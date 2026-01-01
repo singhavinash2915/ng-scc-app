@@ -5,12 +5,27 @@ interface CardProps {
   className?: string;
   onClick?: () => void;
   hover?: boolean;
+  animate?: boolean;
+  delay?: number;
+  glass?: boolean;
 }
 
-export function Card({ children, className = '', onClick, hover = false }: CardProps) {
+export function Card({ children, className = '', onClick, hover = false, animate = true, delay = 0, glass = false }: CardProps) {
+  const baseClasses = glass
+    ? 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/50'
+    : 'bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700';
+
+  const hoverClasses = hover || onClick
+    ? 'hover:shadow-lg hover:scale-[1.02] hover:border-primary-300 dark:hover:border-primary-600 cursor-pointer active:scale-[0.98]'
+    : '';
+
+  const animateClasses = animate ? 'animate-fade-in-up' : '';
+  const animationDelay = delay > 0 ? { animationDelay: `${delay}ms`, animationFillMode: 'backwards' as const } : {};
+
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 ${hover ? 'hover:shadow-md hover:border-primary-300 dark:hover:border-primary-600 cursor-pointer transition-all duration-200' : ''} ${className}`}
+      className={`${baseClasses} ${hoverClasses} ${animateClasses} transition-all duration-300 ${className}`}
+      style={animationDelay}
       onClick={onClick}
     >
       {children}
