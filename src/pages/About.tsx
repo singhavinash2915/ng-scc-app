@@ -8,6 +8,8 @@ import {
   Calendar,
   MapPin,
   Phone,
+  Mail,
+  Instagram,
   Target,
   Heart,
   TrendingUp,
@@ -170,12 +172,37 @@ export function About() {
         {/* Contact Info */}
         <Card>
           <CardContent className="p-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Contact Admin</h3>
-            <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
-              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <Phone className="w-5 h-5" />
-              </div>
-              <span>Avinash - 8888546860</span>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Contact Us</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <a
+                href="tel:+918888546860"
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <Phone className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-gray-700 dark:text-gray-300">+91 8888546860</span>
+              </a>
+              <a
+                href="mailto:sangriacricket@gmail.com"
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">sangriacricket@gmail.com</span>
+              </a>
+              <a
+                href="https://instagram.com/sangriacricket_official"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
+                  <Instagram className="w-5 h-5 text-pink-600 dark:text-pink-400" />
+                </div>
+                <span className="text-gray-700 dark:text-gray-300">@sangriacricket_official</span>
+              </a>
             </div>
           </CardContent>
         </Card>
