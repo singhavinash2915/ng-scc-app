@@ -62,7 +62,7 @@ export function Sidebar() {
         {/* Logo - Clickable to Dashboard */}
         <Link to="/" className="flex items-center gap-3 px-6 py-5 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
           <img
-            src="/ng-scc-app/scc-logo.jpg"
+            src="/scc-logo.jpg"
             alt="Sangria CC"
             className="w-10 h-10 rounded-xl object-cover"
           />
