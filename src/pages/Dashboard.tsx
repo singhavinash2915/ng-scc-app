@@ -8,6 +8,7 @@ import {
   AlertCircle,
   ChevronRight,
   IndianRupee,
+  UserPlus,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -70,6 +71,26 @@ export function Dashboard() {
       <Header title="Dashboard" subtitle="Welcome to Sangria Cricket Club" />
 
       <div className="p-4 lg:p-8 space-y-6">
+        {/* Join Club Banner */}
+        <Link to="/requests">
+          <Card className="bg-gradient-to-r from-primary-500 to-primary-600 border-0 hover:from-primary-600 hover:to-primary-700 transition-all cursor-pointer">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 rounded-xl">
+                  <UserPlus className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1 text-white">
+                  <h3 className="text-lg font-bold">Want to Join Sangria Cricket Club?</h3>
+                  <p className="text-primary-100 text-sm">
+                    Click here to submit your membership request
+                  </p>
+                </div>
+                <ChevronRight className="w-6 h-6 text-white/70" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
