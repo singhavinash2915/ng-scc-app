@@ -15,7 +15,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter basename="/ng-scc-app">
+        <BrowserRouter>
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />
