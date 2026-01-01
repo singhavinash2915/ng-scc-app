@@ -61,9 +61,11 @@ export function Sidebar() {
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
         {/* Logo - Clickable to Dashboard */}
         <Link to="/" className="flex items-center gap-3 px-6 py-5 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-          <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-lg">S</span>
-          </div>
+          <img
+            src="/ng-scc-app/scc-logo.jpg"
+            alt="Sangria CC"
+            className="w-10 h-10 rounded-xl object-cover"
+          />
           <div>
             <h1 className="font-bold text-gray-900 dark:text-white">Sangria CC</h1>
             <p className="text-xs text-gray-500 dark:text-gray-400">Cricket Club</p>
