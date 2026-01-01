@@ -26,6 +26,22 @@ export function useRequests() {
 
   useEffect(() => {
     fetchRequests();
+
+    // Subscribe to real-time changes for instant updates
+    const channel = supabase
+      .channel('member_requests_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'member_requests' },
+        () => {
+          fetchRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchRequests]);
 
   const submitRequest = async (request: {

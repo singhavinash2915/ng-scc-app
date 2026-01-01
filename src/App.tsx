@@ -9,6 +9,7 @@ import { Finance } from './pages/Finance';
 import { Analytics } from './pages/Analytics';
 import { Requests } from './pages/Requests';
 import { Settings } from './pages/Settings';
+import { About } from './pages/About';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/requests" element={<Requests />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/about" element={<About />} />
             </Routes>
           </Layout>
         </BrowserRouter>

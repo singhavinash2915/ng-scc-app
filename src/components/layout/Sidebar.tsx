@@ -11,6 +11,7 @@ import {
   Shield,
   LogOut,
   Lock,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -18,12 +19,16 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
-const navItems = [
+const publicNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/about', icon: Info, label: 'About' },
+];
+
+const adminNavItems = [
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
@@ -67,7 +72,7 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
+          {publicNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -81,13 +86,36 @@ export function Sidebar() {
             >
               <item.icon className="w-5 h-5" />
               <span className="font-medium">{item.label}</span>
-              {item.showBadge && pendingCount > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                  {pendingCount}
-                </span>
-              )}
             </NavLink>
           ))}
+
+          {/* Admin-only navigation items */}
+          {isAdmin && (
+            <>
+              <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+              {adminNavItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`
+                  }
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                  {item.showBadge && pendingCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                      {pendingCount}
+                    </span>
+                  )}
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         {/* Admin Login/Logout Button */}
