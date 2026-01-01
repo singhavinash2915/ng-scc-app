@@ -9,6 +9,8 @@ import {
   IndianRupee,
   TrendingUp,
   TrendingDown,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -21,8 +23,8 @@ import { useMembers } from '../hooks/useMembers';
 import { useAuth } from '../context/AuthContext';
 
 export function Finance() {
-  const { transactions, loading, addExpense } = useTransactions();
-  const { members, addFunds } = useMembers();
+  const { transactions, loading, addExpense, deleteTransaction } = useTransactions();
+  const { members, addFunds, updateMember } = useMembers();
   const { isAdmin } = useAuth();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'deposit' | 'match_fee' | 'expense'>('all');
@@ -40,6 +42,12 @@ export function Finance() {
     amount: '',
     description: '',
   });
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    show: boolean;
+    transaction: typeof transactions[0] | null;
+  }>({ show: false, transaction: null });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const stats = useMemo(() => {
     const totalDeposits = transactions
@@ -106,6 +114,41 @@ export function Finance() {
       console.error('Failed to add deposit:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteTransaction = async () => {
+    if (!isAdmin || !deleteConfirm.transaction) return;
+
+    const txn = deleteConfirm.transaction;
+    setIsDeleting(true);
+
+    try {
+      // If it's a deposit, we need to reverse the member's balance
+      if (txn.type === 'deposit' && txn.member_id) {
+        const member = members.find(m => m.id === txn.member_id);
+        if (member) {
+          const newBalance = member.balance - txn.amount;
+          await updateMember(txn.member_id, { balance: newBalance });
+        }
+      }
+
+      // If it's a match_fee (negative), we need to add the amount back
+      if (txn.type === 'match_fee' && txn.member_id) {
+        const member = members.find(m => m.id === txn.member_id);
+        if (member) {
+          const newBalance = member.balance - txn.amount; // txn.amount is negative, so this adds back
+          await updateMember(txn.member_id, { balance: newBalance });
+        }
+      }
+
+      // Delete the transaction
+      await deleteTransaction(txn.id);
+      setDeleteConfirm({ show: false, transaction: null });
+    } catch (error) {
+      console.error('Failed to delete transaction:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -294,6 +337,15 @@ export function Finance() {
                     >
                       {txn.amount >= 0 ? '+' : ''}₹{Math.abs(txn.amount).toLocaleString('en-IN')}
                     </span>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setDeleteConfirm({ show: true, transaction: txn })}
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                        title="Delete transaction"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -370,6 +422,77 @@ export function Finance() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, transaction: null })}
+        title="Delete Transaction"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p className="font-medium text-red-800 dark:text-red-200">This action cannot be undone</p>
+              <p className="text-sm text-red-600 dark:text-red-300">
+                {deleteConfirm.transaction?.type === 'deposit' && deleteConfirm.transaction?.member_id
+                  ? `Member balance will be reduced by ₹${Math.abs(deleteConfirm.transaction?.amount || 0).toLocaleString('en-IN')}`
+                  : deleteConfirm.transaction?.type === 'match_fee' && deleteConfirm.transaction?.member_id
+                  ? `Member balance will be increased by ₹${Math.abs(deleteConfirm.transaction?.amount || 0).toLocaleString('en-IN')}`
+                  : 'This transaction will be permanently deleted'}
+              </p>
+            </div>
+          </div>
+
+          {deleteConfirm.transaction && (
+            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Type:</span>
+                <span className="font-medium capitalize">{deleteConfirm.transaction.type.replace('_', ' ')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Amount:</span>
+                <span className={`font-bold ${deleteConfirm.transaction.amount >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  {deleteConfirm.transaction.amount >= 0 ? '+' : ''}₹{Math.abs(deleteConfirm.transaction.amount).toLocaleString('en-IN')}
+                </span>
+              </div>
+              {deleteConfirm.transaction.member?.name && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Member:</span>
+                  <span className="font-medium">{deleteConfirm.transaction.member.name}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Description:</span>
+                <span className="font-medium truncate max-w-[200px]">{deleteConfirm.transaction.description || '-'}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setDeleteConfirm({ show: false, transaction: null })}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleDeleteTransaction}
+              loading={isDeleting}
+              className="flex-1"
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
