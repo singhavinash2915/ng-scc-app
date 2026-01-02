@@ -10,6 +10,8 @@ import {
   Edit,
   Trash2,
   Check,
+  Wallet,
+  Banknote,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -42,6 +44,7 @@ export function Matches() {
     match_fee: 200,
     ground_cost: 0,
     other_expenses: 0,
+    deduct_from_balance: true,
     notes: '',
   });
 
@@ -80,6 +83,7 @@ export function Matches() {
           match_fee: formData.match_fee,
           ground_cost: formData.ground_cost,
           other_expenses: formData.other_expenses,
+          deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
         },
         selectedPlayers
@@ -108,6 +112,7 @@ export function Matches() {
           match_fee: formData.match_fee,
           ground_cost: formData.ground_cost,
           other_expenses: formData.other_expenses,
+          deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
         },
         selectedPlayers
@@ -162,6 +167,7 @@ export function Matches() {
       match_fee: 200,
       ground_cost: 0,
       other_expenses: 0,
+      deduct_from_balance: true,
       notes: '',
     });
     setSelectedPlayers([]);
@@ -176,6 +182,7 @@ export function Matches() {
       match_fee: match.match_fee,
       ground_cost: match.ground_cost,
       other_expenses: match.other_expenses,
+      deduct_from_balance: match.deduct_from_balance ?? true,
       notes: match.notes || '',
     });
     setSelectedPlayers(match.players?.map(p => p.member_id) || []);
@@ -401,6 +408,74 @@ export function Matches() {
               onChange={(e) => setFormData({ ...formData, other_expenses: parseFloat(e.target.value) || 0 })}
             />
           </div>
+
+          {/* Payment Type Toggle */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Payment Type
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, deduct_from_balance: true })}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                  formData.deduct_from_balance
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  formData.deduct_from_balance
+                    ? 'bg-primary-100 dark:bg-primary-900/30'
+                    : 'bg-gray-100 dark:bg-gray-800'
+                }`}>
+                  <Wallet className={`w-5 h-5 ${
+                    formData.deduct_from_balance
+                      ? 'text-primary-600 dark:text-primary-400'
+                      : 'text-gray-500'
+                  }`} />
+                </div>
+                <div className="text-left">
+                  <p className={`font-medium ${
+                    formData.deduct_from_balance
+                      ? 'text-primary-700 dark:text-primary-300'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}>From Balance</p>
+                  <p className="text-xs text-gray-500">Deduct from member wallet</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, deduct_from_balance: false })}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                  !formData.deduct_from_balance
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  !formData.deduct_from_balance
+                    ? 'bg-orange-100 dark:bg-orange-900/30'
+                    : 'bg-gray-100 dark:bg-gray-800'
+                }`}>
+                  <Banknote className={`w-5 h-5 ${
+                    !formData.deduct_from_balance
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : 'text-gray-500'
+                  }`} />
+                </div>
+                <div className="text-left">
+                  <p className={`font-medium ${
+                    !formData.deduct_from_balance
+                      ? 'text-orange-700 dark:text-orange-300'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}>Cash Payment</p>
+                  <p className="text-xs text-gray-500">Tournament/adhoc match</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <TextArea
             label="Notes"
             placeholder="Any additional notes..."
@@ -436,9 +511,11 @@ export function Matches() {
                     )}
                   </div>
                   <span className="flex-1 text-left">{member.name}</span>
-                  <span className={`text-sm ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
-                    ₹{member.balance}
-                  </span>
+                  {formData.deduct_from_balance && (
+                    <span className={`text-sm ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
+                      ₹{member.balance}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -501,6 +578,74 @@ export function Matches() {
               onChange={(e) => setFormData({ ...formData, other_expenses: parseFloat(e.target.value) || 0 })}
             />
           </div>
+
+          {/* Payment Type Toggle */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Payment Type
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, deduct_from_balance: true })}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                  formData.deduct_from_balance
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  formData.deduct_from_balance
+                    ? 'bg-primary-100 dark:bg-primary-900/30'
+                    : 'bg-gray-100 dark:bg-gray-800'
+                }`}>
+                  <Wallet className={`w-5 h-5 ${
+                    formData.deduct_from_balance
+                      ? 'text-primary-600 dark:text-primary-400'
+                      : 'text-gray-500'
+                  }`} />
+                </div>
+                <div className="text-left">
+                  <p className={`font-medium ${
+                    formData.deduct_from_balance
+                      ? 'text-primary-700 dark:text-primary-300'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}>From Balance</p>
+                  <p className="text-xs text-gray-500">Deduct from member wallet</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, deduct_from_balance: false })}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                  !formData.deduct_from_balance
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  !formData.deduct_from_balance
+                    ? 'bg-orange-100 dark:bg-orange-900/30'
+                    : 'bg-gray-100 dark:bg-gray-800'
+                }`}>
+                  <Banknote className={`w-5 h-5 ${
+                    !formData.deduct_from_balance
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : 'text-gray-500'
+                  }`} />
+                </div>
+                <div className="text-left">
+                  <p className={`font-medium ${
+                    !formData.deduct_from_balance
+                      ? 'text-orange-700 dark:text-orange-300'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}>Cash Payment</p>
+                  <p className="text-xs text-gray-500">Tournament/adhoc match</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <TextArea
             label="Notes"
             placeholder="Any additional notes..."
@@ -536,9 +681,11 @@ export function Matches() {
                     )}
                   </div>
                   <span className="flex-1 text-left">{member.name}</span>
-                  <span className={`text-sm ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
-                    ₹{member.balance}
-                  </span>
+                  {formData.deduct_from_balance && (
+                    <span className={`text-sm ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
+                      ₹{member.balance}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

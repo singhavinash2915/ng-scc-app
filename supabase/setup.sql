@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS matches (
   match_fee DECIMAL(10,2) DEFAULT 0,
   ground_cost DECIMAL(10,2) DEFAULT 0,
   other_expenses DECIMAL(10,2) DEFAULT 0,
+  deduct_from_balance BOOLEAN DEFAULT TRUE,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

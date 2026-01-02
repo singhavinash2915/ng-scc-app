@@ -22,6 +22,7 @@ export interface Match {
   match_fee: number;
   ground_cost: number;
   other_expenses: number;
+  deduct_from_balance: boolean;
   notes: string | null;
   created_at: string;
   players?: MatchPlayer[];

@@ -56,7 +56,7 @@ export function useMatches() {
         const matchPlayers = playerIds.map(memberId => ({
           match_id: matchData.id,
           member_id: memberId,
-          fee_paid: false,
+          fee_paid: match.deduct_from_balance, // Mark as paid if deducted from balance
         }));
 
         const { error: playersError } = await supabase
@@ -64,6 +64,35 @@ export function useMatches() {
           .insert(matchPlayers);
 
         if (playersError) throw playersError;
+
+        // If deduct_from_balance is true, deduct fees from member balances and create transactions
+        if (match.deduct_from_balance) {
+          for (const memberId of playerIds) {
+            // Get current member balance
+            const { data: memberData } = await supabase
+              .from('members')
+              .select('balance')
+              .eq('id', memberId)
+              .single();
+
+            if (memberData) {
+              // Update member balance
+              await supabase
+                .from('members')
+                .update({ balance: memberData.balance - match.match_fee })
+                .eq('id', memberId);
+
+              // Create transaction record
+              await supabase.from('transactions').insert([{
+                type: 'match_fee',
+                amount: -match.match_fee,
+                member_id: memberId,
+                match_id: matchData.id,
+                description: `Match fee - ${match.venue}`,
+              }]);
+            }
+          }
+        }
       }
 
       await fetchMatches();
