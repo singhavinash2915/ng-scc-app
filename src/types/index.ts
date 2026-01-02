@@ -75,3 +75,29 @@ export interface DashboardStats {
   winRate: number;
   pendingRequests: number;
 }
+
+export interface Tournament {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string | null;
+  venue: string;
+  format: 'T20' | 'ODI' | 'T10' | 'Tennis Ball' | 'Other';
+  status: 'upcoming' | 'ongoing' | 'completed';
+  total_teams: number | null;
+  entry_fee: number;
+  prize_money: number | null;
+  our_position: string | null;
+  result: 'winner' | 'runner_up' | 'semi_finalist' | 'quarter_finalist' | 'group_stage' | 'participated' | null;
+  notes: string | null;
+  created_at: string;
+  matches?: TournamentMatch[];
+}
+
+export interface TournamentMatch {
+  id: string;
+  tournament_id: string;
+  match_id: string;
+  stage: 'group' | 'quarter_final' | 'semi_final' | 'final' | 'league';
+  match?: Match;
+}
