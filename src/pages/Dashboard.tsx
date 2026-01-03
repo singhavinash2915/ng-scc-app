@@ -10,7 +10,20 @@ import {
   IndianRupee,
   UserPlus,
   Sparkles,
+  Star,
+  Award,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -58,6 +71,90 @@ export function Dashboard() {
     return members.filter(m => m.status === 'active' && m.balance < 500).slice(0, 5);
   }, [members]);
 
+  // Get the latest won match with Man of the Match
+  const latestWonMatch = useMemo(() => {
+    return matches.find(m => m.result === 'won' && m.man_of_match);
+  }, [matches]);
+
+  // Check if Man of the Match should be displayed (until next match is played)
+  const showManOfMatch = useMemo(() => {
+    if (!latestWonMatch || !latestWonMatch.man_of_match) return null;
+
+    // Find the index of the latest won match
+    const wonMatchIndex = matches.findIndex(m => m.id === latestWonMatch.id);
+
+    // Check if there's a newer completed match
+    const newerCompletedMatch = matches.slice(0, wonMatchIndex).find(
+      m => ['won', 'lost', 'draw'].includes(m.result)
+    );
+
+    // Only show if no newer completed match exists
+    return newerCompletedMatch ? null : latestWonMatch;
+  }, [matches, latestWonMatch]);
+
+  // Monthly finance data for chart
+  const monthlyFinanceData = useMemo(() => {
+    const last6Months: { month: string; deposits: number; expenses: number }[] = [];
+    const today = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthKey = date.toLocaleDateString('en-IN', { month: 'short' });
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+      const monthTransactions = transactions.filter(t => {
+        const txnDate = new Date(t.date);
+        return txnDate >= monthStart && txnDate <= monthEnd;
+      });
+
+      const deposits = monthTransactions
+        .filter(t => t.type === 'deposit')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const expenses = monthTransactions
+        .filter(t => t.amount < 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+      last6Months.push({ month: monthKey, deposits, expenses });
+    }
+
+    return last6Months;
+  }, [transactions]);
+
+  // Win/Loss pie chart data
+  const matchResultData = useMemo(() => {
+    const draw = matches.filter(m => m.result === 'draw').length;
+    return [
+      { name: 'Won', value: stats.won, color: '#22c55e' },
+      { name: 'Lost', value: stats.lost, color: '#ef4444' },
+      { name: 'Draw', value: draw, color: '#f59e0b' },
+    ].filter(d => d.value > 0);
+  }, [matches, stats.won, stats.lost]);
+
+  // Top contributors
+  const topContributors = useMemo(() => {
+    const contributorMap = new Map<string, { name: string; total: number }>();
+
+    transactions
+      .filter(t => t.type === 'deposit' && t.member)
+      .forEach(t => {
+        const existing = contributorMap.get(t.member!.id);
+        if (existing) {
+          existing.total += t.amount;
+        } else {
+          contributorMap.set(t.member!.id, {
+            name: t.member!.name,
+            total: t.amount,
+          });
+        }
+      });
+
+    return Array.from(contributorMap.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 3);
+  }, [transactions]);
+
   // Animated values
   const animatedMembers = useAnimatedValue(stats.activeMembers, 800);
   const animatedFunds = useAnimatedValue(stats.totalFunds, 1200);
@@ -87,6 +184,72 @@ export function Dashboard() {
       <Header title="Dashboard" subtitle="Welcome to Sangria Cricket Club" />
 
       <div className="p-4 lg:p-8 space-y-6">
+        {/* Man of the Match - Hero Section */}
+        {showManOfMatch && showManOfMatch.man_of_match && (
+          <Card className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 border-0 overflow-hidden relative" delay={0}>
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMSkiIHN0cm9rZS13aWR0aD0iMiIvPjwvZz48L3N2Zz4=')] opacity-30"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+            <CardContent className="p-6 lg:p-8 relative">
+              <div className="flex flex-col lg:flex-row items-center gap-6">
+                {/* Trophy Icon */}
+                <div className="flex-shrink-0">
+                  <div className="relative">
+                    <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm animate-pulse">
+                      <Star className="w-10 h-10 lg:w-12 lg:h-12 text-white" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+                      <Trophy className="w-5 h-5 text-amber-500" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Player Photo */}
+                <div className="flex-shrink-0">
+                  {showManOfMatch.man_of_match.avatar_url ? (
+                    <img
+                      src={showManOfMatch.man_of_match.avatar_url}
+                      alt={showManOfMatch.man_of_match.name}
+                      className="w-28 h-28 lg:w-36 lg:h-36 rounded-2xl object-cover border-4 border-white/30 shadow-2xl"
+                    />
+                  ) : (
+                    <div className="w-28 h-28 lg:w-36 lg:h-36 rounded-2xl bg-white/20 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center shadow-2xl">
+                      <span className="text-4xl lg:text-5xl font-bold text-white">
+                        {showManOfMatch.man_of_match.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 text-center lg:text-left">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-white/90 text-sm font-medium mb-2 backdrop-blur-sm">
+                    <Award className="w-4 h-4" />
+                    Man of the Match
+                  </div>
+                  <h2 className="text-2xl lg:text-3xl font-bold text-white mb-1">
+                    {showManOfMatch.man_of_match.name}
+                  </h2>
+                  <p className="text-white/80 text-sm lg:text-base">
+                    vs {showManOfMatch.opponent || 'Opposition'} • {new Date(showManOfMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                  {showManOfMatch.our_score && (
+                    <p className="text-white/90 font-semibold mt-2 text-lg">
+                      {showManOfMatch.our_score} - {showManOfMatch.opponent_score}
+                    </p>
+                  )}
+                </div>
+
+                {/* Decorative Stars */}
+                <div className="hidden lg:flex flex-col gap-2 text-white/20">
+                  <Star className="w-8 h-8 animate-pulse" />
+                  <Star className="w-6 h-6 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                  <Star className="w-4 h-4 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Join Club Banner */}
         <Link to="/requests">
           <Card className="bg-gradient-to-r from-primary-500 via-primary-600 to-emerald-500 border-0 overflow-hidden relative group" delay={0}>
@@ -245,6 +408,153 @@ export function Dashboard() {
                 <Link to="/requests" className="mt-3 inline-flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium">
                   Review now <ChevronRight className="w-4 h-4" />
                 </Link>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Monthly Finance Chart */}
+          <Card delay={375}>
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <IndianRupee className="w-5 h-5 text-primary-500" />
+                Monthly Finance Overview
+              </h3>
+            </div>
+            <CardContent className="p-4">
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyFinanceData}>
+                    <XAxis
+                      dataKey="month"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      tickFormatter={(value) => `₹${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: 'none',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                      }}
+                      formatter={(value) => [`₹${Number(value).toLocaleString('en-IN')}`, '']}
+                    />
+                    <Bar dataKey="deposits" fill="#22c55e" radius={[4, 4, 0, 0]} name="Deposits" />
+                    <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="Expenses" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Deposits</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Expenses</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Match Results Pie Chart & Top Contributors */}
+          <Card delay={400}>
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary-500" />
+                Match Results & Top Contributors
+              </h3>
+            </div>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Pie Chart */}
+                <div className="h-40">
+                  {matchResultData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={matchResultData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={35}
+                          outerRadius={55}
+                          paddingAngle={4}
+                          dataKey="value"
+                        >
+                          {matchResultData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                      No matches yet
+                    </div>
+                  )}
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-col justify-center gap-2">
+                  {matchResultData.map((item) => (
+                    <div key={item.name} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      ></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {item.name}: {item.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Contributors */}
+              {topContributors.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-xs font-medium text-gray-500 mb-3 flex items-center gap-1">
+                    <Award className="w-3 h-3" /> TOP CONTRIBUTORS
+                  </p>
+                  <div className="space-y-2">
+                    {topContributors.map((contributor, index) => (
+                      <div key={contributor.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                            index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                            index === 1 ? 'bg-gray-200 text-gray-700' :
+                            'bg-orange-100 text-orange-700'
+                          }`}>
+                            {index + 1}
+                          </span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {contributor.name}
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold text-green-600">
+                          ₹{contributor.total.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

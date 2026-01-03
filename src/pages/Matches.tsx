@@ -12,6 +12,7 @@ import {
   Check,
   Wallet,
   Banknote,
+  Star,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -56,6 +57,7 @@ export function Matches() {
     result: 'won' as Match['result'],
     our_score: '',
     opponent_score: '',
+    man_of_match_id: '' as string,
   });
 
   // Check if selected date is today or in the past
@@ -98,6 +100,7 @@ export function Matches() {
           other_expenses: formData.other_expenses ? parseFloat(formData.other_expenses) : 0,
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
+          man_of_match_id: null,
         },
         selectedPlayers
       );
@@ -150,9 +153,11 @@ export function Matches() {
         result: resultData.result,
         our_score: resultData.our_score || null,
         opponent_score: resultData.opponent_score || null,
+        man_of_match_id: resultData.result === 'won' && resultData.man_of_match_id ? resultData.man_of_match_id : null,
       });
       setShowResultModal(false);
       setSelectedMatch(null);
+      setResultData({ result: 'won', our_score: '', opponent_score: '', man_of_match_id: '' });
     } catch (error) {
       console.error('Failed to update result:', error);
     } finally {
@@ -215,6 +220,7 @@ export function Matches() {
       result: match.result === 'upcoming' ? 'won' : match.result,
       our_score: match.our_score || '',
       opponent_score: match.opponent_score || '',
+      man_of_match_id: match.man_of_match_id || '',
     });
     setShowResultModal(true);
     setMenuOpen(null);
@@ -796,6 +802,36 @@ export function Matches() {
               onChange={(e) => setResultData({ ...resultData, opponent_score: e.target.value })}
             />
           </div>
+
+          {/* Man of the Match - Only show for Won matches */}
+          {resultData.result === 'won' && (
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center gap-2 mb-3">
+                <Star className="w-5 h-5 text-amber-500" />
+                <label className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                  Man of the Match
+                </label>
+              </div>
+              <Select
+                value={resultData.man_of_match_id}
+                onChange={(e) => setResultData({ ...resultData, man_of_match_id: e.target.value })}
+                options={[
+                  { value: '', label: 'Select player (optional)' },
+                  ...(selectedMatch?.players?.map(p => ({
+                    value: p.member_id,
+                    label: p.member?.name || 'Unknown Player',
+                  })) || activeMembers.map(m => ({
+                    value: m.id,
+                    label: m.name,
+                  }))),
+                ]}
+              />
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                The Man of the Match will be featured on the Dashboard until the next match!
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="secondary" onClick={() => setShowResultModal(false)} className="flex-1">
               Cancel

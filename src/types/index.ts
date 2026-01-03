@@ -24,8 +24,10 @@ export interface Match {
   other_expenses: number;
   deduct_from_balance: boolean;
   notes: string | null;
+  man_of_match_id: string | null;
   created_at: string;
   players?: MatchPlayer[];
+  man_of_match?: Member;
 }
 
 export interface MatchPlayer {

@@ -20,7 +20,8 @@ export function useMatches() {
             member_id,
             fee_paid,
             member:members(id, name, balance)
-          )
+          ),
+          man_of_match:members!matches_man_of_match_id_fkey(id, name, avatar_url)
         `)
         .order('date', { ascending: false });
 
