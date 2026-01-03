@@ -416,10 +416,15 @@ export function Settings() {
                 <p className="text-gray-500">Club Management App v1.0</p>
               </div>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 mb-4">
               A modern web application for managing members, matches, and finances of Sangria
               Cricket Club. Built with React, TypeScript, and Supabase.
             </p>
+            <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-500">
+                Created by <span className="font-medium text-gray-700 dark:text-gray-300">Avinash Singh</span>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
