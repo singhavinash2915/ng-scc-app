@@ -1,6 +1,9 @@
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 import { Shield } from 'lucide-react';
+import { Notifications } from '../Notifications';
+import { useMembers } from '../../hooks/useMembers';
+import { useMatches } from '../../hooks/useMatches';
 
 interface HeaderProps {
   title: string;
@@ -9,6 +12,8 @@ interface HeaderProps {
 
 export function Header({ title, subtitle }: HeaderProps) {
   const { isAdmin } = useAuth();
+  const { members } = useMembers();
+  const { matches } = useMatches();
 
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 lg:px-8 py-4">
@@ -32,6 +37,7 @@ export function Header({ title, subtitle }: HeaderProps) {
               </span>
             </div>
           )}
+          <Notifications members={members} matches={matches} />
           <div className="hidden lg:block">
             <ThemeToggle />
           </div>

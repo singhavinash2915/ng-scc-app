@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
+import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -11,7 +11,8 @@ import { useAuth } from '../context/AuthContext';
 import type { Member } from '../types';
 
 export function Members() {
-  const { members, loading, addMember, updateMember, deleteMember, addFunds } = useMembers();
+  const { members, loading, addMember, updateMember, deleteMember, addFunds, uploadAvatar, removeAvatar } = useMembers();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -25,6 +26,7 @@ export function Members() {
     name: '',
     phone: '',
     email: '',
+    birthday: '',
     status: 'active' as 'active' | 'inactive',
     balance: 0,
   });
@@ -32,6 +34,8 @@ export function Members() {
   const [fundAmount, setFundAmount] = useState('');
   const [fundDescription, setFundDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
@@ -53,13 +57,14 @@ export function Members() {
         name: formData.name,
         phone: formData.phone || null,
         email: formData.email || null,
+        birthday: formData.birthday || null,
         status: formData.status,
         balance: formData.balance,
         join_date: new Date().toISOString().split('T')[0],
         avatar_url: null,
       });
       setShowAddModal(false);
-      setFormData({ name: '', phone: '', email: '', status: 'active', balance: 0 });
+      setFormData({ name: '', phone: '', email: '', birthday: '', status: 'active', balance: 0 });
     } catch (error) {
       console.error('Failed to add member:', error);
     } finally {
@@ -77,6 +82,7 @@ export function Members() {
         name: formData.name,
         phone: formData.phone || null,
         email: formData.email || null,
+        birthday: formData.birthday || null,
         status: formData.status,
       });
       setShowEditModal(false);
@@ -127,6 +133,7 @@ export function Members() {
       name: member.name,
       phone: member.phone || '',
       email: member.email || '',
+      birthday: member.birthday || '',
       status: member.status,
       balance: member.balance,
     });
@@ -138,6 +145,60 @@ export function Members() {
     setSelectedMember(member);
     setShowFundModal(true);
     setMenuOpen(null);
+  };
+
+  const openAvatarModal = (member: Member) => {
+    setSelectedMember(member);
+    setShowAvatarModal(true);
+    setMenuOpen(null);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedMember || !e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Max 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      await uploadAvatar(selectedMember.id, file);
+      setShowAvatarModal(false);
+      setSelectedMember(null);
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+      alert('Failed to upload avatar. Please try again.');
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!selectedMember) return;
+
+    if (!window.confirm('Remove this photo?')) return;
+
+    setAvatarUploading(true);
+    try {
+      await removeAvatar(selectedMember.id);
+      setShowAvatarModal(false);
+      setSelectedMember(null);
+    } catch (error) {
+      console.error('Failed to remove avatar:', error);
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   if (loading) {
@@ -210,6 +271,12 @@ export function Members() {
                           <IndianRupee className="w-4 h-4" /> Add Funds
                         </button>
                         <button
+                          onClick={() => openAvatarModal(member)}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                        >
+                          <Camera className="w-4 h-4" /> {member.avatar_url ? 'Change Photo' : 'Add Photo'}
+                        </button>
+                        <button
                           onClick={() => handleDeleteMember(member.id)}
                           className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                         >
@@ -221,9 +288,17 @@ export function Members() {
                 )}
 
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                    <User className="w-7 h-7 text-primary-600 dark:text-primary-400" />
-                  </div>
+                  {member.avatar_url ? (
+                    <img
+                      src={member.avatar_url}
+                      alt={member.name}
+                      className="w-14 h-14 rounded-full object-cover border-2 border-primary-200 dark:border-primary-800"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                      <User className="w-7 h-7 text-primary-600 dark:text-primary-400" />
+                    </div>
+                  )}
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">{member.name}</h3>
                     <Badge variant={member.status === 'active' ? 'success' : 'default'} size="sm">
@@ -292,6 +367,12 @@ export function Members() {
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
+          <Input
+            label="Birthday"
+            type="date"
+            value={formData.birthday}
+            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+          />
           <Select
             label="Status"
             value={formData.status}
@@ -337,6 +418,12 @@ export function Members() {
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+          <Input
+            label="Birthday"
+            type="date"
+            value={formData.birthday}
+            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
           />
           <Select
             label="Status"
@@ -391,6 +478,83 @@ export function Members() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Avatar Upload Modal */}
+      <Modal isOpen={showAvatarModal} onClose={() => setShowAvatarModal(false)} title="Member Photo">
+        <div className="space-y-6">
+          {/* Current Avatar Preview */}
+          <div className="flex flex-col items-center">
+            {selectedMember?.avatar_url ? (
+              <img
+                src={selectedMember.avatar_url}
+                alt={selectedMember.name}
+                className="w-32 h-32 rounded-full object-cover border-4 border-primary-200 dark:border-primary-800 shadow-lg"
+              />
+            ) : (
+              <div className="w-32 h-32 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center border-4 border-primary-200 dark:border-primary-800">
+                <User className="w-16 h-16 text-primary-600 dark:text-primary-400" />
+              </div>
+            )}
+            <p className="mt-3 font-semibold text-gray-900 dark:text-white text-lg">{selectedMember?.name}</p>
+          </div>
+
+          {/* Upload Area */}
+          <div className="space-y-3">
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+              id="avatar-upload"
+            />
+            <label
+              htmlFor="avatar-upload"
+              className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-primary-500 dark:hover:border-primary-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+            >
+              {avatarUploading ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                  <span className="text-sm text-gray-500">Uploading...</span>
+                </div>
+              ) : (
+                <>
+                  <Camera className="w-10 h-10 text-gray-400 mb-2" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Click to upload photo
+                  </span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    JPG, PNG, GIF up to 5MB
+                  </span>
+                </>
+              )}
+            </label>
+          </div>
+
+          {/* Remove Photo Button */}
+          {selectedMember?.avatar_url && (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleRemoveAvatar}
+              loading={avatarUploading}
+              className="w-full"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Remove Photo
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setShowAvatarModal(false)}
+            className="w-full"
+          >
+            Close
+          </Button>
+        </div>
       </Modal>
     </div>
   );

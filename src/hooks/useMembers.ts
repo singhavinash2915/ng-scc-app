@@ -123,6 +123,68 @@ export function useMembers() {
     }
   };
 
+  const uploadAvatar = async (memberId: string, file: File) => {
+    try {
+      const member = members.find(m => m.id === memberId);
+      if (!member) throw new Error('Member not found');
+
+      // Generate unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${memberId}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Delete old avatar if exists
+      if (member.avatar_url) {
+        const oldPath = member.avatar_url.split('/').pop();
+        if (oldPath) {
+          await supabase.storage.from('avatars').remove([`avatars/${oldPath}`]);
+        }
+      }
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update member with avatar URL
+      await updateMember(memberId, { avatar_url: publicUrl });
+
+      return publicUrl;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to upload avatar');
+    }
+  };
+
+  const removeAvatar = async (memberId: string) => {
+    try {
+      const member = members.find(m => m.id === memberId);
+      if (!member) throw new Error('Member not found');
+
+      // Delete avatar from storage if exists
+      if (member.avatar_url) {
+        const fileName = member.avatar_url.split('/').pop();
+        if (fileName) {
+          await supabase.storage.from('avatars').remove([`avatars/${fileName}`]);
+        }
+      }
+
+      // Update member to remove avatar URL
+      await updateMember(memberId, { avatar_url: null });
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to remove avatar');
+    }
+  };
+
   return {
     members,
     loading,
@@ -133,5 +195,7 @@ export function useMembers() {
     deleteMember,
     addFunds,
     deductFunds,
+    uploadAvatar,
+    removeAvatar,
   };
 }

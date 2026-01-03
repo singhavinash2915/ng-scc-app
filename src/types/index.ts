@@ -4,6 +4,7 @@ export interface Member {
   phone: string | null;
   email: string | null;
   join_date: string;
+  birthday: string | null;
   status: 'active' | 'inactive';
   balance: number;
   matches_played: number;

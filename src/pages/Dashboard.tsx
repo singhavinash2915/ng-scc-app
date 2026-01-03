@@ -424,7 +424,7 @@ export function Dashboard() {
               </h3>
             </div>
             <CardContent className="p-4">
-              <div className="h-64">
+              <div className="h-64" style={{ minHeight: '256px', minWidth: '0' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthlyFinanceData}>
                     <XAxis
@@ -477,7 +477,7 @@ export function Dashboard() {
             <CardContent className="p-4">
               <div className="grid grid-cols-2 gap-4">
                 {/* Pie Chart */}
-                <div className="h-40">
+                <div className="h-40" style={{ minHeight: '160px', minWidth: '0' }}>
                   {matchResultData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
