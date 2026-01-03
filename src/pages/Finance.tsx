@@ -45,7 +45,7 @@ interface MonthlyData {
 }
 
 export function Finance() {
-  const { transactions, loading, addExpense, deleteTransaction } = useTransactions();
+  const { transactions, loading, addExpense, deleteTransaction, fetchTransactions } = useTransactions();
   const { members, addFunds, updateMember } = useMembers();
   const { isAdmin } = useAuth();
 
@@ -65,12 +65,14 @@ export function Finance() {
   const [expenseData, setExpenseData] = useState({
     amount: '',
     description: '',
+    date: new Date().toISOString().split('T')[0],
   });
 
   const [depositData, setDepositData] = useState({
     memberId: '',
     amount: '',
     description: '',
+    date: new Date().toISOString().split('T')[0],
   });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -225,9 +227,9 @@ export function Finance() {
 
     setIsSubmitting(true);
     try {
-      await addExpense(amount, expenseData.description || 'Ad-hoc expense');
+      await addExpense(amount, expenseData.description || 'Ad-hoc expense', expenseData.date);
       setShowExpenseModal(false);
-      setExpenseData({ amount: '', description: '' });
+      setExpenseData({ amount: '', description: '', date: new Date().toISOString().split('T')[0] });
     } catch (error) {
       console.error('Failed to add expense:', error);
     } finally {
@@ -244,9 +246,11 @@ export function Finance() {
 
     setIsSubmitting(true);
     try {
-      await addFunds(depositData.memberId, amount, depositData.description || 'Fund deposit');
+      await addFunds(depositData.memberId, amount, depositData.description || 'Fund deposit', depositData.date);
+      // Refresh transactions to show the new deposit
+      await fetchTransactions();
       setShowDepositModal(false);
-      setDepositData({ memberId: '', amount: '', description: '' });
+      setDepositData({ memberId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
     } catch (error) {
       console.error('Failed to add deposit:', error);
     } finally {
@@ -997,6 +1001,13 @@ export function Finance() {
       <Modal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} title="Add Expense">
         <form onSubmit={handleAddExpense} className="space-y-4">
           <Input
+            label="Date *"
+            type="date"
+            value={expenseData.date}
+            onChange={(e) => setExpenseData({ ...expenseData, date: e.target.value })}
+            required
+          />
+          <Input
             label="Amount (₹) *"
             type="number"
             min="1"
@@ -1027,6 +1038,13 @@ export function Finance() {
       {/* Add Deposit Modal */}
       <Modal isOpen={showDepositModal} onClose={() => setShowDepositModal(false)} title="Add Deposit">
         <form onSubmit={handleAddDeposit} className="space-y-4">
+          <Input
+            label="Date *"
+            type="date"
+            value={depositData.date}
+            onChange={(e) => setDepositData({ ...depositData, date: e.target.value })}
+            required
+          />
           <Select
             label="Member *"
             value={depositData.memberId}

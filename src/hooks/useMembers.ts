@@ -75,7 +75,7 @@ export function useMembers() {
     }
   };
 
-  const addFunds = async (memberId: string, amount: number, description: string) => {
+  const addFunds = async (memberId: string, amount: number, description: string, date?: string) => {
     try {
       const member = members.find(m => m.id === memberId);
       if (!member) throw new Error('Member not found');
@@ -90,6 +90,7 @@ export function useMembers() {
         amount,
         member_id: memberId,
         description,
+        date: date || new Date().toISOString().split('T')[0],
       }]);
 
       return newBalance;

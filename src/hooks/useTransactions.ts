@@ -52,7 +52,7 @@ export function useTransactions() {
     }
   };
 
-  const addExpense = async (amount: number, description: string) => {
+  const addExpense = async (amount: number, description: string, date?: string) => {
     try {
       const { data, error } = await supabase
         .from('transactions')
@@ -60,12 +60,17 @@ export function useTransactions() {
           type: 'expense',
           amount: -Math.abs(amount),
           description,
+          date: date || new Date().toISOString().split('T')[0],
         }])
         .select()
         .single();
 
       if (error) throw error;
-      setTransactions(prev => [data, ...prev]);
+      // Insert in correct position based on date
+      setTransactions(prev => {
+        const newTransactions = [data, ...prev];
+        return newTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      });
       return data;
     } catch (err) {
       throw err instanceof Error ? err : new Error('Failed to add expense');
