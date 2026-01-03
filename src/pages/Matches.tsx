@@ -42,10 +42,14 @@ export function Matches() {
     venue: '',
     opponent: '',
     match_fee: 200,
-    ground_cost: 0,
-    other_expenses: 0,
+    ground_cost: '',
+    other_expenses: '',
     deduct_from_balance: true,
     notes: '',
+    // Result fields for current/past date matches
+    result: 'upcoming' as Match['result'],
+    our_score: '',
+    opponent_score: '',
   });
 
   const [resultData, setResultData] = useState({
@@ -53,6 +57,15 @@ export function Matches() {
     our_score: '',
     opponent_score: '',
   });
+
+  // Check if selected date is today or in the past
+  const isCurrentOrPastDate = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(formData.date);
+    selectedDate.setHours(0, 0, 0, 0);
+    return selectedDate <= today;
+  }, [formData.date]);
 
   const filteredMatches = useMemo(() => {
     return matches.filter(match => {
@@ -77,12 +90,12 @@ export function Matches() {
           date: formData.date,
           venue: formData.venue,
           opponent: formData.opponent || null,
-          result: 'upcoming',
-          our_score: null,
-          opponent_score: null,
+          result: isCurrentOrPastDate ? formData.result : 'upcoming',
+          our_score: isCurrentOrPastDate && formData.result !== 'upcoming' ? (formData.our_score || null) : null,
+          opponent_score: isCurrentOrPastDate && formData.result !== 'upcoming' ? (formData.opponent_score || null) : null,
           match_fee: formData.match_fee,
-          ground_cost: formData.ground_cost,
-          other_expenses: formData.other_expenses,
+          ground_cost: formData.ground_cost ? parseFloat(formData.ground_cost) : 0,
+          other_expenses: formData.other_expenses ? parseFloat(formData.other_expenses) : 0,
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
         },
@@ -110,8 +123,8 @@ export function Matches() {
           venue: formData.venue,
           opponent: formData.opponent || null,
           match_fee: formData.match_fee,
-          ground_cost: formData.ground_cost,
-          other_expenses: formData.other_expenses,
+          ground_cost: formData.ground_cost ? parseFloat(formData.ground_cost) : 0,
+          other_expenses: formData.other_expenses ? parseFloat(formData.other_expenses) : 0,
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
         },
@@ -165,10 +178,13 @@ export function Matches() {
       venue: '',
       opponent: '',
       match_fee: 200,
-      ground_cost: 0,
-      other_expenses: 0,
+      ground_cost: '',
+      other_expenses: '',
       deduct_from_balance: true,
       notes: '',
+      result: 'upcoming',
+      our_score: '',
+      opponent_score: '',
     });
     setSelectedPlayers([]);
   };
@@ -180,10 +196,13 @@ export function Matches() {
       venue: match.venue,
       opponent: match.opponent || '',
       match_fee: match.match_fee,
-      ground_cost: match.ground_cost,
-      other_expenses: match.other_expenses,
+      ground_cost: match.ground_cost ? match.ground_cost.toString() : '',
+      other_expenses: match.other_expenses ? match.other_expenses.toString() : '',
       deduct_from_balance: match.deduct_from_balance ?? true,
       notes: match.notes || '',
+      result: match.result,
+      our_score: match.our_score || '',
+      opponent_score: match.opponent_score || '',
     });
     setSelectedPlayers(match.players?.map(p => p.member_id) || []);
     setShowEditModal(true);
@@ -399,15 +418,54 @@ export function Matches() {
               label="Ground Cost (₹)"
               type="number"
               value={formData.ground_cost}
-              onChange={(e) => setFormData({ ...formData, ground_cost: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, ground_cost: e.target.value })}
+              placeholder="0"
             />
             <Input
               label="Other Expenses (₹)"
               type="number"
               value={formData.other_expenses}
-              onChange={(e) => setFormData({ ...formData, other_expenses: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, other_expenses: e.target.value })}
+              placeholder="0"
             />
           </div>
+
+          {/* Match Result - Only show for current or past dates */}
+          {isCurrentOrPastDate && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-4">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                Match Result (optional - can be added later)
+              </p>
+              <Select
+                label="Result"
+                value={formData.result}
+                onChange={(e) => setFormData({ ...formData, result: e.target.value as Match['result'] })}
+                options={[
+                  { value: 'upcoming', label: 'Not Yet Played / TBD' },
+                  { value: 'won', label: 'Won' },
+                  { value: 'lost', label: 'Lost' },
+                  { value: 'draw', label: 'Draw' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ]}
+              />
+              {formData.result !== 'upcoming' && formData.result !== 'cancelled' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Our Score"
+                    placeholder="e.g., 156/4"
+                    value={formData.our_score}
+                    onChange={(e) => setFormData({ ...formData, our_score: e.target.value })}
+                  />
+                  <Input
+                    label="Opponent Score"
+                    placeholder="e.g., 142/8"
+                    value={formData.opponent_score}
+                    onChange={(e) => setFormData({ ...formData, opponent_score: e.target.value })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Payment Type Toggle */}
           <div>
@@ -569,13 +627,15 @@ export function Matches() {
               label="Ground Cost (₹)"
               type="number"
               value={formData.ground_cost}
-              onChange={(e) => setFormData({ ...formData, ground_cost: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, ground_cost: e.target.value })}
+              placeholder="0"
             />
             <Input
               label="Other Expenses (₹)"
               type="number"
               value={formData.other_expenses}
-              onChange={(e) => setFormData({ ...formData, other_expenses: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => setFormData({ ...formData, other_expenses: e.target.value })}
+              placeholder="0"
             />
           </div>
 
