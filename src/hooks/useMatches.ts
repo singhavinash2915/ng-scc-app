@@ -66,22 +66,24 @@ export function useMatches() {
 
         if (playersError) throw playersError;
 
-        // If deduct_from_balance is true, deduct fees from member balances and create transactions
-        if (match.deduct_from_balance) {
-          for (const memberId of playerIds) {
-            // Get current member balance
-            const { data: memberData } = await supabase
-              .from('members')
-              .select('balance')
-              .eq('id', memberId)
-              .single();
+        // Update each player's matches_played count and handle fees
+        for (const memberId of playerIds) {
+          // Get current member data
+          const { data: memberData } = await supabase
+            .from('members')
+            .select('balance, matches_played')
+            .eq('id', memberId)
+            .single();
 
-            if (memberData) {
-              // Update member balance
-              await supabase
-                .from('members')
-                .update({ balance: memberData.balance - match.match_fee })
-                .eq('id', memberId);
+          if (memberData) {
+            // Prepare update object - always increment matches_played
+            const updateData: { matches_played: number; balance?: number } = {
+              matches_played: (memberData.matches_played || 0) + 1,
+            };
+
+            // If deduct_from_balance is true, also deduct fee
+            if (match.deduct_from_balance) {
+              updateData.balance = memberData.balance - match.match_fee;
 
               // Create transaction record
               await supabase.from('transactions').insert([{
@@ -92,6 +94,12 @@ export function useMatches() {
                 description: `Match fee - ${match.venue}`,
               }]);
             }
+
+            // Update member
+            await supabase
+              .from('members')
+              .update(updateData)
+              .eq('id', memberId);
           }
         }
       }
