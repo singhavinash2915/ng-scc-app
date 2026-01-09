@@ -104,3 +104,12 @@ export interface TournamentMatch {
   stage: 'group' | 'quarter_final' | 'semi_final' | 'final' | 'league';
   match?: Match;
 }
+
+export interface MatchPhoto {
+  id: string;
+  match_id: string;
+  photo_url: string;
+  caption: string | null;
+  created_at: string;
+  match?: Match;
+}

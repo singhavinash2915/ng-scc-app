@@ -12,6 +12,7 @@ import {
   Sparkles,
   Star,
   Award,
+  Camera,
 } from 'lucide-react';
 import {
   BarChart,
@@ -27,10 +28,12 @@ import {
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { PhotoCarousel } from '../components/PhotoCarousel';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
 import { useRequests } from '../hooks/useRequests';
+import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 
 export function Dashboard() {
@@ -38,6 +41,7 @@ export function Dashboard() {
   const { matches, loading: matchesLoading } = useMatches();
   const { transactions, loading: transactionsLoading } = useTransactions();
   const { getPendingCount } = useRequests();
+  const { photos: matchPhotos, loading: photosLoading } = useMatchPhotos();
 
   const stats = useMemo(() => {
     const activeMembers = members.filter(m => m.status === 'active').length;
@@ -163,7 +167,7 @@ export function Dashboard() {
   const animatedWon = useAnimatedValue(stats.won, 800);
   const animatedLost = useAnimatedValue(stats.lost, 800);
 
-  const loading = membersLoading || matchesLoading || transactionsLoading;
+  const loading = membersLoading || matchesLoading || transactionsLoading || photosLoading;
 
   if (loading) {
     return (
@@ -248,6 +252,17 @@ export function Dashboard() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Team Photos Carousel */}
+        {matchPhotos.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <Camera className="w-5 h-5 text-primary-500" />
+              Team Gallery
+            </h2>
+            <PhotoCarousel photos={matchPhotos} autoPlayInterval={5000} />
+          </div>
         )}
 
         {/* Join Club Banner */}

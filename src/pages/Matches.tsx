@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   Calendar,
   Plus,
@@ -13,6 +13,9 @@ import {
   Wallet,
   Banknote,
   Star,
+  Camera,
+  Image,
+  X,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -22,12 +25,15 @@ import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
+import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useAuth } from '../context/AuthContext';
 import type { Match } from '../types';
 
 export function Matches() {
   const { matches, loading, addMatch, updateMatch, deleteMatch } = useMatches();
   const { members } = useMembers();
+  const { uploadPhoto, deletePhoto, getPhotosByMatch } = useMatchPhotos();
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -37,6 +43,9 @@ export function Matches() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [photoCaption, setPhotoCaption] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -229,6 +238,52 @@ export function Matches() {
     setMenuOpen(null);
   };
 
+  const openPhotoModal = (match: Match) => {
+    setSelectedMatch(match);
+    setPhotoCaption('');
+    setShowPhotoModal(true);
+    setMenuOpen(null);
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedMatch || !e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB');
+      return;
+    }
+
+    setPhotoUploading(true);
+    try {
+      await uploadPhoto(selectedMatch.id, file, photoCaption || undefined);
+      setPhotoCaption('');
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      alert('Failed to upload photo. Please try again.');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!window.confirm('Delete this photo?')) return;
+
+    try {
+      await deletePhoto(photoId);
+    } catch (error) {
+      console.error('Failed to delete photo:', error);
+    }
+  };
+
   const togglePlayer = (memberId: string) => {
     setSelectedPlayers(prev =>
       prev.includes(memberId)
@@ -366,6 +421,12 @@ export function Matches() {
                               <Trophy className="w-4 h-4" /> Update Result
                             </button>
                           )}
+                          <button
+                            onClick={() => openPhotoModal(match)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                          >
+                            <Camera className="w-4 h-4" /> Photos ({getPhotosByMatch(match.id).length})
+                          </button>
                           <button
                             onClick={() => handleDeleteMatch(match.id)}
                             className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -878,6 +939,137 @@ export function Matches() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Photo Gallery Modal */}
+      <Modal
+        isOpen={showPhotoModal}
+        onClose={() => setShowPhotoModal(false)}
+        title={`Photos - ${selectedMatch?.opponent || selectedMatch?.venue || 'Match'}`}
+        size="lg"
+      >
+        <div className="space-y-6">
+          {/* Match Info */}
+          {selectedMatch && (
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    vs {selectedMatch.opponent || 'TBD'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(selectedMatch.date).toLocaleDateString('en-IN', {
+                      weekday: 'short',
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })} • {selectedMatch.venue}
+                  </p>
+                </div>
+                {selectedMatch.result !== 'upcoming' && (
+                  <Badge variant={
+                    selectedMatch.result === 'won' ? 'success' :
+                    selectedMatch.result === 'lost' ? 'danger' :
+                    selectedMatch.result === 'draw' ? 'warning' : 'default'
+                  }>
+                    {selectedMatch.result.toUpperCase()}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Upload Section */}
+          {isAdmin && (
+            <div className="space-y-3">
+              <Input
+                label="Caption (optional)"
+                placeholder="e.g., Team photo after the match"
+                value={photoCaption}
+                onChange={(e) => setPhotoCaption(e.target.value)}
+              />
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                id="match-photo-upload"
+              />
+              <label
+                htmlFor="match-photo-upload"
+                className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-primary-500 dark:hover:border-primary-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+              >
+                {photoUploading ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                    <span className="text-sm text-gray-500">Uploading...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Camera className="w-10 h-10 text-gray-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Click to upload team photo
+                    </span>
+                    <span className="text-xs text-gray-500 mt-1">
+                      JPG, PNG up to 10MB
+                    </span>
+                  </>
+                )}
+              </label>
+            </div>
+          )}
+
+          {/* Photo Gallery */}
+          {selectedMatch && (
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <Image className="w-4 h-4" />
+                Photos ({getPhotosByMatch(selectedMatch.id).length})
+              </h4>
+              {getPhotosByMatch(selectedMatch.id).length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                  <Camera className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">No photos uploaded yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {getPhotosByMatch(selectedMatch.id).map(photo => (
+                    <div key={photo.id} className="relative group">
+                      <img
+                        src={photo.photo_url}
+                        alt={photo.caption || 'Match photo'}
+                        className="w-full aspect-square object-cover rounded-lg"
+                      />
+                      {photo.caption && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2 rounded-b-lg truncate">
+                          {photo.caption}
+                        </div>
+                      )}
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setShowPhotoModal(false)}
+            className="w-full"
+          >
+            Close
+          </Button>
+        </div>
       </Modal>
     </div>
   );
