@@ -2,14 +2,68 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { MatchPhoto } from '../types';
 
+// Configuration: Keep photos from only the last N matches
+const MAX_MATCHES_WITH_PHOTOS = 5;
+
 export function useMatchPhotos() {
   const [photos, setPhotos] = useState<MatchPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Clean up old photos - keep only photos from last N matches
+  const cleanupOldPhotos = useCallback(async () => {
+    try {
+      // Get unique match IDs sorted by match date (newest first)
+      const { data: recentMatches, error: matchError } = await supabase
+        .from('matches')
+        .select('id')
+        .order('date', { ascending: false });
+
+      if (matchError) throw matchError;
+
+      const recentMatchIds = recentMatches?.slice(0, MAX_MATCHES_WITH_PHOTOS).map(m => m.id) || [];
+
+      if (recentMatchIds.length === 0) return;
+
+      // Get photos from older matches (not in the recent list)
+      const { data: oldPhotos, error: photoError } = await supabase
+        .from('match_photos')
+        .select('id, photo_url, match_id')
+        .not('match_id', 'in', `(${recentMatchIds.join(',')})`);
+
+      if (photoError) throw photoError;
+
+      if (!oldPhotos || oldPhotos.length === 0) return;
+
+      // Delete old photos from storage and database
+      for (const photo of oldPhotos) {
+        const fileName = photo.photo_url.split('/').pop();
+        if (fileName) {
+          await supabase.storage.from('match-photos').remove([`photos/${fileName}`]);
+        }
+      }
+
+      // Delete all old photo records
+      const oldPhotoIds = oldPhotos.map(p => p.id);
+      await supabase
+        .from('match_photos')
+        .delete()
+        .in('id', oldPhotoIds);
+
+      console.log(`Cleaned up ${oldPhotos.length} old photos`);
+    } catch (err) {
+      console.error('Failed to cleanup old photos:', err);
+    }
+  }, []);
+
   const fetchPhotos = useCallback(async () => {
     try {
       setLoading(true);
+
+      // First, cleanup old photos
+      await cleanupOldPhotos();
+
+      // Then fetch remaining photos
       const { data, error } = await supabase
         .from('match_photos')
         .select(`
@@ -25,7 +79,7 @@ export function useMatchPhotos() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cleanupOldPhotos]);
 
   useEffect(() => {
     fetchPhotos();
