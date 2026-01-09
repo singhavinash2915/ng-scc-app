@@ -16,6 +16,7 @@ export function Members() {
   const { isAdmin } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [balanceFilter, setBalanceFilter] = useState<'all' | 'low' | 'critical'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFundModal, setShowFundModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -43,9 +44,27 @@ export function Members() {
         member.phone?.toLowerCase().includes(search.toLowerCase()) ||
         member.email?.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
-      return matchesSearch && matchesStatus;
+
+      // Balance filter: 'low' = < 1000, 'critical' = < 500
+      let matchesBalance = true;
+      if (balanceFilter === 'low') {
+        matchesBalance = member.balance < 1000;
+      } else if (balanceFilter === 'critical') {
+        matchesBalance = member.balance < 500;
+      }
+
+      return matchesSearch && matchesStatus && matchesBalance;
     });
-  }, [members, search, statusFilter]);
+  }, [members, search, statusFilter, balanceFilter]);
+
+  // Count members with low/critical balance for filter badges
+  const lowBalanceCount = useMemo(() => {
+    return members.filter(m => m.status === 'active' && m.balance < 1000 && m.balance >= 500).length;
+  }, [members]);
+
+  const criticalBalanceCount = useMemo(() => {
+    return members.filter(m => m.status === 'active' && m.balance < 500).length;
+  }, [members]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,32 +234,82 @@ export function Members() {
 
       <div className="p-4 lg:p-8 space-y-6">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search members..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input pl-10"
-            />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search members..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="input pl-10"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              className="input w-full sm:w-40"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            {isAdmin && (
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Member
+              </Button>
+            )}
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-            className="input w-full sm:w-40"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          {isAdmin && (
-            <Button onClick={() => setShowAddModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Member
-            </Button>
-          )}
+
+          {/* Balance Filter */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setBalanceFilter('all')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                balanceFilter === 'all'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              All Balances
+            </button>
+            <button
+              onClick={() => setBalanceFilter('low')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+                balanceFilter === 'low'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50'
+              }`}
+            >
+              <span>Low Balance (&lt;₹1000)</span>
+              {(lowBalanceCount + criticalBalanceCount) > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                  balanceFilter === 'low' ? 'bg-white/20' : 'bg-orange-500 text-white'
+                }`}>
+                  {lowBalanceCount + criticalBalanceCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setBalanceFilter('critical')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+                balanceFilter === 'critical'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+              }`}
+            >
+              <span>Critical (&lt;₹500)</span>
+              {criticalBalanceCount > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                  balanceFilter === 'critical' ? 'bg-white/20' : 'bg-red-500 text-white'
+                }`}>
+                  {criticalBalanceCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Members Grid */}
@@ -325,9 +394,25 @@ export function Members() {
                 <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <div>
                     <p className="text-xs text-gray-500">Balance</p>
-                    <p className={`text-lg font-bold ${member.balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                    <p className={`text-lg font-bold ${
+                      member.balance < 500
+                        ? 'text-red-600 dark:text-red-400'
+                        : member.balance < 1000
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-green-600 dark:text-green-400'
+                    }`}>
                       ₹{member.balance.toLocaleString('en-IN')}
                     </p>
+                    {member.balance < 500 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-medium">
+                        Critical
+                      </span>
+                    )}
+                    {member.balance >= 500 && member.balance < 1000 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 font-medium">
+                        Low
+                      </span>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-500">Matches</p>
