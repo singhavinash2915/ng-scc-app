@@ -13,6 +13,7 @@ import {
   Star,
   Award,
   Camera,
+  Swords,
 } from 'lucide-react';
 import {
   BarChart,
@@ -46,7 +47,9 @@ export function Dashboard() {
   const stats = useMemo(() => {
     const activeMembers = members.filter(m => m.status === 'active').length;
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
-    const completedMatches = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
+    // External matches only for main stats
+    const externalMatches = matches.filter(m => m.match_type !== 'internal');
+    const completedMatches = externalMatches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
     const won = completedMatches.filter(m => m.result === 'won').length;
     const lost = completedMatches.filter(m => m.result === 'lost').length;
     const winRate = completedMatches.length > 0 ? (won / completedMatches.length) * 100 : 0;
@@ -126,15 +129,34 @@ export function Dashboard() {
     return last6Months;
   }, [transactions]);
 
-  // Win/Loss pie chart data
+  // Win/Loss pie chart data (external matches only)
   const matchResultData = useMemo(() => {
-    const draw = matches.filter(m => m.result === 'draw').length;
+    const externalMatches = matches.filter(m => m.match_type !== 'internal');
+    const externalWon = externalMatches.filter(m => m.result === 'won').length;
+    const externalLost = externalMatches.filter(m => m.result === 'lost').length;
+    const externalDraw = externalMatches.filter(m => m.result === 'draw').length;
     return [
-      { name: 'Won', value: stats.won, color: '#22c55e' },
-      { name: 'Lost', value: stats.lost, color: '#ef4444' },
-      { name: 'Draw', value: draw, color: '#f59e0b' },
+      { name: 'Won', value: externalWon, color: '#22c55e' },
+      { name: 'Lost', value: externalLost, color: '#ef4444' },
+      { name: 'Draw', value: externalDraw, color: '#f59e0b' },
     ].filter(d => d.value > 0);
-  }, [matches, stats.won, stats.lost]);
+  }, [matches]);
+
+  // Internal match stats (Dhurandars vs Bazigars)
+  const internalMatchStats = useMemo(() => {
+    const internalMatches = matches.filter(m => m.match_type === 'internal');
+    const completedInternal = internalMatches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
+    const dhurandarsWins = completedInternal.filter(m => m.winning_team === 'dhurandars').length;
+    const bazigarsWins = completedInternal.filter(m => m.winning_team === 'bazigars').length;
+    const draws = completedInternal.filter(m => m.result === 'draw').length;
+
+    return {
+      total: completedInternal.length,
+      dhurandarsWins,
+      bazigarsWins,
+      draws,
+    };
+  }, [matches]);
 
   // Top contributors
   const topContributors = useMemo(() => {
@@ -166,6 +188,8 @@ export function Dashboard() {
   const animatedWinRate = useAnimatedValue(Math.round(stats.winRate), 1000);
   const animatedWon = useAnimatedValue(stats.won, 800);
   const animatedLost = useAnimatedValue(stats.lost, 800);
+  const animatedDhurandarsWins = useAnimatedValue(internalMatchStats.dhurandarsWins, 800);
+  const animatedBazigarsWins = useAnimatedValue(internalMatchStats.bazigarsWins, 800);
 
   const loading = membersLoading || matchesLoading || transactionsLoading || photosLoading;
 
@@ -427,6 +451,92 @@ export function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Internal Match Stats - Dhurandars vs Bazigars */}
+        {internalMatchStats.total > 0 && (
+          <Card delay={370} className="overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Swords className="w-5 h-5 text-purple-500" />
+                Internal Matches - Dhurandars vs Bazigars
+              </h3>
+            </div>
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
+                {/* Dhurandars */}
+                <div className="flex-1 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 mb-3 shadow-lg">
+                    <span className="text-3xl font-bold text-white tabular-nums">
+                      {animatedDhurandarsWins}
+                    </span>
+                  </div>
+                  <h4 className="text-lg font-bold text-blue-600 dark:text-blue-400">Sangria Dhurandars</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Wins</p>
+                </div>
+
+                {/* VS */}
+                <div className="flex flex-col items-center px-6">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center shadow-inner">
+                    <span className="text-xl font-bold text-gray-500 dark:text-gray-400">VS</span>
+                  </div>
+                  {internalMatchStats.draws > 0 && (
+                    <p className="mt-2 text-sm text-amber-600 dark:text-amber-400 font-medium">
+                      {internalMatchStats.draws} Draw{internalMatchStats.draws > 1 ? 's' : ''}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {internalMatchStats.total} match{internalMatchStats.total > 1 ? 'es' : ''} played
+                  </p>
+                </div>
+
+                {/* Bazigars */}
+                <div className="flex-1 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 mb-3 shadow-lg">
+                    <span className="text-3xl font-bold text-white tabular-nums">
+                      {animatedBazigarsWins}
+                    </span>
+                  </div>
+                  <h4 className="text-lg font-bold text-purple-600 dark:text-purple-400">Sangria Bazigars</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Wins</p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-6">
+                <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
+                  {internalMatchStats.dhurandarsWins > 0 && (
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-400 to-blue-500 transition-all duration-1000"
+                      style={{
+                        width: `${(internalMatchStats.dhurandarsWins / internalMatchStats.total) * 100}%`,
+                      }}
+                    ></div>
+                  )}
+                  {internalMatchStats.draws > 0 && (
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-1000"
+                      style={{
+                        width: `${(internalMatchStats.draws / internalMatchStats.total) * 100}%`,
+                      }}
+                    ></div>
+                  )}
+                  {internalMatchStats.bazigarsWins > 0 && (
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-400 to-purple-500 transition-all duration-1000"
+                      style={{
+                        width: `${(internalMatchStats.bazigarsWins / internalMatchStats.total) * 100}%`,
+                      }}
+                    ></div>
+                  )}
+                </div>
+                <div className="flex justify-between mt-2 text-xs text-gray-500">
+                  <span className="text-blue-500 font-medium">Dhurandars</span>
+                  <span className="text-purple-500 font-medium">Bazigars</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

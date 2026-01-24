@@ -12,6 +12,9 @@ export interface Member {
   created_at: string;
 }
 
+export type MatchType = 'external' | 'internal';
+export type InternalTeam = 'dhurandars' | 'bazigars';
+
 export interface Match {
   id: string;
   date: string;
@@ -26,6 +29,8 @@ export interface Match {
   deduct_from_balance: boolean;
   notes: string | null;
   man_of_match_id: string | null;
+  match_type: MatchType;
+  winning_team: InternalTeam | null; // For internal matches - which team won
   created_at: string;
   players?: MatchPlayer[];
   man_of_match?: Member;
@@ -36,6 +41,7 @@ export interface MatchPlayer {
   match_id: string;
   member_id: string;
   fee_paid: boolean;
+  team: InternalTeam | null; // For internal matches - which team the player is on
   member?: Member;
 }
 

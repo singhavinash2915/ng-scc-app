@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Match, MatchPlayer } from '../types';
+import type { Match, MatchPlayer, InternalTeam } from '../types';
 
 export function useMatches() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -19,7 +19,8 @@ export function useMatches() {
             match_id,
             member_id,
             fee_paid,
-            member:members(id, name, balance)
+            team,
+            member:members(id, name, balance, avatar_url)
           ),
           man_of_match:members!matches_man_of_match_id_fkey(id, name, avatar_url)
         `)
@@ -40,7 +41,8 @@ export function useMatches() {
 
   const addMatch = async (
     match: Omit<Match, 'id' | 'created_at' | 'players'>,
-    playerIds: string[]
+    playerIds: string[],
+    playerTeams?: Record<string, InternalTeam> // For internal matches: { memberId: 'dhurandars' | 'bazigars' }
   ) => {
     try {
       // Insert match
@@ -57,7 +59,8 @@ export function useMatches() {
         const matchPlayers = playerIds.map(memberId => ({
           match_id: matchData.id,
           member_id: memberId,
-          fee_paid: match.deduct_from_balance, // Mark as paid if deducted from balance
+          fee_paid: match.deduct_from_balance,
+          team: match.match_type === 'internal' && playerTeams ? playerTeams[memberId] || null : null,
         }));
 
         const { error: playersError } = await supabase
@@ -86,12 +89,13 @@ export function useMatches() {
               updateData.balance = memberData.balance - match.match_fee;
 
               // Create transaction record
+              const matchTypeLabel = match.match_type === 'internal' ? 'Internal Match' : 'Match';
               await supabase.from('transactions').insert([{
                 type: 'match_fee',
                 amount: -match.match_fee,
                 member_id: memberId,
                 match_id: matchData.id,
-                description: `Match fee - ${match.venue}`,
+                description: `${matchTypeLabel} fee - ${match.venue}`,
               }]);
             }
 

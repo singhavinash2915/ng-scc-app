@@ -27,7 +27,13 @@ import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useAuth } from '../context/AuthContext';
-import type { Match } from '../types';
+import type { Match, MatchType, InternalTeam } from '../types';
+
+// Internal team names
+const TEAM_NAMES: Record<InternalTeam, string> = {
+  dhurandars: 'Sangria Dhurandars',
+  bazigars: 'Sangria Bazigars',
+};
 
 export function Matches() {
   const { matches, loading, addMatch, updateMatch, deleteMatch } = useMatches();
@@ -36,6 +42,7 @@ export function Matches() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [matchTypeFilter, setMatchTypeFilter] = useState<'all' | 'external' | 'internal'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
@@ -61,13 +68,20 @@ export function Matches() {
     our_score: '',
     opponent_score: '',
     man_of_match_id: '' as string,
+    // Match type fields
+    match_type: 'external' as MatchType,
+    winning_team: '' as string,
   });
+
+  // For internal matches - track which team each player is on
+  const [playerTeams, setPlayerTeams] = useState<Record<string, InternalTeam>>({});
 
   const [resultData, setResultData] = useState({
     result: 'won' as Match['result'],
     our_score: '',
     opponent_score: '',
     man_of_match_id: '' as string,
+    winning_team: '' as string,
   });
 
   // Check if selected date is today or in the past
@@ -81,11 +95,16 @@ export function Matches() {
 
   const filteredMatches = useMemo(() => {
     return matches.filter(match => {
-      if (filter === 'upcoming') return match.result === 'upcoming';
-      if (filter === 'completed') return ['won', 'lost', 'draw'].includes(match.result);
+      // Filter by result status
+      if (filter === 'upcoming' && match.result !== 'upcoming') return false;
+      if (filter === 'completed' && !['won', 'lost', 'draw'].includes(match.result)) return false;
+
+      // Filter by match type
+      if (matchTypeFilter !== 'all' && match.match_type !== matchTypeFilter) return false;
+
       return true;
     });
-  }, [matches, filter]);
+  }, [matches, filter, matchTypeFilter]);
 
   const activeMembers = useMemo(() => {
     return members.filter(m => m.status === 'active');
@@ -95,13 +114,23 @@ export function Matches() {
     e.preventDefault();
     if (!isAdmin) return;
 
+    // For internal matches, determine the opponent string
+    const opponentName = formData.match_type === 'internal'
+      ? `${TEAM_NAMES.dhurandars} vs ${TEAM_NAMES.bazigars}`
+      : formData.opponent || null;
+
+    // For internal matches with result, determine winning team
+    const winningTeam = formData.match_type === 'internal' && isCurrentOrPastDate && formData.result === 'won' && formData.winning_team
+      ? formData.winning_team as InternalTeam
+      : null;
+
     setIsSubmitting(true);
     try {
       await addMatch(
         {
           date: formData.date,
           venue: formData.venue,
-          opponent: formData.opponent || null,
+          opponent: opponentName,
           result: isCurrentOrPastDate ? formData.result : 'upcoming',
           our_score: isCurrentOrPastDate && formData.result !== 'upcoming' ? (formData.our_score || null) : null,
           opponent_score: isCurrentOrPastDate && formData.result !== 'upcoming' ? (formData.opponent_score || null) : null,
@@ -111,8 +140,11 @@ export function Matches() {
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
           man_of_match_id: isCurrentOrPastDate && formData.result === 'won' && formData.man_of_match_id ? formData.man_of_match_id : null,
+          match_type: formData.match_type,
+          winning_team: winningTeam,
         },
-        selectedPlayers
+        selectedPlayers,
+        formData.match_type === 'internal' ? playerTeams : undefined
       );
       setShowAddModal(false);
       resetForm();
@@ -167,7 +199,7 @@ export function Matches() {
       });
       setShowResultModal(false);
       setSelectedMatch(null);
-      setResultData({ result: 'won', our_score: '', opponent_score: '', man_of_match_id: '' });
+      setResultData({ result: 'won', our_score: '', opponent_score: '', man_of_match_id: '', winning_team: '' });
     } catch (error) {
       console.error('Failed to update result:', error);
     } finally {
@@ -201,8 +233,37 @@ export function Matches() {
       our_score: '',
       opponent_score: '',
       man_of_match_id: '',
+      match_type: 'external',
+      winning_team: '',
     });
     setSelectedPlayers([]);
+    setPlayerTeams({});
+  };
+
+  // Toggle player's team for internal matches
+  const setPlayerTeam = (memberId: string, team: InternalTeam) => {
+    setPlayerTeams(prev => ({ ...prev, [memberId]: team }));
+    // Auto-select the player when assigning team
+    if (!selectedPlayers.includes(memberId)) {
+      setSelectedPlayers(prev => [...prev, memberId]);
+    }
+  };
+
+  // Remove player from teams
+  const removePlayerFromTeam = (memberId: string) => {
+    setPlayerTeams(prev => {
+      const newTeams = { ...prev };
+      delete newTeams[memberId];
+      return newTeams;
+    });
+    setSelectedPlayers(prev => prev.filter(id => id !== memberId));
+  };
+
+  // Get players by team
+  const getPlayersByTeam = (team: InternalTeam) => {
+    return Object.entries(playerTeams)
+      .filter(([_, t]) => t === team)
+      .map(([memberId]) => memberId);
   };
 
   const openEditModal = (match: Match) => {
@@ -220,8 +281,20 @@ export function Matches() {
       our_score: match.our_score || '',
       opponent_score: match.opponent_score || '',
       man_of_match_id: match.man_of_match_id || '',
+      match_type: match.match_type || 'external',
+      winning_team: match.winning_team || '',
     });
     setSelectedPlayers(match.players?.map(p => p.member_id) || []);
+    // Restore player teams for internal matches
+    if (match.match_type === 'internal' && match.players) {
+      const teams: Record<string, InternalTeam> = {};
+      match.players.forEach(p => {
+        if (p.team) teams[p.member_id] = p.team;
+      });
+      setPlayerTeams(teams);
+    } else {
+      setPlayerTeams({});
+    }
     setShowEditModal(true);
     setMenuOpen(null);
   };
@@ -233,6 +306,7 @@ export function Matches() {
       our_score: match.our_score || '',
       opponent_score: match.opponent_score || '',
       man_of_match_id: match.man_of_match_id || '',
+      winning_team: match.winning_team || '',
     });
     setShowResultModal(true);
     setMenuOpen(null);
@@ -321,29 +395,65 @@ export function Matches() {
 
       <div className="p-4 lg:p-8 space-y-6">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex gap-2">
-            {(['all', 'upcoming', 'completed'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === f
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex gap-2">
+              {(['all', 'upcoming', 'completed'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    filter === f
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="flex-1" />
+            {isAdmin && (
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Match
+              </Button>
+            )}
           </div>
-          <div className="flex-1" />
-          {isAdmin && (
-            <Button onClick={() => setShowAddModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Match
-            </Button>
-          )}
+
+          {/* Match Type Filter */}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setMatchTypeFilter('all')}
+              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors ${
+                matchTypeFilter === 'all'
+                  ? 'bg-gray-800 dark:bg-white text-white dark:text-gray-800'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+              }`}
+            >
+              All Types
+            </button>
+            <button
+              onClick={() => setMatchTypeFilter('external')}
+              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+                matchTypeFilter === 'external'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200'
+              }`}
+            >
+              <Trophy className="w-4 h-4" /> External
+            </button>
+            <button
+              onClick={() => setMatchTypeFilter('internal')}
+              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+                matchTypeFilter === 'internal'
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200'
+              }`}
+            >
+              <Users className="w-4 h-4" /> Internal
+            </button>
+          </div>
         </div>
 
         {/* Matches List */}
@@ -366,11 +476,37 @@ export function Matches() {
 
                   {/* Match Info */}
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        vs {match.opponent || 'TBD'}
-                      </h3>
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      {match.match_type === 'internal' ? (
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          🦁 Dhurandars vs Bazigars 🐅
+                        </h3>
+                      ) : (
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          vs {match.opponent || 'TBD'}
+                        </h3>
+                      )}
                       {getResultBadge(match.result)}
+                      {match.match_type === 'internal' ? (
+                        <Badge variant="default" className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                          Internal
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                          External
+                        </Badge>
+                      )}
+                      {match.match_type === 'internal' && match.winning_team && (
+                        <Badge
+                          variant="success"
+                          className={match.winning_team === 'dhurandars'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                          }
+                        >
+                          🏆 {TEAM_NAMES[match.winning_team]}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
@@ -454,6 +590,47 @@ export function Matches() {
       {/* Add Match Modal */}
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Match" size="lg">
         <form onSubmit={handleAddMatch} className="space-y-4">
+          {/* Match Type Toggle */}
+          <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, match_type: 'external', winning_team: '' })}
+              className={`flex-1 py-2 px-4 rounded-md font-medium text-sm transition-colors ${
+                formData.match_type === 'external'
+                  ? 'bg-white dark:bg-gray-700 text-primary-600 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+              }`}
+            >
+              External Match
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({ ...formData, match_type: 'internal', opponent: '' });
+                setSelectedPlayers([]);
+                setPlayerTeams({});
+              }}
+              className={`flex-1 py-2 px-4 rounded-md font-medium text-sm transition-colors ${
+                formData.match_type === 'internal'
+                  ? 'bg-white dark:bg-gray-700 text-primary-600 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+              }`}
+            >
+              Internal Match
+            </button>
+          </div>
+
+          {formData.match_type === 'internal' && (
+            <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                🏏 {TEAM_NAMES.dhurandars} vs {TEAM_NAMES.bazigars}
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                Select players and assign them to teams below
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Date *"
@@ -462,12 +639,20 @@ export function Matches() {
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               required
             />
-            <Input
-              label="Opponent"
-              placeholder="e.g., Royal Strikers"
-              value={formData.opponent}
-              onChange={(e) => setFormData({ ...formData, opponent: e.target.value })}
-            />
+            {formData.match_type === 'external' ? (
+              <Input
+                label="Opponent"
+                placeholder="e.g., Royal Strikers"
+                value={formData.opponent}
+                onChange={(e) => setFormData({ ...formData, opponent: e.target.value })}
+              />
+            ) : (
+              <div className="flex items-end">
+                <div className="text-sm text-gray-500 dark:text-gray-400 pb-2">
+                  Internal match between SCC teams
+                </div>
+              </div>
+            )}
           </div>
           <Input
             label="Venue *"
@@ -532,6 +717,38 @@ export function Matches() {
                     value={formData.opponent_score}
                     onChange={(e) => setFormData({ ...formData, opponent_score: e.target.value })}
                   />
+                </div>
+              )}
+              {/* Winning Team - Only show for Internal matches with won result */}
+              {formData.match_type === 'internal' && formData.result === 'won' && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Winning Team *
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, winning_team: 'dhurandars' })}
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        formData.winning_team === 'dhurandars'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <span className="font-medium text-blue-700 dark:text-blue-300">🦁 Dhurandars</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, winning_team: 'bazigars' })}
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        formData.winning_team === 'bazigars'
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <span className="font-medium text-purple-700 dark:text-purple-300">🐅 Bazigars</span>
+                    </button>
+                  </div>
                 </div>
               )}
               {/* Man of the Match - Only show for Won matches */}
@@ -646,42 +863,122 @@ export function Matches() {
             rows={2}
           />
 
-          {/* Player Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Players ({selectedPlayers.length} selected)
-            </label>
-            <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
-              {activeMembers.map(member => (
-                <button
-                  key={member.id}
-                  type="button"
-                  onClick={() => togglePlayer(member.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                    selectedPlayers.includes(member.id)
-                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                    selectedPlayers.includes(member.id)
-                      ? 'bg-primary-500 border-primary-500'
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}>
-                    {selectedPlayers.includes(member.id) && (
-                      <Check className="w-3 h-3 text-white" />
+          {/* Player Selection - Different UI for Internal vs External matches */}
+          {formData.match_type === 'external' ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select Players ({selectedPlayers.length} selected)
+              </label>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
+                {activeMembers.map(member => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => togglePlayer(member.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                      selectedPlayers.includes(member.id)
+                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      selectedPlayers.includes(member.id)
+                        ? 'bg-primary-500 border-primary-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}>
+                      {selectedPlayers.includes(member.id) && (
+                        <Check className="w-3 h-3 text-white" />
+                      )}
+                    </div>
+                    <span className="flex-1 text-left">{member.name}</span>
+                    {formData.deduct_from_balance && (
+                      <span className={`text-sm ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
+                        ₹{member.balance}
+                      </span>
                     )}
-                  </div>
-                  <span className="flex-1 text-left">{member.name}</span>
-                  {formData.deduct_from_balance && (
-                    <span className={`text-sm ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
-                      ₹{member.balance}
-                    </span>
-                  )}
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Internal Match - Team Assignment UI */
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Dhurandars Team */}
+                <div className="border-2 border-blue-200 dark:border-blue-800 rounded-xl p-3 bg-blue-50/50 dark:bg-blue-900/10">
+                  <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2 text-sm">
+                    🦁 {TEAM_NAMES.dhurandars} ({getPlayersByTeam('dhurandars').length})
+                  </h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {getPlayersByTeam('dhurandars').map(memberId => {
+                      const member = activeMembers.find(m => m.id === memberId);
+                      return member ? (
+                        <div key={member.id} className="flex items-center justify-between bg-blue-100 dark:bg-blue-900/30 rounded px-2 py-1 text-sm">
+                          <span className="text-blue-800 dark:text-blue-200">{member.name}</span>
+                          <button type="button" onClick={() => removePlayerFromTeam(member.id)} className="text-blue-600 hover:text-red-500">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+
+                {/* Bazigars Team */}
+                <div className="border-2 border-purple-200 dark:border-purple-800 rounded-xl p-3 bg-purple-50/50 dark:bg-purple-900/10">
+                  <h4 className="font-semibold text-purple-700 dark:text-purple-300 mb-2 text-sm">
+                    🐅 {TEAM_NAMES.bazigars} ({getPlayersByTeam('bazigars').length})
+                  </h4>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {getPlayersByTeam('bazigars').map(memberId => {
+                      const member = activeMembers.find(m => m.id === memberId);
+                      return member ? (
+                        <div key={member.id} className="flex items-center justify-between bg-purple-100 dark:bg-purple-900/30 rounded px-2 py-1 text-sm">
+                          <span className="text-purple-800 dark:text-purple-200">{member.name}</span>
+                          <button type="button" onClick={() => removePlayerFromTeam(member.id)} className="text-purple-600 hover:text-red-500">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Available Players */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Add Players to Teams
+                </label>
+                <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
+                  {activeMembers.filter(m => !playerTeams[m.id]).map(member => (
+                    <div key={member.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
+                      <span className="flex-1 text-sm">{member.name}</span>
+                      {formData.deduct_from_balance && (
+                        <span className={`text-xs ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
+                          ₹{member.balance}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPlayerTeam(member.id, 'dhurandars')}
+                        className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200"
+                      >
+                        + Dhurandars
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPlayerTeam(member.id, 'bazigars')}
+                        className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded hover:bg-purple-200"
+                      >
+                        + Bazigars
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="secondary" onClick={() => { setShowAddModal(false); resetForm(); }} className="flex-1">
