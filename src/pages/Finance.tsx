@@ -6,7 +6,6 @@ import {
   ArrowDownRight,
   Search,
   Filter,
-  IndianRupee,
   TrendingUp,
   TrendingDown,
   Trash2,
@@ -346,7 +345,7 @@ export function Finance() {
 
       <div className="p-4 lg:p-8 space-y-6">
         {/* Overall Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-4">
@@ -373,22 +372,6 @@ export function Finance() {
                   <p className="text-sm text-gray-500 dark:text-gray-400">Total Deposits</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">
                     ₹{stats.totalDeposits.toLocaleString('en-IN')}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-                  <IndianRupee className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Match Fees</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
-                    ₹{stats.totalMatchFees.toLocaleString('en-IN')}
                   </p>
                 </div>
               </div>
@@ -506,17 +489,11 @@ export function Finance() {
 
             {/* Month Summary when filtered */}
             {selectedMonth !== 'all' && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
                   <p className="text-sm text-green-600 dark:text-green-400">Deposits</p>
                   <p className="text-xl font-bold text-green-700 dark:text-green-300">
                     +₹{selectedMonthStats.deposits.toLocaleString('en-IN')}
-                  </p>
-                </div>
-                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                  <p className="text-sm text-purple-600 dark:text-purple-400">Match Fees</p>
-                  <p className="text-xl font-bold text-purple-700 dark:text-purple-300">
-                    -₹{selectedMonthStats.matchFees.toLocaleString('en-IN')}
                   </p>
                 </div>
                 <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
@@ -623,7 +600,7 @@ export function Finance() {
             </div>
 
             {/* Monthly Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-green-200 dark:border-green-800">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
@@ -634,19 +611,6 @@ export function Finance() {
                     ₹{selectedMonthStats.deposits.toLocaleString('en-IN')}
                   </p>
                   <p className="text-sm text-green-600 dark:text-green-400 mt-1">Total Deposits</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <IndianRupee className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                    <Badge variant="info">Match</Badge>
-                  </div>
-                  <p className="text-3xl font-bold text-purple-700 dark:text-purple-300">
-                    ₹{selectedMonthStats.matchFees.toLocaleString('en-IN')}
-                  </p>
-                  <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">Match Fees Used</p>
                 </CardContent>
               </Card>
 
@@ -691,7 +655,6 @@ export function Finance() {
                       <tr className="text-left text-sm text-gray-500 border-b border-gray-200 dark:border-gray-700">
                         <th className="pb-3 font-medium">Month</th>
                         <th className="pb-3 font-medium text-right">Deposits</th>
-                        <th className="pb-3 font-medium text-right">Match Fees</th>
                         <th className="pb-3 font-medium text-right">Expenses</th>
                         <th className="pb-3 font-medium text-right">Net Flow</th>
                         <th className="pb-3 font-medium text-right">Transactions</th>
@@ -711,9 +674,6 @@ export function Finance() {
                           </td>
                           <td className="py-3 text-right text-green-600 dark:text-green-400">
                             +₹{data.deposits.toLocaleString('en-IN')}
-                          </td>
-                          <td className="py-3 text-right text-purple-600 dark:text-purple-400">
-                            -₹{data.matchFees.toLocaleString('en-IN')}
                           </td>
                           <td className="py-3 text-right text-red-500">
                             -₹{data.expenses.toLocaleString('en-IN')}
