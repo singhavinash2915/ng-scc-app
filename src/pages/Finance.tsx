@@ -149,7 +149,7 @@ export function Finance() {
         data.netFlow += t.amount;
       } else if (t.type === 'match_fee') {
         data.matchFees += Math.abs(t.amount);
-        data.netFlow += t.amount;
+        // Match fees are internal balance deductions, not real cash out
       } else if (t.type === 'expense') {
         data.expenses += Math.abs(t.amount);
         data.netFlow += t.amount;
@@ -168,7 +168,7 @@ export function Finance() {
         deposits: stats.totalDeposits,
         matchFees: stats.totalMatchFees,
         expenses: stats.totalExpenses,
-        netFlow: stats.totalDeposits - stats.totalMatchFees - stats.totalExpenses,
+        netFlow: stats.totalDeposits - stats.totalExpenses,
       };
     }
 
