@@ -5,6 +5,7 @@ import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Members } from './pages/Members';
 import { Matches } from './pages/Matches';
+import { Calendar } from './pages/Calendar';
 import { Tournaments } from './pages/Tournaments';
 import { Finance } from './pages/Finance';
 import { Analytics } from './pages/Analytics';
@@ -22,6 +23,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/members" element={<Members />} />
               <Route path="/matches" element={<Matches />} />
+              <Route path="/calendar" element={<Calendar />} />
               <Route path="/tournaments" element={<Tournaments />} />
               <Route path="/finance" element={<Finance />} />
               <Route path="/analytics" element={<Analytics />} />

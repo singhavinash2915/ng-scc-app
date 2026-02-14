@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import type { Member, Match } from '../types';
+import { getActiveMemberIds } from '../utils/memberActivity';
 
 interface NotificationsProps {
   members: Member[];
@@ -33,9 +34,13 @@ export function Notifications({ members, matches }: NotificationsProps) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Low balance warnings (balance < 500)
+    // Get active members (played in last 10 matches)
+    const activeMemberIds = getActiveMemberIds(matches, 10);
+    const isActive = (memberId: string) => activeMemberIds.has(memberId);
+
+    // Low balance warnings (balance < 500) for active members only
     const lowBalanceMembers = members.filter(
-      m => m.status === 'active' && m.balance < 500
+      m => isActive(m.id) && m.balance < 500
     );
     lowBalanceMembers.forEach(member => {
       notifs.push({
@@ -69,9 +74,9 @@ export function Notifications({ members, matches }: NotificationsProps) {
       });
     });
 
-    // Birthday notifications (today or within next 7 days)
+    // Birthday notifications (today or within next 7 days) for active members only
     const activeMembersWithBirthday = members.filter(
-      m => m.status === 'active' && m.birthday
+      m => isActive(m.id) && m.birthday
     );
     activeMembersWithBirthday.forEach(member => {
       if (!member.birthday) return;

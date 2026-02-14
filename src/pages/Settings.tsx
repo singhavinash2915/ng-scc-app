@@ -21,12 +21,14 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
 import { useTournaments } from '../hooks/useTournaments';
+import { useMemberActivity } from '../hooks/useMemberActivity';
 
 export function Settings() {
   const { isAdmin, login, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { members } = useMembers();
   const { matches } = useMatches();
+  const { activeCount } = useMemberActivity(members, matches);
   const { transactions } = useTransactions();
   const { tournaments } = useTournaments();
 
@@ -109,7 +111,7 @@ export function Settings() {
         })),
         summary: {
           totalMembers: members.length,
-          activeMembers: members.filter(m => m.status === 'active').length,
+          activeMembers: activeCount,
           totalMatches: matches.length,
           totalTournaments: tournaments.length,
           totalDeposits: transactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0),

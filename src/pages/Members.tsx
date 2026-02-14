@@ -3,15 +3,19 @@ import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Input, Select } from '../components/ui/Input';
+import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { useMembers } from '../hooks/useMembers';
+import { useMatches } from '../hooks/useMatches';
+import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
 import type { Member } from '../types';
 
 export function Members() {
   const { members, loading, addMember, updateMember, deleteMember, addFunds, uploadAvatar, removeAvatar } = useMembers();
+  const { matches } = useMatches();
+  const { isActive } = useMemberActivity(members, matches);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
   const [search, setSearch] = useState('');
@@ -43,7 +47,12 @@ export function Members() {
       const matchesSearch = member.name.toLowerCase().includes(search.toLowerCase()) ||
         member.phone?.toLowerCase().includes(search.toLowerCase()) ||
         member.email?.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
+
+      // Status filter: based on computed active status (played in last 10 matches)
+      const memberIsActive = isActive(member.id);
+      const matchesStatus = statusFilter === 'all' ||
+        (statusFilter === 'active' && memberIsActive) ||
+        (statusFilter === 'inactive' && !memberIsActive);
 
       // Balance filter: 'low' = < 1000, 'critical' = < 500
       let matchesBalance = true;
@@ -55,16 +64,16 @@ export function Members() {
 
       return matchesSearch && matchesStatus && matchesBalance;
     });
-  }, [members, search, statusFilter, balanceFilter]);
+  }, [members, search, statusFilter, balanceFilter, isActive]);
 
-  // Count members with low/critical balance for filter badges
+  // Count members with low/critical balance for filter badges (active members only)
   const lowBalanceCount = useMemo(() => {
-    return members.filter(m => m.status === 'active' && m.balance < 1000 && m.balance >= 500).length;
-  }, [members]);
+    return members.filter(m => isActive(m.id) && m.balance < 1000 && m.balance >= 500).length;
+  }, [members, isActive]);
 
   const criticalBalanceCount = useMemo(() => {
-    return members.filter(m => m.status === 'active' && m.balance < 500).length;
-  }, [members]);
+    return members.filter(m => isActive(m.id) && m.balance < 500).length;
+  }, [members, isActive]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +86,7 @@ export function Members() {
         phone: formData.phone || null,
         email: formData.email || null,
         birthday: formData.birthday || null,
-        status: formData.status,
+        status: 'active', // Initial status - will be computed based on match participation
         balance: formData.balance,
         join_date: new Date().toISOString().split('T')[0],
         avatar_url: null,
@@ -102,7 +111,6 @@ export function Members() {
         phone: formData.phone || null,
         email: formData.email || null,
         birthday: formData.birthday || null,
-        status: formData.status,
       });
       setShowEditModal(false);
       setSelectedMember(null);
@@ -370,8 +378,8 @@ export function Members() {
                   )}
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">{member.name}</h3>
-                    <Badge variant={member.status === 'active' ? 'success' : 'default'} size="sm">
-                      {member.status}
+                    <Badge variant={isActive(member.id) ? 'success' : 'default'} size="sm">
+                      {isActive(member.id) ? 'active' : 'inactive'}
                     </Badge>
                   </div>
                 </div>
@@ -458,15 +466,6 @@ export function Members() {
             value={formData.birthday}
             onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
           />
-          <Select
-            label="Status"
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-            options={[
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' },
-            ]}
-          />
           <Input
             label="Initial Balance (₹)"
             type="number"
@@ -509,15 +508,6 @@ export function Members() {
             type="date"
             value={formData.birthday}
             onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-          />
-          <Select
-            label="Status"
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-            options={[
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' },
-            ]}
           />
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)} className="flex-1">

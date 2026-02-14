@@ -2,6 +2,7 @@ import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
+import { useMemberActivity } from '../hooks/useMemberActivity';
 import {
   Trophy,
   Users,
@@ -18,9 +19,10 @@ import {
 export function About() {
   const { members } = useMembers();
   const { matches } = useMatches();
+  const { activeCount } = useMemberActivity(members, matches);
 
   // Calculate real stats
-  const activeMembers = members.filter(m => m.status === 'active').length;
+  const activeMembers = activeCount;
   const completedMatches = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
   const matchesWon = completedMatches.filter(m => m.result === 'won').length;
   const matchesLost = completedMatches.filter(m => m.result === 'lost').length;

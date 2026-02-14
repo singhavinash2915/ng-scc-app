@@ -26,6 +26,7 @@ import { Badge } from '../components/ui/Badge';
 import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
+import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
 import type { Match, MatchType, InternalTeam } from '../types';
 
@@ -38,6 +39,7 @@ const TEAM_NAMES: Record<InternalTeam, string> = {
 export function Matches() {
   const { matches, loading, addMatch, updateMatch, deleteMatch } = useMatches();
   const { members } = useMembers();
+  const { isActive } = useMemberActivity(members, matches);
   const { uploadPhoto, deletePhoto, getPhotosByMatch } = useMatchPhotos();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
@@ -107,8 +109,8 @@ export function Matches() {
   }, [matches, filter, matchTypeFilter]);
 
   const activeMembers = useMemo(() => {
-    return members.filter(m => m.status === 'active');
-  }, [members]);
+    return members.filter(m => isActive(m.id));
+  }, [members, isActive]);
 
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();

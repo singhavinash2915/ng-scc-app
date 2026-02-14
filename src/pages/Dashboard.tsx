@@ -30,12 +30,14 @@ import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { PhotoCarousel } from '../components/PhotoCarousel';
+import { CalendarWidget } from '../components/CalendarWidget';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
 import { useRequests } from '../hooks/useRequests';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
+import { useMemberActivity } from '../hooks/useMemberActivity';
 
 export function Dashboard() {
   const { members, loading: membersLoading } = useMembers();
@@ -43,9 +45,9 @@ export function Dashboard() {
   const { transactions, loading: transactionsLoading } = useTransactions();
   const { getPendingCount } = useRequests();
   const { photos: matchPhotos, loading: photosLoading } = useMatchPhotos();
+  const { activeCount, isActive } = useMemberActivity(members, matches);
 
   const stats = useMemo(() => {
-    const activeMembers = members.filter(m => m.status === 'active').length;
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
     // External matches only for main stats
     const externalMatches = matches.filter(m => m.match_type !== 'internal');
@@ -56,7 +58,7 @@ export function Dashboard() {
 
     return {
       totalMembers: members.length,
-      activeMembers,
+      activeMembers: activeCount,
       totalFunds,
       matchesPlayed: completedMatches.length,
       won,
@@ -64,7 +66,7 @@ export function Dashboard() {
       winRate,
       pendingRequests: getPendingCount(),
     };
-  }, [members, matches, getPendingCount]);
+  }, [members, matches, getPendingCount, activeCount]);
 
   const recentMatches = useMemo(() => {
     return matches.slice(0, 5);
@@ -75,8 +77,8 @@ export function Dashboard() {
   }, [transactions]);
 
   const lowBalanceMembers = useMemo(() => {
-    return members.filter(m => m.status === 'active' && m.balance < 500).slice(0, 5);
-  }, [members]);
+    return members.filter(m => isActive(m.id) && m.balance < 500).slice(0, 5);
+  }, [members, isActive]);
 
   // Get the latest won match with Man of the Match
   const latestWonMatch = useMemo(() => {
@@ -836,6 +838,9 @@ export function Dashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Calendar Widget */}
+        <CalendarWidget matches={matches} />
       </div>
     </div>
   );
