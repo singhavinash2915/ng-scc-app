@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Calendar,
   Plus,
@@ -37,6 +38,7 @@ const TEAM_NAMES: Record<InternalTeam, string> = {
 };
 
 export function Matches() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { matches, loading, addMatch, updateMatch, deleteMatch } = useMatches();
   const { members } = useMembers();
   const { isActive } = useMemberActivity(members, matches);
@@ -94,6 +96,15 @@ export function Matches() {
     selectedDate.setHours(0, 0, 0, 0);
     return selectedDate <= today;
   }, [formData.date]);
+
+  // Handle ?action=add query param from Calendar page
+  useEffect(() => {
+    if (searchParams.get('action') === 'add' && isAdmin) {
+      setShowAddModal(true);
+      // Clear the query param
+      setSearchParams({});
+    }
+  }, [searchParams, isAdmin, setSearchParams]);
 
   const filteredMatches = useMemo(() => {
     return matches.filter(match => {

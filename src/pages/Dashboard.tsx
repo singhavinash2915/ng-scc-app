@@ -72,10 +72,6 @@ export function Dashboard() {
     return matches.slice(0, 5);
   }, [matches]);
 
-  const recentTransactions = useMemo(() => {
-    return transactions.slice(0, 5);
-  }, [transactions]);
-
   const lowBalanceMembers = useMemo(() => {
     return members.filter(m => isActive(m.id) && m.balance < 500).slice(0, 5);
   }, [members, isActive]);
@@ -790,54 +786,6 @@ export function Dashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Recent Transactions */}
-        <Card delay={500}>
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <IndianRupee className="w-5 h-5 text-primary-500" />
-              Recent Transactions
-            </h3>
-            <Link
-              to="/finance"
-              className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 flex items-center gap-1 font-medium group"
-            >
-              View all <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-          <CardContent className="p-0">
-            {recentTransactions.length === 0 ? (
-              <p className="p-6 text-center text-gray-500">No transactions yet</p>
-            ) : (
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {recentTransactions.map((txn, index) => (
-                  <div
-                    key={txn.id}
-                    className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
-                    style={{ animationDelay: `${550 + index * 50}ms` }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${txn.amount >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'} group-hover:scale-110 transition-transform`}>
-                        <IndianRupee className={`w-5 h-5 ${txn.amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {txn.description || txn.type}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {txn.member?.name || 'Club'} • {new Date(txn.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`font-bold text-lg tabular-nums ${txn.amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {txn.amount >= 0 ? '+' : ''}₹{Math.abs(txn.amount).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Calendar Widget */}
         <CalendarWidget matches={matches} />

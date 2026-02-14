@@ -25,9 +25,9 @@ const publicNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
-  { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
   { to: '/tournaments', icon: Trophy, label: 'Tournaments' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
+  { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/about', icon: Info, label: 'About' },
 ];
