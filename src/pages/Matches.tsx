@@ -138,7 +138,7 @@ export function Matches() {
       : formData.opponent || null;
 
     // For internal matches with result, determine winning team
-    const winningTeam = formData.match_type === 'internal' && isCurrentOrPastDate && formData.result === 'won' && formData.winning_team
+    const winningTeam = formData.match_type === 'internal' && formData.result === 'won' && formData.winning_team
       ? formData.winning_team as InternalTeam
       : null;
 
@@ -387,10 +387,10 @@ export function Matches() {
     );
   };
 
-  const getResultBadge = (result: Match['result']) => {
+  const getResultBadge = (result: Match['result'], matchType?: MatchType) => {
     switch (result) {
       case 'won':
-        return <Badge variant="success">WON</Badge>;
+        return <Badge variant="success">{matchType === 'internal' ? 'COMPLETED' : 'WON'}</Badge>;
       case 'lost':
         return <Badge variant="danger">LOST</Badge>;
       case 'draw':
@@ -507,7 +507,7 @@ export function Matches() {
                           vs {match.opponent || 'TBD'}
                         </h3>
                       )}
-                      {getResultBadge(match.result)}
+                      {getResultBadge(match.result, match.match_type)}
                       {match.match_type === 'internal' ? (
                         <Badge variant="default" className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                           Internal
@@ -716,65 +716,100 @@ export function Matches() {
               <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 Match Result (optional - can be added later)
               </p>
-              <Select
-                label="Result"
-                value={formData.result}
-                onChange={(e) => setFormData({ ...formData, result: e.target.value as Match['result'] })}
-                options={[
-                  { value: 'upcoming', label: 'Not Yet Played / TBD' },
-                  { value: 'won', label: 'Won' },
-                  { value: 'lost', label: 'Lost' },
-                  { value: 'draw', label: 'Draw' },
-                  { value: 'cancelled', label: 'Cancelled' },
-                ]}
-              />
-              {formData.result !== 'upcoming' && formData.result !== 'cancelled' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label={formData.match_type === 'internal' ? '🦁 Dhurandars Score' : 'Our Score'}
-                    placeholder="e.g., 156/4"
-                    value={formData.our_score}
-                    onChange={(e) => setFormData({ ...formData, our_score: e.target.value })}
+              {formData.match_type === 'internal' ? (
+                /* Internal Match Result - Simplified flow */
+                <>
+                  <Select
+                    label="Result"
+                    value={formData.result}
+                    onChange={(e) => setFormData({ ...formData, result: e.target.value as Match['result'], winning_team: e.target.value === 'draw' ? '' : formData.winning_team })}
+                    options={[
+                      { value: 'upcoming', label: 'Not Yet Played / TBD' },
+                      { value: 'won', label: 'Completed' },
+                      { value: 'draw', label: 'Draw' },
+                      { value: 'cancelled', label: 'Cancelled' },
+                    ]}
                   />
-                  <Input
-                    label={formData.match_type === 'internal' ? '🐅 Bazigars Score' : 'Opponent Score'}
-                    placeholder="e.g., 142/8"
-                    value={formData.opponent_score}
-                    onChange={(e) => setFormData({ ...formData, opponent_score: e.target.value })}
+                  {formData.result === 'won' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Winning Team *
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, winning_team: 'dhurandars' })}
+                          className={`p-3 rounded-xl border-2 transition-all ${
+                            formData.winning_team === 'dhurandars'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              : 'border-gray-200 dark:border-gray-700'
+                          }`}
+                        >
+                          <span className="font-medium text-blue-700 dark:text-blue-300">🦁 Dhurandars</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, winning_team: 'bazigars' })}
+                          className={`p-3 rounded-xl border-2 transition-all ${
+                            formData.winning_team === 'bazigars'
+                              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                              : 'border-gray-200 dark:border-gray-700'
+                          }`}
+                        >
+                          <span className="font-medium text-purple-700 dark:text-purple-300">🐅 Bazigars</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {formData.result !== 'upcoming' && formData.result !== 'cancelled' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        label="🦁 Dhurandars Score"
+                        placeholder="e.g., 156/4"
+                        value={formData.our_score}
+                        onChange={(e) => setFormData({ ...formData, our_score: e.target.value })}
+                      />
+                      <Input
+                        label="🐅 Bazigars Score"
+                        placeholder="e.g., 142/8"
+                        value={formData.opponent_score}
+                        onChange={(e) => setFormData({ ...formData, opponent_score: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* External Match Result */
+                <>
+                  <Select
+                    label="Result"
+                    value={formData.result}
+                    onChange={(e) => setFormData({ ...formData, result: e.target.value as Match['result'] })}
+                    options={[
+                      { value: 'upcoming', label: 'Not Yet Played / TBD' },
+                      { value: 'won', label: 'Won' },
+                      { value: 'lost', label: 'Lost' },
+                      { value: 'draw', label: 'Draw' },
+                      { value: 'cancelled', label: 'Cancelled' },
+                    ]}
                   />
-                </div>
-              )}
-              {/* Winning Team - Only show for Internal matches with won result */}
-              {formData.match_type === 'internal' && formData.result === 'won' && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Winning Team *
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, winning_team: 'dhurandars' })}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        formData.winning_team === 'dhurandars'
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-gray-700'
-                      }`}
-                    >
-                      <span className="font-medium text-blue-700 dark:text-blue-300">🦁 Dhurandars</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, winning_team: 'bazigars' })}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        formData.winning_team === 'bazigars'
-                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                          : 'border-gray-200 dark:border-gray-700'
-                      }`}
-                    >
-                      <span className="font-medium text-purple-700 dark:text-purple-300">🐅 Bazigars</span>
-                    </button>
-                  </div>
-                </div>
+                  {formData.result !== 'upcoming' && formData.result !== 'cancelled' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        label="Our Score"
+                        placeholder="e.g., 156/4"
+                        value={formData.our_score}
+                        onChange={(e) => setFormData({ ...formData, our_score: e.target.value })}
+                      />
+                      <Input
+                        label="Opponent Score"
+                        placeholder="e.g., 142/8"
+                        value={formData.opponent_score}
+                        onChange={(e) => setFormData({ ...formData, opponent_score: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </>
               )}
               {/* Man of the Match - Only show for Won matches */}
               {formData.result === 'won' && (
@@ -1280,63 +1315,96 @@ export function Matches() {
                 : `vs ${selectedMatch?.opponent || 'TBD'} at ${selectedMatch?.venue}`}
             </p>
           </div>
-          <Select
-            label="Result *"
-            value={resultData.result}
-            onChange={(e) => setResultData({ ...resultData, result: e.target.value as Match['result'] })}
-            options={[
-              { value: 'won', label: 'Won' },
-              { value: 'lost', label: 'Lost' },
-              { value: 'draw', label: 'Draw' },
-              { value: 'cancelled', label: 'Cancelled' },
-            ]}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label={selectedMatch?.match_type === 'internal' ? '🦁 Dhurandars Score' : 'Our Score'}
-              placeholder="e.g., 156/4"
-              value={resultData.our_score}
-              onChange={(e) => setResultData({ ...resultData, our_score: e.target.value })}
-            />
-            <Input
-              label={selectedMatch?.match_type === 'internal' ? '🐅 Bazigars Score' : 'Opponent Score'}
-              placeholder="e.g., 142/8"
-              value={resultData.opponent_score}
-              onChange={(e) => setResultData({ ...resultData, opponent_score: e.target.value })}
-            />
-          </div>
-
-          {/* Winning Team - Only show for Internal matches with won result */}
-          {selectedMatch?.match_type === 'internal' && resultData.result === 'won' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Winning Team *
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setResultData({ ...resultData, winning_team: 'dhurandars' })}
-                  className={`p-3 rounded-xl border-2 transition-all ${
-                    resultData.winning_team === 'dhurandars'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <span className="font-medium text-blue-700 dark:text-blue-300">🦁 Dhurandars</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setResultData({ ...resultData, winning_team: 'bazigars' })}
-                  className={`p-3 rounded-xl border-2 transition-all ${
-                    resultData.winning_team === 'bazigars'
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                      : 'border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <span className="font-medium text-purple-700 dark:text-purple-300">🐅 Bazigars</span>
-                </button>
+          {selectedMatch?.match_type === 'internal' ? (
+            /* Internal Match Result */
+            <>
+              <Select
+                label="Result *"
+                value={resultData.result}
+                onChange={(e) => setResultData({ ...resultData, result: e.target.value as Match['result'], winning_team: e.target.value === 'draw' ? '' : resultData.winning_team })}
+                options={[
+                  { value: 'won', label: 'Completed' },
+                  { value: 'draw', label: 'Draw' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ]}
+              />
+              {resultData.result === 'won' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Winning Team *
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setResultData({ ...resultData, winning_team: 'dhurandars' })}
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        resultData.winning_team === 'dhurandars'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <span className="font-medium text-blue-700 dark:text-blue-300">🦁 Dhurandars</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setResultData({ ...resultData, winning_team: 'bazigars' })}
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        resultData.winning_team === 'bazigars'
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <span className="font-medium text-purple-700 dark:text-purple-300">🐅 Bazigars</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+              {resultData.result !== 'cancelled' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="🦁 Dhurandars Score"
+                    placeholder="e.g., 156/4"
+                    value={resultData.our_score}
+                    onChange={(e) => setResultData({ ...resultData, our_score: e.target.value })}
+                  />
+                  <Input
+                    label="🐅 Bazigars Score"
+                    placeholder="e.g., 142/8"
+                    value={resultData.opponent_score}
+                    onChange={(e) => setResultData({ ...resultData, opponent_score: e.target.value })}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            /* External Match Result */
+            <>
+              <Select
+                label="Result *"
+                value={resultData.result}
+                onChange={(e) => setResultData({ ...resultData, result: e.target.value as Match['result'] })}
+                options={[
+                  { value: 'won', label: 'Won' },
+                  { value: 'lost', label: 'Lost' },
+                  { value: 'draw', label: 'Draw' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ]}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Our Score"
+                  placeholder="e.g., 156/4"
+                  value={resultData.our_score}
+                  onChange={(e) => setResultData({ ...resultData, our_score: e.target.value })}
+                />
+                <Input
+                  label="Opponent Score"
+                  placeholder="e.g., 142/8"
+                  value={resultData.opponent_score}
+                  onChange={(e) => setResultData({ ...resultData, opponent_score: e.target.value })}
+                />
               </div>
-            </div>
+            </>
           )}
 
           {/* Man of the Match - Only show for Won matches */}
