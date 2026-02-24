@@ -214,6 +214,9 @@ export function Matches() {
         our_score: resultData.our_score || null,
         opponent_score: resultData.opponent_score || null,
         man_of_match_id: resultData.result === 'won' && resultData.man_of_match_id ? resultData.man_of_match_id : null,
+        winning_team: selectedMatch.match_type === 'internal' && resultData.result === 'won' && resultData.winning_team
+          ? resultData.winning_team as InternalTeam
+          : null,
       });
       setShowResultModal(false);
       setSelectedMatch(null);
@@ -1302,6 +1305,39 @@ export function Matches() {
               onChange={(e) => setResultData({ ...resultData, opponent_score: e.target.value })}
             />
           </div>
+
+          {/* Winning Team - Only show for Internal matches with won result */}
+          {selectedMatch?.match_type === 'internal' && resultData.result === 'won' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Winning Team *
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setResultData({ ...resultData, winning_team: 'dhurandars' })}
+                  className={`p-3 rounded-xl border-2 transition-all ${
+                    resultData.winning_team === 'dhurandars'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <span className="font-medium text-blue-700 dark:text-blue-300">🦁 Dhurandars</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResultData({ ...resultData, winning_team: 'bazigars' })}
+                  className={`p-3 rounded-xl border-2 transition-all ${
+                    resultData.winning_team === 'bazigars'
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <span className="font-medium text-purple-700 dark:text-purple-300">🐅 Bazigars</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Man of the Match - Only show for Won matches */}
           {resultData.result === 'won' && (
