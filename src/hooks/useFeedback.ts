@@ -52,6 +52,26 @@ export function useFeedback() {
     }
   };
 
+  const replyToFeedback = async (id: string, reply: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('feedback')
+        .update({
+          admin_reply: reply,
+          replied_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setFeedback(prev => prev.map(f => f.id === id ? data : f));
+      return data;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to reply to feedback');
+    }
+  };
+
   const deleteFeedback = async (id: string) => {
     try {
       const { error } = await supabase
@@ -72,6 +92,7 @@ export function useFeedback() {
     error,
     fetchFeedback,
     submitFeedback,
+    replyToFeedback,
     deleteFeedback,
   };
 }

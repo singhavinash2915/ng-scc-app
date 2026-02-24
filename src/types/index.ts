@@ -125,5 +125,7 @@ export interface Feedback {
   name: string;
   message: string;
   rating: number | null;
+  admin_reply: string | null;
+  replied_at: string | null;
   created_at: string;
 }
