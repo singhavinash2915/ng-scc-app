@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, CalendarDays, Trophy, Wallet, BarChart3, Info } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, CalendarDays, Trophy, Wallet, BarChart3, MessageSquare, Info } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -66,6 +66,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/finance', icon: Wallet, label: 'Finance' },
               { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
               { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+              { to: '/feedback', icon: MessageSquare, label: 'Feedback' },
               { to: '/about', icon: Info, label: 'About' },
             ].map((item) => (
               <NavLink

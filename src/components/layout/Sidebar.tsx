@@ -14,6 +14,7 @@ import {
   LogOut,
   Lock,
   Info,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -29,6 +30,7 @@ const publicNavItems = [
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/feedback', icon: MessageSquare, label: 'Feedback' },
   { to: '/about', icon: Info, label: 'About' },
 ];
 

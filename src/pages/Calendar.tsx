@@ -366,7 +366,11 @@ export function Calendar() {
                           {match.our_score && (
                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                               <Trophy className="w-4 h-4" />
-                              <span>{match.our_score} - {match.opponent_score}</span>
+                              <span>
+                                {match.match_type === 'internal'
+                                  ? `🦁 ${match.our_score} - ${match.opponent_score} 🐅`
+                                  : `${match.our_score} - ${match.opponent_score}`}
+                              </span>
                             </div>
                           )}
                         </div>

@@ -123,6 +123,11 @@ export function Matches() {
     return members.filter(m => isActive(m.id));
   }, [members, isActive]);
 
+  // For internal matches, show all members
+  const availableMembers = useMemo(() => {
+    return formData.match_type === 'internal' ? members : activeMembers;
+  }, [formData.match_type, members, activeMembers]);
+
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) return;
@@ -539,7 +544,11 @@ export function Matches() {
                       <div className="mt-2 flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-yellow-500" />
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {match.our_score} - {match.opponent_score}
+                          {match.match_type === 'internal' ? (
+                            <>🦁 {match.our_score} - {match.opponent_score} 🐅</>
+                          ) : (
+                            <>{match.our_score} - {match.opponent_score}</>
+                          )}
                         </span>
                       </div>
                     )}
@@ -719,13 +728,13 @@ export function Matches() {
               {formData.result !== 'upcoming' && formData.result !== 'cancelled' && (
                 <div className="grid grid-cols-2 gap-4">
                   <Input
-                    label="Our Score"
+                    label={formData.match_type === 'internal' ? '🦁 Dhurandars Score' : 'Our Score'}
                     placeholder="e.g., 156/4"
                     value={formData.our_score}
                     onChange={(e) => setFormData({ ...formData, our_score: e.target.value })}
                   />
                   <Input
-                    label="Opponent Score"
+                    label={formData.match_type === 'internal' ? '🐅 Bazigars Score' : 'Opponent Score'}
                     placeholder="e.g., 142/8"
                     value={formData.opponent_score}
                     onChange={(e) => setFormData({ ...formData, opponent_score: e.target.value })}
@@ -780,13 +789,13 @@ export function Matches() {
                       { value: '', label: 'Select player (optional)' },
                       ...(selectedPlayers.length > 0
                         ? selectedPlayers.map(playerId => {
-                            const member = activeMembers.find(m => m.id === playerId);
+                            const member = availableMembers.find(m => m.id === playerId);
                             return {
                               value: playerId,
                               label: member?.name || 'Unknown Player',
                             };
                           })
-                        : activeMembers.map(m => ({
+                        : availableMembers.map(m => ({
                             value: m.id,
                             label: m.name,
                           }))
@@ -883,7 +892,7 @@ export function Matches() {
                 Select Players ({selectedPlayers.length} selected)
               </label>
               <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
-                {activeMembers.map(member => (
+                {availableMembers.map(member => (
                   <button
                     key={member.id}
                     type="button"
@@ -924,7 +933,7 @@ export function Matches() {
                   </h4>
                   <div className="space-y-1 max-h-32 overflow-y-auto">
                     {getPlayersByTeam('dhurandars').map(memberId => {
-                      const member = activeMembers.find(m => m.id === memberId);
+                      const member = members.find(m => m.id === memberId);
                       return member ? (
                         <div key={member.id} className="flex items-center justify-between bg-blue-100 dark:bg-blue-900/30 rounded px-2 py-1 text-sm">
                           <span className="text-blue-800 dark:text-blue-200">{member.name}</span>
@@ -944,7 +953,7 @@ export function Matches() {
                   </h4>
                   <div className="space-y-1 max-h-32 overflow-y-auto">
                     {getPlayersByTeam('bazigars').map(memberId => {
-                      const member = activeMembers.find(m => m.id === memberId);
+                      const member = members.find(m => m.id === memberId);
                       return member ? (
                         <div key={member.id} className="flex items-center justify-between bg-purple-100 dark:bg-purple-900/30 rounded px-2 py-1 text-sm">
                           <span className="text-purple-800 dark:text-purple-200">{member.name}</span>
@@ -964,7 +973,7 @@ export function Matches() {
                   Add Players to Teams
                 </label>
                 <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
-                  {activeMembers.filter(m => !playerTeams[m.id]).map(member => (
+                  {members.filter(m => !playerTeams[m.id]).map(member => (
                     <div key={member.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
                       <span className="flex-1 text-sm">{member.name}</span>
                       {formData.deduct_from_balance && (
@@ -1134,7 +1143,7 @@ export function Matches() {
               Select Players ({selectedPlayers.length} selected)
             </label>
             <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
-              {activeMembers.map(member => (
+              {availableMembers.map(member => (
                 <button
                   key={member.id}
                   type="button"
@@ -1182,7 +1191,9 @@ export function Matches() {
           <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4">
             <p className="text-sm text-gray-500">Match</p>
             <p className="font-semibold text-gray-900 dark:text-white">
-              vs {selectedMatch?.opponent || 'TBD'} at {selectedMatch?.venue}
+              {selectedMatch?.match_type === 'internal'
+                ? `🦁 Dhurandars vs Bazigars 🐅 at ${selectedMatch?.venue}`
+                : `vs ${selectedMatch?.opponent || 'TBD'} at ${selectedMatch?.venue}`}
             </p>
           </div>
           <Select
@@ -1198,13 +1209,13 @@ export function Matches() {
           />
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Our Score"
+              label={selectedMatch?.match_type === 'internal' ? '🦁 Dhurandars Score' : 'Our Score'}
               placeholder="e.g., 156/4"
               value={resultData.our_score}
               onChange={(e) => setResultData({ ...resultData, our_score: e.target.value })}
             />
             <Input
-              label="Opponent Score"
+              label={selectedMatch?.match_type === 'internal' ? '🐅 Bazigars Score' : 'Opponent Score'}
               placeholder="e.g., 142/8"
               value={resultData.opponent_score}
               onChange={(e) => setResultData({ ...resultData, opponent_score: e.target.value })}
@@ -1228,7 +1239,7 @@ export function Matches() {
                   ...(selectedMatch?.players?.map(p => ({
                     value: p.member_id,
                     label: p.member?.name || 'Unknown Player',
-                  })) || activeMembers.map(m => ({
+                  })) || members.map(m => ({
                     value: m.id,
                     label: m.name,
                   }))),

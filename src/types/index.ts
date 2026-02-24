@@ -119,3 +119,11 @@ export interface MatchPhoto {
   created_at: string;
   match?: Match;
 }
+
+export interface Feedback {
+  id: string;
+  name: string;
+  message: string;
+  rating: number | null;
+  created_at: string;
+}
