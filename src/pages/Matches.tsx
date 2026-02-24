@@ -119,14 +119,14 @@ export function Matches() {
     });
   }, [matches, filter, matchTypeFilter]);
 
-  const activeMembers = useMemo(() => {
-    return members.filter(m => isActive(m.id));
-  }, [members, isActive]);
+  const [playerFilter, setPlayerFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
-  // For internal matches, show all members
-  const availableMembers = useMemo(() => {
-    return formData.match_type === 'internal' ? members : activeMembers;
-  }, [formData.match_type, members, activeMembers]);
+  // Filter members based on active/inactive toggle
+  const filteredMembers = useMemo(() => {
+    if (playerFilter === 'active') return members.filter(m => isActive(m.id));
+    if (playerFilter === 'inactive') return members.filter(m => !isActive(m.id));
+    return members;
+  }, [members, isActive, playerFilter]);
 
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -789,13 +789,13 @@ export function Matches() {
                       { value: '', label: 'Select player (optional)' },
                       ...(selectedPlayers.length > 0
                         ? selectedPlayers.map(playerId => {
-                            const member = availableMembers.find(m => m.id === playerId);
+                            const member = members.find(m => m.id === playerId);
                             return {
                               value: playerId,
                               label: member?.name || 'Unknown Player',
                             };
                           })
-                        : availableMembers.map(m => ({
+                        : members.map(m => ({
                             value: m.id,
                             label: m.name,
                           }))
@@ -888,11 +888,29 @@ export function Matches() {
           {/* Player Selection - Different UI for Internal vs External matches */}
           {formData.match_type === 'external' ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Players ({selectedPlayers.length} selected)
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Select Players ({selectedPlayers.length} selected)
+                </label>
+                <div className="flex gap-1">
+                  {(['all', 'active', 'inactive'] as const).map(f => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setPlayerFilter(f)}
+                      className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
+                        playerFilter === f
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
-                {availableMembers.map(member => (
+                {filteredMembers.map(member => (
                   <button
                     key={member.id}
                     type="button"
@@ -912,7 +930,16 @@ export function Matches() {
                         <Check className="w-3 h-3 text-white" />
                       )}
                     </div>
-                    <span className="flex-1 text-left">{member.name}</span>
+                    <span className="flex-1 text-left flex items-center gap-2">
+                      {member.name}
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        isActive(member.id)
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                      }`}>
+                        {isActive(member.id) ? 'Active' : 'Inactive'}
+                      </span>
+                    </span>
                     {formData.deduct_from_balance && (
                       <span className={`text-sm ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
                         ₹{member.balance}
@@ -969,13 +996,40 @@ export function Matches() {
 
               {/* Available Players */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Add Players to Teams
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Add Players to Teams
+                  </label>
+                  <div className="flex gap-1">
+                    {(['all', 'active', 'inactive'] as const).map(f => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setPlayerFilter(f)}
+                        className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
+                          playerFilter === f
+                            ? 'bg-primary-500 text-white'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
-                  {members.filter(m => !playerTeams[m.id]).map(member => (
+                  {filteredMembers.filter(m => !playerTeams[m.id]).map(member => (
                     <div key={member.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
-                      <span className="flex-1 text-sm">{member.name}</span>
+                      <span className="flex-1 text-sm flex items-center gap-1.5">
+                        {member.name}
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          isActive(member.id)
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {isActive(member.id) ? 'Active' : 'Inactive'}
+                        </span>
+                      </span>
                       {formData.deduct_from_balance && (
                         <span className={`text-xs ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
                           ₹{member.balance}
@@ -1139,11 +1193,29 @@ export function Matches() {
 
           {/* Player Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Players ({selectedPlayers.length} selected)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Select Players ({selectedPlayers.length} selected)
+              </label>
+              <div className="flex gap-1">
+                {(['all', 'active', 'inactive'] as const).map(f => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setPlayerFilter(f)}
+                    className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
+                      playerFilter === f
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
-              {availableMembers.map(member => (
+              {filteredMembers.map(member => (
                 <button
                   key={member.id}
                   type="button"
@@ -1163,7 +1235,16 @@ export function Matches() {
                       <Check className="w-3 h-3 text-white" />
                     )}
                   </div>
-                  <span className="flex-1 text-left">{member.name}</span>
+                  <span className="flex-1 text-left flex items-center gap-2">
+                    {member.name}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      isActive(member.id)
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {isActive(member.id) ? 'Active' : 'Inactive'}
+                    </span>
+                  </span>
                   {formData.deduct_from_balance && (
                     <span className={`text-sm ${member.balance >= formData.match_fee ? 'text-green-500' : 'text-red-500'}`}>
                       ₹{member.balance}
