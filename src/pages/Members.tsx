@@ -1,11 +1,12 @@
 import { useState, useMemo, useRef } from 'react';
-import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X } from 'lucide-react';
+import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X, MessageCircle } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
+import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useMemberActivity } from '../hooks/useMemberActivity';
@@ -41,6 +42,7 @@ export function Members() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
@@ -73,6 +75,10 @@ export function Members() {
 
   const criticalBalanceCount = useMemo(() => {
     return members.filter(m => isActive(m.id) && m.balance < 500).length;
+  }, [members, isActive]);
+
+  const lowBalanceMembers = useMemo(() => {
+    return members.filter(m => isActive(m.id) && m.balance < 500);
   }, [members, isActive]);
 
   const handleAddMember = async (e: React.FormEvent) => {
@@ -317,6 +323,16 @@ export function Members() {
                 </span>
               )}
             </button>
+            {isAdmin && (balanceFilter === 'low' || balanceFilter === 'critical') && lowBalanceMembers.length > 0 && (
+              <Button
+                size="sm"
+                onClick={() => setShowWhatsAppModal(true)}
+                className="!bg-green-600 hover:!bg-green-700 !text-white"
+              >
+                <MessageCircle className="w-4 h-4 mr-1" />
+                WhatsApp Reminders
+              </Button>
+            )}
           </div>
         </div>
 
@@ -631,6 +647,13 @@ export function Members() {
           </Button>
         </div>
       </Modal>
+
+      {/* WhatsApp Reminders Modal */}
+      <WhatsAppRemindersModal
+        isOpen={showWhatsAppModal}
+        onClose={() => setShowWhatsAppModal(false)}
+        members={lowBalanceMembers}
+      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   Lock,
   Info,
   MessageSquare,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -28,6 +29,7 @@ const publicNavItems = [
   { to: '/matches', icon: Calendar, label: 'Matches' },
   { to: '/tournaments', icon: Trophy, label: 'Tournaments' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
+  { to: '/payment', icon: CreditCard, label: 'Pay Online' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/feedback', icon: MessageSquare, label: 'Feedback' },

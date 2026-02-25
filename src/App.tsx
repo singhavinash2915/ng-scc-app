@@ -13,6 +13,7 @@ import { Requests } from './pages/Requests';
 import { Settings } from './pages/Settings';
 import { About } from './pages/About';
 import { Feedback } from './pages/Feedback';
+import { Payment } from './pages/Payment';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/tournaments" element={<Tournaments />} />
               <Route path="/finance" element={<Finance />} />
+              <Route path="/payment" element={<Payment />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/requests" element={<Requests />} />
               <Route path="/settings" element={<Settings />} />

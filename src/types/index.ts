@@ -129,3 +129,16 @@ export interface Feedback {
   replied_at: string | null;
   created_at: string;
 }
+
+export interface PaymentOrder {
+  id: string;
+  member_id: string;
+  amount: number;
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  razorpay_signature: string | null;
+  status: 'created' | 'paid' | 'failed';
+  created_at: string;
+  paid_at: string | null;
+  member?: Member;
+}

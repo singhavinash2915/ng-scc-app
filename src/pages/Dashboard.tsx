@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
@@ -14,6 +14,7 @@ import {
   Award,
   Camera,
   Swords,
+  MessageCircle,
 } from 'lucide-react';
 import {
   BarChart,
@@ -31,6 +32,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { PhotoCarousel } from '../components/PhotoCarousel';
 import { CalendarWidget } from '../components/CalendarWidget';
+import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
@@ -38,6 +40,7 @@ import { useRequests } from '../hooks/useRequests';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
+import { useAuth } from '../context/AuthContext';
 
 export function Dashboard() {
   const { members, loading: membersLoading } = useMembers();
@@ -46,6 +49,8 @@ export function Dashboard() {
   const { getPendingCount } = useRequests();
   const { photos: matchPhotos, loading: photosLoading } = useMatchPhotos();
   const { activeCount, isActive } = useMemberActivity(members, matches);
+  const { isAdmin } = useAuth();
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   const stats = useMemo(() => {
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
@@ -72,9 +77,13 @@ export function Dashboard() {
     return matches.slice(0, 5);
   }, [matches]);
 
-  const lowBalanceMembers = useMemo(() => {
-    return members.filter(m => isActive(m.id) && m.balance < 500).slice(0, 5);
+  const allLowBalanceMembers = useMemo(() => {
+    return members.filter(m => isActive(m.id) && m.balance < 500);
   }, [members, isActive]);
+
+  const lowBalanceMembers = useMemo(() => {
+    return allLowBalanceMembers.slice(0, 5);
+  }, [allLowBalanceMembers]);
 
   // Get the latest won match with Man of the Match
   const latestWonMatch = useMemo(() => {
@@ -745,12 +754,23 @@ export function Dashboard() {
                 <AlertCircle className="w-5 h-5 text-yellow-500" />
                 Low Balance Alert
               </h3>
-              <Link
-                to="/members"
-                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 flex items-center gap-1 font-medium group"
-              >
-                View all <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
+              <div className="flex items-center gap-3">
+                {isAdmin && allLowBalanceMembers.length > 0 && (
+                  <button
+                    onClick={() => setShowWhatsAppModal(true)}
+                    className="text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 flex items-center gap-1 font-medium"
+                    title="Send WhatsApp Reminders"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </button>
+                )}
+                <Link
+                  to="/members"
+                  className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 flex items-center gap-1 font-medium group"
+                >
+                  View all <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
             </div>
             <CardContent className="p-0">
               {lowBalanceMembers.length === 0 ? (
@@ -790,6 +810,13 @@ export function Dashboard() {
         {/* Calendar Widget */}
         <CalendarWidget matches={matches} />
       </div>
+
+      {/* WhatsApp Reminders Modal */}
+      <WhatsAppRemindersModal
+        isOpen={showWhatsAppModal}
+        onClose={() => setShowWhatsAppModal(false)}
+        members={allLowBalanceMembers}
+      />
     </div>
   );
 }
