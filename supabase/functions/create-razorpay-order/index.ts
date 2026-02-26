@@ -47,7 +47,7 @@ serve(async (req) => {
       body: JSON.stringify({
         amount: Math.round(amount * 100), // Convert to paise
         currency: 'INR',
-        receipt: `scc_${member_id}_${Date.now()}`,
+        receipt: `scc_${Date.now()}`,
         notes: {
           member_id,
           member_name: member.name,
