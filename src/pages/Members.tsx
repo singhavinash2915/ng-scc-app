@@ -78,7 +78,7 @@ export function Members() {
   }, [members, isActive]);
 
   const lowBalanceMembers = useMemo(() => {
-    return members.filter(m => isActive(m.id) && m.balance < 500);
+    return members.filter(m => isActive(m.id) && m.balance < 1000);
   }, [members, isActive]);
 
   const handleAddMember = async (e: React.FormEvent) => {
@@ -653,6 +653,7 @@ export function Members() {
         isOpen={showWhatsAppModal}
         onClose={() => setShowWhatsAppModal(false)}
         members={lowBalanceMembers}
+        threshold={1000}
       />
     </div>
   );

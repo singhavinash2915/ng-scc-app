@@ -78,7 +78,7 @@ export function Dashboard() {
   }, [matches]);
 
   const allLowBalanceMembers = useMemo(() => {
-    return members.filter(m => isActive(m.id) && m.balance < 500);
+    return members.filter(m => isActive(m.id) && m.balance < 1000);
   }, [members, isActive]);
 
   const lowBalanceMembers = useMemo(() => {
@@ -816,6 +816,7 @@ export function Dashboard() {
         isOpen={showWhatsAppModal}
         onClose={() => setShowWhatsAppModal(false)}
         members={allLowBalanceMembers}
+        threshold={1000}
       />
     </div>
   );
