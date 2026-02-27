@@ -17,6 +17,9 @@ import {
   Camera,
   Image,
   X,
+  BarChart3,
+  Send,
+  ClipboardList,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -29,6 +32,8 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
+import { PollSummaryBadge } from '../components/PollSummaryBadge';
+import { PollManageModal } from '../components/PollManageModal';
 import type { Match, MatchType, InternalTeam } from '../types';
 
 // Internal team names
@@ -57,6 +62,8 @@ export function Matches() {
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [photoCaption, setPhotoCaption] = useState('');
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollMatch, setPollMatch] = useState<Match | null>(null);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -75,6 +82,9 @@ export function Matches() {
     // Match type fields
     match_type: 'external' as MatchType,
     winning_team: '' as string,
+    // Polling fields
+    polling_enabled: false,
+    polling_deadline: '',
   });
 
   // For internal matches - track which team each player is on
@@ -160,6 +170,10 @@ export function Matches() {
           man_of_match_id: isCurrentOrPastDate && formData.result === 'won' && formData.man_of_match_id ? formData.man_of_match_id : null,
           match_type: formData.match_type,
           winning_team: winningTeam,
+          polling_enabled: !isCurrentOrPastDate && formData.polling_enabled,
+          polling_deadline: !isCurrentOrPastDate && formData.polling_enabled && formData.polling_deadline
+            ? new Date(formData.polling_deadline).toISOString()
+            : null,
         },
         selectedPlayers,
         formData.match_type === 'internal' ? playerTeams : undefined
@@ -256,9 +270,57 @@ export function Matches() {
       man_of_match_id: '',
       match_type: 'external',
       winning_team: '',
+      polling_enabled: false,
+      polling_deadline: '',
     });
     setSelectedPlayers([]);
     setPlayerTeams({});
+  };
+
+  // Poll helpers
+  const openPollModal = (match: Match) => {
+    setPollMatch(match);
+    setShowPollModal(true);
+    setMenuOpen(null);
+  };
+
+  const handleClosePoll = async () => {
+    if (!pollMatch) return;
+    try {
+      await updateMatch(pollMatch.id, { polling_enabled: false });
+      setShowPollModal(false);
+      setPollMatch(null);
+    } catch (error) {
+      console.error('Failed to close poll:', error);
+    }
+  };
+
+  const handleSharePoll = (match: Match) => {
+    const matchDate = new Date(match.date).toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+    const pollUrl = `${window.location.origin}/poll/${match.id}`;
+    const message =
+      `🏏 *Squad Availability Poll*\n\n` +
+      `📅 ${matchDate}\n📍 ${match.venue}` +
+      (match.opponent ? `\nvs ${match.opponent}` : '') +
+      (match.polling_deadline
+        ? `\n⏰ Respond by ${new Date(match.polling_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+        : '') +
+      `\n\n👉 Mark your availability:\n${pollUrl}` +
+      `\n\n- Sangria Cricket Club`;
+
+    if (navigator.share) {
+      navigator.share({ text: message }).catch(() => {
+        navigator.clipboard.writeText(message);
+      });
+    } else {
+      navigator.clipboard.writeText(message);
+      alert('Poll link copied to clipboard!');
+    }
+    setMenuOpen(null);
   };
 
   // Toggle player's team for internal matches
@@ -304,6 +366,10 @@ export function Matches() {
       man_of_match_id: match.man_of_match_id || '',
       match_type: match.match_type || 'external',
       winning_team: match.winning_team || '',
+      polling_enabled: match.polling_enabled ?? false,
+      polling_deadline: match.polling_deadline
+        ? new Date(match.polling_deadline).toISOString().slice(0, 16)
+        : '',
     });
     setSelectedPlayers(match.players?.map(p => p.member_id) || []);
     // Restore player teams for internal matches
@@ -555,6 +621,32 @@ export function Matches() {
                         </span>
                       </div>
                     )}
+                    {/* Poll Summary for upcoming matches with polling enabled */}
+                    {match.result === 'upcoming' && match.polling_enabled && (
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <PollSummaryBadge
+                          matchId={match.id}
+                          members={members}
+                          onClick={() => openPollModal(match)}
+                        />
+                        <button
+                          onClick={() => handleSharePoll(match)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                        >
+                          <Send className="w-3 h-3" />
+                          Share Poll
+                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => openPollModal(match)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                          >
+                            <ClipboardList className="w-3 h-3" />
+                            Manage
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -581,6 +673,24 @@ export function Matches() {
                             >
                               <Trophy className="w-4 h-4" /> Update Result
                             </button>
+                          )}
+                          {match.result === 'upcoming' && (
+                            <>
+                              <button
+                                onClick={() => openPollModal(match)}
+                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                              >
+                                <BarChart3 className="w-4 h-4" /> {match.polling_enabled ? 'Manage Poll' : 'Open Poll'}
+                              </button>
+                              {match.polling_enabled && (
+                                <button
+                                  onClick={() => handleSharePoll(match)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-green-600"
+                                >
+                                  <Send className="w-4 h-4" /> Share Poll Link
+                                </button>
+                              )}
+                            </>
                           )}
                           <button
                             onClick={() => openPhotoModal(match)}
@@ -922,6 +1032,37 @@ export function Matches() {
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={2}
           />
+
+          {/* Availability Poll - Only for future matches */}
+          {!isCurrentOrPastDate && (
+            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl space-y-3 border border-indigo-200 dark:border-indigo-800">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.polling_enabled}
+                  onChange={(e) => setFormData({ ...formData, polling_enabled: e.target.checked })}
+                  className="w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <div>
+                  <span className="font-medium text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    Enable Availability Poll
+                  </span>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5">
+                    Members can mark if they're available via a shareable link
+                  </p>
+                </div>
+              </label>
+              {formData.polling_enabled && (
+                <Input
+                  label="Poll Deadline (optional)"
+                  type="datetime-local"
+                  value={formData.polling_deadline}
+                  onChange={(e) => setFormData({ ...formData, polling_deadline: e.target.value })}
+                />
+              )}
+            </div>
+          )}
 
           {/* Player Selection - Different UI for Internal vs External matches */}
           {formData.match_type === 'external' ? (
@@ -1577,6 +1718,18 @@ export function Matches() {
           </Button>
         </div>
       </Modal>
+
+      {/* Poll Management Modal */}
+      {pollMatch && (
+        <PollManageModal
+          isOpen={showPollModal}
+          onClose={() => { setShowPollModal(false); setPollMatch(null); }}
+          match={pollMatch}
+          members={members}
+          isAdmin={isAdmin}
+          onClosePoll={handleClosePoll}
+        />
+      )}
     </div>
   );
 }

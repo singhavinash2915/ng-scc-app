@@ -33,6 +33,7 @@ import { Badge } from '../components/ui/Badge';
 import { PhotoCarousel } from '../components/PhotoCarousel';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
+import { DashboardPoll } from '../components/DashboardPoll';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
@@ -44,7 +45,7 @@ import { useAuth } from '../context/AuthContext';
 
 export function Dashboard() {
   const { members, loading: membersLoading } = useMembers();
-  const { matches, loading: matchesLoading } = useMatches();
+  const { matches, loading: matchesLoading, fetchMatches } = useMatches();
   const { transactions, loading: transactionsLoading } = useTransactions();
   const { getPendingCount } = useRequests();
   const { photos: matchPhotos, loading: photosLoading } = useMatchPhotos();
@@ -544,6 +545,9 @@ export function Dashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Squad Availability Poll */}
+        <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

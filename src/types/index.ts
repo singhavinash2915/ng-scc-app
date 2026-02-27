@@ -31,9 +31,12 @@ export interface Match {
   man_of_match_id: string | null;
   match_type: MatchType;
   winning_team: InternalTeam | null; // For internal matches - which team won
+  polling_enabled: boolean;
+  polling_deadline: string | null;
   created_at: string;
   players?: MatchPlayer[];
   man_of_match?: Member;
+  polls?: MatchPoll[];
 }
 
 export interface MatchPlayer {
@@ -128,6 +131,18 @@ export interface Feedback {
   admin_reply: string | null;
   replied_at: string | null;
   created_at: string;
+}
+
+export type PollResponse = 'available' | 'unavailable' | 'maybe';
+
+export interface MatchPoll {
+  id: string;
+  match_id: string;
+  member_id: string;
+  response: PollResponse;
+  note: string | null;
+  responded_at: string;
+  member?: Member;
 }
 
 export interface PaymentOrder {

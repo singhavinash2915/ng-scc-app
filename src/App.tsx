@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/layout/Layout';
@@ -14,14 +14,27 @@ import { Settings } from './pages/Settings';
 import { About } from './pages/About';
 import { Feedback } from './pages/Feedback';
 import { Payment } from './pages/Payment';
+import { MatchPoll } from './pages/MatchPoll';
+
+function LayoutWrapper() {
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
+}
 
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Layout>
-            <Routes>
+          <Routes>
+            {/* Standalone poll page — no sidebar/layout */}
+            <Route path="/poll/:matchId" element={<MatchPoll />} />
+
+            {/* All other pages — with full layout */}
+            <Route element={<LayoutWrapper />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/members" element={<Members />} />
               <Route path="/matches" element={<Matches />} />
@@ -34,8 +47,8 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/about" element={<About />} />
-            </Routes>
-          </Layout>
+            </Route>
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
