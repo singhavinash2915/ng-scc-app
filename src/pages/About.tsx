@@ -3,6 +3,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useMemberActivity } from '../hooks/useMemberActivity';
+import { useSponsor } from '../hooks/useSponsor';
 import {
   Trophy,
   Users,
@@ -14,12 +15,15 @@ import {
   Target,
   Heart,
   TrendingUp,
+  Building2,
+  ExternalLink,
 } from 'lucide-react';
 
 export function About() {
   const { members } = useMembers();
   const { matches } = useMatches();
   const { activeCount } = useMemberActivity(members, matches);
+  const { sponsor } = useSponsor();
 
   // Calculate real stats
   const activeMembers = activeCount;
@@ -235,6 +239,68 @@ export function About() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Our Sponsor */}
+        {sponsor && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
+                  <Building2 className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Our Sponsor</h3>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                {/* Logo */}
+                {sponsor.logo_url ? (
+                  <img
+                    src={sponsor.logo_url}
+                    alt={sponsor.name}
+                    className="w-32 h-32 object-contain rounded-2xl bg-gray-50 dark:bg-gray-700 p-4 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Building2 className="w-12 h-12 text-gray-400" />
+                  </div>
+                )}
+
+                {/* Details */}
+                <div className="flex-1 text-center md:text-left">
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    {sponsor.name}
+                  </h4>
+                  {sponsor.tagline && (
+                    <p className="text-primary-600 dark:text-primary-400 font-medium mb-2">
+                      {sponsor.tagline}
+                    </p>
+                  )}
+                  {sponsor.description && (
+                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                      {sponsor.description}
+                    </p>
+                  )}
+                  {sponsor.member && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                      Also a proud member of Sangria Cricket Club
+                    </p>
+                  )}
+                  {sponsor.website_url && (
+                    <a
+                      href={sponsor.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors font-medium text-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Visit Website
+                    </a>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

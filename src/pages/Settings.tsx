@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Shield,
   LogOut,
@@ -10,11 +10,17 @@ import {
   Lock,
   FileJson,
   FileSpreadsheet,
+  Building2,
+  Upload,
+  Trash2,
+  ExternalLink,
+  Image,
+  Save,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { Input, TextArea, Select } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useMembers } from '../hooks/useMembers';
@@ -22,6 +28,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
 import { useTournaments } from '../hooks/useTournaments';
 import { useMemberActivity } from '../hooks/useMemberActivity';
+import { useSponsor } from '../hooks/useSponsor';
 
 export function Settings() {
   const { isAdmin, login, logout } = useAuth();
@@ -32,10 +39,109 @@ export function Settings() {
   const { transactions } = useTransactions();
   const { tournaments } = useTournaments();
 
+  const { sponsor, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
+
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+
+  // Sponsor form state
+  const [sponsorName, setSponsorName] = useState('');
+  const [sponsorTagline, setSponsorTagline] = useState('');
+  const [sponsorDescription, setSponsorDescription] = useState('');
+  const [sponsorWebsite, setSponsorWebsite] = useState('');
+  const [sponsorMemberId, setSponsorMemberId] = useState('');
+  const [sponsorSaving, setSponsorSaving] = useState(false);
+  const [sponsorLogoUploading, setSponsorLogoUploading] = useState(false);
+  const [sponsorMsg, setSponsorMsg] = useState('');
+  const [sponsorError, setSponsorError] = useState('');
+  const [sponsorFormLoaded, setSponsorFormLoaded] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Load sponsor data into form when available
+  if (sponsor && !sponsorFormLoaded) {
+    setSponsorName(sponsor.name);
+    setSponsorTagline(sponsor.tagline || '');
+    setSponsorDescription(sponsor.description || '');
+    setSponsorWebsite(sponsor.website_url || '');
+    setSponsorMemberId(sponsor.member_id || '');
+    setSponsorFormLoaded(true);
+  }
+
+  const handleSaveSponsor = async () => {
+    if (!sponsorName.trim()) {
+      setSponsorError('Sponsor name is required');
+      return;
+    }
+    try {
+      setSponsorSaving(true);
+      setSponsorError('');
+      setSponsorMsg('');
+      await saveSponsor({
+        name: sponsorName.trim(),
+        tagline: sponsorTagline.trim() || null,
+        description: sponsorDescription.trim() || null,
+        website_url: sponsorWebsite.trim() || null,
+        member_id: sponsorMemberId || null,
+      });
+      setSponsorMsg(sponsor ? 'Sponsor updated!' : 'Sponsor added!');
+    } catch {
+      setSponsorError('Failed to save sponsor');
+    } finally {
+      setSponsorSaving(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setSponsorError('Logo must be under 2MB');
+      return;
+    }
+    try {
+      setSponsorLogoUploading(true);
+      setSponsorError('');
+      setSponsorMsg('');
+      await uploadLogo(file);
+      setSponsorMsg('Logo uploaded!');
+    } catch {
+      setSponsorError('Failed to upload logo');
+    } finally {
+      setSponsorLogoUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    try {
+      setSponsorError('');
+      setSponsorMsg('');
+      await removeLogo();
+      setSponsorMsg('Logo removed');
+    } catch {
+      setSponsorError('Failed to remove logo');
+    }
+  };
+
+  const handleRemoveSponsor = async () => {
+    if (!confirm('Remove sponsor? This will delete all sponsor data.')) return;
+    try {
+      setSponsorError('');
+      setSponsorMsg('');
+      await removeSponsor();
+      setSponsorName('');
+      setSponsorTagline('');
+      setSponsorDescription('');
+      setSponsorWebsite('');
+      setSponsorMemberId('');
+      setSponsorFormLoaded(false);
+      setSponsorMsg('Sponsor removed');
+    } catch {
+      setSponsorError('Failed to remove sponsor');
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -400,6 +506,166 @@ export function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Sponsor Management (Admin Only) */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary-500" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">Sponsor Management</h3>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Logo Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Sponsor Logo
+                </label>
+                <div className="flex items-center gap-4">
+                  {sponsor?.logo_url ? (
+                    <img
+                      src={sponsor.logo_url}
+                      alt="Sponsor logo"
+                      className="w-20 h-20 object-contain rounded-xl bg-gray-50 dark:bg-gray-700 p-2 border border-gray-200 dark:border-gray-600"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center border border-dashed border-gray-300 dark:border-gray-600">
+                      <Image className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={!sponsor || sponsorLogoUploading}
+                    >
+                      {sponsorLogoUploading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5 mr-1.5" />
+                      )}
+                      {sponsorLogoUploading ? 'Uploading...' : 'Upload Logo'}
+                    </Button>
+                    {sponsor?.logo_url && (
+                      <Button size="sm" variant="danger" onClick={handleRemoveLogo}>
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {!sponsor && (
+                  <p className="text-xs text-gray-400 mt-2">Save sponsor details first, then upload logo</p>
+                )}
+              </div>
+
+              {/* Form Fields */}
+              <Input
+                label="Sponsor Name *"
+                placeholder="e.g., TechCorp Solutions"
+                value={sponsorName}
+                onChange={(e) => { setSponsorName(e.target.value); setSponsorError(''); }}
+              />
+
+              <Input
+                label="Tagline"
+                placeholder="e.g., Your trusted technology partner"
+                value={sponsorTagline}
+                onChange={(e) => setSponsorTagline(e.target.value)}
+              />
+
+              <TextArea
+                label="Description"
+                placeholder="A brief description about the sponsor company..."
+                value={sponsorDescription}
+                onChange={(e) => setSponsorDescription(e.target.value)}
+                rows={3}
+              />
+
+              <Input
+                label="Website URL"
+                placeholder="https://example.com"
+                type="url"
+                value={sponsorWebsite}
+                onChange={(e) => setSponsorWebsite(e.target.value)}
+              />
+
+              <Select
+                label="Linked Team Member (optional)"
+                value={sponsorMemberId}
+                onChange={(e) => setSponsorMemberId(e.target.value)}
+                options={[
+                  { value: '', label: 'None' },
+                  ...members.map(m => ({ value: m.id, label: m.name })),
+                ]}
+              />
+
+              {/* Feedback Messages */}
+              {sponsorError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  {sponsorError}
+                </div>
+              )}
+
+              {sponsorMsg && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                  {sponsorMsg}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button onClick={handleSaveSponsor} disabled={sponsorSaving} className="flex-1">
+                  <Save className="w-4 h-4 mr-2" />
+                  {sponsorSaving ? 'Saving...' : sponsor ? 'Save Changes' : 'Add Sponsor'}
+                </Button>
+                {sponsor && (
+                  <Button variant="danger" onClick={handleRemoveSponsor}>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Remove
+                  </Button>
+                )}
+              </div>
+
+              {/* Current Sponsor Preview */}
+              {sponsor && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Current Sponsor Preview</p>
+                  <div className="flex items-center gap-3">
+                    {sponsor.logo_url ? (
+                      <img src={sponsor.logo_url} alt={sponsor.name} className="w-12 h-12 object-contain rounded-lg bg-white dark:bg-gray-700 p-1" />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm">{sponsor.name}</p>
+                      {sponsor.tagline && <p className="text-xs text-gray-500 truncate">{sponsor.tagline}</p>}
+                      {sponsor.member && <p className="text-xs text-primary-500">Team member: {sponsor.member.name}</p>}
+                    </div>
+                    {sponsor.website_url && (
+                      <a href={sponsor.website_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary-500">
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* About */}
         <Card>
