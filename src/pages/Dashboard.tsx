@@ -132,7 +132,7 @@ export function Dashboard() {
         .reduce((sum, t) => sum + t.amount, 0);
 
       const expenses = monthTransactions
-        .filter(t => t.amount < 0)
+        .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
       last6Months.push({ month: monthKey, deposits, expenses });
