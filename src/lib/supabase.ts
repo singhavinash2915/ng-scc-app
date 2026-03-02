@@ -5,4 +5,22 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const ADMIN_PASSWORD = 'scc@2026';
+// Admin password is validated server-side via Supabase RPC function
+// No password stored in client-side code
+export async function verifyAdminPassword(password: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('verify_admin_password', {
+      input_password: password,
+    });
+
+    if (error) {
+      console.error('Auth verification error:', error.message);
+      return false;
+    }
+
+    return data === true;
+  } catch {
+    console.error('Auth verification failed');
+    return false;
+  }
+}

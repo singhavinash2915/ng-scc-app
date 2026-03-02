@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState } from 'react';
-import { ADMIN_PASSWORD } from '../lib/supabase';
+import { verifyAdminPassword } from '../lib/supabase';
 
 interface AuthContextType {
   isAdmin: boolean;
-  login: (password: string) => boolean;
+  loginLoading: boolean;
+  login: (password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -14,14 +15,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     return localStorage.getItem('scc-admin') === 'true';
   });
+  const [loginLoading, setLoginLoading] = useState(false);
 
-  const login = (password: string): boolean => {
-    if (password === ADMIN_PASSWORD) {
-      setIsAdmin(true);
-      localStorage.setItem('scc-admin', 'true');
-      return true;
+  const login = async (password: string): Promise<boolean> => {
+    setLoginLoading(true);
+    try {
+      const isValid = await verifyAdminPassword(password);
+      if (isValid) {
+        setIsAdmin(true);
+        localStorage.setItem('scc-admin', 'true');
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    } finally {
+      setLoginLoading(false);
     }
-    return false;
   };
 
   const logout = () => {
@@ -30,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ isAdmin, loginLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

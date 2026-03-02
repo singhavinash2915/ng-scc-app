@@ -42,16 +42,17 @@ const adminNavItems = [
 ];
 
 export function Sidebar() {
-  const { isAdmin, login, logout } = useAuth();
+  const { isAdmin, loginLoading, login, logout } = useAuth();
   const { getPendingCount } = useRequests();
   const pendingCount = getPendingCount();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(password)) {
+    const success = await login(password);
+    if (success) {
       setShowLoginModal(false);
       setPassword('');
       setError('');
@@ -172,11 +173,11 @@ export function Sidebar() {
             error={error}
           />
           <div className="flex gap-3">
-            <Button type="button" variant="secondary" onClick={() => setShowLoginModal(false)} className="flex-1">
+            <Button type="button" variant="secondary" onClick={() => setShowLoginModal(false)} className="flex-1" disabled={loginLoading}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1">
-              Login
+            <Button type="submit" className="flex-1" disabled={loginLoading}>
+              {loginLoading ? 'Verifying...' : 'Login'}
             </Button>
           </div>
         </form>

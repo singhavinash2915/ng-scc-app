@@ -31,7 +31,7 @@ import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useSponsor } from '../hooks/useSponsor';
 
 export function Settings() {
-  const { isAdmin, login, logout } = useAuth();
+  const { isAdmin, loginLoading, login, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { members } = useMembers();
   const { matches } = useMatches();
@@ -143,12 +143,13 @@ export function Settings() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    if (login(password)) {
+    const success = await login(password);
+    if (success) {
       setSuccess('Successfully logged in as admin!');
       setPassword('');
     } else {
@@ -392,9 +393,9 @@ export function Settings() {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" disabled={loginLoading}>
                   <Shield className="w-4 h-4 mr-2" />
-                  Login as Admin
+                  {loginLoading ? 'Verifying...' : 'Login as Admin'}
                 </Button>
               </form>
             )}
