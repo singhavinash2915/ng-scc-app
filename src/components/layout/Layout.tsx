@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { ContactBar } from './ContactBar';
+import { InstallPrompt } from '../InstallPrompt';
+import { OfflineIndicator } from '../OfflineIndicator';
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,6 +12,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <OfflineIndicator />
       {/* Contact bar at top - visible on mobile/tablet */}
       <div className="lg:hidden">
         <ContactBar />
@@ -21,6 +24,7 @@ export function Layout({ children }: LayoutProps) {
         </main>
       </div>
       <MobileNav />
+      <InstallPrompt />
     </div>
   );
 }
