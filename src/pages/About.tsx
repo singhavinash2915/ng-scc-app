@@ -17,6 +17,9 @@ import {
   TrendingUp,
   Building2,
   ExternalLink,
+  Smartphone,
+  Shield,
+  Tag,
 } from 'lucide-react';
 
 export function About() {
@@ -236,6 +239,51 @@ export function About() {
                   Every member contributes their share, ensuring the club runs smoothly.
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* App Info */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                <Smartphone className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">SCC App</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Member & Fund Management</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <Tag className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Version</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">v1.0.0</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <Calendar className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Released</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Mar 2026</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <Shield className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
+                  <p className="font-semibold text-green-600 dark:text-green-400">Stable</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+              <p className="text-xs text-primary-700 dark:text-primary-300 leading-relaxed">
+                <span className="font-semibold">What's new in v1.0.0:</span> PWA support (install on phone),
+                squad availability polling, sponsor showcase, Razorpay payments, WhatsApp reminders,
+                server-side admin auth, match photos, tournaments, and more.
+              </p>
             </div>
           </CardContent>
         </Card>
