@@ -717,7 +717,7 @@ export function Matches() {
                               <ImageDown className="w-4 h-4" /> Squad Graphic
                             </button>
                           )}
-                          {match.result === 'upcoming' && match.players && match.players.length > 0 && (
+                          {match.result === 'upcoming' && (
                             <button
                               onClick={() => {
                                 setMatchDayMatch(match);
