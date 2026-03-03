@@ -54,7 +54,7 @@ export function Dashboard() {
   const { photos: matchPhotos, loading: photosLoading } = useMatchPhotos();
   const { activeCount, isActive } = useMemberActivity(members, matches);
   const { isAdmin } = useAuth();
-  const { sponsor } = useSponsor();
+  const { sponsors } = useSponsor();
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   const stats = useMemo(() => {
@@ -322,50 +322,54 @@ export function Dashboard() {
           </Card>
         </Link>
 
-        {/* Sponsor Banner */}
-        {sponsor && (
+        {/* Sponsor Banners */}
+        {sponsors.length > 0 && (
           <Card delay={25} className="group overflow-hidden">
             <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center gap-4">
-                {sponsor.logo_url ? (
-                  <img
-                    src={sponsor.logo_url}
-                    alt={sponsor.name}
-                    className="w-16 h-16 lg:w-20 lg:h-20 object-contain rounded-xl bg-gray-50 dark:bg-gray-700 p-2 flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Building2 className="w-8 h-8 text-gray-400" />
+              <p className="text-[10px] font-semibold text-primary-500 uppercase tracking-wider mb-3">
+                {sponsors.length === 1 ? 'Powered By' : 'Our Sponsors'}
+              </p>
+              <div className="space-y-4">
+                {sponsors.map(s => (
+                  <div key={s.id} className="flex items-center gap-4">
+                    {s.logo_url ? (
+                      <img
+                        src={s.logo_url}
+                        alt={s.name}
+                        className="w-14 h-14 lg:w-16 lg:h-16 object-contain rounded-xl bg-gray-50 dark:bg-gray-700 p-2 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-7 h-7 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 dark:text-white text-base truncate">
+                        {s.name}
+                      </h3>
+                      {s.tagline && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {s.tagline}
+                        </p>
+                      )}
+                      {s.member && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                          SCC Member: {s.member.name}
+                        </p>
+                      )}
+                    </div>
+                    {s.website_url && (
+                      <a
+                        href={s.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
+                      >
+                        <ExternalLink className="w-5 h-5 text-gray-400 hover:text-primary-500" />
+                      </a>
+                    )}
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-primary-500 uppercase tracking-wider mb-0.5">
-                    Powered By
-                  </p>
-                  <h3 className="font-bold text-gray-900 dark:text-white text-lg truncate">
-                    {sponsor.name}
-                  </h3>
-                  {sponsor.tagline && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                      {sponsor.tagline}
-                    </p>
-                  )}
-                  {sponsor.member && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                      SCC Member: {sponsor.member.name}
-                    </p>
-                  )}
-                </div>
-                {sponsor.website_url && (
-                  <a
-                    href={sponsor.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
-                  >
-                    <ExternalLink className="w-5 h-5 text-gray-400 hover:text-primary-500" />
-                  </a>
-                )}
+                ))}
               </div>
             </CardContent>
           </Card>

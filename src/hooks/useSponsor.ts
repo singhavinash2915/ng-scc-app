@@ -3,34 +3,40 @@ import { supabase } from '../lib/supabase';
 import type { Sponsor } from '../types';
 
 export function useSponsor() {
-  const [sponsor, setSponsor] = useState<Sponsor | null>(null);
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSponsor = useCallback(async () => {
+  // Single active sponsor (first one) for backward compat
+  const sponsor = sponsors.length > 0 ? sponsors[0] : null;
+
+  const fetchSponsors = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('sponsors')
         .select('*, member:members(id, name, avatar_url)')
         .eq('is_active', true)
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setSponsor(data);
+      setSponsors(data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch sponsor');
+      setError(err instanceof Error ? err.message : 'Failed to fetch sponsors');
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Keep old name working
+  const fetchSponsor = fetchSponsors;
+
   useEffect(() => {
-    fetchSponsor();
-  }, [fetchSponsor]);
+    fetchSponsors();
+  }, [fetchSponsors]);
 
   const saveSponsor = async (sponsorData: {
+    id?: string;
     name: string;
     tagline?: string | null;
     description?: string | null;
@@ -38,29 +44,42 @@ export function useSponsor() {
     member_id?: string | null;
   }) => {
     try {
-      if (sponsor) {
+      if (sponsorData.id) {
+        // Update existing sponsor
         const { data, error } = await supabase
           .from('sponsors')
           .update({
-            ...sponsorData,
+            name: sponsorData.name,
+            tagline: sponsorData.tagline,
+            description: sponsorData.description,
+            website_url: sponsorData.website_url,
+            member_id: sponsorData.member_id,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', sponsor.id)
+          .eq('id', sponsorData.id)
           .select('*, member:members(id, name, avatar_url)')
           .single();
 
         if (error) throw error;
-        setSponsor(data);
+        setSponsors(prev => prev.map(s => s.id === data.id ? data : s));
         return data;
       } else {
+        // Create new sponsor
         const { data, error } = await supabase
           .from('sponsors')
-          .insert([{ ...sponsorData, is_active: true }])
+          .insert([{
+            name: sponsorData.name,
+            tagline: sponsorData.tagline,
+            description: sponsorData.description,
+            website_url: sponsorData.website_url,
+            member_id: sponsorData.member_id,
+            is_active: true,
+          }])
           .select('*, member:members(id, name, avatar_url)')
           .single();
 
         if (error) throw error;
-        setSponsor(data);
+        setSponsors(prev => [...prev, data]);
         return data;
       }
     } catch (err) {
@@ -68,15 +87,18 @@ export function useSponsor() {
     }
   };
 
-  const uploadLogo = async (file: File): Promise<string> => {
+  const uploadLogo = async (file: File, sponsorId?: string): Promise<string> => {
     try {
+      const targetId = sponsorId || sponsor?.id;
+      const targetSponsor = sponsors.find(s => s.id === targetId);
+
       const fileExt = file.name.split('.').pop();
       const fileName = `logo-${Date.now()}.${fileExt}`;
       const filePath = `logos/${fileName}`;
 
       // Delete old logo if exists
-      if (sponsor?.logo_url) {
-        const oldPath = sponsor.logo_url.split('/sponsors/')[1];
+      if (targetSponsor?.logo_url) {
+        const oldPath = targetSponsor.logo_url.split('/sponsors/')[1];
         if (oldPath) {
           await supabase.storage.from('sponsors').remove([oldPath]);
         }
@@ -93,16 +115,16 @@ export function useSponsor() {
         .getPublicUrl(filePath);
 
       // Update sponsor record with new logo URL
-      if (sponsor) {
+      if (targetId) {
         const { data, error } = await supabase
           .from('sponsors')
           .update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
-          .eq('id', sponsor.id)
+          .eq('id', targetId)
           .select('*, member:members(id, name, avatar_url)')
           .single();
 
         if (error) throw error;
-        setSponsor(data);
+        setSponsors(prev => prev.map(s => s.id === data.id ? data : s));
       }
 
       return publicUrl;
@@ -111,11 +133,13 @@ export function useSponsor() {
     }
   };
 
-  const removeLogo = async () => {
+  const removeLogo = async (sponsorId?: string) => {
     try {
-      if (!sponsor?.logo_url) return;
+      const targetId = sponsorId || sponsor?.id;
+      const targetSponsor = sponsors.find(s => s.id === targetId);
+      if (!targetSponsor?.logo_url || !targetId) return;
 
-      const oldPath = sponsor.logo_url.split('/sponsors/')[1];
+      const oldPath = targetSponsor.logo_url.split('/sponsors/')[1];
       if (oldPath) {
         await supabase.storage.from('sponsors').remove([oldPath]);
       }
@@ -123,24 +147,26 @@ export function useSponsor() {
       const { data, error } = await supabase
         .from('sponsors')
         .update({ logo_url: null, updated_at: new Date().toISOString() })
-        .eq('id', sponsor.id)
+        .eq('id', targetId)
         .select('*, member:members(id, name, avatar_url)')
         .single();
 
       if (error) throw error;
-      setSponsor(data);
+      setSponsors(prev => prev.map(s => s.id === data.id ? data : s));
     } catch (err) {
       throw err instanceof Error ? err : new Error('Failed to remove logo');
     }
   };
 
-  const removeSponsor = async () => {
+  const removeSponsor = async (sponsorId?: string) => {
     try {
-      if (!sponsor) return;
+      const targetId = sponsorId || sponsor?.id;
+      const targetSponsor = sponsors.find(s => s.id === targetId);
+      if (!targetSponsor || !targetId) return;
 
       // Remove logo from storage
-      if (sponsor.logo_url) {
-        const oldPath = sponsor.logo_url.split('/sponsors/')[1];
+      if (targetSponsor.logo_url) {
+        const oldPath = targetSponsor.logo_url.split('/sponsors/')[1];
         if (oldPath) {
           await supabase.storage.from('sponsors').remove([oldPath]);
         }
@@ -149,10 +175,10 @@ export function useSponsor() {
       const { error } = await supabase
         .from('sponsors')
         .delete()
-        .eq('id', sponsor.id);
+        .eq('id', targetId);
 
       if (error) throw error;
-      setSponsor(null);
+      setSponsors(prev => prev.filter(s => s.id !== targetId));
     } catch (err) {
       throw err instanceof Error ? err : new Error('Failed to remove sponsor');
     }
@@ -160,9 +186,11 @@ export function useSponsor() {
 
   return {
     sponsor,
+    sponsors,
     loading,
     error,
     fetchSponsor,
+    fetchSponsors,
     saveSponsor,
     uploadLogo,
     removeLogo,

@@ -3,16 +3,17 @@ import type { Match, MatchPlayer } from '../types';
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1350;
 
-// SCC brand colors
+// SCC brand colors - Modern dark navy theme
 const COLORS = {
-  darkGreen: '#064e3b',
-  mediumGreen: '#059669',
-  lightGreen: '#10b981',
-  accentGold: '#fbbf24',
+  darkBg: '#0f172a',
+  mediumBg: '#1e293b',
+  accent: '#3b82f6',
+  accentLight: '#60a5fa',
+  accentGold: '#f59e0b',
   white: '#ffffff',
-  lightText: '#d1fae5',
-  cardBg: 'rgba(255,255,255,0.12)',
-  cardBorder: 'rgba(255,255,255,0.2)',
+  lightText: '#cbd5e1',
+  cardBg: 'rgba(255,255,255,0.08)',
+  cardBorder: 'rgba(255,255,255,0.12)',
 };
 
 function drawRoundedRect(
@@ -49,8 +50,8 @@ function drawCircleAvatar(
   } else {
     // Fallback: gradient circle with initials
     const grad = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
-    grad.addColorStop(0, COLORS.mediumGreen);
-    grad.addColorStop(1, COLORS.darkGreen);
+    grad.addColorStop(0, COLORS.accent);
+    grad.addColorStop(1, COLORS.darkBg);
     ctx.fillStyle = grad;
     ctx.fill();
 
@@ -89,30 +90,47 @@ export async function generateSquadGraphic(
   canvas.height = CANVAS_HEIGHT;
   const ctx = canvas.getContext('2d')!;
 
-  // === Background gradient ===
+  // === Background gradient - Dark navy ===
   const bgGrad = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-  bgGrad.addColorStop(0, '#064e3b');
-  bgGrad.addColorStop(0.5, '#065f46');
-  bgGrad.addColorStop(1, '#064e3b');
+  bgGrad.addColorStop(0, '#0f172a');
+  bgGrad.addColorStop(0.4, '#1e293b');
+  bgGrad.addColorStop(0.7, '#0f172a');
+  bgGrad.addColorStop(1, '#1e293b');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // Subtle pattern overlay
-  ctx.globalAlpha = 0.03;
-  for (let i = 0; i < CANVAS_WIDTH; i += 40) {
-    for (let j = 0; j < CANVAS_HEIGHT; j += 40) {
-      ctx.fillStyle = COLORS.white;
-      ctx.fillRect(i, j, 1, 1);
-    }
+  // Subtle geometric pattern overlay
+  ctx.globalAlpha = 0.04;
+  for (let i = 0; i < CANVAS_WIDTH; i += 60) {
+    ctx.strokeStyle = COLORS.accent;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, CANVAS_HEIGHT);
+    ctx.stroke();
+  }
+  for (let j = 0; j < CANVAS_HEIGHT; j += 60) {
+    ctx.beginPath();
+    ctx.moveTo(0, j);
+    ctx.lineTo(CANVAS_WIDTH, j);
+    ctx.stroke();
   }
   ctx.globalAlpha = 1;
 
-  // === Top accent bar ===
+  // Diagonal accent glow (top-right corner)
+  const glowGrad = ctx.createRadialGradient(CANVAS_WIDTH - 100, 100, 0, CANVAS_WIDTH - 100, 100, 500);
+  glowGrad.addColorStop(0, 'rgba(59, 130, 246, 0.12)');
+  glowGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // === Top accent bar - blue gradient ===
   const accentGrad = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, 0);
-  accentGrad.addColorStop(0, COLORS.accentGold);
-  accentGrad.addColorStop(1, '#f59e0b');
+  accentGrad.addColorStop(0, COLORS.accent);
+  accentGrad.addColorStop(0.5, COLORS.accentGold);
+  accentGrad.addColorStop(1, COLORS.accent);
   ctx.fillStyle = accentGrad;
-  ctx.fillRect(0, 0, CANVAS_WIDTH, 6);
+  ctx.fillRect(0, 0, CANVAS_WIDTH, 5);
 
   // === Logo + Club Name ===
   let headerY = 40;
@@ -143,16 +161,17 @@ export async function generateSquadGraphic(
 
   // === "MATCH DAY SQUAD" title ===
   headerY += 60;
-  ctx.fillStyle = COLORS.white;
-  ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillText('MATCH DAY SQUAD', CANVAS_WIDTH / 2, headerY + 20);
+  ctx.fillStyle = COLORS.lightText;
+  ctx.font = '600 26px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.letterSpacing = '4px';
+  ctx.fillText('M A T C H   D A Y   S Q U A D', CANVAS_WIDTH / 2, headerY + 20);
 
   // Divider line
   headerY += 40;
   const divGrad = ctx.createLinearGradient(100, 0, CANVAS_WIDTH - 100, 0);
   divGrad.addColorStop(0, 'transparent');
-  divGrad.addColorStop(0.3, COLORS.accentGold);
-  divGrad.addColorStop(0.7, COLORS.accentGold);
+  divGrad.addColorStop(0.3, COLORS.accent);
+  divGrad.addColorStop(0.7, COLORS.accent);
   divGrad.addColorStop(1, 'transparent');
   ctx.strokeStyle = divGrad;
   ctx.lineWidth = 2;
@@ -376,12 +395,16 @@ export async function generateSquadGraphic(
   }
 
   // Bottom accent bar
-  ctx.fillStyle = COLORS.accentGold;
-  ctx.fillRect(0, CANVAS_HEIGHT - 6, CANVAS_WIDTH, 6);
+  const bottomBarGrad = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, 0);
+  bottomBarGrad.addColorStop(0, COLORS.accent);
+  bottomBarGrad.addColorStop(0.5, COLORS.accentGold);
+  bottomBarGrad.addColorStop(1, COLORS.accent);
+  ctx.fillStyle = bottomBarGrad;
+  ctx.fillRect(0, CANVAS_HEIGHT - 5, CANVAS_WIDTH, 5);
 
   // Watermark
   ctx.fillStyle = COLORS.lightText;
-  ctx.globalAlpha = 0.5;
+  ctx.globalAlpha = 0.4;
   ctx.font = '14px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.textAlign = 'right';
   ctx.fillText('sangriacricket.club', CANVAS_WIDTH - 60, footerY + 20);

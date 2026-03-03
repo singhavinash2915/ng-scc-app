@@ -12,6 +12,7 @@ import {
   ChevronUp,
   Search,
   Send,
+  Lock,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Header } from '../components/layout/Header';
@@ -30,7 +31,7 @@ import type { Match } from '../types';
 type TabType = 'matches' | 'balances';
 
 export function FeeTracking() {
-  const { matches } = useMatches();
+  const { matches, toggleFeePaid } = useMatches();
   const { members } = useMembers();
   const { transactions } = useTransactions();
   const { isAdmin } = useAuth();
@@ -75,6 +76,23 @@ export function FeeTracking() {
     setMatchDayMatch(match);
     setShowMatchDayModal(true);
   };
+
+  if (!isAdmin) {
+    return (
+      <div>
+        <Header title="Fee Tracking" subtitle="Track fees, balances & match-day logistics" />
+        <div className="p-4 lg:p-8 flex flex-col items-center justify-center min-h-[60vh] text-center">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
+            <Lock className="w-8 h-8 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Admin Access Required</h2>
+          <p className="text-gray-500 dark:text-gray-400 max-w-sm">
+            Fee tracking is only available to administrators. Please log in as admin from the Settings page.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -285,37 +303,36 @@ export function FeeTracking() {
                             </div>
                           </div>
 
-                          {/* Paid players */}
-                          {status.paidMembers.length > 0 && (
-                            <div>
-                              <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1.5 flex items-center gap-1">
-                                <CheckCircle className="w-3 h-3" /> Paid
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {status.paidMembers.map(m => (
-                                  <span key={m.id} className="px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
-                                    {m.name}
-                                  </span>
-                                ))}
-                              </div>
+                          {/* All players with toggle */}
+                          <div>
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                              Tap a player to toggle fee status
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(status.match.players || []).map(player => {
+                                const member = members.find(m => m.id === player.member_id);
+                                if (!member) return null;
+                                return (
+                                  <button
+                                    key={member.id}
+                                    onClick={() => toggleFeePaid(status.match.id, member.id, !player.fee_paid)}
+                                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                                      player.fee_paid
+                                        ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40'
+                                        : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40'
+                                    }`}
+                                  >
+                                    {player.fee_paid ? (
+                                      <CheckCircle className="w-3 h-3 inline mr-1" />
+                                    ) : (
+                                      <XCircle className="w-3 h-3 inline mr-1" />
+                                    )}
+                                    {member.name}
+                                  </button>
+                                );
+                              })}
                             </div>
-                          )}
-
-                          {/* Unpaid players */}
-                          {status.unpaidMembers.length > 0 && (
-                            <div>
-                              <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-1.5 flex items-center gap-1">
-                                <XCircle className="w-3 h-3" /> Unpaid
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {status.unpaidMembers.map(m => (
-                                  <span key={m.id} className="px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-medium">
-                                    {m.name} (₹{m.balance.toFixed(0)})
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                          </div>
 
                           {/* Actions */}
                           {isAdmin && isUpcoming && (

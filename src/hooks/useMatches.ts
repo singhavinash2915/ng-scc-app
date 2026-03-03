@@ -190,6 +190,31 @@ export function useMatches() {
     return data || [];
   };
 
+  const toggleFeePaid = async (matchId: string, memberId: string, feePaid: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('match_players')
+        .update({ fee_paid: feePaid })
+        .eq('match_id', matchId)
+        .eq('member_id', memberId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMatches(prev => prev.map(m => {
+        if (m.id !== matchId) return m;
+        return {
+          ...m,
+          players: m.players?.map(p =>
+            p.member_id === memberId ? { ...p, fee_paid: feePaid } : p
+          ),
+        };
+      }));
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to update fee status');
+    }
+  };
+
   return {
     matches,
     loading,
@@ -200,5 +225,6 @@ export function useMatches() {
     deleteMatch,
     updateMatchResult,
     getMatchPlayers,
+    toggleFeePaid,
   };
 }
