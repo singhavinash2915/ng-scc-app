@@ -55,13 +55,6 @@ export function MatchDayMessageModal({
 
     const squadNames = squadMembers.map((m, i) => `${i + 1}. ${m.name}`);
 
-    // Fee status
-    const paidPlayers = match.players?.filter(p => p.fee_paid) || [];
-    const unpaidPlayers = match.players?.filter(p => !p.fee_paid) || [];
-    const unpaidNames = unpaidPlayers
-      .map(p => members.find(m => m.id === p.member_id)?.name)
-      .filter(Boolean);
-
     let msg = `🏏 *SANGRIA CRICKET CLUB*\n`;
     msg += `━━━━━━━━━━━━━━━\n`;
     msg += `*MATCH DAY INFO*\n\n`;
@@ -104,15 +97,6 @@ export function MatchDayMessageModal({
       if (driverNames.length < parseInt(carsNeeded)) {
         const remaining = parseInt(carsNeeded) - driverNames.length;
         msg += `  ⚠️ ${remaining} more car${remaining > 1 ? 's' : ''} needed!\n`;
-      }
-    }
-
-    if (match.match_fee > 0) {
-      msg += `\n━━━━━━━━━━━━━━━\n`;
-      msg += `💰 *Match Fee: ₹${match.match_fee}/player*\n`;
-      msg += `✅ Paid: ${paidPlayers.length}/${match.players?.length || 0}\n`;
-      if (unpaidNames.length > 0) {
-        msg += `❌ Unpaid: ${unpaidNames.join(', ')}\n`;
       }
     }
 
@@ -216,8 +200,9 @@ export function MatchDayMessageModal({
             }))}
           />
 
-          <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
-            {squadMembers.map(m => (
+          <p className="text-xs text-gray-500 dark:text-gray-400">Who is driving?</p>
+          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+            {members.filter(m => m.status === 'active').map(m => (
               <button
                 key={m.id}
                 onClick={() => toggleCarDriver(m.id)}
