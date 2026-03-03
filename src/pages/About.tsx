@@ -260,7 +260,7 @@ export function About() {
                 <Tag className="w-4 h-4 text-primary-500 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Version</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">v1.0.0</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">v1.1.0</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -278,12 +278,20 @@ export function About() {
                 </div>
               </div>
             </div>
-            <div className="mt-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
-              <p className="text-xs text-primary-700 dark:text-primary-300 leading-relaxed">
-                <span className="font-semibold">What's new in v1.0.0:</span> PWA support (install on phone),
-                squad availability polling, sponsor showcase, Razorpay payments, WhatsApp reminders,
-                server-side admin auth, match photos, tournaments, and more.
-              </p>
+            <div className="mt-4 space-y-2">
+              <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                <p className="text-xs text-primary-700 dark:text-primary-300 leading-relaxed">
+                  <span className="font-semibold">What's new in v1.1.0:</span> Squad graphic generator (download/share match-day squad images),
+                  fee tracking dashboard (member balances, match fee collection, charts),
+                  WhatsApp match-day message builder (kit bags, car pool, reporting time, ground location).
+                </p>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  <span className="font-semibold">v1.0.0:</span> PWA support, squad polling, sponsor showcase,
+                  Razorpay payments, WhatsApp reminders, server-side admin auth, match photos, tournaments.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

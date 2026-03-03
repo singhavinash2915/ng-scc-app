@@ -20,6 +20,7 @@ import {
   BarChart3,
   Send,
   ClipboardList,
+  ImageDown,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -34,6 +35,8 @@ import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
 import { PollSummaryBadge } from '../components/PollSummaryBadge';
 import { PollManageModal } from '../components/PollManageModal';
+import { SquadGraphicModal } from '../components/SquadGraphicModal';
+import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
 import type { Match, MatchType, InternalTeam } from '../types';
 
 // Internal team names
@@ -64,6 +67,10 @@ export function Matches() {
   const [photoUploading, setPhotoUploading] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
   const [pollMatch, setPollMatch] = useState<Match | null>(null);
+  const [showSquadGraphicModal, setShowSquadGraphicModal] = useState(false);
+  const [squadGraphicMatch, setSquadGraphicMatch] = useState<Match | null>(null);
+  const [showMatchDayModal, setShowMatchDayModal] = useState(false);
+  const [matchDayMatch, setMatchDayMatch] = useState<Match | null>(null);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -345,7 +352,7 @@ export function Matches() {
   // Get players by team
   const getPlayersByTeam = (team: InternalTeam) => {
     return Object.entries(playerTeams)
-      .filter(([_, t]) => t === team)
+      .filter(([, t]) => t === team)
       .map(([memberId]) => memberId);
   };
 
@@ -698,6 +705,30 @@ export function Matches() {
                           >
                             <Camera className="w-4 h-4" /> Photos ({getPhotosByMatch(match.id).length})
                           </button>
+                          {match.players && match.players.length > 0 && (
+                            <button
+                              onClick={() => {
+                                setSquadGraphicMatch(match);
+                                setShowSquadGraphicModal(true);
+                                setMenuOpen(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-primary-600 dark:text-primary-400"
+                            >
+                              <ImageDown className="w-4 h-4" /> Squad Graphic
+                            </button>
+                          )}
+                          {match.result === 'upcoming' && match.players && match.players.length > 0 && (
+                            <button
+                              onClick={() => {
+                                setMatchDayMatch(match);
+                                setShowMatchDayModal(true);
+                                setMenuOpen(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-green-600 dark:text-green-400"
+                            >
+                              <Send className="w-4 h-4" /> Match Day Message
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDeleteMatch(match.id)}
                             className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -1728,6 +1759,25 @@ export function Matches() {
           members={members}
           isAdmin={isAdmin}
           onClosePoll={handleClosePoll}
+        />
+      )}
+
+      {/* Squad Graphic Modal */}
+      {showSquadGraphicModal && squadGraphicMatch && (
+        <SquadGraphicModal
+          isOpen={showSquadGraphicModal}
+          onClose={() => { setShowSquadGraphicModal(false); setSquadGraphicMatch(null); }}
+          match={squadGraphicMatch}
+        />
+      )}
+
+      {/* Match Day Message Modal */}
+      {showMatchDayModal && matchDayMatch && (
+        <MatchDayMessageModal
+          isOpen={showMatchDayModal}
+          onClose={() => { setShowMatchDayModal(false); setMatchDayMatch(null); }}
+          match={matchDayMatch}
+          members={members}
         />
       )}
     </div>
