@@ -59,7 +59,7 @@ export function Finance() {
 
   // Transaction filters
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'deposit' | 'match_fee' | 'expense'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'deposit' | 'match_fee' | 'expense' | 'adjustment'>('all');
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
   // Modals
@@ -298,7 +298,17 @@ export function Finance() {
     }
   };
 
-  const getTransactionIcon = (_type: string, amount: number) => {
+  const getTransactionIcon = (type: string, amount: number) => {
+    if (type === 'adjustment') {
+      return (
+        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+          {amount >= 0
+            ? <ArrowUpRight className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            : <ArrowDownRight className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          }
+        </div>
+      );
+    }
     if (amount >= 0) {
       return (
         <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
@@ -323,6 +333,8 @@ export function Finance() {
         return <Badge variant="warning">Expense</Badge>;
       case 'refund':
         return <Badge variant="default">Refund</Badge>;
+      case 'adjustment':
+        return <Badge variant="danger">Adjustment</Badge>;
       default:
         return <Badge>{type}</Badge>;
     }
@@ -495,6 +507,7 @@ export function Finance() {
                   <option value="deposit">Deposits</option>
                   <option value="match_fee">Match Fees</option>
                   <option value="expense">Expenses</option>
+                  <option value="adjustment">Adjustments</option>
                 </select>
               </div>
               {isAdmin && (

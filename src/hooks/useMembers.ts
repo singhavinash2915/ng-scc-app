@@ -123,6 +123,32 @@ export function useMembers() {
     }
   };
 
+  const adjustBalance = async (memberId: string, correctBalance: number, reason: string) => {
+    try {
+      const member = members.find(m => m.id === memberId);
+      if (!member) throw new Error('Member not found');
+
+      const difference = correctBalance - member.balance;
+      if (difference === 0) return member.balance;
+
+      // Update member balance to the correct amount
+      await updateMember(memberId, { balance: correctBalance });
+
+      // Create adjustment transaction for audit trail
+      await supabase.from('transactions').insert([{
+        type: 'adjustment',
+        amount: difference,
+        member_id: memberId,
+        description: reason || 'Balance correction',
+        date: new Date().toISOString().split('T')[0],
+      }]);
+
+      return correctBalance;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to adjust balance');
+    }
+  };
+
   const uploadAvatar = async (memberId: string, file: File) => {
     try {
       const member = members.find(m => m.id === memberId);
@@ -195,6 +221,7 @@ export function useMembers() {
     deleteMember,
     addFunds,
     deductFunds,
+    adjustBalance,
     uploadAvatar,
     removeAvatar,
   };

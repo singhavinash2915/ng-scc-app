@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X, MessageCircle, History, ArrowUpRight, ArrowDownRight, RotateCcw } from 'lucide-react';
+import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X, MessageCircle, History, ArrowUpRight, ArrowDownRight, RotateCcw, Settings2 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import type { Member } from '../types';
 
 export function Members() {
-  const { members, loading, addMember, updateMember, deleteMember, addFunds, uploadAvatar, removeAvatar } = useMembers();
+  const { members, loading, addMember, updateMember, deleteMember, addFunds, adjustBalance, uploadAvatar, removeAvatar } = useMembers();
   const { matches } = useMatches();
   const { transactions } = useTransactions();
   const { isActive } = useMemberActivity(members, matches);
@@ -47,6 +47,10 @@ export function Members() {
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyMember, setHistoryMember] = useState<Member | null>(null);
+  const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const [adjustMember, setAdjustMember] = useState<Member | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState('');
+  const [adjustReason, setAdjustReason] = useState('');
 
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
@@ -141,6 +145,38 @@ export function Members() {
       }
     }
     setMenuOpen(null);
+  };
+
+  const handleAdjustBalance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAdmin || !adjustMember) return;
+
+    const correctBalance = parseFloat(adjustAmount);
+    if (isNaN(correctBalance) || correctBalance < 0) return;
+
+    setIsSubmitting(true);
+    try {
+      await adjustBalance(adjustMember.id, correctBalance, adjustReason || 'Old app migration correction');
+      setShowAdjustModal(false);
+      setAdjustMember(null);
+      setAdjustAmount('');
+      setAdjustReason('');
+      // Refresh history if the same member
+      if (historyMember && historyMember.id === adjustMember.id) {
+        setHistoryMember(members.find(m => m.id === adjustMember.id) || null);
+      }
+    } catch (error) {
+      console.error('Failed to adjust balance:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openAdjustModal = (member: Member) => {
+    setAdjustMember(member);
+    setAdjustAmount(String(member.balance));
+    setAdjustReason('');
+    setShowAdjustModal(true);
   };
 
   const handleAddFunds = async (e: React.FormEvent) => {
@@ -366,6 +402,12 @@ export function Members() {
                           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                         >
                           <IndianRupee className="w-4 h-4" /> Add Funds
+                        </button>
+                        <button
+                          onClick={() => { openAdjustModal(member); setMenuOpen(null); }}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                        >
+                          <Settings2 className="w-4 h-4" /> Correct Balance
                         </button>
                         <button
                           onClick={() => openAvatarModal(member)}
@@ -687,6 +729,10 @@ export function Members() {
               .filter(t => t.type === 'match_fee')
               .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
+            const totalAdjustments = memberTxns
+              .filter(t => t.type === 'adjustment')
+              .reduce((sum, t) => sum + t.amount, 0);
+
             return (
               <div className="space-y-4">
                 {/* Summary */}
@@ -707,6 +753,24 @@ export function Members() {
                   </div>
                 </div>
 
+                {/* Adjustment info */}
+                {totalAdjustments !== 0 && (
+                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center">
+                    <p className="text-xs text-gray-500">Balance Adjustments: <span className="font-bold text-purple-600 dark:text-purple-400">{totalAdjustments > 0 ? '+' : ''}₹{totalAdjustments.toLocaleString('en-IN')}</span></p>
+                  </div>
+                )}
+
+                {/* Correct Balance button */}
+                {isAdmin && (
+                  <button
+                    onClick={() => openAdjustModal(historyMember)}
+                    className="w-full py-2 px-4 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Settings2 className="w-4 h-4" />
+                    Correct Balance
+                  </button>
+                )}
+
                 {/* Log */}
                 {memberTxns.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
@@ -719,11 +783,14 @@ export function Members() {
                       const isDeposit = txn.type === 'deposit';
                       const isRefund = txn.type === 'refund';
                       const isFee = txn.type === 'match_fee';
+                      const isAdjustment = txn.type === 'adjustment';
+                      const isPositive = isDeposit || isRefund || (isAdjustment && txn.amount >= 0);
 
                       return (
                         <div key={txn.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                           <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              isAdjustment ? 'bg-purple-100 dark:bg-purple-900/30' :
                               isDeposit ? 'bg-green-100 dark:bg-green-900/30' :
                               isRefund  ? 'bg-blue-100 dark:bg-blue-900/30' :
                                           'bg-red-100 dark:bg-red-900/30'
@@ -731,10 +798,11 @@ export function Members() {
                               {isDeposit && <ArrowUpRight className="w-4 h-4 text-green-600 dark:text-green-400" />}
                               {isRefund  && <RotateCcw className="w-4 h-4 text-blue-500" />}
                               {isFee     && <ArrowDownRight className="w-4 h-4 text-red-500" />}
+                              {isAdjustment && <Settings2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                             </div>
                             <div>
                               <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                                {txn.type === 'match_fee' ? 'Match Fee' : txn.type.charAt(0).toUpperCase() + txn.type.slice(1)}
+                                {txn.type === 'match_fee' ? 'Match Fee' : txn.type === 'adjustment' ? 'Adjustment' : txn.type.charAt(0).toUpperCase() + txn.type.slice(1)}
                               </p>
                               {txn.description && (
                                 <p className="text-xs text-gray-500 truncate max-w-[200px]">{txn.description}</p>
@@ -745,11 +813,12 @@ export function Members() {
                             </div>
                           </div>
                           <span className={`font-bold text-sm ${
+                            isAdjustment ? 'text-purple-600 dark:text-purple-400' :
                             isDeposit ? 'text-green-600 dark:text-green-400' :
                             isRefund  ? 'text-blue-500' :
                                         'text-red-500'
                           }`}>
-                            {isDeposit || isRefund ? '+' : '−'}₹{Math.abs(txn.amount).toLocaleString('en-IN')}
+                            {isPositive ? '+' : '−'}₹{Math.abs(txn.amount).toLocaleString('en-IN')}
                           </span>
                         </div>
                       );
@@ -761,6 +830,71 @@ export function Members() {
           })()}
         </Modal>
       )}
+
+      {/* Balance Adjustment Modal */}
+      <Modal isOpen={showAdjustModal} onClose={() => { setShowAdjustModal(false); setAdjustMember(null); }} title="Correct Balance">
+        <form onSubmit={handleAdjustBalance} className="space-y-4">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+            <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
+              Use this to fix incorrect balances (e.g., old app migration issues where contributions were migrated but match fees were not).
+            </p>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+            <p className="text-sm text-gray-500">Correcting balance for</p>
+            <p className="font-semibold text-gray-900 dark:text-white">{adjustMember?.name}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Current balance: <span className="font-bold text-lg text-red-500">₹{adjustMember?.balance.toLocaleString('en-IN')}</span>
+            </p>
+          </div>
+
+          <Input
+            label="Correct Balance (₹) *"
+            type="number"
+            min="0"
+            step="1"
+            value={adjustAmount}
+            onChange={(e) => setAdjustAmount(e.target.value)}
+            required
+          />
+
+          {adjustMember && adjustAmount !== '' && !isNaN(parseFloat(adjustAmount)) && (
+            <div className={`p-3 rounded-lg text-sm font-medium ${
+              parseFloat(adjustAmount) - adjustMember.balance < 0
+                ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                : parseFloat(adjustAmount) - adjustMember.balance > 0
+                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+            }`}>
+              {parseFloat(adjustAmount) - adjustMember.balance === 0
+                ? 'No change needed'
+                : `Adjustment: ${parseFloat(adjustAmount) - adjustMember.balance > 0 ? '+' : ''}₹${(parseFloat(adjustAmount) - adjustMember.balance).toLocaleString('en-IN')}`
+              }
+            </div>
+          )}
+
+          <Input
+            label="Reason"
+            placeholder="e.g., Old app match fees not migrated"
+            value={adjustReason}
+            onChange={(e) => setAdjustReason(e.target.value)}
+          />
+
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="secondary" onClick={() => { setShowAdjustModal(false); setAdjustMember(null); }} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              className="flex-1"
+              disabled={!adjustAmount || isNaN(parseFloat(adjustAmount)) || parseFloat(adjustAmount) < 0 || (adjustMember ? parseFloat(adjustAmount) === adjustMember.balance : true)}
+            >
+              Update Balance
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -51,7 +51,7 @@ export interface MatchPlayer {
 export interface Transaction {
   id: string;
   date: string;
-  type: 'deposit' | 'match_fee' | 'expense' | 'refund';
+  type: 'deposit' | 'match_fee' | 'expense' | 'refund' | 'adjustment';
   amount: number;
   member_id: string | null;
   match_id: string | null;
