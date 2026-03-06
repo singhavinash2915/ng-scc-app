@@ -721,43 +721,43 @@ export function Members() {
               .filter(t => t.member_id === historyMember.id)
               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-            const totalDeposited = memberTxns
-              .filter(t => t.type === 'deposit' || t.type === 'refund')
+            // Total money in: deposits + refunds + positive adjustments
+            const totalIn = memberTxns
+              .filter(t => t.type === 'deposit' || t.type === 'refund' || (t.type === 'adjustment' && t.amount > 0))
               .reduce((sum, t) => sum + t.amount, 0);
 
-            const totalFees = memberTxns
-              .filter(t => t.type === 'match_fee')
+            // Total money out: match fees + negative adjustments
+            const totalOut = memberTxns
+              .filter(t => t.type === 'match_fee' || (t.type === 'adjustment' && t.amount < 0))
               .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-            const totalAdjustments = memberTxns
-              .filter(t => t.type === 'adjustment')
-              .reduce((sum, t) => sum + t.amount, 0);
+            const hasAdjustments = memberTxns.some(t => t.type === 'adjustment');
 
             return (
               <div className="space-y-4">
-                {/* Summary */}
-                <div className="grid grid-cols-3 gap-3">
+                {/* Balance - prominent */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
+                  <p className="text-xs text-gray-500 mb-1">Current Balance</p>
+                  <p className={`text-2xl font-bold ${historyMember.balance < 500 ? 'text-red-500' : historyMember.balance < 1000 ? 'text-amber-500' : 'text-blue-600 dark:text-blue-400'}`}>
+                    ₹{historyMember.balance.toLocaleString('en-IN')}
+                  </p>
+                </div>
+
+                {/* In / Out summary */}
+                <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
-                    <p className="text-xs text-gray-500 mb-1">Total Deposited</p>
-                    <p className="font-bold text-green-600 dark:text-green-400">₹{totalDeposited.toLocaleString('en-IN')}</p>
+                    <p className="text-xs text-gray-500 mb-1">Total In</p>
+                    <p className="font-bold text-green-600 dark:text-green-400">₹{totalIn.toLocaleString('en-IN')}</p>
                   </div>
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-center">
-                    <p className="text-xs text-gray-500 mb-1">Match Fees Paid</p>
-                    <p className="font-bold text-red-500 dark:text-red-400">₹{totalFees.toLocaleString('en-IN')}</p>
-                  </div>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-                    <p className="text-xs text-gray-500 mb-1">Current Balance</p>
-                    <p className={`font-bold ${historyMember.balance < 500 ? 'text-red-500' : historyMember.balance < 1000 ? 'text-amber-500' : 'text-blue-600 dark:text-blue-400'}`}>
-                      ₹{historyMember.balance.toLocaleString('en-IN')}
-                    </p>
+                    <p className="text-xs text-gray-500 mb-1">Total Out</p>
+                    <p className="font-bold text-red-500 dark:text-red-400">₹{totalOut.toLocaleString('en-IN')}</p>
                   </div>
                 </div>
 
-                {/* Adjustment info */}
-                {totalAdjustments !== 0 && (
-                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center">
-                    <p className="text-xs text-gray-500">Balance Adjustments: <span className="font-bold text-purple-600 dark:text-purple-400">{totalAdjustments > 0 ? '+' : ''}₹{totalAdjustments.toLocaleString('en-IN')}</span></p>
-                  </div>
+                {/* Adjustment note */}
+                {hasAdjustments && (
+                  <p className="text-xs text-center text-purple-500 dark:text-purple-400">* Includes balance corrections</p>
                 )}
 
                 {/* Correct Balance button */}
