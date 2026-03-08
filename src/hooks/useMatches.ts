@@ -156,6 +156,44 @@ export function useMatches() {
 
   const deleteMatch = async (id: string) => {
     try {
+      // Get match details before deleting
+      const match = matches.find(m => m.id === id);
+
+      // Revert fee deductions and matches_played if the match had players
+      if (match?.players && match.players.length > 0) {
+        for (const player of match.players) {
+          const { data: memberData } = await supabase
+            .from('members')
+            .select('balance, matches_played')
+            .eq('id', player.member_id)
+            .single();
+
+          if (memberData) {
+            const updateData: { matches_played: number; balance?: number } = {
+              matches_played: Math.max(0, (memberData.matches_played || 0) - 1),
+            };
+
+            // Revert fee if it was deducted
+            if (match.deduct_from_balance && match.match_fee > 0) {
+              updateData.balance = memberData.balance + match.match_fee;
+            }
+
+            await supabase
+              .from('members')
+              .update(updateData)
+              .eq('id', player.member_id);
+          }
+        }
+
+        // Delete associated match_fee transactions
+        await supabase
+          .from('transactions')
+          .delete()
+          .eq('match_id', id)
+          .eq('type', 'match_fee');
+      }
+
+      // Delete the match (match_players cascade-deleted via FK)
       const { error } = await supabase
         .from('matches')
         .delete()
