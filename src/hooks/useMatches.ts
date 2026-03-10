@@ -56,10 +56,13 @@ export function useMatches() {
 
       // Insert match players
       if (playerIds.length > 0) {
+        const isUpcoming = match.result === 'upcoming';
+        const shouldDeduct = match.deduct_from_balance && !isUpcoming;
+
         const matchPlayers = playerIds.map(memberId => ({
           match_id: matchData.id,
           member_id: memberId,
-          fee_paid: match.deduct_from_balance,
+          fee_paid: shouldDeduct,
           team: match.match_type === 'internal' && playerTeams ? playerTeams[memberId] || null : null,
         }));
 
@@ -69,41 +72,38 @@ export function useMatches() {
 
         if (playersError) throw playersError;
 
-        // Update each player's matches_played count and handle fees
-        for (const memberId of playerIds) {
-          // Get current member data
-          const { data: memberData } = await supabase
-            .from('members')
-            .select('balance, matches_played')
-            .eq('id', memberId)
-            .single();
-
-          if (memberData) {
-            // Prepare update object - always increment matches_played
-            const updateData: { matches_played: number; balance?: number } = {
-              matches_played: (memberData.matches_played || 0) + 1,
-            };
-
-            // If deduct_from_balance is true, also deduct fee
-            if (match.deduct_from_balance) {
-              updateData.balance = memberData.balance - match.match_fee;
-
-              // Create transaction record
-              const matchTypeLabel = match.match_type === 'internal' ? 'Internal Match' : 'Match';
-              await supabase.from('transactions').insert([{
-                type: 'match_fee',
-                amount: -match.match_fee,
-                member_id: memberId,
-                match_id: matchData.id,
-                description: `${matchTypeLabel} fee - ${match.venue}`,
-              }]);
-            }
-
-            // Update member
-            await supabase
+        // Only deduct fees and increment matches_played for non-upcoming matches
+        if (!isUpcoming) {
+          for (const memberId of playerIds) {
+            const { data: memberData } = await supabase
               .from('members')
-              .update(updateData)
-              .eq('id', memberId);
+              .select('balance, matches_played')
+              .eq('id', memberId)
+              .single();
+
+            if (memberData) {
+              const updateData: { matches_played: number; balance?: number } = {
+                matches_played: (memberData.matches_played || 0) + 1,
+              };
+
+              if (shouldDeduct) {
+                updateData.balance = memberData.balance - match.match_fee;
+
+                const matchTypeLabel = match.match_type === 'internal' ? 'Internal Match' : 'Match';
+                await supabase.from('transactions').insert([{
+                  type: 'match_fee',
+                  amount: -match.match_fee,
+                  member_id: memberId,
+                  match_id: matchData.id,
+                  description: `${matchTypeLabel} fee - ${match.venue}`,
+                }]);
+              }
+
+              await supabase
+                .from('members')
+                .update(updateData)
+                .eq('id', memberId);
+            }
           }
         }
       }
@@ -121,6 +121,12 @@ export function useMatches() {
     playerIds?: string[]
   ) => {
     try {
+      // Check if result is changing from 'upcoming' to a completed result
+      const existingMatch = matches.find(m => m.id === id);
+      const wasUpcoming = existingMatch?.result === 'upcoming';
+      const isNowCompleted = updates.result && updates.result !== 'upcoming' && updates.result !== 'cancelled';
+      const shouldDeductNow = wasUpcoming && isNowCompleted && existingMatch?.deduct_from_balance && existingMatch?.match_fee > 0;
+
       const { data, error } = await supabase
         .from('matches')
         .update(updates)
@@ -144,6 +150,46 @@ export function useMatches() {
           }));
 
           await supabase.from('match_players').insert(matchPlayers);
+        }
+      }
+
+      // Deduct fees when match moves from upcoming → completed result
+      if (shouldDeductNow && existingMatch?.players && existingMatch.players.length > 0) {
+        for (const player of existingMatch.players) {
+          const { data: memberData } = await supabase
+            .from('members')
+            .select('balance, matches_played')
+            .eq('id', player.member_id)
+            .single();
+
+          if (memberData) {
+            const matchTypeLabel = existingMatch.match_type === 'internal' ? 'Internal Match' : 'Match';
+
+            // Deduct fee and increment matches_played
+            await supabase
+              .from('members')
+              .update({
+                balance: memberData.balance - existingMatch.match_fee,
+                matches_played: (memberData.matches_played || 0) + 1,
+              })
+              .eq('id', player.member_id);
+
+            // Create transaction record
+            await supabase.from('transactions').insert([{
+              type: 'match_fee',
+              amount: -existingMatch.match_fee,
+              member_id: player.member_id,
+              match_id: id,
+              description: `${matchTypeLabel} fee - ${existingMatch.venue}`,
+            }]);
+
+            // Mark fee as paid
+            await supabase
+              .from('match_players')
+              .update({ fee_paid: true })
+              .eq('match_id', id)
+              .eq('member_id', player.member_id);
+          }
         }
       }
 
