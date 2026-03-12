@@ -206,6 +206,7 @@ export function useMatches() {
       const match = matches.find(m => m.id === id);
 
       // Revert fee deductions and matches_played if the match had players
+      const wasCompleted = match?.result && match.result !== 'upcoming' && match.result !== 'cancelled';
       if (match?.players && match.players.length > 0) {
         for (const player of match.players) {
           const { data: memberData } = await supabase
@@ -215,19 +216,24 @@ export function useMatches() {
             .single();
 
           if (memberData) {
-            const updateData: { matches_played: number; balance?: number } = {
-              matches_played: Math.max(0, (memberData.matches_played || 0) - 1),
-            };
+            const updateData: { matches_played?: number; balance?: number } = {};
 
-            // Revert fee if it was deducted
-            if (match.deduct_from_balance && match.match_fee > 0) {
+            // Only decrement matches_played if the match was completed (not upcoming/cancelled)
+            if (wasCompleted) {
+              updateData.matches_played = Math.max(0, (memberData.matches_played || 0) - 1);
+            }
+
+            // Only revert fee if it was actually deducted (fee_paid = true)
+            if (player.fee_paid && match.match_fee > 0) {
               updateData.balance = memberData.balance + match.match_fee;
             }
 
-            await supabase
-              .from('members')
-              .update(updateData)
-              .eq('id', player.member_id);
+            if (Object.keys(updateData).length > 0) {
+              await supabase
+                .from('members')
+                .update(updateData)
+                .eq('id', player.member_id);
+            }
           }
         }
 

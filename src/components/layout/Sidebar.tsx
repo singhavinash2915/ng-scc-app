@@ -17,6 +17,7 @@ import {
   MessageSquare,
   CreditCard,
   Receipt,
+  Megaphone,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -39,6 +40,7 @@ const publicNavItems = [
 ];
 
 const adminNavItems = [
+  { to: '/match-day-tools', icon: Megaphone, label: 'Match Day Tools' },
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
