@@ -37,11 +37,11 @@ const publicNavItems = [
   { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/feedback', icon: MessageSquare, label: 'Feedback' },
+  { to: '/season-fund', icon: Landmark, label: 'Ground Booking' },
   { to: '/about', icon: Info, label: 'About' },
 ];
 
 const adminNavItems = [
-  { to: '/season-fund', icon: Landmark, label: 'Season Fund' },
   { to: '/match-day-tools', icon: Megaphone, label: 'Match Day Tools' },
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
   { to: '/settings', icon: Settings, label: 'Settings' },

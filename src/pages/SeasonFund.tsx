@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronRight,
   Handshake,
+  MapPin,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -50,6 +51,8 @@ const TIER_LABELS: Record<MemberTier, string> = {
   other: 'Other',
 };
 
+type TabType = 'bookings' | 'members';
+
 const formatCurrency = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 const formatDate = (date: string) => {
   const d = new Date(date);
@@ -69,6 +72,7 @@ export function SeasonFund() {
   const { members } = useMembers();
   const { isAdmin } = useAuth();
 
+  const [activeTab, setActiveTab] = useState<TabType>('bookings');
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [showSeasonModal, setShowSeasonModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -110,6 +114,7 @@ export function SeasonFund() {
   const [bookingEditForm, setBookingEditForm] = useState({
     cost: '',
     opponent_collection: '',
+    opponent_name: '',
     status: 'booked' as GroundBooking['status'],
     payment_status: 'pending' as GroundBooking['payment_status'],
     notes: '',
@@ -181,8 +186,6 @@ export function SeasonFund() {
         status: seasonForm.status,
         notes: seasonForm.notes || null,
       });
-      // After season is created, we need to generate bookings
-      // Re-fetch will happen and we'll generate on the next step
       setShowSeasonModal(false);
     } catch { /* ignore */ } finally {
       setIsSubmitting(false);
@@ -235,6 +238,7 @@ export function SeasonFund() {
   };
 
   const handleTogglePaymentStatus = async (booking: GroundBooking) => {
+    if (!isAdmin) return;
     const newStatus = booking.payment_status === 'paid' ? 'pending' : 'paid';
     await updateBooking(booking.id, { payment_status: newStatus });
   };
@@ -246,6 +250,7 @@ export function SeasonFund() {
       await updateBooking(editingBooking.id, {
         cost: Number(bookingEditForm.cost) || 0,
         opponent_collection: Number(bookingEditForm.opponent_collection) || 0,
+        opponent_name: bookingEditForm.opponent_name || null,
         status: bookingEditForm.status,
         payment_status: bookingEditForm.payment_status,
         notes: bookingEditForm.notes || null,
@@ -321,6 +326,7 @@ export function SeasonFund() {
     setBookingEditForm({
       cost: String(booking.cost),
       opponent_collection: String(booking.opponent_collection || 0),
+      opponent_name: booking.opponent_name || '',
       status: booking.status,
       payment_status: booking.payment_status,
       notes: booking.notes || '',
@@ -359,28 +365,11 @@ export function SeasonFund() {
     );
   }
 
-  // ---- Admin gate ----
-  if (!isAdmin) {
-    return (
-      <div>
-        <Header title="Season Fund" subtitle="Four Star Ground — Booking & Payments" />
-        <div className="max-w-lg mx-auto mt-12">
-          <Card animate>
-            <CardContent className="text-center py-12">
-              <Landmark className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Admin Access Required</h3>
-              <p className="text-gray-500 dark:text-gray-400">Please login as admin to access Season Fund management.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
+  // ---- Loading ----
   if (loading) {
     return (
       <div>
-        <Header title="Season Fund" subtitle="Four Star Ground — Booking & Payments" />
+        <Header title="Ground Booking" subtitle="Four Star Ground — Tue/Thu/Sat, 7-9 AM" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
         </div>
@@ -392,27 +381,31 @@ export function SeasonFund() {
   if (seasons.length === 0) {
     return (
       <div>
-        <Header title="Season Fund" subtitle="Four Star Ground — Booking & Payments" />
+        <Header title="Ground Booking" subtitle="Four Star Ground — Tue/Thu/Sat, 7-9 AM" />
         <div className="max-w-lg mx-auto mt-12">
           <Card animate>
             <CardContent className="text-center py-12">
-              <Landmark className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <MapPin className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Season Created</h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
                 Create a season for Four Star Ground (Tue/Thu/Sat, 7-9 AM).
               </p>
-              <Button onClick={() => {
-                setEditingSeason(null);
-                setSeasonForm({ name: 'Season 2026-27', start_date: '2026-10-01', end_date: '2027-05-31', total_budget: '', status: 'active', notes: '' });
-                setShowSeasonModal(true);
-              }}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Season 2026-27
-              </Button>
+              {isAdmin ? (
+                <Button onClick={() => {
+                  setEditingSeason(null);
+                  setSeasonForm({ name: 'Season 2026-27', start_date: '2026-10-01', end_date: '2027-05-31', total_budget: '', status: 'active', notes: '' });
+                  setShowSeasonModal(true);
+                }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Season 2026-27
+                </Button>
+              ) : (
+                <p className="text-sm text-gray-400">Ask an admin to create the season.</p>
+              )}
             </CardContent>
           </Card>
         </div>
-        {/* Season Modal */}
+        {/* Season Modal for empty state */}
         <Modal isOpen={showSeasonModal} onClose={() => { setShowSeasonModal(false); setEditingSeason(null); }} title="Create Season">
           <div className="space-y-4">
             <Input label="Season Name" value={seasonForm.name} onChange={(e) => setSeasonForm(f => ({ ...f, name: e.target.value }))} />
@@ -439,9 +432,14 @@ export function SeasonFund() {
   }
 
   // ---- Main Page ----
+  const tabs: { key: TabType; label: string; icon: typeof Calendar }[] = [
+    { key: 'bookings', label: 'Ground Bookings', icon: Calendar },
+    { key: 'members', label: 'Member Contributions', icon: Users },
+  ];
+
   return (
     <div>
-      <Header title="Season Fund" subtitle="Four Star Ground — Tue/Thu/Sat, 7-9 AM" />
+      <Header title="Ground Booking" subtitle="Four Star Ground — Tue/Thu/Sat, 7-9 AM" />
 
       {/* Season Selector (if multiple) */}
       {seasons.length > 1 && (
@@ -507,318 +505,357 @@ export function SeasonFund() {
             </Card>
           </div>
 
-          {/* Collection progress */}
-          {stats && stats.totalTarget > 0 && (
-            <Card animate delay={5}>
-              <CardContent className="p-3">
-                <div className="flex justify-between items-center mb-1.5">
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Member Collection</p>
-                  <p className="text-xs text-gray-500">{formatCurrency(stats.totalCollected)} / {formatCurrency(stats.totalTarget)} ({stats.totalTarget > 0 ? Math.round((stats.totalCollected / stats.totalTarget) * 100) : 0}%)</p>
-                </div>
-                {renderProgressBar(stats.totalCollected, stats.totalTarget, 'bg-green-500')}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Ground payment progress */}
-          {stats && stats.bookingCount > 0 && (
-            <Card animate delay={6}>
-              <CardContent className="p-3">
-                <div className="flex justify-between items-center mb-1.5">
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Ground Owner Paid</p>
-                  <p className="text-xs text-gray-500">{formatCurrency(stats.groundOwnerPaid)} / {formatCurrency(stats.totalSpent)} ({stats.paidBookingCount}/{stats.bookingCount} sessions)</p>
-                </div>
-                {renderProgressBar(stats.groundOwnerPaid, stats.totalSpent, 'bg-orange-500')}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ===== GROUND BOOKINGS ===== */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-primary-500" />
-                Ground Bookings
-              </h2>
-              <div className="flex gap-2">
-                {selectedSeason.bookings && selectedSeason.bookings.length === 0 && (
-                  <Button size="sm" onClick={handleGenerateBookings} disabled={isSubmitting}>
-                    <Calendar className="w-3.5 h-3.5 mr-1" />
-                    {isSubmitting ? 'Generating...' : 'Generate All Bookings'}
-                  </Button>
-                )}
-                <Button size="sm" variant="secondary" onClick={() => openEditSeason(selectedSeason)}>
-                  <Edit3 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-
-            {bookingsByMonth.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-gray-500 dark:text-gray-400">No bookings yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Click "Generate All Bookings" to auto-create Tue/Thu/Sat schedule</p>
+          {/* Progress bars */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {stats && stats.totalTarget > 0 && (
+              <Card animate delay={5}>
+                <CardContent className="p-3">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Member Collection</p>
+                    <p className="text-xs text-gray-500">{formatCurrency(stats.totalCollected)} / {formatCurrency(stats.totalTarget)} ({Math.round((stats.totalCollected / stats.totalTarget) * 100)}%)</p>
+                  </div>
+                  {renderProgressBar(stats.totalCollected, stats.totalTarget, 'bg-green-500')}
                 </CardContent>
               </Card>
-            ) : (
-              <div className="space-y-3">
-                {bookingsByMonth.map(group => {
-                  const isCollapsed = collapsedMonths.has(group.key);
-                  return (
-                    <Card key={group.key} animate>
-                      <CardContent className="p-0">
-                        {/* Month header - clickable */}
-                        <button
-                          onClick={() => toggleMonth(group.key)}
-                          className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-t-xl"
-                        >
-                          <div className="flex items-center gap-2">
-                            {isCollapsed ? <ChevronRight className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{group.label}</span>
-                            <Badge variant="info" size="sm">{group.bookings.length} sessions</Badge>
-                          </div>
-                          <div className="flex items-center gap-3 text-xs">
-                            <span className="text-gray-500">{formatCurrency(group.totalCost)}</span>
-                            {group.totalOpponent > 0 && <span className="text-blue-500">Opp: +{formatCurrency(group.totalOpponent)}</span>}
-                            <span className="text-green-600">{group.paidCount}/{group.bookings.length} paid</span>
-                          </div>
-                        </button>
-
-                        {/* Booking rows */}
-                        {!isCollapsed && (
-                          <div className="border-t border-gray-100 dark:border-gray-700">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                                  <th className="text-left py-2 px-3 font-medium">Date</th>
-                                  <th className="text-right py-2 px-2 font-medium">Cost</th>
-                                  <th className="text-right py-2 px-2 font-medium">Opponent</th>
-                                  <th className="text-right py-2 px-2 font-medium">Net</th>
-                                  <th className="text-center py-2 px-2 font-medium">Paid</th>
-                                  <th className="text-center py-2 px-2 font-medium w-16"></th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {group.bookings.map(booking => {
-                                  const d = new Date(booking.date);
-                                  const isSat = d.getDay() === 6;
-                                  const net = Number(booking.cost) - Number(booking.opponent_collection || 0);
-                                  const isPast = d < new Date();
-
-                                  return (
-                                    <tr
-                                      key={booking.id}
-                                      className={`border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 ${
-                                        booking.status === 'cancelled' ? 'opacity-40 line-through' : ''
-                                      }`}
-                                    >
-                                      <td className="py-2 px-3">
-                                        <span className={`font-medium ${isSat ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                                          {formatDate(booking.date)}
-                                        </span>
-                                        {booking.notes && <span className="text-xs text-gray-400 ml-1" title={booking.notes}>*</span>}
-                                        {!isPast && booking.status !== 'cancelled' && (
-                                          <Badge variant="info" size="sm" className="ml-1">upcoming</Badge>
-                                        )}
-                                      </td>
-                                      <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">
-                                        {formatCurrency(Number(booking.cost))}
-                                      </td>
-                                      <td className="text-right py-2 px-2">
-                                        {Number(booking.opponent_collection) > 0 ? (
-                                          <span className="text-blue-600 dark:text-blue-400">+{formatCurrency(Number(booking.opponent_collection))}</span>
-                                        ) : (
-                                          <span className="text-gray-300 dark:text-gray-600">—</span>
-                                        )}
-                                      </td>
-                                      <td className="text-right py-2 px-2 font-medium text-gray-900 dark:text-white">
-                                        {formatCurrency(net)}
-                                      </td>
-                                      <td className="text-center py-2 px-2">
-                                        <button
-                                          onClick={() => handleTogglePaymentStatus(booking)}
-                                          className="inline-flex items-center justify-center"
-                                          title={booking.payment_status === 'paid' ? 'Mark as unpaid' : 'Mark as paid'}
-                                        >
-                                          {booking.payment_status === 'paid' ? (
-                                            <CheckCircle className="w-5 h-5 text-green-500" />
-                                          ) : (
-                                            <XCircle className="w-5 h-5 text-gray-300 dark:text-gray-600 hover:text-amber-500" />
-                                          )}
-                                        </button>
-                                      </td>
-                                      <td className="text-center py-2 px-2">
-                                        <div className="flex gap-0.5 justify-center">
-                                          <button onClick={() => openEditBooking(booking)} className="p-1 text-gray-400 hover:text-gray-600">
-                                            <Edit3 className="w-3.5 h-3.5" />
-                                          </button>
-                                          <button onClick={() => setDeleteConfirm({ type: 'booking', id: booking.id, name: formatDate(booking.date) })} className="p-1 text-gray-400 hover:text-red-500">
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                          </button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
             )}
-          </div>
-
-          {/* ===== MEMBER CONTRIBUTIONS ===== */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Users className="w-4 h-4 text-primary-500" />
-                Member Contributions
-              </h2>
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => { setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' }); setShowPaymentModal(true); }}>
-                  <Plus className="w-3.5 h-3.5 mr-1" /> Record Payment
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => { setSelectedMemberIds([]); setTargetAmount(''); setShowTargetModal(true); }}>
-                  <Target className="w-3.5 h-3.5 mr-1" /> Set Targets
-                </Button>
-              </div>
-            </div>
-
-            {memberFundStatuses.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                  <p className="text-gray-500 dark:text-gray-400">No member targets set</p>
-                  <p className="text-xs text-gray-400 mt-1">Click "Set Targets" to assign advance payment amounts</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card animate>
-                <CardContent className="p-0">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                        <th className="text-left py-2.5 px-3 font-medium">Member</th>
-                        <th className="text-right py-2.5 px-2 font-medium">Target</th>
-                        <th className="text-right py-2.5 px-2 font-medium">Paid</th>
-                        <th className="text-right py-2.5 px-2 font-medium">Due</th>
-                        <th className="py-2.5 px-2 font-medium w-24">Progress</th>
-                        <th className="text-center py-2.5 px-2 font-medium w-16"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(showAllMembers ? memberFundStatuses : memberFundStatuses.slice(0, 10)).map(m => {
-                        const pct = m.target > 0 ? Math.round((m.paid / m.target) * 100) : 0;
-                        const barColor = pct >= 100 ? 'bg-green-500' : pct > 50 ? 'bg-amber-500' : 'bg-red-500';
-
-                        return (
-                          <tr key={m.member_id} className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                            <td className="py-2 px-3">
-                              <div className="flex items-center gap-2">
-                                {m.member?.avatar_url ? (
-                                  <img src={m.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                                ) : (
-                                  <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                                    <span className="text-xs text-gray-500">{m.member?.name?.[0]}</span>
-                                  </div>
-                                )}
-                                <span className="text-gray-700 dark:text-gray-300">{m.member?.name}</span>
-                                <Badge variant={m.tier === 'regular' ? 'success' : m.tier === 'occasional' ? 'warning' : 'info'} size="sm">
-                                  {TIER_LABELS[m.tier]}
-                                </Badge>
-                              </div>
-                            </td>
-                            <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(m.target)}</td>
-                            <td className="text-right py-2 px-2 font-medium text-green-600">{formatCurrency(m.paid)}</td>
-                            <td className="text-right py-2 px-2 font-medium text-red-600">
-                              {m.outstanding > 0 ? formatCurrency(m.outstanding) : <CheckCircle className="w-4 h-4 text-green-500 inline" />}
-                            </td>
-                            <td className="py-2 px-2">
-                              <div className="flex items-center gap-1.5">
-                                {renderProgressBar(m.paid, m.target, barColor)}
-                                <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
-                              </div>
-                            </td>
-                            <td className="text-center py-2 px-2">
-                              <div className="flex gap-0.5 justify-center">
-                                <button
-                                  onClick={() => {
-                                    setPaymentForm(prev => ({ ...prev, member_id: m.member_id }));
-                                    setShowPaymentModal(true);
-                                  }}
-                                  className="p-1 text-gray-400 hover:text-green-600"
-                                  title="Record payment"
-                                >
-                                  <IndianRupee className="w-3.5 h-3.5" />
-                                </button>
-                                <button onClick={() => setDeleteConfirm({ type: 'target', id: m.id, name: m.member?.name || '' })} className="p-1 text-gray-400 hover:text-red-500">
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  {memberFundStatuses.length > 10 && (
-                    <button
-                      onClick={() => setShowAllMembers(!showAllMembers)}
-                      className="w-full py-2 text-xs text-primary-500 hover:text-primary-600 font-medium"
-                    >
-                      {showAllMembers ? 'Show less' : `Show all ${memberFundStatuses.length} members`}
-                    </button>
-                  )}
+            {stats && stats.bookingCount > 0 && (
+              <Card animate delay={6}>
+                <CardContent className="p-3">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Ground Owner Paid</p>
+                    <p className="text-xs text-gray-500">{formatCurrency(stats.groundOwnerPaid)} / {formatCurrency(stats.totalSpent)} ({stats.paidBookingCount}/{stats.bookingCount})</p>
+                  </div>
+                  {renderProgressBar(stats.groundOwnerPaid, stats.totalSpent, 'bg-orange-500')}
                 </CardContent>
               </Card>
             )}
           </div>
 
-          {/* ===== RECENT PAYMENTS ===== */}
-          {payments.length > 0 && (
+          {/* ===== TABS ===== */}
+          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            {tabs.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 flex-1 justify-center px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ===== BOOKINGS TAB ===== */}
+          {activeTab === 'bookings' && (
             <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
-                <CreditCard className="w-4 h-4 text-primary-500" />
-                Recent Payments
-                <Badge variant="info" size="sm">{payments.length}</Badge>
-              </h2>
-              <Card animate>
-                <CardContent className="p-0 divide-y divide-gray-100 dark:divide-gray-700">
-                  {payments.slice(0, 15).map(payment => (
-                    <div key={payment.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                      <div className="flex items-center gap-2">
-                        {payment.member?.avatar_url ? (
-                          <img src={payment.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-xs text-gray-500">{payment.member?.name?.[0]}</span>
+              {isAdmin && (
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex gap-2">
+                    {selectedSeason.bookings && selectedSeason.bookings.length === 0 && (
+                      <Button size="sm" onClick={handleGenerateBookings} disabled={isSubmitting}>
+                        <Calendar className="w-3.5 h-3.5 mr-1" />
+                        {isSubmitting ? 'Generating...' : 'Generate All Bookings'}
+                      </Button>
+                    )}
+                  </div>
+                  <Button size="sm" variant="secondary" onClick={() => openEditSeason(selectedSeason)}>
+                    <Edit3 className="w-3.5 h-3.5 mr-1" /> Edit Season
+                  </Button>
+                </div>
+              )}
+
+              {bookingsByMonth.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-gray-500 dark:text-gray-400">No bookings yet</p>
+                    {isAdmin && <p className="text-xs text-gray-400 mt-1">Click "Generate All Bookings" to auto-create Tue/Thu/Sat schedule</p>}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {bookingsByMonth.map(group => {
+                    const isCollapsed = collapsedMonths.has(group.key);
+                    return (
+                      <Card key={group.key} animate>
+                        <CardContent className="p-0">
+                          {/* Month header */}
+                          <button
+                            onClick={() => toggleMonth(group.key)}
+                            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-t-xl"
+                          >
+                            <div className="flex items-center gap-2">
+                              {isCollapsed ? <ChevronRight className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white">{group.label}</span>
+                              <Badge variant="info" size="sm">{group.bookings.length} sessions</Badge>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs">
+                              <span className="text-gray-500">{formatCurrency(group.totalCost)}</span>
+                              {group.totalOpponent > 0 && <span className="text-blue-500">Opp: +{formatCurrency(group.totalOpponent)}</span>}
+                              <span className="text-green-600">{group.paidCount}/{group.bookings.length} paid</span>
+                            </div>
+                          </button>
+
+                          {/* Booking rows */}
+                          {!isCollapsed && (
+                            <div className="border-t border-gray-100 dark:border-gray-700">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                                    <th className="text-left py-2 px-3 font-medium">Date</th>
+                                    <th className="text-right py-2 px-2 font-medium">Cost</th>
+                                    <th className="text-right py-2 px-2 font-medium">Opponent</th>
+                                    <th className="text-right py-2 px-2 font-medium">Net</th>
+                                    <th className="text-center py-2 px-2 font-medium">Paid</th>
+                                    {isAdmin && <th className="text-center py-2 px-2 font-medium w-16"></th>}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {group.bookings.map(booking => {
+                                    const d = new Date(booking.date);
+                                    const isSat = d.getDay() === 6;
+                                    const net = Number(booking.cost) - Number(booking.opponent_collection || 0);
+                                    const isPast = d < new Date();
+
+                                    return (
+                                      <tr
+                                        key={booking.id}
+                                        className={`border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 ${
+                                          booking.status === 'cancelled' ? 'opacity-40 line-through' : ''
+                                        }`}
+                                      >
+                                        <td className="py-2 px-3">
+                                          <div>
+                                            <span className={`font-medium ${isSat ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                                              {formatDate(booking.date)}
+                                            </span>
+                                            {!isPast && booking.status !== 'cancelled' && (
+                                              <Badge variant="info" size="sm" className="ml-1">upcoming</Badge>
+                                            )}
+                                          </div>
+                                          {booking.opponent_name && (
+                                            <span className="text-xs text-blue-500">vs {booking.opponent_name}</span>
+                                          )}
+                                          {booking.notes && !booking.opponent_name && (
+                                            <span className="text-xs text-gray-400">{booking.notes}</span>
+                                          )}
+                                        </td>
+                                        <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">
+                                          {formatCurrency(Number(booking.cost))}
+                                        </td>
+                                        <td className="text-right py-2 px-2">
+                                          {Number(booking.opponent_collection) > 0 ? (
+                                            <span className="text-blue-600 dark:text-blue-400">+{formatCurrency(Number(booking.opponent_collection))}</span>
+                                          ) : (
+                                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                                          )}
+                                        </td>
+                                        <td className="text-right py-2 px-2 font-medium text-gray-900 dark:text-white">
+                                          {formatCurrency(net)}
+                                        </td>
+                                        <td className="text-center py-2 px-2">
+                                          {isAdmin ? (
+                                            <button
+                                              onClick={() => handleTogglePaymentStatus(booking)}
+                                              className="inline-flex items-center justify-center"
+                                              title={booking.payment_status === 'paid' ? 'Mark as unpaid' : 'Mark as paid'}
+                                            >
+                                              {booking.payment_status === 'paid' ? (
+                                                <CheckCircle className="w-5 h-5 text-green-500" />
+                                              ) : (
+                                                <XCircle className="w-5 h-5 text-gray-300 dark:text-gray-600 hover:text-amber-500" />
+                                              )}
+                                            </button>
+                                          ) : (
+                                            booking.payment_status === 'paid' ? (
+                                              <CheckCircle className="w-4 h-4 text-green-500 inline" />
+                                            ) : (
+                                              <XCircle className="w-4 h-4 text-gray-300 dark:text-gray-600 inline" />
+                                            )
+                                          )}
+                                        </td>
+                                        {isAdmin && (
+                                          <td className="text-center py-2 px-2">
+                                            <div className="flex gap-0.5 justify-center">
+                                              <button onClick={() => openEditBooking(booking)} className="p-1 text-gray-400 hover:text-gray-600">
+                                                <Edit3 className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button onClick={() => setDeleteConfirm({ type: 'booking', id: booking.id, name: formatDate(booking.date) })} className="p-1 text-gray-400 hover:text-red-500">
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
+                                          </td>
+                                        )}
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== MEMBERS TAB ===== */}
+          {activeTab === 'members' && (
+            <div className="space-y-4">
+              {/* Actions */}
+              {isAdmin && (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => { setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' }); setShowPaymentModal(true); }}>
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Record Payment
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => { setSelectedMemberIds([]); setTargetAmount(''); setShowTargetModal(true); }}>
+                    <Target className="w-3.5 h-3.5 mr-1" /> Set Targets
+                  </Button>
+                </div>
+              )}
+
+              {/* Member Contributions Table */}
+              {memberFundStatuses.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-gray-500 dark:text-gray-400">No member targets set</p>
+                    {isAdmin && <p className="text-xs text-gray-400 mt-1">Click "Set Targets" to assign advance payment amounts</p>}
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card animate>
+                  <CardContent className="p-0">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                          <th className="text-left py-2.5 px-3 font-medium">Member</th>
+                          <th className="text-right py-2.5 px-2 font-medium">Target</th>
+                          <th className="text-right py-2.5 px-2 font-medium">Paid</th>
+                          <th className="text-right py-2.5 px-2 font-medium">Due</th>
+                          <th className="py-2.5 px-2 font-medium w-24">Progress</th>
+                          {isAdmin && <th className="text-center py-2.5 px-2 font-medium w-16"></th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(showAllMembers ? memberFundStatuses : memberFundStatuses.slice(0, 10)).map(m => {
+                          const pct = m.target > 0 ? Math.round((m.paid / m.target) * 100) : 0;
+                          const barColor = pct >= 100 ? 'bg-green-500' : pct > 50 ? 'bg-amber-500' : 'bg-red-500';
+
+                          return (
+                            <tr key={m.member_id} className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                              <td className="py-2 px-3">
+                                <div className="flex items-center gap-2">
+                                  {m.member?.avatar_url ? (
+                                    <img src={m.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                                      <span className="text-xs text-gray-500">{m.member?.name?.[0]}</span>
+                                    </div>
+                                  )}
+                                  <span className="text-gray-700 dark:text-gray-300">{m.member?.name}</span>
+                                  <Badge variant={m.tier === 'regular' ? 'success' : m.tier === 'occasional' ? 'warning' : 'info'} size="sm">
+                                    {TIER_LABELS[m.tier]}
+                                  </Badge>
+                                </div>
+                              </td>
+                              <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(m.target)}</td>
+                              <td className="text-right py-2 px-2 font-medium text-green-600">{formatCurrency(m.paid)}</td>
+                              <td className="text-right py-2 px-2 font-medium text-red-600">
+                                {m.outstanding > 0 ? formatCurrency(m.outstanding) : <CheckCircle className="w-4 h-4 text-green-500 inline" />}
+                              </td>
+                              <td className="py-2 px-2">
+                                <div className="flex items-center gap-1.5">
+                                  {renderProgressBar(m.paid, m.target, barColor)}
+                                  <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
+                                </div>
+                              </td>
+                              {isAdmin && (
+                                <td className="text-center py-2 px-2">
+                                  <div className="flex gap-0.5 justify-center">
+                                    <button
+                                      onClick={() => {
+                                        setPaymentForm(prev => ({ ...prev, member_id: m.member_id }));
+                                        setShowPaymentModal(true);
+                                      }}
+                                      className="p-1 text-gray-400 hover:text-green-600"
+                                      title="Record payment"
+                                    >
+                                      <IndianRupee className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button onClick={() => setDeleteConfirm({ type: 'target', id: m.id, name: m.member?.name || '' })} className="p-1 text-gray-400 hover:text-red-500">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    {memberFundStatuses.length > 10 && (
+                      <button
+                        onClick={() => setShowAllMembers(!showAllMembers)}
+                        className="w-full py-2 text-xs text-primary-500 hover:text-primary-600 font-medium"
+                      >
+                        {showAllMembers ? 'Show less' : `Show all ${memberFundStatuses.length} members`}
+                      </button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recent Payments */}
+              {payments.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+                    <CreditCard className="w-4 h-4 text-primary-500" />
+                    Recent Payments
+                    <Badge variant="info" size="sm">{payments.length}</Badge>
+                  </h3>
+                  <Card animate>
+                    <CardContent className="p-0 divide-y divide-gray-100 dark:divide-gray-700">
+                      {payments.slice(0, 15).map(payment => (
+                        <div key={payment.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                          <div className="flex items-center gap-2">
+                            {payment.member?.avatar_url ? (
+                              <img src={payment.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                                <span className="text-xs text-gray-500">{payment.member?.name?.[0]}</span>
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-sm text-gray-700 dark:text-gray-300">{payment.member?.name}</p>
+                              <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                <span>{formatDate(payment.date)}</span>
+                                <Badge variant="info" size="sm">{METHOD_LABELS[payment.payment_method]}</Badge>
+                                {payment.description && <span>· {payment.description}</span>}
+                              </div>
+                            </div>
                           </div>
-                        )}
-                        <div>
-                          <p className="text-sm text-gray-700 dark:text-gray-300">{payment.member?.name}</p>
-                          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                            <span>{formatDate(payment.date)}</span>
-                            <Badge variant="info" size="sm">{METHOD_LABELS[payment.payment_method]}</Badge>
-                            {payment.description && <span>· {payment.description}</span>}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-green-600">+{formatCurrency(Number(payment.amount))}</span>
+                            {isAdmin && (
+                              <button onClick={() => setDeleteConfirm({ type: 'payment', id: payment.id, name: `${payment.member?.name} — ${formatCurrency(Number(payment.amount))}` })} className="p-1 text-gray-400 hover:text-red-500">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-green-600">+{formatCurrency(Number(payment.amount))}</span>
-                        <button onClick={() => setDeleteConfirm({ type: 'payment', id: payment.id, name: `${payment.member?.name} — ${formatCurrency(Number(payment.amount))}` })} className="p-1 text-gray-400 hover:text-red-500">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -839,8 +876,7 @@ export function SeasonFund() {
           <TextArea label="Notes" placeholder="Optional" value={seasonForm.notes} onChange={(e) => setSeasonForm(f => ({ ...f, notes: e.target.value }))} />
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
             <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Four Star Ground Schedule:</p>
-            <p>Tue & Thu — ₹{WEEKDAY_COST.toLocaleString()}/session</p>
-            <p>Sat — ₹{WEEKEND_COST.toLocaleString()}/session</p>
+            <p>Tue & Thu — ₹{WEEKDAY_COST.toLocaleString()}/session | Sat — ₹{WEEKEND_COST.toLocaleString()}/session</p>
             <p>Time: {TIME_SLOT}</p>
           </div>
           <div className="flex gap-3">
@@ -859,6 +895,7 @@ export function SeasonFund() {
             <Input type="number" label="Cost (₹)" value={bookingEditForm.cost} onChange={(e) => setBookingEditForm(f => ({ ...f, cost: e.target.value }))} />
             <Input type="number" label="Opponent Collection (₹)" placeholder="0" value={bookingEditForm.opponent_collection} onChange={(e) => setBookingEditForm(f => ({ ...f, opponent_collection: e.target.value }))} />
           </div>
+          <Input label="Opponent Team Name" placeholder="e.g. Chennai Warriors, Internal Match" value={bookingEditForm.opponent_name} onChange={(e) => setBookingEditForm(f => ({ ...f, opponent_name: e.target.value }))} />
           <div className="grid grid-cols-2 gap-4">
             <Select label="Status" value={bookingEditForm.status} onChange={(e) => setBookingEditForm(f => ({ ...f, status: e.target.value as GroundBooking['status'] }))} options={[{ value: 'booked', label: 'Booked' }, { value: 'completed', label: 'Completed' }, { value: 'cancelled', label: 'Cancelled' }]} />
             <Select label="Payment" value={bookingEditForm.payment_status} onChange={(e) => setBookingEditForm(f => ({ ...f, payment_status: e.target.value as GroundBooking['payment_status'] }))} options={[{ value: 'pending', label: 'Pending' }, { value: 'paid', label: 'Paid' }]} />
@@ -994,4 +1031,3 @@ export function SeasonFund() {
     </div>
   );
 }
-

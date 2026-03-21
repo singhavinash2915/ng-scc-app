@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS ground_bookings (
   time_slot TEXT,
   cost DECIMAL NOT NULL DEFAULT 0,
   opponent_collection DECIMAL DEFAULT 0,
+  opponent_name TEXT,
   status TEXT CHECK (status IN ('booked', 'completed', 'cancelled')) DEFAULT 'booked',
   payment_status TEXT CHECK (payment_status IN ('pending', 'paid')) DEFAULT 'pending',
   match_id UUID REFERENCES matches(id) ON DELETE SET NULL,

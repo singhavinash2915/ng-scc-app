@@ -216,6 +216,7 @@ export function useSeasonFund() {
           time_slot: config.timeSlot,
           cost: isWeekend ? config.weekendCost : config.weekdayCost,
           opponent_collection: 0,
+          opponent_name: null,
           status: 'booked',
           payment_status: 'pending',
           match_id: null,
