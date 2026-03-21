@@ -5,17 +5,16 @@ import {
   Trash2,
   Edit3,
   Calendar,
-  MapPin,
-  Clock,
   IndianRupee,
   CheckCircle,
-  AlertCircle,
+  XCircle,
   Users,
   Target,
   CreditCard,
-  Search,
   TrendingUp,
-  Link2,
+  ChevronDown,
+  ChevronRight,
+  Handshake,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -25,23 +24,18 @@ import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { useSeasonFund } from '../hooks/useSeasonFund';
 import { useMembers } from '../hooks/useMembers';
-import { useMatches } from '../hooks/useMatches';
 import { useAuth } from '../context/AuthContext';
 import type { Season, GroundBooking, MemberTier, FundPaymentMethod } from '../types';
 
-type TabType = 'overview' | 'bookings' | 'members' | 'payments';
+// Four Star Ground hardcoded config
+const GROUND_NAME = 'Four Star Ground';
+const TIME_SLOT = '7:00 AM - 9:00 AM';
+const WEEKDAY_COST = 5000;
+const WEEKEND_COST = 7000; // Saturday
+const BOOKING_DAYS = [2, 4, 6]; // Tue, Thu, Sat
 
-const TIER_LABELS: Record<MemberTier, string> = {
-  regular: 'Regular',
-  occasional: 'Occasional',
-  other: 'Other',
-};
-
-const TIER_COLORS: Record<MemberTier, 'success' | 'warning' | 'info'> = {
-  regular: 'success',
-  occasional: 'warning',
-  other: 'info',
-};
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const METHOD_LABELS: Record<FundPaymentMethod, string> = {
   cash: 'Cash',
@@ -50,74 +44,55 @@ const METHOD_LABELS: Record<FundPaymentMethod, string> = {
   other: 'Other',
 };
 
+const TIER_LABELS: Record<MemberTier, string> = {
+  regular: 'Regular',
+  occasional: 'Occasional',
+  other: 'Other',
+};
+
+const formatCurrency = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
+const formatDate = (date: string) => {
+  const d = new Date(date);
+  return `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
+};
+
 export function SeasonFund() {
   const {
     seasons, payments, loading,
     addSeason, updateSeason, deleteSeason,
-    addBooking, updateBooking, deleteBooking,
+    updateBooking, deleteBooking,
     generateSeasonBookings, addBulkBookings,
     setMemberTargets, removeMemberTarget,
     fetchPayments, addPayment, deletePayment,
-    getSeasonStats, getMemberFundStatus, getVenueBreakdown,
+    getSeasonStats, getMemberFundStatus,
   } = useSeasonFund();
   const { members } = useMembers();
-  const { matches } = useMatches();
   const { isAdmin } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
-
-  // Modals
+  const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [showSeasonModal, setShowSeasonModal] = useState(false);
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [showTargetModal, setShowTargetModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showTargetModal, setShowTargetModal] = useState(false);
+  const [showEditBookingModal, setShowEditBookingModal] = useState(false);
   const [editingSeason, setEditingSeason] = useState<Season | null>(null);
   const [editingBooking, setEditingBooking] = useState<GroundBooking | null>(null);
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Filters
-  const [bookingVenueFilter, setBookingVenueFilter] = useState('all');
-  const [bookingStatusFilter, setBookingStatusFilter] = useState('all');
-  const [paymentSearch, setPaymentSearch] = useState('');
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
-  const [memberTierFilter, setMemberTierFilter] = useState('all');
-
-  // Delete confirmations
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const [showAllMembers, setShowAllMembers] = useState(false);
 
-
-  // Season form state
+  // Season form
   const [seasonForm, setSeasonForm] = useState({
-    name: '',
-    start_date: '',
-    end_date: '',
+    name: 'Season 2026-27',
+    start_date: '2026-10-01',
+    end_date: '2027-05-31',
     total_budget: '',
-    status: 'upcoming' as Season['status'],
+    status: 'active' as Season['status'],
     notes: '',
   });
 
-  // Booking form state
-  const [bookingForm, setBookingForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    venue: '',
-    time_slot: '',
-    cost: '',
-    opponent_collection: '',
-    status: 'booked' as GroundBooking['status'],
-    payment_status: 'pending' as GroundBooking['payment_status'],
-    match_id: '',
-    notes: '',
-  });
-
-  // Target form state
-  const [targetTier, setTargetTier] = useState<MemberTier>('regular');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
-
-  // Payment form state
+  // Payment form
   const [paymentForm, setPaymentForm] = useState({
     member_id: '',
     amount: '',
@@ -126,16 +101,21 @@ export function SeasonFund() {
     description: '',
   });
 
-  // Generate bookings form state
-  const [generateForm, setGenerateForm] = useState({
-    venue: 'Four Star Ground',
-    time_slot: '7:00 AM - 9:00 AM',
-    days: [2, 4, 6] as number[], // Tue, Thu, Sat
-    weekday_cost: '5000',
-    weekend_cost: '7000',
+  // Target form
+  const [targetTier, setTargetTier] = useState<MemberTier>('regular');
+  const [targetAmount, setTargetAmount] = useState('');
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+
+  // Booking edit form
+  const [bookingEditForm, setBookingEditForm] = useState({
+    cost: '',
+    opponent_collection: '',
+    status: 'booked' as GroundBooking['status'],
+    payment_status: 'pending' as GroundBooking['payment_status'],
+    notes: '',
   });
 
-  // Select first season on load
+  // Auto-select season
   useEffect(() => {
     if (seasons.length > 0 && !selectedSeasonId) {
       const active = seasons.find(s => s.status === 'active');
@@ -143,71 +123,54 @@ export function SeasonFund() {
     }
   }, [seasons, selectedSeasonId]);
 
-  // Fetch payments when season changes
   useEffect(() => {
-    if (selectedSeasonId) {
-      fetchPayments(selectedSeasonId);
-    }
+    if (selectedSeasonId) fetchPayments(selectedSeasonId);
   }, [selectedSeasonId, fetchPayments]);
 
-  const selectedSeason = useMemo(() =>
-    seasons.find(s => s.id === selectedSeasonId) || null
-  , [seasons, selectedSeasonId]);
+  const selectedSeason = useMemo(() => seasons.find(s => s.id === selectedSeasonId) || null, [seasons, selectedSeasonId]);
+  const stats = useMemo(() => selectedSeason ? getSeasonStats(selectedSeason) : null, [selectedSeason, getSeasonStats]);
 
-  const stats = useMemo(() =>
-    selectedSeason ? getSeasonStats(selectedSeason) : null
-  , [selectedSeason, getSeasonStats]);
-
-  const venueBreakdown = useMemo(() =>
-    selectedSeason ? getVenueBreakdown(selectedSeason) : []
-  , [selectedSeason, getVenueBreakdown]);
-
-  // Unique venues from bookings
-  const venues = useMemo(() => {
+  // Group bookings by month
+  const bookingsByMonth = useMemo(() => {
     if (!selectedSeason?.bookings) return [];
-    return [...new Set(selectedSeason.bookings.map(b => b.venue))];
+    const groups = new Map<string, GroundBooking[]>();
+    const sorted = [...selectedSeason.bookings]
+      .filter(b => b.status !== 'cancelled')
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    for (const booking of sorted) {
+      const d = new Date(booking.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(booking);
+    }
+
+    return Array.from(groups.entries()).map(([key, bookings]) => {
+      const d = new Date(bookings[0].date);
+      return {
+        key,
+        label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`,
+        bookings,
+        totalCost: bookings.reduce((s, b) => s + Number(b.cost), 0),
+        totalOpponent: bookings.reduce((s, b) => s + Number(b.opponent_collection || 0), 0),
+        paidCount: bookings.filter(b => b.payment_status === 'paid').length,
+      };
+    });
   }, [selectedSeason]);
 
-  // Filtered bookings
-  const filteredBookings = useMemo(() => {
-    if (!selectedSeason?.bookings) return [];
-    return selectedSeason.bookings
-      .filter(b => bookingVenueFilter === 'all' || b.venue === bookingVenueFilter)
-      .filter(b => bookingStatusFilter === 'all' || b.status === bookingStatusFilter || b.payment_status === bookingStatusFilter)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [selectedSeason, bookingVenueFilter, bookingStatusFilter]);
-
-  // Filtered payments
-  const filteredPayments = useMemo(() => {
-    return payments
-      .filter(p => !paymentSearch || p.member?.name?.toLowerCase().includes(paymentSearch.toLowerCase()))
-      .filter(p => paymentMethodFilter === 'all' || p.payment_method === paymentMethodFilter);
-  }, [payments, paymentSearch, paymentMethodFilter]);
-
-  // Member targets with payment status
+  // Member fund statuses
   const memberFundStatuses = useMemo(() => {
     if (!selectedSeason?.targets) return [];
     return selectedSeason.targets
-      .filter(t => memberTierFilter === 'all' || t.tier === memberTierFilter)
       .map(t => ({
         ...t,
         ...getMemberFundStatus(selectedSeasonId, t.member_id),
       }))
       .sort((a, b) => b.outstanding - a.outstanding);
-  }, [selectedSeason, selectedSeasonId, getMemberFundStatus, memberTierFilter]);
-
-  // Unlinked matches (not already linked to a booking)
-  const linkedMatchIds = useMemo(() => {
-    if (!selectedSeason?.bookings) return new Set<string>();
-    return new Set(selectedSeason.bookings.map(b => b.match_id).filter(Boolean) as string[]);
-  }, [selectedSeason]);
-
-  const availableMatches = useMemo(() => {
-    return matches.filter(m => !linkedMatchIds.has(m.id));
-  }, [matches, linkedMatchIds]);
+  }, [selectedSeason, selectedSeasonId, getMemberFundStatus]);
 
   // ---- Handlers ----
-  const handleAddSeason = async () => {
+  const handleCreateSeason = async () => {
     setIsSubmitting(true);
     try {
       await addSeason({
@@ -218,8 +181,9 @@ export function SeasonFund() {
         status: seasonForm.status,
         notes: seasonForm.notes || null,
       });
+      // After season is created, we need to generate bookings
+      // Re-fetch will happen and we'll generate on the next step
       setShowSeasonModal(false);
-      resetSeasonForm();
     } catch { /* ignore */ } finally {
       setIsSubmitting(false);
     }
@@ -239,73 +203,55 @@ export function SeasonFund() {
       });
       setShowSeasonModal(false);
       setEditingSeason(null);
-      resetSeasonForm();
     } catch { /* ignore */ } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleAddBooking = async () => {
-    if (!selectedSeasonId) return;
+  const handleGenerateBookings = async () => {
+    if (!selectedSeason) return;
+    if (selectedSeason.bookings && selectedSeason.bookings.length > 0) {
+      alert('Bookings already exist for this season. Delete them first if you want to regenerate.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await addBooking({
-        season_id: selectedSeasonId,
-        date: bookingForm.date,
-        venue: bookingForm.venue,
-        time_slot: bookingForm.time_slot || null,
-        cost: Number(bookingForm.cost) || 0,
-        opponent_collection: Number(bookingForm.opponent_collection) || 0,
-        status: bookingForm.status,
-        payment_status: bookingForm.payment_status,
-        match_id: bookingForm.match_id || null,
-        notes: bookingForm.notes || null,
-      });
-      setShowBookingModal(false);
-      resetBookingForm();
+      const bookings = generateSeasonBookings(
+        selectedSeason.id,
+        selectedSeason.start_date,
+        selectedSeason.end_date,
+        {
+          venue: GROUND_NAME,
+          timeSlot: TIME_SLOT,
+          days: BOOKING_DAYS,
+          weekdayCost: WEEKDAY_COST,
+          weekendCost: WEEKEND_COST,
+        }
+      );
+      await addBulkBookings(bookings);
     } catch { /* ignore */ } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleUpdateBooking = async () => {
+  const handleTogglePaymentStatus = async (booking: GroundBooking) => {
+    const newStatus = booking.payment_status === 'paid' ? 'pending' : 'paid';
+    await updateBooking(booking.id, { payment_status: newStatus });
+  };
+
+  const handleSaveBookingEdit = async () => {
     if (!editingBooking) return;
     setIsSubmitting(true);
     try {
       await updateBooking(editingBooking.id, {
-        date: bookingForm.date,
-        venue: bookingForm.venue,
-        time_slot: bookingForm.time_slot || null,
-        cost: Number(bookingForm.cost) || 0,
-        opponent_collection: Number(bookingForm.opponent_collection) || 0,
-        status: bookingForm.status,
-        payment_status: bookingForm.payment_status,
-        match_id: bookingForm.match_id || null,
-        notes: bookingForm.notes || null,
+        cost: Number(bookingEditForm.cost) || 0,
+        opponent_collection: Number(bookingEditForm.opponent_collection) || 0,
+        status: bookingEditForm.status,
+        payment_status: bookingEditForm.payment_status,
+        notes: bookingEditForm.notes || null,
       });
-      setShowBookingModal(false);
+      setShowEditBookingModal(false);
       setEditingBooking(null);
-      resetBookingForm();
-    } catch { /* ignore */ } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSetTargets = async () => {
-    if (!selectedSeasonId || selectedMemberIds.length === 0) return;
-    setIsSubmitting(true);
-    try {
-      await setMemberTargets(
-        selectedSeasonId,
-        selectedMemberIds.map(id => ({
-          member_id: id,
-          target_amount: Number(targetAmount) || 0,
-          tier: targetTier,
-        }))
-      );
-      setShowTargetModal(false);
-      setTargetAmount('');
-      setSelectedMemberIds([]);
     } catch { /* ignore */ } finally {
       setIsSubmitting(false);
     }
@@ -324,30 +270,27 @@ export function SeasonFund() {
         description: paymentForm.description || undefined,
       });
       setShowPaymentModal(false);
-      resetPaymentForm();
+      setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' });
     } catch { /* ignore */ } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleGenerateBookings = async () => {
-    if (!selectedSeason) return;
+  const handleSetTargets = async () => {
+    if (!selectedSeasonId || selectedMemberIds.length === 0) return;
     setIsSubmitting(true);
     try {
-      const bookings = generateSeasonBookings(
-        selectedSeason.id,
-        selectedSeason.start_date,
-        selectedSeason.end_date,
-        {
-          venue: generateForm.venue,
-          timeSlot: generateForm.time_slot,
-          days: generateForm.days,
-          weekdayCost: Number(generateForm.weekday_cost) || 0,
-          weekendCost: Number(generateForm.weekend_cost) || 0,
-        }
+      await setMemberTargets(
+        selectedSeasonId,
+        selectedMemberIds.map(id => ({
+          member_id: id,
+          target_amount: Number(targetAmount) || 0,
+          tier: targetTier,
+        }))
       );
-      await addBulkBookings(bookings);
-      setShowGenerateModal(false);
+      setShowTargetModal(false);
+      setSelectedMemberIds([]);
+      setTargetAmount('');
     } catch { /* ignore */ } finally {
       setIsSubmitting(false);
     }
@@ -373,6 +316,18 @@ export function SeasonFund() {
     }
   };
 
+  const openEditBooking = (booking: GroundBooking) => {
+    setEditingBooking(booking);
+    setBookingEditForm({
+      cost: String(booking.cost),
+      opponent_collection: String(booking.opponent_collection || 0),
+      status: booking.status,
+      payment_status: booking.payment_status,
+      notes: booking.notes || '',
+    });
+    setShowEditBookingModal(true);
+  };
+
   const openEditSeason = (season: Season) => {
     setEditingSeason(season);
     setSeasonForm({
@@ -386,64 +341,35 @@ export function SeasonFund() {
     setShowSeasonModal(true);
   };
 
-  const openEditBooking = (booking: GroundBooking) => {
-    setEditingBooking(booking);
-    setBookingForm({
-      date: booking.date,
-      venue: booking.venue,
-      time_slot: booking.time_slot || '',
-      cost: String(booking.cost),
-      opponent_collection: String(booking.opponent_collection || 0),
-      status: booking.status,
-      payment_status: booking.payment_status,
-      match_id: booking.match_id || '',
-      notes: booking.notes || '',
+  const toggleMonth = (key: string) => {
+    setCollapsedMonths(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
     });
-    setShowBookingModal(true);
   };
 
-  const openQuickPayment = (memberId: string) => {
-    setPaymentForm(prev => ({ ...prev, member_id: memberId }));
-    setShowPaymentModal(true);
-  };
+  function renderProgressBar(value: number, max: number, color: string = 'bg-primary-500') {
+    const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+    return (
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div className={`${color} h-2 rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+    );
+  }
 
-  const resetSeasonForm = () => {
-    setSeasonForm({ name: '', start_date: '', end_date: '', total_budget: '', status: 'upcoming', notes: '' });
-    setEditingSeason(null);
-  };
-
-  const resetBookingForm = () => {
-    setBookingForm({ date: new Date().toISOString().split('T')[0], venue: '', time_slot: '', cost: '', opponent_collection: '', status: 'booked', payment_status: 'pending', match_id: '', notes: '' });
-    setEditingBooking(null);
-  };
-
-  const resetPaymentForm = () => {
-    setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' });
-  };
-
-  const formatCurrency = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
-  const formatDate = (date: string) => new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-
-  const tabs: { key: TabType; label: string; icon: typeof Landmark }[] = [
-    { key: 'overview', label: 'Overview', icon: TrendingUp },
-    { key: 'bookings', label: 'Bookings', icon: MapPin },
-    { key: 'members', label: 'Members', icon: Users },
-    { key: 'payments', label: 'Payments', icon: CreditCard },
-  ];
-
-  // Admin-only page
+  // ---- Admin gate ----
   if (!isAdmin) {
     return (
       <div>
-        <Header title="Season Fund" subtitle="Ground booking & advance payments" />
+        <Header title="Season Fund" subtitle="Four Star Ground — Booking & Payments" />
         <div className="max-w-lg mx-auto mt-12">
           <Card animate>
             <CardContent className="text-center py-12">
               <Landmark className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Admin Access Required</h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Please login as admin to access Season Fund management.
-              </p>
+              <p className="text-gray-500 dark:text-gray-400">Please login as admin to access Season Fund management.</p>
             </CardContent>
           </Card>
         </div>
@@ -454,7 +380,7 @@ export function SeasonFund() {
   if (loading) {
     return (
       <div>
-        <Header title="Season Fund" subtitle="Ground booking & advance payments" />
+        <Header title="Season Fund" subtitle="Four Star Ground — Booking & Payments" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
         </div>
@@ -462,687 +388,568 @@ export function SeasonFund() {
     );
   }
 
-  // Empty state - no seasons
+  // ---- No season yet ----
   if (seasons.length === 0) {
     return (
       <div>
-        <Header title="Season Fund" subtitle="Ground booking & advance payments" />
+        <Header title="Season Fund" subtitle="Four Star Ground — Booking & Payments" />
         <div className="max-w-lg mx-auto mt-12">
           <Card animate>
             <CardContent className="text-center py-12">
               <Landmark className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Season Created</h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Create a season to start tracking ground bookings and member advance payments.
+                Create a season for Four Star Ground (Tue/Thu/Sat, 7-9 AM).
               </p>
-              {isAdmin && (
-                <Button onClick={() => { resetSeasonForm(); setShowSeasonModal(true); }}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Season
-                </Button>
-              )}
+              <Button onClick={() => {
+                setEditingSeason(null);
+                setSeasonForm({ name: 'Season 2026-27', start_date: '2026-10-01', end_date: '2027-05-31', total_budget: '', status: 'active', notes: '' });
+                setShowSeasonModal(true);
+              }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Season 2026-27
+              </Button>
             </CardContent>
           </Card>
         </div>
-        {renderSeasonModal()}
-      </div>
-    );
-  }
-
-  function renderProgressBar(value: number, max: number, color: string = 'bg-primary-500') {
-    const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-    return (
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-        <div className={`${color} h-2.5 rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
-      </div>
-    );
-  }
-
-  function renderOverviewTab() {
-    if (!selectedSeason || !stats) return null;
-
-    return (
-      <div className="space-y-6">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card animate delay={0}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-blue-500" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total Target</p>
-              </div>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalTarget)}</p>
-            </CardContent>
-          </Card>
-          <Card animate delay={1}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="w-4 h-4 text-green-500" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Collected</p>
-              </div>
-              <p className="text-xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats.totalCollected)}</p>
-            </CardContent>
-          </Card>
-          <Card animate delay={2}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Landmark className="w-4 h-4 text-orange-500" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Ground Cost</p>
-              </div>
-              <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(stats.totalSpent)}</p>
-              {stats.totalOpponentCollection > 0 && (
-                <p className="text-xs text-blue-500 mt-0.5">Opp: -{formatCurrency(stats.totalOpponentCollection)}</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card animate delay={3}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertCircle className="w-4 h-4 text-red-500" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Outstanding</p>
-              </div>
-              <p className="text-xl font-bold text-red-600 dark:text-red-400">{formatCurrency(Math.max(0, stats.outstanding))}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Collection Progress */}
-        <Card animate delay={4}>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Collection Progress</p>
-              <p className="text-sm text-gray-500">
-                {formatCurrency(stats.totalCollected)} / {formatCurrency(stats.totalTarget)}
-              </p>
+        {/* Season Modal */}
+        <Modal isOpen={showSeasonModal} onClose={() => { setShowSeasonModal(false); setEditingSeason(null); }} title="Create Season">
+          <div className="space-y-4">
+            <Input label="Season Name" value={seasonForm.name} onChange={(e) => setSeasonForm(f => ({ ...f, name: e.target.value }))} />
+            <div className="grid grid-cols-2 gap-4">
+              <Input type="date" label="Start Date" value={seasonForm.start_date} onChange={(e) => setSeasonForm(f => ({ ...f, start_date: e.target.value }))} />
+              <Input type="date" label="End Date" value={seasonForm.end_date} onChange={(e) => setSeasonForm(f => ({ ...f, end_date: e.target.value }))} />
             </div>
-            {renderProgressBar(stats.totalCollected, stats.totalTarget, 'bg-green-500')}
-            <p className="text-xs text-gray-400 mt-1">
-              {stats.totalTarget > 0 ? Math.round((stats.totalCollected / stats.totalTarget) * 100) : 0}% collected
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Ground Payment Status */}
-        <Card animate delay={5}>
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Ground Owner Payments</h3>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{stats.bookingCount}</p>
-                <p className="text-xs text-gray-500">Total Bookings</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold text-green-600">{stats.paidBookingCount}</p>
-                <p className="text-xs text-gray-500">Paid</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold text-amber-600">{stats.pendingBookingCount}</p>
-                <p className="text-xs text-gray-500">Pending</p>
-              </div>
+            <Input type="number" label="Estimated Budget (₹)" placeholder="Optional" value={seasonForm.total_budget} onChange={(e) => setSeasonForm(f => ({ ...f, total_budget: e.target.value }))} />
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
+              <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Four Star Ground Schedule:</p>
+              <p>Tue & Thu — ₹{WEEKDAY_COST.toLocaleString()}/session | Sat — ₹{WEEKEND_COST.toLocaleString()}/session</p>
+              <p>Time: {TIME_SLOT}</p>
             </div>
-            {stats.groundOwnerPending > 0 && (
-              <p className="text-xs text-amber-600 mt-2 text-center">
-                {formatCurrency(stats.groundOwnerPending)} pending to ground owners
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Venue Breakdown */}
-        {venueBreakdown.length > 0 && (
-          <Card animate delay={6}>
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Venue-wise Spending</h3>
-              <div className="space-y-3">
-                {venueBreakdown.map(v => (
-                  <div key={v.venue}>
-                    <div className="flex justify-between items-center mb-1">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3 h-3 text-gray-400" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{v.venue}</span>
-                        <span className="text-xs text-gray-400">({v.count} sessions)</span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{formatCurrency(v.totalCost)}</span>
-                    </div>
-                    {renderProgressBar(v.paid, v.totalCost, 'bg-green-500')}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Top Outstanding Members */}
-        {memberFundStatuses.length > 0 && (
-          <Card animate delay={7}>
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Members with Outstanding Dues</h3>
-              <div className="space-y-2">
-                {memberFundStatuses
-                  .filter(m => m.outstanding > 0)
-                  .slice(0, 5)
-                  .map(m => (
-                    <div key={m.member_id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {m.member?.avatar_url ? (
-                          <img src={m.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-xs text-gray-500">{m.member?.name?.[0]}</span>
-                          </div>
-                        )}
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{m.member?.name}</span>
-                      </div>
-                      <span className="text-sm font-medium text-red-600">{formatCurrency(m.outstanding)}</span>
-                    </div>
-                  ))}
-                {memberFundStatuses.filter(m => m.outstanding > 0).length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-2">All members are up to date!</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={() => setShowSeasonModal(false)} className="flex-1" disabled={isSubmitting}>Cancel</Button>
+              <Button onClick={handleCreateSeason} className="flex-1" disabled={isSubmitting || !seasonForm.name || !seasonForm.start_date || !seasonForm.end_date}>
+                {isSubmitting ? 'Creating...' : 'Create Season'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     );
   }
 
-  function renderBookingsTab() {
-    return (
-      <div className="space-y-4">
-        {/* Actions & Filters */}
-        <div className="flex flex-wrap gap-3 items-center">
-          {isAdmin && (
-            <>
-              <Button size="sm" onClick={() => { resetBookingForm(); setShowBookingModal(true); }}>
-                <Plus className="w-4 h-4 mr-1" /> Add Booking
-              </Button>
-              <Button size="sm" variant="secondary" onClick={() => setShowGenerateModal(true)}>
-                <Calendar className="w-4 h-4 mr-1" /> Generate Schedule
-              </Button>
-            </>
-          )}
-          {venues.length > 0 && (
-            <Select
-              value={bookingVenueFilter}
-              onChange={(e) => setBookingVenueFilter(e.target.value)}
-              className="!w-auto"
-              options={[{ value: 'all', label: 'All Venues' }, ...venues.map(v => ({ value: v, label: v }))]}
-            />
-          )}
+  // ---- Main Page ----
+  return (
+    <div>
+      <Header title="Season Fund" subtitle="Four Star Ground — Tue/Thu/Sat, 7-9 AM" />
+
+      {/* Season Selector (if multiple) */}
+      {seasons.length > 1 && (
+        <div className="flex items-center gap-3 mb-4">
           <Select
-            value={bookingStatusFilter}
-            onChange={(e) => setBookingStatusFilter(e.target.value)}
-            className="!w-auto"
-            options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'booked', label: 'Booked' },
-              { value: 'completed', label: 'Completed' },
-              { value: 'cancelled', label: 'Cancelled' },
-              { value: 'paid', label: 'Paid' },
-              { value: 'pending', label: 'Pending Payment' },
-            ]}
+            value={selectedSeasonId}
+            onChange={(e) => setSelectedSeasonId(e.target.value)}
+            className="!w-auto min-w-[200px]"
+            options={seasons.map(s => ({ value: s.id, label: `${s.name}${s.status === 'active' ? ' (Active)' : ''}` }))}
           />
         </div>
+      )}
 
-        {/* Summary */}
-        {stats && (
-          <div className="grid grid-cols-3 gap-3">
-            <Card><CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{stats.bookingCount}</p>
-              <p className="text-xs text-gray-500">Bookings</p>
-            </CardContent></Card>
-            <Card><CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-green-600">{formatCurrency(stats.groundOwnerPaid)}</p>
-              <p className="text-xs text-gray-500">Paid</p>
-            </CardContent></Card>
-            <Card><CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-amber-600">{formatCurrency(stats.groundOwnerPending)}</p>
-              <p className="text-xs text-gray-500">Pending</p>
-            </CardContent></Card>
+      {selectedSeason && (
+        <div className="space-y-6">
+
+          {/* ===== STATS CARDS ===== */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <Card animate delay={0}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Landmark className="w-3.5 h-3.5 text-orange-500" />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Ground Cost</p>
+                </div>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(stats?.totalSpent || 0)}</p>
+              </CardContent>
+            </Card>
+            <Card animate delay={1}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Handshake className="w-3.5 h-3.5 text-blue-500" />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Opponent</p>
+                </div>
+                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCurrency(stats?.totalOpponentCollection || 0)}</p>
+              </CardContent>
+            </Card>
+            <Card animate delay={2}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Target className="w-3.5 h-3.5 text-purple-500" />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Net Cost</p>
+                </div>
+                <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{formatCurrency(stats?.netCost || 0)}</p>
+              </CardContent>
+            </Card>
+            <Card animate delay={3}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <TrendingUp className="w-3.5 h-3.5 text-green-500" />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Collected</p>
+                </div>
+                <p className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(stats?.totalCollected || 0)}</p>
+              </CardContent>
+            </Card>
+            <Card animate delay={4}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <IndianRupee className="w-3.5 h-3.5 text-red-500" />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Outstanding</p>
+                </div>
+                <p className="text-lg font-bold text-red-600 dark:text-red-400">{formatCurrency(Math.max(0, stats?.outstanding || 0))}</p>
+              </CardContent>
+            </Card>
           </div>
-        )}
 
-        {/* Bookings List */}
-        {filteredBookings.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-              <p className="text-gray-500">No bookings found</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {filteredBookings.map(booking => (
-              <Card key={booking.id} animate>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{formatDate(booking.date)}</span>
-                        <Badge variant={booking.status === 'completed' ? 'success' : booking.status === 'cancelled' ? 'danger' : 'info'} size="sm">
-                          {booking.status}
-                        </Badge>
-                        <Badge variant={booking.payment_status === 'paid' ? 'success' : 'warning'} size="sm">
-                          {booking.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {booking.venue}</span>
-                        {booking.time_slot && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {booking.time_slot}</span>}
-                        <span className="flex items-center gap-1"><IndianRupee className="w-3 h-3" /> {formatCurrency(Number(booking.cost))}</span>
-                        {Number(booking.opponent_collection) > 0 && (
-                          <span className="flex items-center gap-1 text-blue-500"><span className="text-xs">Opp: +{formatCurrency(Number(booking.opponent_collection))}</span></span>
-                        )}
-                      </div>
-                      {booking.match && (
-                        <p className="text-xs text-primary-500 mt-1 flex items-center gap-1">
-                          <Link2 className="w-3 h-3" /> Linked: vs {booking.match.opponent || 'Internal'} ({formatDate(booking.match.date)})
-                        </p>
-                      )}
-                      {booking.notes && <p className="text-xs text-gray-400 mt-1">{booking.notes}</p>}
-                    </div>
-                    {isAdmin && (
-                      <div className="flex gap-1 ml-2">
-                        {booking.payment_status === 'pending' && (
-                          <Button size="sm" variant="success" onClick={() => updateBooking(booking.id, { payment_status: 'paid' })}>
-                            <CheckCircle className="w-3 h-3" />
-                          </Button>
-                        )}
-                        <Button size="sm" variant="ghost" onClick={() => openEditBooking(booking)}>
-                          <Edit3 className="w-3 h-3" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setDeleteConfirm({ type: 'booking', id: booking.id, name: `${booking.venue} on ${formatDate(booking.date)}` })}>
-                          <Trash2 className="w-3 h-3 text-red-500" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+          {/* Collection progress */}
+          {stats && stats.totalTarget > 0 && (
+            <Card animate delay={5}>
+              <CardContent className="p-3">
+                <div className="flex justify-between items-center mb-1.5">
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Member Collection</p>
+                  <p className="text-xs text-gray-500">{formatCurrency(stats.totalCollected)} / {formatCurrency(stats.totalTarget)} ({stats.totalTarget > 0 ? Math.round((stats.totalCollected / stats.totalTarget) * 100) : 0}%)</p>
+                </div>
+                {renderProgressBar(stats.totalCollected, stats.totalTarget, 'bg-green-500')}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Ground payment progress */}
+          {stats && stats.bookingCount > 0 && (
+            <Card animate delay={6}>
+              <CardContent className="p-3">
+                <div className="flex justify-between items-center mb-1.5">
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Ground Owner Paid</p>
+                  <p className="text-xs text-gray-500">{formatCurrency(stats.groundOwnerPaid)} / {formatCurrency(stats.totalSpent)} ({stats.paidBookingCount}/{stats.bookingCount} sessions)</p>
+                </div>
+                {renderProgressBar(stats.groundOwnerPaid, stats.totalSpent, 'bg-orange-500')}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ===== GROUND BOOKINGS ===== */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary-500" />
+                Ground Bookings
+              </h2>
+              <div className="flex gap-2">
+                {selectedSeason.bookings && selectedSeason.bookings.length === 0 && (
+                  <Button size="sm" onClick={handleGenerateBookings} disabled={isSubmitting}>
+                    <Calendar className="w-3.5 h-3.5 mr-1" />
+                    {isSubmitting ? 'Generating...' : 'Generate All Bookings'}
+                  </Button>
+                )}
+                <Button size="sm" variant="secondary" onClick={() => openEditSeason(selectedSeason)}>
+                  <Edit3 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            {bookingsByMonth.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                  <p className="text-gray-500 dark:text-gray-400">No bookings yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Click "Generate All Bookings" to auto-create Tue/Thu/Sat schedule</p>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              <div className="space-y-3">
+                {bookingsByMonth.map(group => {
+                  const isCollapsed = collapsedMonths.has(group.key);
+                  return (
+                    <Card key={group.key} animate>
+                      <CardContent className="p-0">
+                        {/* Month header - clickable */}
+                        <button
+                          onClick={() => toggleMonth(group.key)}
+                          className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-t-xl"
+                        >
+                          <div className="flex items-center gap-2">
+                            {isCollapsed ? <ChevronRight className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{group.label}</span>
+                            <Badge variant="info" size="sm">{group.bookings.length} sessions</Badge>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="text-gray-500">{formatCurrency(group.totalCost)}</span>
+                            {group.totalOpponent > 0 && <span className="text-blue-500">Opp: +{formatCurrency(group.totalOpponent)}</span>}
+                            <span className="text-green-600">{group.paidCount}/{group.bookings.length} paid</span>
+                          </div>
+                        </button>
+
+                        {/* Booking rows */}
+                        {!isCollapsed && (
+                          <div className="border-t border-gray-100 dark:border-gray-700">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                                  <th className="text-left py-2 px-3 font-medium">Date</th>
+                                  <th className="text-right py-2 px-2 font-medium">Cost</th>
+                                  <th className="text-right py-2 px-2 font-medium">Opponent</th>
+                                  <th className="text-right py-2 px-2 font-medium">Net</th>
+                                  <th className="text-center py-2 px-2 font-medium">Paid</th>
+                                  <th className="text-center py-2 px-2 font-medium w-16"></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {group.bookings.map(booking => {
+                                  const d = new Date(booking.date);
+                                  const isSat = d.getDay() === 6;
+                                  const net = Number(booking.cost) - Number(booking.opponent_collection || 0);
+                                  const isPast = d < new Date();
+
+                                  return (
+                                    <tr
+                                      key={booking.id}
+                                      className={`border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 ${
+                                        booking.status === 'cancelled' ? 'opacity-40 line-through' : ''
+                                      }`}
+                                    >
+                                      <td className="py-2 px-3">
+                                        <span className={`font-medium ${isSat ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                                          {formatDate(booking.date)}
+                                        </span>
+                                        {booking.notes && <span className="text-xs text-gray-400 ml-1" title={booking.notes}>*</span>}
+                                        {!isPast && booking.status !== 'cancelled' && (
+                                          <Badge variant="info" size="sm" className="ml-1">upcoming</Badge>
+                                        )}
+                                      </td>
+                                      <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">
+                                        {formatCurrency(Number(booking.cost))}
+                                      </td>
+                                      <td className="text-right py-2 px-2">
+                                        {Number(booking.opponent_collection) > 0 ? (
+                                          <span className="text-blue-600 dark:text-blue-400">+{formatCurrency(Number(booking.opponent_collection))}</span>
+                                        ) : (
+                                          <span className="text-gray-300 dark:text-gray-600">—</span>
+                                        )}
+                                      </td>
+                                      <td className="text-right py-2 px-2 font-medium text-gray-900 dark:text-white">
+                                        {formatCurrency(net)}
+                                      </td>
+                                      <td className="text-center py-2 px-2">
+                                        <button
+                                          onClick={() => handleTogglePaymentStatus(booking)}
+                                          className="inline-flex items-center justify-center"
+                                          title={booking.payment_status === 'paid' ? 'Mark as unpaid' : 'Mark as paid'}
+                                        >
+                                          {booking.payment_status === 'paid' ? (
+                                            <CheckCircle className="w-5 h-5 text-green-500" />
+                                          ) : (
+                                            <XCircle className="w-5 h-5 text-gray-300 dark:text-gray-600 hover:text-amber-500" />
+                                          )}
+                                        </button>
+                                      </td>
+                                      <td className="text-center py-2 px-2">
+                                        <div className="flex gap-0.5 justify-center">
+                                          <button onClick={() => openEditBooking(booking)} className="p-1 text-gray-400 hover:text-gray-600">
+                                            <Edit3 className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button onClick={() => setDeleteConfirm({ type: 'booking', id: booking.id, name: formatDate(booking.date) })} className="p-1 text-gray-400 hover:text-red-500">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    );
-  }
 
-  function renderMembersTab() {
-    return (
-      <div className="space-y-4">
-        {/* Actions & Filters */}
-        <div className="flex flex-wrap gap-3 items-center">
-          {isAdmin && (
-            <Button size="sm" onClick={() => { setSelectedMemberIds([]); setTargetAmount(''); setShowTargetModal(true); }}>
-              <Target className="w-4 h-4 mr-1" /> Set Targets
-            </Button>
-          )}
-          <Select
-            value={memberTierFilter}
-            onChange={(e) => setMemberTierFilter(e.target.value)}
-            className="!w-auto"
-            options={[
-              { value: 'all', label: 'All Tiers' },
-              { value: 'regular', label: 'Regular' },
-              { value: 'occasional', label: 'Occasional' },
-              { value: 'other', label: 'Other' },
-            ]}
-          />
-        </div>
+          {/* ===== MEMBER CONTRIBUTIONS ===== */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary-500" />
+                Member Contributions
+              </h2>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => { setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' }); setShowPaymentModal(true); }}>
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Record Payment
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => { setSelectedMemberIds([]); setTargetAmount(''); setShowTargetModal(true); }}>
+                  <Target className="w-3.5 h-3.5 mr-1" /> Set Targets
+                </Button>
+              </div>
+            </div>
 
-        {/* Summary Cards */}
-        {stats && (
-          <div className="grid grid-cols-3 gap-3">
-            <Card><CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedSeason?.targets?.length || 0}</p>
-              <p className="text-xs text-gray-500">Members</p>
-            </CardContent></Card>
-            <Card><CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-green-600">{formatCurrency(stats.totalCollected)}</p>
-              <p className="text-xs text-gray-500">Collected</p>
-            </CardContent></Card>
-            <Card><CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-red-600">{formatCurrency(Math.max(0, stats.outstanding))}</p>
-              <p className="text-xs text-gray-500">Outstanding</p>
-            </CardContent></Card>
+            {memberFundStatuses.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                  <p className="text-gray-500 dark:text-gray-400">No member targets set</p>
+                  <p className="text-xs text-gray-400 mt-1">Click "Set Targets" to assign advance payment amounts</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card animate>
+                <CardContent className="p-0">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                        <th className="text-left py-2.5 px-3 font-medium">Member</th>
+                        <th className="text-right py-2.5 px-2 font-medium">Target</th>
+                        <th className="text-right py-2.5 px-2 font-medium">Paid</th>
+                        <th className="text-right py-2.5 px-2 font-medium">Due</th>
+                        <th className="py-2.5 px-2 font-medium w-24">Progress</th>
+                        <th className="text-center py-2.5 px-2 font-medium w-16"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(showAllMembers ? memberFundStatuses : memberFundStatuses.slice(0, 10)).map(m => {
+                        const pct = m.target > 0 ? Math.round((m.paid / m.target) * 100) : 0;
+                        const barColor = pct >= 100 ? 'bg-green-500' : pct > 50 ? 'bg-amber-500' : 'bg-red-500';
+
+                        return (
+                          <tr key={m.member_id} className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-2">
+                                {m.member?.avatar_url ? (
+                                  <img src={m.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                                    <span className="text-xs text-gray-500">{m.member?.name?.[0]}</span>
+                                  </div>
+                                )}
+                                <span className="text-gray-700 dark:text-gray-300">{m.member?.name}</span>
+                                <Badge variant={m.tier === 'regular' ? 'success' : m.tier === 'occasional' ? 'warning' : 'info'} size="sm">
+                                  {TIER_LABELS[m.tier]}
+                                </Badge>
+                              </div>
+                            </td>
+                            <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(m.target)}</td>
+                            <td className="text-right py-2 px-2 font-medium text-green-600">{formatCurrency(m.paid)}</td>
+                            <td className="text-right py-2 px-2 font-medium text-red-600">
+                              {m.outstanding > 0 ? formatCurrency(m.outstanding) : <CheckCircle className="w-4 h-4 text-green-500 inline" />}
+                            </td>
+                            <td className="py-2 px-2">
+                              <div className="flex items-center gap-1.5">
+                                {renderProgressBar(m.paid, m.target, barColor)}
+                                <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
+                              </div>
+                            </td>
+                            <td className="text-center py-2 px-2">
+                              <div className="flex gap-0.5 justify-center">
+                                <button
+                                  onClick={() => {
+                                    setPaymentForm(prev => ({ ...prev, member_id: m.member_id }));
+                                    setShowPaymentModal(true);
+                                  }}
+                                  className="p-1 text-gray-400 hover:text-green-600"
+                                  title="Record payment"
+                                >
+                                  <IndianRupee className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => setDeleteConfirm({ type: 'target', id: m.id, name: m.member?.name || '' })} className="p-1 text-gray-400 hover:text-red-500">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {memberFundStatuses.length > 10 && (
+                    <button
+                      onClick={() => setShowAllMembers(!showAllMembers)}
+                      className="w-full py-2 text-xs text-primary-500 hover:text-primary-600 font-medium"
+                    >
+                      {showAllMembers ? 'Show less' : `Show all ${memberFundStatuses.length} members`}
+                    </button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
-        )}
 
-        {/* Member Fund Status List */}
-        {memberFundStatuses.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-              <p className="text-gray-500">No member targets set yet</p>
-              {isAdmin && <p className="text-xs text-gray-400 mt-1">Click "Set Targets" to assign amounts</p>}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {memberFundStatuses.map(m => {
-              const pct = m.target > 0 ? Math.round((m.paid / m.target) * 100) : 0;
-              const statusColor = pct >= 100 ? 'text-green-600' : pct > 0 ? 'text-amber-600' : 'text-red-600';
-              const barColor = pct >= 100 ? 'bg-green-500' : pct > 0 ? 'bg-amber-500' : 'bg-red-500';
-
-              return (
-                <Card key={m.member_id} animate>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
+          {/* ===== RECENT PAYMENTS ===== */}
+          {payments.length > 0 && (
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+                <CreditCard className="w-4 h-4 text-primary-500" />
+                Recent Payments
+                <Badge variant="info" size="sm">{payments.length}</Badge>
+              </h2>
+              <Card animate>
+                <CardContent className="p-0 divide-y divide-gray-100 dark:divide-gray-700">
+                  {payments.slice(0, 15).map(payment => (
+                    <div key={payment.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/30">
                       <div className="flex items-center gap-2">
-                        {m.member?.avatar_url ? (
-                          <img src={m.member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        {payment.member?.avatar_url ? (
+                          <img src={payment.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-sm text-gray-500">{m.member?.name?.[0]}</span>
+                          <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                            <span className="text-xs text-gray-500">{payment.member?.name?.[0]}</span>
                           </div>
                         )}
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{m.member?.name}</p>
-                          <Badge variant={TIER_COLORS[m.tier]} size="sm">{TIER_LABELS[m.tier]}</Badge>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{payment.member?.name}</p>
+                          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                            <span>{formatDate(payment.date)}</span>
+                            <Badge variant="info" size="sm">{METHOD_LABELS[payment.payment_method]}</Badge>
+                            {payment.description && <span>· {payment.description}</span>}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {isAdmin && (
-                          <>
-                            <Button size="sm" variant="ghost" onClick={() => openQuickPayment(m.member_id)}>
-                              <IndianRupee className="w-3 h-3" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setDeleteConfirm({ type: 'target', id: m.id, name: m.member?.name || '' })}>
-                              <Trash2 className="w-3 h-3 text-red-500" />
-                            </Button>
-                          </>
-                        )}
+                        <span className="text-sm font-bold text-green-600">+{formatCurrency(Number(payment.amount))}</span>
+                        <button onClick={() => setDeleteConfirm({ type: 'payment', id: payment.id, name: `${payment.member?.name} — ${formatCurrency(Number(payment.amount))}` })} className="p-1 text-gray-400 hover:text-red-500">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500">
-                        {formatCurrency(m.paid)} / {formatCurrency(m.target)}
-                      </span>
-                      <span className={`font-medium ${statusColor}`}>{pct}%</span>
-                    </div>
-                    {renderProgressBar(m.paid, m.target, barColor)}
-                    {m.outstanding > 0 && (
-                      <p className="text-xs text-red-500 mt-1">Outstanding: {formatCurrency(m.outstanding)}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function renderPaymentsTab() {
-    const totalFiltered = filteredPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-
-    return (
-      <div className="space-y-4">
-        {/* Actions & Filters */}
-        <div className="flex flex-wrap gap-3 items-center">
-          {isAdmin && (
-            <Button size="sm" onClick={() => { resetPaymentForm(); setShowPaymentModal(true); }}>
-              <Plus className="w-4 h-4 mr-1" /> Record Payment
-            </Button>
-          )}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by member..."
-              value={paymentSearch}
-              onChange={(e) => setPaymentSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
-          <Select
-            value={paymentMethodFilter}
-            onChange={(e) => setPaymentMethodFilter(e.target.value)}
-            className="!w-auto"
-            options={[
-              { value: 'all', label: 'All Methods' },
-              { value: 'cash', label: 'Cash' },
-              { value: 'online', label: 'Online' },
-              { value: 'bank_transfer', label: 'Bank Transfer' },
-              { value: 'other', label: 'Other' },
-            ]}
-          />
-        </div>
-
-        {/* Total */}
-        <Card>
-          <CardContent className="p-3 text-center">
-            <p className="text-xs text-gray-500">Total Payments</p>
-            <p className="text-xl font-bold text-green-600">{formatCurrency(totalFiltered)}</p>
-            <p className="text-xs text-gray-400">{filteredPayments.length} transactions</p>
-          </CardContent>
-        </Card>
-
-        {/* Payment List */}
-        {filteredPayments.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-              <p className="text-gray-500">No payments recorded</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {filteredPayments.map(payment => (
-              <Card key={payment.id} animate>
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {payment.member?.avatar_url ? (
-                        <img src={payment.member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                          <span className="text-sm text-gray-500">{payment.member?.name?.[0]}</span>
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{payment.member?.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>{formatDate(payment.date)}</span>
-                          <Badge variant="info" size="sm">{METHOD_LABELS[payment.payment_method]}</Badge>
-                        </div>
-                        {payment.description && <p className="text-xs text-gray-400 mt-0.5">{payment.description}</p>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-green-600">+{formatCurrency(Number(payment.amount))}</span>
-                      {isAdmin && (
-                        <Button size="sm" variant="ghost" onClick={() => setDeleteConfirm({ type: 'payment', id: payment.id, name: `${payment.member?.name} - ${formatCurrency(Number(payment.amount))}` })}>
-                          <Trash2 className="w-3 h-3 text-red-500" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                  ))}
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+            </div>
+          )}
+        </div>
+      )}
 
-  function renderSeasonModal() {
-    return (
-      <Modal
-        isOpen={showSeasonModal}
-        onClose={() => { setShowSeasonModal(false); resetSeasonForm(); }}
-        title={editingSeason ? 'Edit Season' : 'Create Season'}
-      >
+      {/* ===== MODALS ===== */}
+
+      {/* Season Modal */}
+      <Modal isOpen={showSeasonModal} onClose={() => { setShowSeasonModal(false); setEditingSeason(null); }} title={editingSeason ? 'Edit Season' : 'Create Season'}>
         <div className="space-y-4">
-          <Input label="Season Name" placeholder="e.g. Season 2026-27" value={seasonForm.name} onChange={(e) => setSeasonForm(f => ({ ...f, name: e.target.value }))} />
+          <Input label="Season Name" value={seasonForm.name} onChange={(e) => setSeasonForm(f => ({ ...f, name: e.target.value }))} />
           <div className="grid grid-cols-2 gap-4">
             <Input type="date" label="Start Date" value={seasonForm.start_date} onChange={(e) => setSeasonForm(f => ({ ...f, start_date: e.target.value }))} />
             <Input type="date" label="End Date" value={seasonForm.end_date} onChange={(e) => setSeasonForm(f => ({ ...f, end_date: e.target.value }))} />
           </div>
-          <Input type="number" label="Total Budget (₹)" placeholder="Estimated total ground cost" value={seasonForm.total_budget} onChange={(e) => setSeasonForm(f => ({ ...f, total_budget: e.target.value }))} />
-          <Select
-            label="Status"
-            value={seasonForm.status}
-            onChange={(e) => setSeasonForm(f => ({ ...f, status: e.target.value as Season['status'] }))}
-            options={[
-              { value: 'upcoming', label: 'Upcoming' },
-              { value: 'active', label: 'Active' },
-              { value: 'completed', label: 'Completed' },
-            ]}
-          />
-          <TextArea label="Notes" placeholder="Optional notes" value={seasonForm.notes} onChange={(e) => setSeasonForm(f => ({ ...f, notes: e.target.value }))} />
+          <Input type="number" label="Estimated Budget (₹)" placeholder="Optional" value={seasonForm.total_budget} onChange={(e) => setSeasonForm(f => ({ ...f, total_budget: e.target.value }))} />
+          <Select label="Status" value={seasonForm.status} onChange={(e) => setSeasonForm(f => ({ ...f, status: e.target.value as Season['status'] }))} options={[{ value: 'upcoming', label: 'Upcoming' }, { value: 'active', label: 'Active' }, { value: 'completed', label: 'Completed' }]} />
+          <TextArea label="Notes" placeholder="Optional" value={seasonForm.notes} onChange={(e) => setSeasonForm(f => ({ ...f, notes: e.target.value }))} />
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Four Star Ground Schedule:</p>
+            <p>Tue & Thu — ₹{WEEKDAY_COST.toLocaleString()}/session</p>
+            <p>Sat — ₹{WEEKEND_COST.toLocaleString()}/session</p>
+            <p>Time: {TIME_SLOT}</p>
+          </div>
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => { setShowSeasonModal(false); resetSeasonForm(); }} className="flex-1" disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              onClick={editingSeason ? handleUpdateSeason : handleAddSeason}
-              className="flex-1"
-              disabled={isSubmitting || !seasonForm.name || !seasonForm.start_date || !seasonForm.end_date}
-            >
+            <Button variant="secondary" onClick={() => { setShowSeasonModal(false); setEditingSeason(null); }} className="flex-1" disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={editingSeason ? handleUpdateSeason : handleCreateSeason} className="flex-1" disabled={isSubmitting || !seasonForm.name || !seasonForm.start_date || !seasonForm.end_date}>
               {isSubmitting ? 'Saving...' : editingSeason ? 'Update' : 'Create'}
             </Button>
           </div>
         </div>
       </Modal>
-    );
-  }
 
-  function renderBookingModal() {
-    return (
-      <Modal
-        isOpen={showBookingModal}
-        onClose={() => { setShowBookingModal(false); resetBookingForm(); }}
-        title={editingBooking ? 'Edit Booking' : 'Add Ground Booking'}
-      >
+      {/* Edit Booking Modal */}
+      <Modal isOpen={showEditBookingModal} onClose={() => { setShowEditBookingModal(false); setEditingBooking(null); }} title={editingBooking ? `Edit — ${formatDate(editingBooking.date)}` : 'Edit Booking'}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Input type="date" label="Date" value={bookingForm.date} onChange={(e) => setBookingForm(f => ({ ...f, date: e.target.value }))} />
-            <Input type="number" label="Cost (₹)" placeholder="0" value={bookingForm.cost} onChange={(e) => setBookingForm(f => ({ ...f, cost: e.target.value }))} />
-          </div>
-          <Input label="Venue" placeholder="Ground name" value={bookingForm.venue} onChange={(e) => setBookingForm(f => ({ ...f, venue: e.target.value }))} />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Time Slot" placeholder="e.g. 6:00 AM - 9:00 AM" value={bookingForm.time_slot} onChange={(e) => setBookingForm(f => ({ ...f, time_slot: e.target.value }))} />
-            <Input type="number" label="Opponent Collection (₹)" placeholder="0" value={bookingForm.opponent_collection} onChange={(e) => setBookingForm(f => ({ ...f, opponent_collection: e.target.value }))} />
+            <Input type="number" label="Cost (₹)" value={bookingEditForm.cost} onChange={(e) => setBookingEditForm(f => ({ ...f, cost: e.target.value }))} />
+            <Input type="number" label="Opponent Collection (₹)" placeholder="0" value={bookingEditForm.opponent_collection} onChange={(e) => setBookingEditForm(f => ({ ...f, opponent_collection: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Status"
-              value={bookingForm.status}
-              onChange={(e) => setBookingForm(f => ({ ...f, status: e.target.value as GroundBooking['status'] }))}
-              options={[
-                { value: 'booked', label: 'Booked' },
-                { value: 'completed', label: 'Completed' },
-                { value: 'cancelled', label: 'Cancelled' },
-              ]}
-            />
-            <Select
-              label="Payment"
-              value={bookingForm.payment_status}
-              onChange={(e) => setBookingForm(f => ({ ...f, payment_status: e.target.value as GroundBooking['payment_status'] }))}
-              options={[
-                { value: 'pending', label: 'Pending' },
-                { value: 'paid', label: 'Paid' },
-              ]}
-            />
+            <Select label="Status" value={bookingEditForm.status} onChange={(e) => setBookingEditForm(f => ({ ...f, status: e.target.value as GroundBooking['status'] }))} options={[{ value: 'booked', label: 'Booked' }, { value: 'completed', label: 'Completed' }, { value: 'cancelled', label: 'Cancelled' }]} />
+            <Select label="Payment" value={bookingEditForm.payment_status} onChange={(e) => setBookingEditForm(f => ({ ...f, payment_status: e.target.value as GroundBooking['payment_status'] }))} options={[{ value: 'pending', label: 'Pending' }, { value: 'paid', label: 'Paid' }]} />
           </div>
-          <Select
-            label="Link to Match (Optional)"
-            value={bookingForm.match_id}
-            onChange={(e) => setBookingForm(f => ({ ...f, match_id: e.target.value }))}
-            options={[
-              { value: '', label: 'No linked match' },
-              ...availableMatches.map(m => ({
-                value: m.id,
-                label: `${formatDate(m.date)} - vs ${m.opponent || 'Internal'} (${m.venue})`,
-              })),
-            ]}
-          />
-          <TextArea label="Notes" placeholder="Optional notes" value={bookingForm.notes} onChange={(e) => setBookingForm(f => ({ ...f, notes: e.target.value }))} />
+          <TextArea label="Notes" placeholder="e.g. External match, cancelled due to rain" value={bookingEditForm.notes} onChange={(e) => setBookingEditForm(f => ({ ...f, notes: e.target.value }))} />
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => { setShowBookingModal(false); resetBookingForm(); }} className="flex-1" disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              onClick={editingBooking ? handleUpdateBooking : handleAddBooking}
-              className="flex-1"
-              disabled={isSubmitting || !bookingForm.venue || !bookingForm.date}
-            >
-              {isSubmitting ? 'Saving...' : editingBooking ? 'Update' : 'Add Booking'}
+            <Button variant="secondary" onClick={() => { setShowEditBookingModal(false); setEditingBooking(null); }} className="flex-1" disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleSaveBookingEdit} className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>
       </Modal>
-    );
-  }
 
-  function renderTargetModal() {
-    const activeMembers = members.filter(m => m.status === 'active');
-    const existingTargetMemberIds = new Set(selectedSeason?.targets?.map(t => t.member_id) || []);
+      {/* Payment Modal */}
+      <Modal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} title="Record Payment">
+        <div className="space-y-4">
+          <Select
+            label="Member"
+            value={paymentForm.member_id}
+            onChange={(e) => setPaymentForm(f => ({ ...f, member_id: e.target.value }))}
+            options={[
+              { value: '', label: 'Select member' },
+              ...(selectedSeason?.targets?.length
+                ? selectedSeason.targets.filter(t => t.member).map(t => ({ value: t.member_id, label: t.member!.name }))
+                : members.filter(m => m.status === 'active').map(m => ({ value: m.id, label: m.name }))
+              ),
+            ]}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input type="number" label="Amount (₹)" placeholder="0" value={paymentForm.amount} onChange={(e) => setPaymentForm(f => ({ ...f, amount: e.target.value }))} />
+            <Input type="date" label="Date" value={paymentForm.date} onChange={(e) => setPaymentForm(f => ({ ...f, date: e.target.value }))} />
+          </div>
+          <Select label="Payment Method" value={paymentForm.payment_method} onChange={(e) => setPaymentForm(f => ({ ...f, payment_method: e.target.value as FundPaymentMethod }))} options={[{ value: 'cash', label: 'Cash' }, { value: 'online', label: 'Online' }, { value: 'bank_transfer', label: 'Bank Transfer' }, { value: 'other', label: 'Other' }]} />
+          <Input label="Description" placeholder="e.g. Oct-Nov advance" value={paymentForm.description} onChange={(e) => setPaymentForm(f => ({ ...f, description: e.target.value }))} />
 
-    return (
-      <Modal
-        isOpen={showTargetModal}
-        onClose={() => setShowTargetModal(false)}
-        title="Set Member Targets"
-        size="lg"
-      >
+          {/* Show member status */}
+          {paymentForm.member_id && selectedSeasonId && (() => {
+            const status = getMemberFundStatus(selectedSeasonId, paymentForm.member_id);
+            if (status.target > 0) {
+              return (
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-500">Target: {formatCurrency(status.target)}</span>
+                    <span className="text-green-600">Paid: {formatCurrency(status.paid)}</span>
+                    <span className="text-red-600">Due: {formatCurrency(Math.max(0, status.outstanding))}</span>
+                  </div>
+                  {renderProgressBar(status.paid, status.target, status.paid >= status.target ? 'bg-green-500' : 'bg-amber-500')}
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setShowPaymentModal(false)} className="flex-1" disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleAddPayment} className="flex-1" disabled={isSubmitting || !paymentForm.member_id || !paymentForm.amount || Number(paymentForm.amount) <= 0}>
+              {isSubmitting ? 'Saving...' : 'Record Payment'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Set Targets Modal */}
+      <Modal isOpen={showTargetModal} onClose={() => setShowTargetModal(false)} title="Set Member Targets" size="lg">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Tier"
-              value={targetTier}
-              onChange={(e) => setTargetTier(e.target.value as MemberTier)}
-              options={[
-                { value: 'regular', label: 'Regular' },
-                { value: 'occasional', label: 'Occasional' },
-                { value: 'other', label: 'Other' },
-              ]}
-            />
+            <Select label="Tier" value={targetTier} onChange={(e) => setTargetTier(e.target.value as MemberTier)} options={[{ value: 'regular', label: 'Regular' }, { value: 'occasional', label: 'Occasional' }, { value: 'other', label: 'Other' }]} />
             <Input type="number" label="Target Amount (₹)" placeholder="0" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} />
           </div>
-
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Members</label>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="text-xs text-primary-500 hover:text-primary-600"
-                  onClick={() => setSelectedMemberIds(activeMembers.filter(m => !existingTargetMemberIds.has(m.id)).map(m => m.id))}
-                >
-                  Select All New
-                </button>
-                <button
-                  type="button"
-                  className="text-xs text-gray-400 hover:text-gray-500"
-                  onClick={() => setSelectedMemberIds([])}
-                >
-                  Clear
-                </button>
+                <button type="button" className="text-xs text-primary-500 hover:text-primary-600" onClick={() => {
+                  const existingIds = new Set(selectedSeason?.targets?.map(t => t.member_id) || []);
+                  setSelectedMemberIds(members.filter(m => m.status === 'active' && !existingIds.has(m.id)).map(m => m.id));
+                }}>Select All New</button>
+                <button type="button" className="text-xs text-gray-400 hover:text-gray-500" onClick={() => setSelectedMemberIds([])}>Clear</button>
               </div>
             </div>
             <div className="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-2 space-y-1">
-              {activeMembers.map(member => {
-                const hasTarget = existingTargetMemberIds.has(member.id);
+              {members.filter(m => m.status === 'active').map(member => {
+                const hasTarget = selectedSeason?.targets?.some(t => t.member_id === member.id);
                 const isSelected = selectedMemberIds.includes(member.id);
                 return (
-                  <label
-                    key={member.id}
-                    className={`flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedMemberIds(prev => [...prev, member.id]);
-                        else setSelectedMemberIds(prev => prev.filter(id => id !== member.id));
-                      }}
-                      className="rounded border-gray-300"
-                    />
+                  <label key={member.id} className={`flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
+                    <input type="checkbox" checked={isSelected} onChange={(e) => {
+                      if (e.target.checked) setSelectedMemberIds(prev => [...prev, member.id]);
+                      else setSelectedMemberIds(prev => prev.filter(id => id !== member.id));
+                    }} className="rounded border-gray-300" />
                     <div className="flex items-center gap-2 flex-1">
                       {member.avatar_url ? (
                         <img src={member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
@@ -1160,269 +967,24 @@ export function SeasonFund() {
             </div>
             <p className="text-xs text-gray-400 mt-1">{selectedMemberIds.length} selected</p>
           </div>
-
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => setShowTargetModal(false)} className="flex-1" disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSetTargets}
-              className="flex-1"
-              disabled={isSubmitting || selectedMemberIds.length === 0 || !targetAmount}
-            >
+            <Button variant="secondary" onClick={() => setShowTargetModal(false)} className="flex-1" disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleSetTargets} className="flex-1" disabled={isSubmitting || selectedMemberIds.length === 0 || !targetAmount}>
               {isSubmitting ? 'Saving...' : `Set for ${selectedMemberIds.length} Members`}
             </Button>
           </div>
         </div>
       </Modal>
-    );
-  }
 
-  function renderPaymentModal() {
-    // Members who have targets for this season
-    const targetMembers = selectedSeason?.targets?.map(t => t.member) || [];
-    const paymentMembers = targetMembers.length > 0 ? targetMembers : members.filter(m => m.status === 'active');
-
-    return (
-      <Modal
-        isOpen={showPaymentModal}
-        onClose={() => { setShowPaymentModal(false); resetPaymentForm(); }}
-        title="Record Payment"
-      >
-        <div className="space-y-4">
-          <Select
-            label="Member"
-            value={paymentForm.member_id}
-            onChange={(e) => setPaymentForm(f => ({ ...f, member_id: e.target.value }))}
-            options={[
-              { value: '', label: 'Select member' },
-              ...paymentMembers.filter(Boolean).map(m => ({ value: m!.id, label: m!.name })),
-            ]}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input type="number" label="Amount (₹)" placeholder="0" value={paymentForm.amount} onChange={(e) => setPaymentForm(f => ({ ...f, amount: e.target.value }))} />
-            <Input type="date" label="Date" value={paymentForm.date} onChange={(e) => setPaymentForm(f => ({ ...f, date: e.target.value }))} />
-          </div>
-          <Select
-            label="Payment Method"
-            value={paymentForm.payment_method}
-            onChange={(e) => setPaymentForm(f => ({ ...f, payment_method: e.target.value as FundPaymentMethod }))}
-            options={[
-              { value: 'cash', label: 'Cash' },
-              { value: 'online', label: 'Online' },
-              { value: 'bank_transfer', label: 'Bank Transfer' },
-              { value: 'other', label: 'Other' },
-            ]}
-          />
-          <Input label="Description (Optional)" placeholder="e.g. Oct advance payment" value={paymentForm.description} onChange={(e) => setPaymentForm(f => ({ ...f, description: e.target.value }))} />
-
-          {/* Show member's current status */}
-          {paymentForm.member_id && selectedSeasonId && (() => {
-            const status = getMemberFundStatus(selectedSeasonId, paymentForm.member_id);
-            if (status.target > 0) {
-              return (
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 mb-1">Current Status</p>
-                  <div className="flex justify-between text-sm">
-                    <span>Target: {formatCurrency(status.target)}</span>
-                    <span className="text-green-600">Paid: {formatCurrency(status.paid)}</span>
-                    <span className="text-red-600">Due: {formatCurrency(Math.max(0, status.outstanding))}</span>
-                  </div>
-                  {renderProgressBar(status.paid, status.target, status.paid >= status.target ? 'bg-green-500' : 'bg-amber-500')}
-                </div>
-              );
-            }
-            return null;
-          })()}
-
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => { setShowPaymentModal(false); resetPaymentForm(); }} className="flex-1" disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddPayment}
-              className="flex-1"
-              disabled={isSubmitting || !paymentForm.member_id || !paymentForm.amount || Number(paymentForm.amount) <= 0}
-            >
-              {isSubmitting ? 'Saving...' : 'Record Payment'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    );
-  }
-
-  function renderGenerateModal() {
-    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const previewBookings = selectedSeason ? generateSeasonBookings(
-      selectedSeason.id,
-      selectedSeason.start_date,
-      selectedSeason.end_date,
-      {
-        venue: generateForm.venue,
-        timeSlot: generateForm.time_slot,
-        days: generateForm.days,
-        weekdayCost: Number(generateForm.weekday_cost) || 0,
-        weekendCost: Number(generateForm.weekend_cost) || 0,
-      }
-    ) : [];
-    const totalCost = previewBookings.reduce((sum, b) => sum + Number(b.cost), 0);
-
-    return (
-      <Modal
-        isOpen={showGenerateModal}
-        onClose={() => setShowGenerateModal(false)}
-        title="Generate Season Bookings"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Auto-generate bookings for selected days across the entire season ({selectedSeason?.start_date} to {selectedSeason?.end_date}).
-          </p>
-          <Input label="Venue" value={generateForm.venue} onChange={(e) => setGenerateForm(f => ({ ...f, venue: e.target.value }))} />
-          <Input label="Time Slot" value={generateForm.time_slot} onChange={(e) => setGenerateForm(f => ({ ...f, time_slot: e.target.value }))} />
-          <div className="grid grid-cols-2 gap-4">
-            <Input type="number" label="Weekday Cost (₹)" value={generateForm.weekday_cost} onChange={(e) => setGenerateForm(f => ({ ...f, weekday_cost: e.target.value }))} />
-            <Input type="number" label="Weekend Cost (₹)" value={generateForm.weekend_cost} onChange={(e) => setGenerateForm(f => ({ ...f, weekend_cost: e.target.value }))} />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Select Days</label>
-            <div className="flex gap-2 flex-wrap">
-              {dayLabels.map((label, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setGenerateForm(f => ({
-                      ...f,
-                      days: f.days.includes(idx) ? f.days.filter(d => d !== idx) : [...f.days, idx],
-                    }));
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    generateForm.days.includes(idx)
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Preview */}
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Preview</p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <span className="text-gray-500">Total bookings:</span>
-              <span className="font-medium text-gray-900 dark:text-white">{previewBookings.length}</span>
-              <span className="text-gray-500">Total cost:</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(totalCost)}</span>
-              <span className="text-gray-500">Weekday sessions:</span>
-              <span className="font-medium">{previewBookings.filter(b => { const d = new Date(b.date).getDay(); return d !== 0 && d !== 6; }).length}</span>
-              <span className="text-gray-500">Weekend sessions:</span>
-              <span className="font-medium">{previewBookings.filter(b => { const d = new Date(b.date).getDay(); return d === 0 || d === 6; }).length}</span>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => setShowGenerateModal(false)} className="flex-1" disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleGenerateBookings}
-              className="flex-1"
-              disabled={isSubmitting || previewBookings.length === 0 || !generateForm.venue}
-            >
-              {isSubmitting ? 'Generating...' : `Generate ${previewBookings.length} Bookings`}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    );
-  }
-
-  return (
-    <div>
-      <Header title="Season Fund" subtitle="Ground booking & advance payments" />
-
-      {/* Season Selector */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <Select
-          value={selectedSeasonId}
-          onChange={(e) => setSelectedSeasonId(e.target.value)}
-          className="!w-auto min-w-[200px]"
-          options={seasons.map(s => ({
-            value: s.id,
-            label: `${s.name}${s.status === 'active' ? ' (Active)' : ''}`,
-          }))}
-        />
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => { resetSeasonForm(); setShowSeasonModal(true); }}>
-              <Plus className="w-4 h-4 mr-1" /> New Season
-            </Button>
-            {selectedSeason && (
-              <>
-                <Button size="sm" variant="secondary" onClick={() => openEditSeason(selectedSeason)}>
-                  <Edit3 className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => setDeleteConfirm({ type: 'season', id: selectedSeason.id, name: selectedSeason.name })}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto">
-        {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === tab.key
-                ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'overview' && renderOverviewTab()}
-      {activeTab === 'bookings' && renderBookingsTab()}
-      {activeTab === 'members' && renderMembersTab()}
-      {activeTab === 'payments' && renderPaymentsTab()}
-
-      {/* Modals */}
-      {renderSeasonModal()}
-      {renderBookingModal()}
-      {renderTargetModal()}
-      {renderPaymentModal()}
-      {renderGenerateModal()}
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={!!deleteConfirm}
-        onClose={() => setDeleteConfirm(null)}
-        title="Confirm Delete"
-        size="sm"
-      >
+      {/* Delete Confirmation */}
+      <Modal isOpen={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Confirm Delete" size="sm">
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Are you sure you want to delete <strong>{deleteConfirm?.name}</strong>?
-            {deleteConfirm?.type === 'season' && ' This will also delete all bookings, targets, and payments for this season.'}
+            {deleteConfirm?.type === 'season' && ' This will also delete all bookings, targets, and payments.'}
           </p>
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1" disabled={isDeleting}>
-              Cancel
-            </Button>
+            <Button variant="secondary" onClick={() => setDeleteConfirm(null)} className="flex-1" disabled={isDeleting}>Cancel</Button>
             <Button variant="danger" onClick={handleDelete} className="flex-1" disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
@@ -1432,3 +994,4 @@ export function SeasonFund() {
     </div>
   );
 }
+
