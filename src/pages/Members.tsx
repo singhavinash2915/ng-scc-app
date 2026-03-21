@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X, MessageCircle, History, ArrowUpRight, ArrowDownRight, RotateCcw, Settings2 } from 'lucide-react';
+import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X, MessageCircle, History, ArrowUpRight, ArrowDownRight, RotateCcw, Settings2, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -14,6 +14,10 @@ import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
 import type { Member } from '../types';
 
+// Member access PIN — shared with Ground Booking page
+const MEMBER_PIN = 'scc';
+const PIN_STORAGE_KEY = 'scc-member-access';
+
 export function Members() {
   const { members, loading, addMember, updateMember, deleteMember, addFunds, adjustBalance, uploadAvatar, removeAvatar } = useMembers();
   const { matches } = useMatches();
@@ -21,6 +25,28 @@ export function Members() {
   const { isActive } = useMemberActivity(members, matches);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
+
+  // Member PIN access
+  const [hasAccess, setHasAccess] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(PIN_STORAGE_KEY) === 'true';
+    }
+    return false;
+  });
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+
+  const handlePinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pinInput.toLowerCase() === MEMBER_PIN) {
+      localStorage.setItem(PIN_STORAGE_KEY, 'true');
+      setHasAccess(true);
+      setPinError('');
+    } else {
+      setPinError('Incorrect PIN. Ask your team admin for access.');
+    }
+  };
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [balanceFilter, setBalanceFilter] = useState<'all' | 'low' | 'critical'>('all');
@@ -273,6 +299,40 @@ export function Members() {
       setAvatarUploading(false);
     }
   };
+
+  // ---- Member PIN Gate (admins bypass) ----
+  if (!isAdmin && !hasAccess) {
+    return (
+      <div>
+        <Header title="Members" subtitle="Team members — Members Only" />
+        <div className="max-w-sm mx-auto mt-12">
+          <Card animate>
+            <CardContent className="text-center py-10">
+              <Lock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Members Only</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                Enter the member PIN to view team members.
+              </p>
+              <form onSubmit={handlePinSubmit} className="space-y-3">
+                <input
+                  type="text"
+                  value={pinInput}
+                  onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
+                  placeholder="Enter member PIN"
+                  className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                  autoFocus
+                />
+                {pinError && <p className="text-sm text-red-500">{pinError}</p>}
+                <Button type="submit" className="w-full" disabled={!pinInput.trim()}>
+                  Access Members
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
