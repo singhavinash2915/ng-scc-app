@@ -18,6 +18,7 @@ import {
   CreditCard,
   Receipt,
   Megaphone,
+  Landmark,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -40,6 +41,7 @@ const publicNavItems = [
 ];
 
 const adminNavItems = [
+  { to: '/season-fund', icon: Landmark, label: 'Season Fund' },
   { to: '/match-day-tools', icon: Megaphone, label: 'Match Day Tools' },
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
   { to: '/settings', icon: Settings, label: 'Settings' },

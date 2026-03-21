@@ -158,6 +158,64 @@ export interface PaymentOrder {
   member?: Member;
 }
 
+// Season Fund & Ground Booking types
+export type SeasonStatus = 'upcoming' | 'active' | 'completed';
+export type BookingStatus = 'booked' | 'completed' | 'cancelled';
+export type BookingPaymentStatus = 'pending' | 'paid';
+export type FundPaymentMethod = 'cash' | 'online' | 'bank_transfer' | 'other';
+export type MemberTier = 'regular' | 'occasional' | 'other';
+
+export interface Season {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  total_budget: number;
+  status: SeasonStatus;
+  notes: string | null;
+  created_at: string;
+  bookings?: GroundBooking[];
+  targets?: SeasonFundTarget[];
+}
+
+export interface GroundBooking {
+  id: string;
+  season_id: string;
+  date: string;
+  venue: string;
+  time_slot: string | null;
+  cost: number;
+  status: BookingStatus;
+  payment_status: BookingPaymentStatus;
+  match_id: string | null;
+  notes: string | null;
+  created_at: string;
+  match?: Match;
+}
+
+export interface SeasonFundTarget {
+  id: string;
+  season_id: string;
+  member_id: string;
+  target_amount: number;
+  tier: MemberTier;
+  notes: string | null;
+  created_at: string;
+  member?: Member;
+}
+
+export interface SeasonFundPayment {
+  id: string;
+  season_id: string;
+  member_id: string;
+  amount: number;
+  date: string;
+  payment_method: FundPaymentMethod;
+  description: string | null;
+  created_at: string;
+  member?: Member;
+}
+
 export interface Sponsor {
   id: string;
   name: string;
