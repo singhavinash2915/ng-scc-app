@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Handshake,
   MapPin,
+  Lock,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -27,6 +28,10 @@ import { useSeasonFund } from '../hooks/useSeasonFund';
 import { useMembers } from '../hooks/useMembers';
 import { useAuth } from '../context/AuthContext';
 import type { Season, GroundBooking, MemberTier, FundPaymentMethod } from '../types';
+
+// Member access PIN
+const MEMBER_PIN = 'scc';
+const PIN_STORAGE_KEY = 'scc-ground-booking-access';
 
 // Four Star Ground hardcoded config
 const GROUND_NAME = 'Four Star Ground';
@@ -71,6 +76,27 @@ export function SeasonFund() {
   } = useSeasonFund();
   const { members } = useMembers();
   const { isAdmin } = useAuth();
+
+  // Member PIN access
+  const [hasAccess, setHasAccess] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(PIN_STORAGE_KEY) === 'true';
+    }
+    return false;
+  });
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+
+  const handlePinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pinInput.toLowerCase() === MEMBER_PIN) {
+      localStorage.setItem(PIN_STORAGE_KEY, 'true');
+      setHasAccess(true);
+      setPinError('');
+    } else {
+      setPinError('Incorrect PIN. Ask your team admin for access.');
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<TabType>('bookings');
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
@@ -361,6 +387,40 @@ export function SeasonFund() {
     return (
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
         <div className={`${color} h-2 rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+    );
+  }
+
+  // ---- Member PIN Gate (admins bypass) ----
+  if (!isAdmin && !hasAccess) {
+    return (
+      <div>
+        <Header title="Ground Booking" subtitle="Four Star Ground — Members Only" />
+        <div className="max-w-sm mx-auto mt-12">
+          <Card animate>
+            <CardContent className="text-center py-10">
+              <Lock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Members Only</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                Enter the member PIN to view ground bookings and contributions.
+              </p>
+              <form onSubmit={handlePinSubmit} className="space-y-3">
+                <input
+                  type="text"
+                  value={pinInput}
+                  onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
+                  placeholder="Enter member PIN"
+                  className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                  autoFocus
+                />
+                {pinError && <p className="text-sm text-red-500">{pinError}</p>}
+                <Button type="submit" className="w-full" disabled={!pinInput.trim()}>
+                  Access Ground Booking
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
