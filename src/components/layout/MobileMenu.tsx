@@ -70,7 +70,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
               { to: '/analytics', icon: BarChart3, label: 'Analytics' },
               { to: '/feedback', icon: MessageSquare, label: 'Feedback' },
-              { to: '/season-fund', icon: Landmark, label: 'Ground Booking' },
+              { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
               { to: '/about', icon: Info, label: 'About' },
             ].map((item) => (
               <NavLink
