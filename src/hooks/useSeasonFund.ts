@@ -187,11 +187,67 @@ export function useSeasonFund() {
     }
   };
 
+  // ---- Bulk Bookings Generator ----
+  const generateSeasonBookings = (
+    seasonId: string,
+    startDate: string,
+    endDate: string,
+    config: {
+      venue: string;
+      timeSlot: string;
+      days: number[]; // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+      weekdayCost: number;
+      weekendCost: number;
+    }
+  ) => {
+    const bookings: Omit<GroundBooking, 'id' | 'created_at' | 'match'>[] = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const current = new Date(start);
+
+    while (current <= end) {
+      const dayOfWeek = current.getDay();
+      if (config.days.includes(dayOfWeek)) {
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        bookings.push({
+          season_id: seasonId,
+          date: current.toISOString().split('T')[0],
+          venue: config.venue,
+          time_slot: config.timeSlot,
+          cost: isWeekend ? config.weekendCost : config.weekdayCost,
+          opponent_collection: 0,
+          status: 'booked',
+          payment_status: 'pending',
+          match_id: null,
+          notes: null,
+        });
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return bookings;
+  };
+
+  const addBulkBookings = async (bookings: Omit<GroundBooking, 'id' | 'created_at' | 'match'>[]) => {
+    try {
+      // Insert in batches of 50
+      for (let i = 0; i < bookings.length; i += 50) {
+        const batch = bookings.slice(i, i + 50);
+        const { error } = await supabase.from('ground_bookings').insert(batch);
+        if (error) throw error;
+      }
+      await fetchSeasons();
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Failed to add bulk bookings');
+    }
+  };
+
   // ---- Computed Helpers ----
   const getSeasonStats = useCallback((season: Season) => {
     const bookings = season.bookings || [];
     const activeBookings = bookings.filter(b => b.status !== 'cancelled');
     const totalSpent = activeBookings.reduce((sum, b) => sum + Number(b.cost), 0);
+    const totalOpponentCollection = activeBookings.reduce((sum, b) => sum + Number(b.opponent_collection || 0), 0);
+    const netCost = totalSpent - totalOpponentCollection;
     const paidBookings = activeBookings.filter(b => b.payment_status === 'paid');
     const pendingBookings = activeBookings.filter(b => b.payment_status === 'pending');
 
@@ -204,6 +260,8 @@ export function useSeasonFund() {
       totalBudget: Number(season.total_budget),
       totalCollected,
       totalSpent,
+      totalOpponentCollection,
+      netCost,
       totalTarget,
       outstanding: totalTarget - totalCollected,
       bookingCount: activeBookings.length,
@@ -271,5 +329,7 @@ export function useSeasonFund() {
     getSeasonStats,
     getMemberFundStatus,
     getVenueBreakdown,
+    generateSeasonBookings,
+    addBulkBookings,
   };
 }

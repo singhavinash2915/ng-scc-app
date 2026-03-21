@@ -185,6 +185,7 @@ export interface GroundBooking {
   venue: string;
   time_slot: string | null;
   cost: number;
+  opponent_collection: number;
   status: BookingStatus;
   payment_status: BookingPaymentStatus;
   match_id: string | null;

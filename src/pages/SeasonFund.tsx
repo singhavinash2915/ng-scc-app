@@ -55,6 +55,7 @@ export function SeasonFund() {
     seasons, payments, loading,
     addSeason, updateSeason, deleteSeason,
     addBooking, updateBooking, deleteBooking,
+    generateSeasonBookings, addBulkBookings,
     setMemberTargets, removeMemberTarget,
     fetchPayments, addPayment, deletePayment,
     getSeasonStats, getMemberFundStatus, getVenueBreakdown,
@@ -73,6 +74,7 @@ export function SeasonFund() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [editingSeason, setEditingSeason] = useState<Season | null>(null);
   const [editingBooking, setEditingBooking] = useState<GroundBooking | null>(null);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filters
@@ -103,6 +105,7 @@ export function SeasonFund() {
     venue: '',
     time_slot: '',
     cost: '',
+    opponent_collection: '',
     status: 'booked' as GroundBooking['status'],
     payment_status: 'pending' as GroundBooking['payment_status'],
     match_id: '',
@@ -121,6 +124,15 @@ export function SeasonFund() {
     date: new Date().toISOString().split('T')[0],
     payment_method: 'cash' as FundPaymentMethod,
     description: '',
+  });
+
+  // Generate bookings form state
+  const [generateForm, setGenerateForm] = useState({
+    venue: 'Four Star Ground',
+    time_slot: '7:00 AM - 9:00 AM',
+    days: [2, 4, 6] as number[], // Tue, Thu, Sat
+    weekday_cost: '5000',
+    weekend_cost: '7000',
   });
 
   // Select first season on load
@@ -243,6 +255,7 @@ export function SeasonFund() {
         venue: bookingForm.venue,
         time_slot: bookingForm.time_slot || null,
         cost: Number(bookingForm.cost) || 0,
+        opponent_collection: Number(bookingForm.opponent_collection) || 0,
         status: bookingForm.status,
         payment_status: bookingForm.payment_status,
         match_id: bookingForm.match_id || null,
@@ -264,6 +277,7 @@ export function SeasonFund() {
         venue: bookingForm.venue,
         time_slot: bookingForm.time_slot || null,
         cost: Number(bookingForm.cost) || 0,
+        opponent_collection: Number(bookingForm.opponent_collection) || 0,
         status: bookingForm.status,
         payment_status: bookingForm.payment_status,
         match_id: bookingForm.match_id || null,
@@ -316,6 +330,29 @@ export function SeasonFund() {
     }
   };
 
+  const handleGenerateBookings = async () => {
+    if (!selectedSeason) return;
+    setIsSubmitting(true);
+    try {
+      const bookings = generateSeasonBookings(
+        selectedSeason.id,
+        selectedSeason.start_date,
+        selectedSeason.end_date,
+        {
+          venue: generateForm.venue,
+          timeSlot: generateForm.time_slot,
+          days: generateForm.days,
+          weekdayCost: Number(generateForm.weekday_cost) || 0,
+          weekendCost: Number(generateForm.weekend_cost) || 0,
+        }
+      );
+      await addBulkBookings(bookings);
+      setShowGenerateModal(false);
+    } catch { /* ignore */ } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteConfirm) return;
     setIsDeleting(true);
@@ -356,6 +393,7 @@ export function SeasonFund() {
       venue: booking.venue,
       time_slot: booking.time_slot || '',
       cost: String(booking.cost),
+      opponent_collection: String(booking.opponent_collection || 0),
       status: booking.status,
       payment_status: booking.payment_status,
       match_id: booking.match_id || '',
@@ -375,7 +413,7 @@ export function SeasonFund() {
   };
 
   const resetBookingForm = () => {
-    setBookingForm({ date: new Date().toISOString().split('T')[0], venue: '', time_slot: '', cost: '', status: 'booked', payment_status: 'pending', match_id: '', notes: '' });
+    setBookingForm({ date: new Date().toISOString().split('T')[0], venue: '', time_slot: '', cost: '', opponent_collection: '', status: 'booked', payment_status: 'pending', match_id: '', notes: '' });
     setEditingBooking(null);
   };
 
@@ -489,9 +527,12 @@ export function SeasonFund() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Landmark className="w-4 h-4 text-orange-500" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Spent on Grounds</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Ground Cost</p>
               </div>
               <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(stats.totalSpent)}</p>
+              {stats.totalOpponentCollection > 0 && (
+                <p className="text-xs text-blue-500 mt-0.5">Opp: -{formatCurrency(stats.totalOpponentCollection)}</p>
+              )}
             </CardContent>
           </Card>
           <Card animate delay={3}>
@@ -612,9 +653,14 @@ export function SeasonFund() {
         {/* Actions & Filters */}
         <div className="flex flex-wrap gap-3 items-center">
           {isAdmin && (
-            <Button size="sm" onClick={() => { resetBookingForm(); setShowBookingModal(true); }}>
-              <Plus className="w-4 h-4 mr-1" /> Add Booking
-            </Button>
+            <>
+              <Button size="sm" onClick={() => { resetBookingForm(); setShowBookingModal(true); }}>
+                <Plus className="w-4 h-4 mr-1" /> Add Booking
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setShowGenerateModal(true)}>
+                <Calendar className="w-4 h-4 mr-1" /> Generate Schedule
+              </Button>
+            </>
           )}
           {venues.length > 0 && (
             <Select
@@ -686,6 +732,9 @@ export function SeasonFund() {
                         <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {booking.venue}</span>
                         {booking.time_slot && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {booking.time_slot}</span>}
                         <span className="flex items-center gap-1"><IndianRupee className="w-3 h-3" /> {formatCurrency(Number(booking.cost))}</span>
+                        {Number(booking.opponent_collection) > 0 && (
+                          <span className="flex items-center gap-1 text-blue-500"><span className="text-xs">Opp: +{formatCurrency(Number(booking.opponent_collection))}</span></span>
+                        )}
                       </div>
                       {booking.match && (
                         <p className="text-xs text-primary-500 mt-1 flex items-center gap-1">
@@ -975,7 +1024,10 @@ export function SeasonFund() {
             <Input type="number" label="Cost (₹)" placeholder="0" value={bookingForm.cost} onChange={(e) => setBookingForm(f => ({ ...f, cost: e.target.value }))} />
           </div>
           <Input label="Venue" placeholder="Ground name" value={bookingForm.venue} onChange={(e) => setBookingForm(f => ({ ...f, venue: e.target.value }))} />
-          <Input label="Time Slot" placeholder="e.g. 6:00 AM - 9:00 AM" value={bookingForm.time_slot} onChange={(e) => setBookingForm(f => ({ ...f, time_slot: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Time Slot" placeholder="e.g. 6:00 AM - 9:00 AM" value={bookingForm.time_slot} onChange={(e) => setBookingForm(f => ({ ...f, time_slot: e.target.value }))} />
+            <Input type="number" label="Opponent Collection (₹)" placeholder="0" value={bookingForm.opponent_collection} onChange={(e) => setBookingForm(f => ({ ...f, opponent_collection: e.target.value }))} />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <Select
               label="Status"
@@ -1200,6 +1252,96 @@ export function SeasonFund() {
     );
   }
 
+  function renderGenerateModal() {
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const previewBookings = selectedSeason ? generateSeasonBookings(
+      selectedSeason.id,
+      selectedSeason.start_date,
+      selectedSeason.end_date,
+      {
+        venue: generateForm.venue,
+        timeSlot: generateForm.time_slot,
+        days: generateForm.days,
+        weekdayCost: Number(generateForm.weekday_cost) || 0,
+        weekendCost: Number(generateForm.weekend_cost) || 0,
+      }
+    ) : [];
+    const totalCost = previewBookings.reduce((sum, b) => sum + Number(b.cost), 0);
+
+    return (
+      <Modal
+        isOpen={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        title="Generate Season Bookings"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Auto-generate bookings for selected days across the entire season ({selectedSeason?.start_date} to {selectedSeason?.end_date}).
+          </p>
+          <Input label="Venue" value={generateForm.venue} onChange={(e) => setGenerateForm(f => ({ ...f, venue: e.target.value }))} />
+          <Input label="Time Slot" value={generateForm.time_slot} onChange={(e) => setGenerateForm(f => ({ ...f, time_slot: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input type="number" label="Weekday Cost (₹)" value={generateForm.weekday_cost} onChange={(e) => setGenerateForm(f => ({ ...f, weekday_cost: e.target.value }))} />
+            <Input type="number" label="Weekend Cost (₹)" value={generateForm.weekend_cost} onChange={(e) => setGenerateForm(f => ({ ...f, weekend_cost: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Select Days</label>
+            <div className="flex gap-2 flex-wrap">
+              {dayLabels.map((label, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setGenerateForm(f => ({
+                      ...f,
+                      days: f.days.includes(idx) ? f.days.filter(d => d !== idx) : [...f.days, idx],
+                    }));
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    generateForm.days.includes(idx)
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Preview</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-gray-500">Total bookings:</span>
+              <span className="font-medium text-gray-900 dark:text-white">{previewBookings.length}</span>
+              <span className="text-gray-500">Total cost:</span>
+              <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(totalCost)}</span>
+              <span className="text-gray-500">Weekday sessions:</span>
+              <span className="font-medium">{previewBookings.filter(b => { const d = new Date(b.date).getDay(); return d !== 0 && d !== 6; }).length}</span>
+              <span className="text-gray-500">Weekend sessions:</span>
+              <span className="font-medium">{previewBookings.filter(b => { const d = new Date(b.date).getDay(); return d === 0 || d === 6; }).length}</span>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setShowGenerateModal(false)} className="flex-1" disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGenerateBookings}
+              className="flex-1"
+              disabled={isSubmitting || previewBookings.length === 0 || !generateForm.venue}
+            >
+              {isSubmitting ? 'Generating...' : `Generate ${previewBookings.length} Bookings`}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
     <div>
       <Header title="Season Fund" subtitle="Ground booking & advance payments" />
@@ -1263,6 +1405,7 @@ export function SeasonFund() {
       {renderBookingModal()}
       {renderTargetModal()}
       {renderPaymentModal()}
+      {renderGenerateModal()}
 
       {/* Delete Confirmation Modal */}
       <Modal
