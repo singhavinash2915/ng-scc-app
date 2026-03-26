@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Landmark,
   Plus,
@@ -140,6 +140,7 @@ export function SeasonFund() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
 
   // Season form
   const [selectedPreset, setSelectedPreset] = useState<PresetKey>('oct-may');
@@ -444,6 +445,25 @@ export function SeasonFund() {
       else next.add(key);
       return next;
     });
+  };
+
+  // Get monthly payment breakdown for a member
+  const getMemberMonthlyBreakdown = (memberId: string) => {
+    const memberPayments = payments.filter(p => p.member_id === memberId);
+    const monthMap = new Map<string, { label: string; total: number; payments: typeof payments }>();
+
+    for (const p of memberPayments) {
+      const d = new Date(p.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const existing = monthMap.get(key) || { label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`, total: 0, payments: [] as typeof payments };
+      existing.total += Number(p.amount);
+      existing.payments.push(p);
+      monthMap.set(key, existing);
+    }
+
+    return Array.from(monthMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => v);
   };
 
   function renderProgressBar(value: number, max: number, color: string = 'bg-primary-500') {
@@ -939,55 +959,97 @@ export function SeasonFund() {
                         {(showAllMembers ? memberFundStatuses : memberFundStatuses.slice(0, 10)).map(m => {
                           const pct = m.target > 0 ? Math.round((m.paid / m.target) * 100) : 0;
                           const barColor = pct >= 100 ? 'bg-green-500' : pct > 50 ? 'bg-amber-500' : 'bg-red-500';
+                          const isExpanded = expandedMemberId === m.member_id;
+                          const colCount = isAdmin ? 6 : 5;
 
                           return (
-                            <tr key={m.member_id} className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                              <td className="py-2 px-3">
-                                <div className="flex items-center gap-2">
-                                  {m.member?.avatar_url ? (
-                                    <img src={m.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                                  ) : (
-                                    <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                                      <span className="text-xs text-gray-500">{m.member?.name?.[0]}</span>
-                                    </div>
-                                  )}
-                                  <span className="text-gray-700 dark:text-gray-300">{m.member?.name}</span>
-                                  <Badge variant={m.tier === 'regular' ? 'success' : m.tier === 'occasional' ? 'warning' : 'info'} size="sm">
-                                    {TIER_LABELS[m.tier]}
-                                  </Badge>
-                                </div>
-                              </td>
-                              <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(m.target)}</td>
-                              <td className="text-right py-2 px-2 font-medium text-green-600">{formatCurrency(m.paid)}</td>
-                              <td className="text-right py-2 px-2 font-medium text-red-600">
-                                {m.outstanding > 0 ? formatCurrency(m.outstanding) : <CheckCircle className="w-4 h-4 text-green-500 inline" />}
-                              </td>
-                              <td className="py-2 px-2">
-                                <div className="flex items-center gap-1.5">
-                                  {renderProgressBar(m.paid, m.target, barColor)}
-                                  <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
-                                </div>
-                              </td>
-                              {isAdmin && (
-                                <td className="text-center py-2 px-2">
-                                  <div className="flex gap-0.5 justify-center">
-                                    <button
-                                      onClick={() => {
-                                        setPaymentForm(prev => ({ ...prev, member_id: m.member_id }));
-                                        setShowPaymentModal(true);
-                                      }}
-                                      className="p-1 text-gray-400 hover:text-green-600"
-                                      title="Record payment"
-                                    >
-                                      <IndianRupee className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button onClick={() => setDeleteConfirm({ type: 'target', id: m.id, name: m.member?.name || '' })} className="p-1 text-gray-400 hover:text-red-500">
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
+                            <React.Fragment key={m.member_id}>
+                              <tr
+                                className={`border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer ${isExpanded ? 'bg-gray-50 dark:bg-gray-700/30' : ''}`}
+                                onClick={() => setExpandedMemberId(isExpanded ? null : m.member_id)}
+                              >
+                                <td className="py-2 px-3">
+                                  <div className="flex items-center gap-2">
+                                    {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
+                                    {m.member?.avatar_url ? (
+                                      <img src={m.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                                    ) : (
+                                      <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                                        <span className="text-xs text-gray-500">{m.member?.name?.[0]}</span>
+                                      </div>
+                                    )}
+                                    <span className="text-gray-700 dark:text-gray-300">{m.member?.name}</span>
+                                    <Badge variant={m.tier === 'regular' ? 'success' : m.tier === 'occasional' ? 'warning' : 'info'} size="sm">
+                                      {TIER_LABELS[m.tier]}
+                                    </Badge>
                                   </div>
                                 </td>
-                              )}
-                            </tr>
+                                <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(m.target)}</td>
+                                <td className="text-right py-2 px-2 font-medium text-green-600">{formatCurrency(m.paid)}</td>
+                                <td className="text-right py-2 px-2 font-medium text-red-600">
+                                  {m.outstanding > 0 ? formatCurrency(m.outstanding) : <CheckCircle className="w-4 h-4 text-green-500 inline" />}
+                                </td>
+                                <td className="py-2 px-2">
+                                  <div className="flex items-center gap-1.5">
+                                    {renderProgressBar(m.paid, m.target, barColor)}
+                                    <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
+                                  </div>
+                                </td>
+                                {isAdmin && (
+                                  <td className="text-center py-2 px-2">
+                                    <div className="flex gap-0.5 justify-center" onClick={(e) => e.stopPropagation()}>
+                                      <button
+                                        onClick={() => {
+                                          setPaymentForm(prev => ({ ...prev, member_id: m.member_id }));
+                                          setShowPaymentModal(true);
+                                        }}
+                                        className="p-1 text-gray-400 hover:text-green-600"
+                                        title="Record payment"
+                                      >
+                                        <IndianRupee className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button onClick={() => setDeleteConfirm({ type: 'target', id: m.id, name: m.member?.name || '' })} className="p-1 text-gray-400 hover:text-red-500">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                )}
+                              </tr>
+                              {/* Monthly breakdown row */}
+                              {isExpanded && (() => {
+                                const monthly = getMemberMonthlyBreakdown(m.member_id);
+                                return (
+                                  <tr>
+                                    <td colSpan={colCount} className="px-3 py-2 bg-gray-50/50 dark:bg-gray-800/50">
+                                      {monthly.length === 0 ? (
+                                        <p className="text-xs text-gray-400 text-center py-2">No payments recorded yet</p>
+                                      ) : (
+                                        <div className="space-y-1.5 pl-8">
+                                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Monthly Breakdown</p>
+                                          {monthly.map(month => (
+                                            <div key={month.label} className="flex items-center justify-between text-xs">
+                                              <span className="text-gray-600 dark:text-gray-400">{month.label}</span>
+                                              <div className="flex items-center gap-3">
+                                                <span className="text-green-600 font-medium">{formatCurrency(month.total)}</span>
+                                                <span className="text-gray-400">
+                                                  {month.payments.length} payment{month.payments.length > 1 ? 's' : ''}
+                                                  {' · '}
+                                                  {month.payments.map(p => METHOD_LABELS[p.payment_method]).join(', ')}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                          <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-200 dark:border-gray-700">
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">Total</span>
+                                            <span className="font-bold text-green-600">{formatCurrency(m.paid)}</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })()}
+                            </React.Fragment>
                           );
                         })}
                       </tbody>
