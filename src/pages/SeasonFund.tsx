@@ -647,17 +647,28 @@ export function SeasonFund() {
     <div>
       <Header title="Ground Booking" subtitle={`${GROUND_NAME} — ${TIME_SLOT}`} />
 
-      {/* Season Selector (if multiple) */}
-      {seasons.length > 1 && (
-        <div className="flex items-center gap-3 mb-4">
+      {/* Season Selector + Add New */}
+      <div className="flex items-center gap-3 mb-4">
+        {seasons.length > 1 && (
           <Select
             value={selectedSeasonId}
             onChange={(e) => setSelectedSeasonId(e.target.value)}
             className="!w-auto min-w-[200px]"
             options={seasons.map(s => ({ value: s.id, label: `${s.name}${s.status === 'active' ? ' (Active)' : ''}` }))}
           />
-        </div>
-      )}
+        )}
+        {isAdmin && (
+          <Button size="sm" variant="secondary" onClick={() => {
+            setEditingSeason(null);
+            const preset = SEASON_PRESETS['oct-may'];
+            setSelectedPreset('oct-may');
+            setSeasonForm({ name: preset.name, start_date: preset.start_date, end_date: preset.end_date, total_budget: '', status: 'active', notes: '', days: [...preset.days], weekday_cost: preset.weekday_cost, weekend_cost: preset.weekend_cost });
+            setShowSeasonModal(true);
+          }}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> New Season
+          </Button>
+        )}
+      </div>
 
       {selectedSeason && (
         <div className="space-y-6">
