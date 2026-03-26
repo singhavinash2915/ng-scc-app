@@ -638,9 +638,14 @@ export function SeasonFund() {
   }
 
   // ---- Main Page ----
+  // Show Member Contributions only for upcoming/future seasons (not past ones)
+  const isSeasonCurrent = selectedSeason ? (
+    (selectedSeason.status === 'active' || selectedSeason.status === 'upcoming') &&
+    new Date(selectedSeason.end_date) >= new Date()
+  ) : false;
   const tabs: { key: TabType; label: string; icon: typeof Calendar }[] = [
     { key: 'bookings', label: 'Ground Bookings', icon: Calendar },
-    { key: 'members', label: 'Member Contributions', icon: Users },
+    ...(isSeasonCurrent ? [{ key: 'members' as TabType, label: 'Member Contributions', icon: Users }] : []),
   ];
 
   return (
@@ -652,7 +657,7 @@ export function SeasonFund() {
         {seasons.length > 1 && (
           <Select
             value={selectedSeasonId}
-            onChange={(e) => setSelectedSeasonId(e.target.value)}
+            onChange={(e) => { setSelectedSeasonId(e.target.value); setActiveTab('bookings'); }}
             className="!w-auto min-w-[200px]"
             options={seasons.map(s => ({ value: s.id, label: `${s.name}${s.status === 'active' ? ' (Active)' : ''}` }))}
           />
