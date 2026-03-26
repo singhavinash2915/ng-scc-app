@@ -748,9 +748,14 @@ export function SeasonFund() {
                       </Button>
                     )}
                   </div>
-                  <Button size="sm" variant="secondary" onClick={() => openEditSeason(selectedSeason)}>
-                    <Edit3 className="w-3.5 h-3.5 mr-1" /> Edit Season
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => openEditSeason(selectedSeason)}>
+                      <Edit3 className="w-3.5 h-3.5 mr-1" /> Edit Season
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => setDeleteConfirm({ type: 'season', id: selectedSeason.id, name: selectedSeason.name })}>
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Season
+                    </Button>
+                  </div>
                 </div>
               )}
 
