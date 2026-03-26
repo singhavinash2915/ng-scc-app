@@ -33,12 +33,41 @@ import type { Season, GroundBooking, MemberTier, FundPaymentMethod } from '../ty
 const MEMBER_PIN = 'scc';
 const PIN_STORAGE_KEY = 'scc-ground-booking-access';
 
-// Four Star Ground hardcoded config
+// Four Star Ground config
 const GROUND_NAME = 'Four Star Ground';
 const TIME_SLOT = '7:00 AM - 9:00 AM';
-const WEEKDAY_COST = 5000;
-const WEEKEND_COST = 7000; // Saturday
-const BOOKING_DAYS = [2, 4, 6]; // Tue, Thu, Sat
+
+// Season presets
+const SEASON_PRESETS = {
+  'oct-may': {
+    label: 'Oct–May (Tue/Thu/Sat)',
+    name: 'Season 2026-27',
+    start_date: '2026-10-01',
+    end_date: '2027-05-31',
+    days: [2, 4, 6], // Tue, Thu, Sat
+    weekday_cost: 5500,
+    weekend_cost: 7500,
+  },
+  'may-only': {
+    label: 'May Only (Tue/Thu)',
+    name: 'May 2025',
+    start_date: '2025-05-01',
+    end_date: '2025-05-31',
+    days: [2, 4], // Tue, Thu
+    weekday_cost: 5000,
+    weekend_cost: 5000,
+  },
+  'custom': {
+    label: 'Custom',
+    name: '',
+    start_date: '',
+    end_date: '',
+    days: [2, 4, 6],
+    weekday_cost: 5500,
+    weekend_cost: 7500,
+  },
+} as const;
+type PresetKey = keyof typeof SEASON_PRESETS;
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -113,6 +142,7 @@ export function SeasonFund() {
   const [showAllMembers, setShowAllMembers] = useState(false);
 
   // Season form
+  const [selectedPreset, setSelectedPreset] = useState<PresetKey>('oct-may');
   const [seasonForm, setSeasonForm] = useState({
     name: 'Season 2026-27',
     start_date: '2026-10-01',
@@ -120,6 +150,9 @@ export function SeasonFund() {
     total_budget: '',
     status: 'active' as Season['status'],
     notes: '',
+    days: [2, 4, 6] as number[],
+    weekday_cost: 5500,
+    weekend_cost: 7500,
   });
 
   // Payment form
@@ -204,13 +237,19 @@ export function SeasonFund() {
   const handleCreateSeason = async () => {
     setIsSubmitting(true);
     try {
+      // Store booking config as JSON in notes so generate can use it
+      const configJson = JSON.stringify({
+        days: seasonForm.days,
+        weekday_cost: seasonForm.weekday_cost,
+        weekend_cost: seasonForm.weekend_cost,
+      });
       await addSeason({
         name: seasonForm.name,
         start_date: seasonForm.start_date,
         end_date: seasonForm.end_date,
         total_budget: Number(seasonForm.total_budget) || 0,
         status: seasonForm.status,
-        notes: seasonForm.notes || null,
+        notes: configJson,
       });
       setShowSeasonModal(false);
     } catch { /* ignore */ } finally {
@@ -237,7 +276,7 @@ export function SeasonFund() {
     }
   };
 
-  const handleGenerateBookings = async () => {
+  const handleGenerateBookings = async (days?: number[], weekdayCost?: number, weekendCost?: number) => {
     if (!selectedSeason) return;
     if (selectedSeason.bookings && selectedSeason.bookings.length > 0) {
       alert('Bookings already exist for this season. Delete them first if you want to regenerate.');
@@ -245,6 +284,18 @@ export function SeasonFund() {
     }
     setIsSubmitting(true);
     try {
+      // Try to infer costs from the season's notes (stored as JSON config)
+      let config = { days: days || [2, 4, 6], weekdayCost: weekdayCost || 5500, weekendCost: weekendCost || 7500 };
+      try {
+        const parsed = selectedSeason.notes ? JSON.parse(selectedSeason.notes) : null;
+        if (parsed?.days) config.days = parsed.days;
+        if (parsed?.weekday_cost) config.weekdayCost = parsed.weekday_cost;
+        if (parsed?.weekend_cost) config.weekendCost = parsed.weekend_cost;
+      } catch { /* not JSON, use defaults */ }
+      if (days) config.days = days;
+      if (weekdayCost) config.weekdayCost = weekdayCost;
+      if (weekendCost) config.weekendCost = weekendCost;
+
       const bookings = generateSeasonBookings(
         selectedSeason.id,
         selectedSeason.start_date,
@@ -252,9 +303,9 @@ export function SeasonFund() {
         {
           venue: GROUND_NAME,
           timeSlot: TIME_SLOT,
-          days: BOOKING_DAYS,
-          weekdayCost: WEEKDAY_COST,
-          weekendCost: WEEKEND_COST,
+          days: config.days,
+          weekdayCost: config.weekdayCost,
+          weekendCost: config.weekendCost,
         }
       );
       await addBulkBookings(bookings);
@@ -362,6 +413,16 @@ export function SeasonFund() {
 
   const openEditSeason = (season: Season) => {
     setEditingSeason(season);
+    // Try to parse config from notes
+    let days = [2, 4, 6];
+    let weekday_cost = 5500;
+    let weekend_cost = 7500;
+    try {
+      const parsed = season.notes ? JSON.parse(season.notes) : null;
+      if (parsed?.days) days = parsed.days;
+      if (parsed?.weekday_cost) weekday_cost = parsed.weekday_cost;
+      if (parsed?.weekend_cost) weekend_cost = parsed.weekend_cost;
+    } catch { /* not JSON */ }
     setSeasonForm({
       name: season.name,
       start_date: season.start_date,
@@ -369,6 +430,9 @@ export function SeasonFund() {
       total_budget: String(season.total_budget),
       status: season.status,
       notes: season.notes || '',
+      days,
+      weekday_cost,
+      weekend_cost,
     });
     setShowSeasonModal(true);
   };
@@ -429,7 +493,7 @@ export function SeasonFund() {
   if (loading) {
     return (
       <div>
-        <Header title="Ground Booking" subtitle="Four Star Ground — Tue/Thu/Sat, 7-9 AM" />
+        <Header title="Ground Booking" subtitle={`${GROUND_NAME} — ${TIME_SLOT}`} />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
         </div>
@@ -441,23 +505,25 @@ export function SeasonFund() {
   if (seasons.length === 0) {
     return (
       <div>
-        <Header title="Ground Booking" subtitle="Four Star Ground — Tue/Thu/Sat, 7-9 AM" />
+        <Header title="Ground Booking" subtitle={`${GROUND_NAME} — ${TIME_SLOT}`} />
         <div className="max-w-lg mx-auto mt-12">
           <Card animate>
             <CardContent className="text-center py-12">
               <MapPin className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Season Created</h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Create a season for Four Star Ground (Tue/Thu/Sat, 7-9 AM).
+                Create a season for {GROUND_NAME} ({TIME_SLOT}).
               </p>
               {isAdmin ? (
                 <Button onClick={() => {
                   setEditingSeason(null);
-                  setSeasonForm({ name: 'Season 2026-27', start_date: '2026-10-01', end_date: '2027-05-31', total_budget: '', status: 'active', notes: '' });
+                  const preset = SEASON_PRESETS['oct-may'];
+                  setSelectedPreset('oct-may');
+                  setSeasonForm({ name: preset.name, start_date: preset.start_date, end_date: preset.end_date, total_budget: '', status: 'active', notes: '', days: [...preset.days], weekday_cost: preset.weekday_cost, weekend_cost: preset.weekend_cost });
                   setShowSeasonModal(true);
                 }}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Season 2026-27
+                  Create Season
                 </Button>
               ) : (
                 <p className="text-sm text-gray-400">Ask an admin to create the season.</p>
@@ -468,20 +534,80 @@ export function SeasonFund() {
         {/* Season Modal for empty state */}
         <Modal isOpen={showSeasonModal} onClose={() => { setShowSeasonModal(false); setEditingSeason(null); }} title="Create Season">
           <div className="space-y-4">
+            {/* Preset selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Quick Setup</label>
+              <div className="flex gap-2">
+                {(Object.keys(SEASON_PRESETS) as PresetKey[]).map(key => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPreset(key);
+                      const p = SEASON_PRESETS[key];
+                      setSeasonForm(f => ({
+                        ...f,
+                        name: p.name || f.name,
+                        start_date: p.start_date || f.start_date,
+                        end_date: p.end_date || f.end_date,
+                        days: [...p.days],
+                        weekday_cost: p.weekday_cost,
+                        weekend_cost: p.weekend_cost,
+                      }));
+                    }}
+                    className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                      selectedPreset === key
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                        : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    {SEASON_PRESETS[key].label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Input label="Season Name" value={seasonForm.name} onChange={(e) => setSeasonForm(f => ({ ...f, name: e.target.value }))} />
             <div className="grid grid-cols-2 gap-4">
               <Input type="date" label="Start Date" value={seasonForm.start_date} onChange={(e) => setSeasonForm(f => ({ ...f, start_date: e.target.value }))} />
               <Input type="date" label="End Date" value={seasonForm.end_date} onChange={(e) => setSeasonForm(f => ({ ...f, end_date: e.target.value }))} />
             </div>
-            <Input type="number" label="Estimated Budget (₹)" placeholder="Optional" value={seasonForm.total_budget} onChange={(e) => setSeasonForm(f => ({ ...f, total_budget: e.target.value }))} />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Booking Days</label>
+              <div className="flex gap-1.5">
+                {DAY_NAMES.map((day, idx) => {
+                  const isSelected = seasonForm.days.includes(idx);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => {
+                        setSeasonForm(f => ({
+                          ...f,
+                          days: isSelected ? f.days.filter(d => d !== idx) : [...f.days, idx].sort(),
+                        }));
+                        setSelectedPreset('custom');
+                      }}
+                      className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${
+                        isSelected ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input type="number" label="Weekday Cost (₹)" value={String(seasonForm.weekday_cost)} onChange={(e) => setSeasonForm(f => ({ ...f, weekday_cost: Number(e.target.value) || 0 }))} />
+              <Input type="number" label="Weekend Cost (₹)" value={String(seasonForm.weekend_cost)} onChange={(e) => setSeasonForm(f => ({ ...f, weekend_cost: Number(e.target.value) || 0 }))} />
+            </div>
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
-              <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Four Star Ground Schedule:</p>
-              <p>Tue & Thu — ₹{WEEKDAY_COST.toLocaleString()}/session | Sat — ₹{WEEKEND_COST.toLocaleString()}/session</p>
-              <p>Time: {TIME_SLOT}</p>
+              <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">{GROUND_NAME} · {TIME_SLOT}</p>
+              <p>{seasonForm.days.map(d => DAY_NAMES[d]).join(', ')} — Weekday ₹{seasonForm.weekday_cost.toLocaleString()} | Weekend ₹{seasonForm.weekend_cost.toLocaleString()}</p>
             </div>
             <div className="flex gap-3">
               <Button variant="secondary" onClick={() => setShowSeasonModal(false)} className="flex-1" disabled={isSubmitting}>Cancel</Button>
-              <Button onClick={handleCreateSeason} className="flex-1" disabled={isSubmitting || !seasonForm.name || !seasonForm.start_date || !seasonForm.end_date}>
+              <Button onClick={handleCreateSeason} className="flex-1" disabled={isSubmitting || !seasonForm.name || !seasonForm.start_date || !seasonForm.end_date || seasonForm.days.length === 0}>
                 {isSubmitting ? 'Creating...' : 'Create Season'}
               </Button>
             </div>
@@ -499,7 +625,7 @@ export function SeasonFund() {
 
   return (
     <div>
-      <Header title="Ground Booking" subtitle="Four Star Ground — Tue/Thu/Sat, 7-9 AM" />
+      <Header title="Ground Booking" subtitle={`${GROUND_NAME} — ${TIME_SLOT}`} />
 
       {/* Season Selector (if multiple) */}
       {seasons.length > 1 && (
@@ -616,7 +742,7 @@ export function SeasonFund() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex gap-2">
                     {selectedSeason.bookings && selectedSeason.bookings.length === 0 && (
-                      <Button size="sm" onClick={handleGenerateBookings} disabled={isSubmitting}>
+                      <Button size="sm" onClick={() => handleGenerateBookings()} disabled={isSubmitting}>
                         <Calendar className="w-3.5 h-3.5 mr-1" />
                         {isSubmitting ? 'Generating...' : 'Generate All Bookings'}
                       </Button>
@@ -926,22 +1052,96 @@ export function SeasonFund() {
       {/* Season Modal */}
       <Modal isOpen={showSeasonModal} onClose={() => { setShowSeasonModal(false); setEditingSeason(null); }} title={editingSeason ? 'Edit Season' : 'Create Season'}>
         <div className="space-y-4">
+          {/* Preset selector (only for new seasons) */}
+          {!editingSeason && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Quick Setup</label>
+              <div className="flex gap-2">
+                {(Object.keys(SEASON_PRESETS) as PresetKey[]).map(key => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPreset(key);
+                      const p = SEASON_PRESETS[key];
+                      setSeasonForm(f => ({
+                        ...f,
+                        name: p.name || f.name,
+                        start_date: p.start_date || f.start_date,
+                        end_date: p.end_date || f.end_date,
+                        days: [...p.days],
+                        weekday_cost: p.weekday_cost,
+                        weekend_cost: p.weekend_cost,
+                      }));
+                    }}
+                    className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                      selectedPreset === key
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                        : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    {SEASON_PRESETS[key].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Input label="Season Name" value={seasonForm.name} onChange={(e) => setSeasonForm(f => ({ ...f, name: e.target.value }))} />
           <div className="grid grid-cols-2 gap-4">
             <Input type="date" label="Start Date" value={seasonForm.start_date} onChange={(e) => setSeasonForm(f => ({ ...f, start_date: e.target.value }))} />
             <Input type="date" label="End Date" value={seasonForm.end_date} onChange={(e) => setSeasonForm(f => ({ ...f, end_date: e.target.value }))} />
           </div>
-          <Input type="number" label="Estimated Budget (₹)" placeholder="Optional" value={seasonForm.total_budget} onChange={(e) => setSeasonForm(f => ({ ...f, total_budget: e.target.value }))} />
-          <Select label="Status" value={seasonForm.status} onChange={(e) => setSeasonForm(f => ({ ...f, status: e.target.value as Season['status'] }))} options={[{ value: 'upcoming', label: 'Upcoming' }, { value: 'active', label: 'Active' }, { value: 'completed', label: 'Completed' }]} />
-          <TextArea label="Notes" placeholder="Optional" value={seasonForm.notes} onChange={(e) => setSeasonForm(f => ({ ...f, notes: e.target.value }))} />
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
-            <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Four Star Ground Schedule:</p>
-            <p>Tue & Thu — ₹{WEEKDAY_COST.toLocaleString()}/session | Sat — ₹{WEEKEND_COST.toLocaleString()}/session</p>
-            <p>Time: {TIME_SLOT}</p>
+
+          {/* Day selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Booking Days</label>
+            <div className="flex gap-1.5">
+              {DAY_NAMES.map((day, idx) => {
+                const isSelected = seasonForm.days.includes(idx);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => {
+                      setSeasonForm(f => ({
+                        ...f,
+                        days: isSelected ? f.days.filter(d => d !== idx) : [...f.days, idx].sort(),
+                      }));
+                      setSelectedPreset('custom');
+                    }}
+                    className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${
+                      isSelected
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Cost fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <Input type="number" label="Weekday Cost (₹)" value={String(seasonForm.weekday_cost)} onChange={(e) => setSeasonForm(f => ({ ...f, weekday_cost: Number(e.target.value) || 0 }))} />
+            <Input type="number" label="Weekend Cost (₹)" value={String(seasonForm.weekend_cost)} onChange={(e) => setSeasonForm(f => ({ ...f, weekend_cost: Number(e.target.value) || 0 }))} />
+          </div>
+
+          <Input type="number" label="Estimated Budget (₹)" placeholder="Optional" value={seasonForm.total_budget} onChange={(e) => setSeasonForm(f => ({ ...f, total_budget: e.target.value }))} />
+          {editingSeason && (
+            <Select label="Status" value={seasonForm.status} onChange={(e) => setSeasonForm(f => ({ ...f, status: e.target.value as Season['status'] }))} options={[{ value: 'upcoming', label: 'Upcoming' }, { value: 'active', label: 'Active' }, { value: 'completed', label: 'Completed' }]} />
+          )}
+
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">{GROUND_NAME} · {TIME_SLOT}</p>
+            <p>{seasonForm.days.map(d => DAY_NAMES[d]).join(', ')} — Weekday ₹{seasonForm.weekday_cost.toLocaleString()} | Weekend ₹{seasonForm.weekend_cost.toLocaleString()}</p>
+          </div>
+
           <div className="flex gap-3">
             <Button variant="secondary" onClick={() => { setShowSeasonModal(false); setEditingSeason(null); }} className="flex-1" disabled={isSubmitting}>Cancel</Button>
-            <Button onClick={editingSeason ? handleUpdateSeason : handleCreateSeason} className="flex-1" disabled={isSubmitting || !seasonForm.name || !seasonForm.start_date || !seasonForm.end_date}>
+            <Button onClick={editingSeason ? handleUpdateSeason : handleCreateSeason} className="flex-1" disabled={isSubmitting || !seasonForm.name || !seasonForm.start_date || !seasonForm.end_date || seasonForm.days.length === 0}>
               {isSubmitting ? 'Saving...' : editingSeason ? 'Update' : 'Create'}
             </Button>
           </div>
