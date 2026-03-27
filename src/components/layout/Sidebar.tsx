@@ -34,11 +34,11 @@ const publicNavItems = [
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
   { to: '/payment', icon: CreditCard, label: 'Pay Online' },
-  { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/feedback', icon: MessageSquare, label: 'Feedback' },
   { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
   { to: '/about', icon: Info, label: 'About' },
+  { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
+  { to: '/feedback', icon: MessageSquare, label: 'Feedback' },
 ];
 
 const adminNavItems = [
