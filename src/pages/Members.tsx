@@ -5,6 +5,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Badge } from '../components/ui/Badge';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { useMembers } from '../hooks/useMembers';
@@ -77,6 +78,8 @@ export function Members() {
   const [adjustMember, setAdjustMember] = useState<Member | null>(null);
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmRemoveAvatar, setConfirmRemoveAvatar] = useState(false);
 
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
@@ -161,16 +164,20 @@ export function Members() {
     }
   };
 
-  const handleDeleteMember = async (id: string) => {
+  const handleDeleteMember = (id: string) => {
     if (!isAdmin) return;
-    if (window.confirm('Are you sure you want to delete this member?')) {
-      try {
-        await deleteMember(id);
-      } catch (error) {
-        console.error('Failed to delete member:', error);
-      }
-    }
+    setConfirmDelete(id);
     setMenuOpen(null);
+  };
+
+  const doDeleteMember = async () => {
+    if (!confirmDelete) return;
+    try {
+      await deleteMember(confirmDelete);
+    } catch (error) {
+      console.error('Failed to delete member:', error);
+    }
+    setConfirmDelete(null);
   };
 
   const handleAdjustBalance = async (e: React.FormEvent) => {
@@ -286,8 +293,11 @@ export function Members() {
   const handleRemoveAvatar = async () => {
     if (!selectedMember) return;
 
-    if (!window.confirm('Remove this photo?')) return;
+    setConfirmRemoveAvatar(true);
+  };
 
+  const doRemoveAvatar = async () => {
+    if (!selectedMember) return;
     setAvatarUploading(true);
     try {
       await removeAvatar(selectedMember.id);
@@ -955,6 +965,26 @@ export function Members() {
           </div>
         </form>
       </Modal>
+
+      {/* Confirm delete member */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={doDeleteMember}
+        title="Delete Member"
+        message="Are you sure you want to delete this member? This cannot be undone."
+        confirmLabel="Delete"
+      />
+
+      {/* Confirm remove avatar */}
+      <ConfirmModal
+        isOpen={confirmRemoveAvatar}
+        onClose={() => setConfirmRemoveAvatar(false)}
+        onConfirm={doRemoveAvatar}
+        title="Remove Photo"
+        message="Remove this profile photo?"
+        confirmLabel="Remove"
+      />
     </div>
   );
 }

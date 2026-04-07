@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sangria CC</string>
+    <string name="title_activity_main">Sangria CC</string>
+    <string name="package_name">club.sangriacricket.app</string>
+    <string name="custom_url_scheme">club.sangriacricket.app</string>
+</resources>

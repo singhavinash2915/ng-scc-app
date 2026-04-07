@@ -27,6 +27,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, TextArea, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Badge } from '../components/ui/Badge';
 import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
@@ -71,6 +72,8 @@ export function Matches() {
   const [squadGraphicMatch, setSquadGraphicMatch] = useState<Match | null>(null);
   const [showMatchDayModal, setShowMatchDayModal] = useState(false);
   const [matchDayMatch, setMatchDayMatch] = useState<Match | null>(null);
+  const [confirmDeleteMatch, setConfirmDeleteMatch] = useState<string | null>(null);
+  const [confirmDeletePhoto, setConfirmDeletePhoto] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -249,16 +252,20 @@ export function Matches() {
     }
   };
 
-  const handleDeleteMatch = async (id: string) => {
+  const handleDeleteMatch = (id: string) => {
     if (!isAdmin) return;
-    if (window.confirm('Are you sure you want to delete this match?')) {
-      try {
-        await deleteMatch(id);
-      } catch (error) {
-        console.error('Failed to delete match:', error);
-      }
-    }
+    setConfirmDeleteMatch(id);
     setMenuOpen(null);
+  };
+
+  const doDeleteMatch = async () => {
+    if (!confirmDeleteMatch) return;
+    try {
+      await deleteMatch(confirmDeleteMatch);
+    } catch (error) {
+      console.error('Failed to delete match:', error);
+    }
+    setConfirmDeleteMatch(null);
   };
 
   const resetForm = () => {
@@ -442,14 +449,18 @@ export function Matches() {
     }
   };
 
-  const handleDeletePhoto = async (photoId: string) => {
-    if (!window.confirm('Delete this photo?')) return;
+  const handleDeletePhoto = (photoId: string) => {
+    setConfirmDeletePhoto(photoId);
+  };
 
+  const doDeletePhoto = async () => {
+    if (!confirmDeletePhoto) return;
     try {
-      await deletePhoto(photoId);
+      await deletePhoto(confirmDeletePhoto);
     } catch (error) {
       console.error('Failed to delete photo:', error);
     }
+    setConfirmDeletePhoto(null);
   };
 
   const togglePlayer = (memberId: string) => {
@@ -1780,6 +1791,24 @@ export function Matches() {
           members={members}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteMatch}
+        onClose={() => setConfirmDeleteMatch(null)}
+        onConfirm={doDeleteMatch}
+        title="Delete Match"
+        message="Are you sure you want to delete this match? This cannot be undone."
+        confirmLabel="Delete"
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmDeletePhoto}
+        onClose={() => setConfirmDeletePhoto(null)}
+        onConfirm={doDeletePhoto}
+        title="Delete Photo"
+        message="Delete this photo?"
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

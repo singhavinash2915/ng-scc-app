@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { ContactBar } from './ContactBar';
 import { InstallPrompt } from '../InstallPrompt';
 import { OfflineIndicator } from '../OfflineIndicator';
+
+const isNative = Capacitor.isNativePlatform();
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,7 +27,8 @@ export function Layout({ children }: LayoutProps) {
         </main>
       </div>
       <MobileNav />
-      <InstallPrompt />
+      {/* InstallPrompt is for PWA — hide inside the native app */}
+      {!isNative && <InstallPrompt />}
     </div>
   );
 }

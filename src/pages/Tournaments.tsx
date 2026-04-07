@@ -20,6 +20,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, TextArea, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Badge } from '../components/ui/Badge';
 import { useTournaments } from '../hooks/useTournaments';
 import { useMatches } from '../hooks/useMatches';
@@ -38,6 +39,7 @@ export function Tournaments() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -132,16 +134,20 @@ export function Tournaments() {
     }
   };
 
-  const handleDeleteTournament = async (id: string) => {
+  const handleDeleteTournament = (id: string) => {
     if (!isAdmin) return;
-    if (window.confirm('Are you sure you want to delete this tournament?')) {
-      try {
-        await deleteTournament(id);
-      } catch (error) {
-        console.error('Failed to delete tournament:', error);
-      }
-    }
+    setConfirmDeleteId(id);
     setMenuOpen(null);
+  };
+
+  const doDeleteTournament = async () => {
+    if (!confirmDeleteId) return;
+    try {
+      await deleteTournament(confirmDeleteId);
+    } catch (error) {
+      console.error('Failed to delete tournament:', error);
+    }
+    setConfirmDeleteId(null);
   };
 
   const handleAddMatch = async (e: React.FormEvent) => {
@@ -891,6 +897,15 @@ export function Tournaments() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={doDeleteTournament}
+        title="Delete Tournament"
+        message="Are you sure you want to delete this tournament?"
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

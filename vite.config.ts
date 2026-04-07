@@ -2,11 +2,14 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const isNativeBuild = process.env.VITE_PLATFORM === 'native';
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    VitePWA({
+    // PWA disabled for native Capacitor builds (service worker not supported in WebView)
+    !isNativeBuild && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['scc-logo.jpg', 'icons/*.png'],
       manifest: {
@@ -87,6 +90,6 @@ export default defineConfig({
         ],
       },
     }),
-  ],
+  ].filter(Boolean),
   base: '/',
 })

@@ -2,6 +2,7 @@ import { MessageCircle, Phone, AlertTriangle } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { generateWhatsAppUrl } from '../utils/phone';
+import { openUrl } from '../utils/nativeOpen';
 import type { Member } from '../types';
 
 const PAYMENT_LINK = 'https://sangriacricket.club/payment';
@@ -34,7 +35,7 @@ export function WhatsAppRemindersModal({
   const handleSend = (member: Member) => {
     if (!member.phone) return;
     const url = generateWhatsAppUrl(member.phone, getMessage(member));
-    if (url) window.open(url, '_blank');
+    if (url) openUrl(url);
   };
 
   return (

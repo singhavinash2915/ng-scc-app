@@ -14,6 +14,7 @@ import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { useMatchPolls } from '../hooks/useMatchPolls';
 import { generateWhatsAppUrl } from '../utils/phone';
+import { openUrl } from '../utils/nativeOpen';
 import type { Match, Member, MatchPoll } from '../types';
 
 interface PollManageModalProps {
@@ -80,7 +81,7 @@ export function PollManageModal({ isOpen, onClose, match, members, isAdmin, onCl
       `\n\n- Sangria Cricket Club`;
 
     const url = generateWhatsAppUrl(member.phone, message);
-    if (url) window.open(url, '_blank');
+    if (url) openUrl(url);
   };
 
   const handleSharePoll = () => {

@@ -3,6 +3,7 @@ import { MessageCircle, MapPin, Clock, Car, Briefcase, Copy, Check } from 'lucid
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Input, TextArea, Select } from './ui/Input';
+import { openUrl } from '../utils/nativeOpen';
 import type { Match, Member } from '../types';
 
 interface MatchDayMessageModalProps {
@@ -119,7 +120,7 @@ export function MatchDayMessageModal({
 
   const handleShareWhatsApp = () => {
     const encoded = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    openUrl(`https://wa.me/?text=${encoded}`);
   };
 
   const toggleKitBagHolder = (memberId: string) => {
