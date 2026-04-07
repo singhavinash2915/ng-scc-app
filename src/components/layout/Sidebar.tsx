@@ -78,11 +78,11 @@ export function Sidebar() {
         <Link to="/" className="flex items-center gap-3 px-6 py-5 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
           <img
             src="/scc-logo.jpg"
-            alt="Sangria CC"
+            alt="SCC"
             className="w-10 h-10 rounded-xl object-cover"
           />
           <div>
-            <h1 className="font-bold text-gray-900 dark:text-white">Sangria CC</h1>
+            <h1 className="font-bold text-gray-900 dark:text-white">SCC</h1>
             <p className="text-xs text-gray-500 dark:text-gray-400">Cricket Club</p>
           </div>
         </Link>

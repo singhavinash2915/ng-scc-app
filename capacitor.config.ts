@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'club.sangriacricket.app',
-  appName: 'Sangria CC',
+  appName: 'SCC',
   webDir: 'dist',
   plugins: {
     SplashScreen: {

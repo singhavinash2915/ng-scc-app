@@ -48,7 +48,7 @@ export function About() {
           <CardContent className="p-8 text-center text-white">
             <img
               src="/scc-logo.jpg"
-              alt="Sangria CC"
+              alt="SCC"
               className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white/30"
             />
             <h2 className="text-3xl font-bold mb-2">Sangria Cricket Club</h2>
