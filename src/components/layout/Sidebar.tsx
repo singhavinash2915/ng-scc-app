@@ -19,6 +19,7 @@ import {
   Receipt,
   Megaphone,
   Landmark,
+  Brain,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -36,6 +37,7 @@ const publicNavItems = [
   { to: '/payment', icon: CreditCard, label: 'Pay Online' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
+  { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/about', icon: Info, label: 'About' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
   { to: '/feedback', icon: MessageSquare, label: 'Feedback' },

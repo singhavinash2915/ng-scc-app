@@ -21,6 +21,7 @@ import { MatchPoll } from './pages/MatchPoll';
 import { FeeTracking } from './pages/FeeTracking';
 import { MatchDayTools } from './pages/MatchDayTools';
 import { SeasonFund } from './pages/SeasonFund';
+import { AIInsights } from './pages/AIInsights';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -72,6 +73,7 @@ const AppRoutes = () => (
         <Route path="/fee-tracking" element={<FeeTracking />} />
         <Route path="/match-day-tools" element={<MatchDayTools />} />
         <Route path="/ground-booking" element={<SeasonFund />} />
+        <Route path="/ai-insights" element={<AIInsights />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/requests" element={<Requests />} />

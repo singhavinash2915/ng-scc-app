@@ -15,6 +15,9 @@ import {
   Trash2,
   ExternalLink,
   Save,
+  Brain,
+  Edit2,
+  X,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
@@ -28,6 +31,8 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useTournaments } from '../hooks/useTournaments';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useSponsor } from '../hooks/useSponsor';
+import { useCricketStats } from '../hooks/useCricketStats';
+import type { MemberCricketStats } from '../types';
 
 export function Settings() {
   const { isAdmin, loginLoading, login, logout } = useAuth();
@@ -39,6 +44,60 @@ export function Settings() {
   const { tournaments } = useTournaments();
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
+
+  const [statsSeason, setStatsSeason] = useState('2026-27');
+  const { stats: cricketStats, upsertStats, deleteStats } = useCricketStats(statsSeason);
+  const [editingStatsId, setEditingStatsId] = useState<string | null>(null);
+  const [statsForm, setStatsForm] = useState<Partial<MemberCricketStats>>({});
+  const [statsMsg, setStatsMsg] = useState('');
+  const [statsError, setStatsError] = useState('');
+  const [statsSaving, setStatsSaving] = useState(false);
+
+  const openStatsEdit = (memberId: string) => {
+    const existing = cricketStats.find(s => s.member_id === memberId);
+    setEditingStatsId(memberId);
+    setStatsForm(existing ? { ...existing } : {
+      batting_matches: 0, batting_innings: 0, batting_runs: 0, batting_highest_score: 0,
+      batting_average: 0, batting_strike_rate: 0, batting_fifties: 0, batting_hundreds: 0,
+      batting_ducks: 0, batting_fours: 0, batting_sixes: 0,
+      bowling_matches: 0, bowling_innings: 0, bowling_overs: 0, bowling_wickets: 0,
+      bowling_runs_conceded: 0, bowling_economy: 0, bowling_average: 0, bowling_strike_rate: 0,
+      bowling_best_figures: '0/0', bowling_five_wickets: 0,
+      fielding_catches: 0, fielding_stumpings: 0, fielding_run_outs: 0,
+      cricheroes_profile_url: '',
+    });
+    setStatsMsg('');
+    setStatsError('');
+  };
+
+  const handleSaveStats = async () => {
+    if (!editingStatsId) return;
+    try {
+      setStatsSaving(true);
+      setStatsError('');
+      await upsertStats(editingStatsId, statsForm);
+      setStatsMsg('Stats saved successfully!');
+      setTimeout(() => { setEditingStatsId(null); setStatsMsg(''); }, 1500);
+    } catch {
+      setStatsError('Failed to save stats. Please try again.');
+    } finally {
+      setStatsSaving(false);
+    }
+  };
+
+  const handleDeleteStats = async (memberId: string) => {
+    if (!confirm('Delete cricket stats for this member?')) return;
+    try {
+      await deleteStats(memberId);
+      setStatsMsg('Stats deleted.');
+    } catch {
+      setStatsError('Failed to delete stats.');
+    }
+  };
+
+  const updateStatsField = (field: keyof MemberCricketStats, value: string | number) => {
+    setStatsForm(prev => ({ ...prev, [field]: value }));
+  };
 
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -695,6 +754,239 @@ export function Settings() {
                     </Button>
                   </div>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Cricket Stats Management (Admin Only) */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-primary-500" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Cricket Stats (CricHeroes)</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={statsSeason}
+                    onChange={e => setStatsSeason(e.target.value)}
+                    className="text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1"
+                  >
+                    {['2026-27', '2025-26', '2024-25'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Manually enter or update CricHeroes stats for each member. These power the AI Insights features.
+              </p>
+
+              {/* Stats feedback */}
+              {statsError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  {statsError}
+                </div>
+              )}
+              {statsMsg && !editingStatsId && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                  {statsMsg}
+                </div>
+              )}
+
+              {/* Member list with stats */}
+              <div className="space-y-2">
+                {members.map(member => {
+                  const memberStats = cricketStats.find(s => s.member_id === member.id);
+                  const isEditing = editingStatsId === member.id;
+                  return (
+                    <div key={member.id} className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50">
+                        {member.avatar_url ? (
+                          <img src={member.avatar_url} alt={member.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold text-sm flex-shrink-0">
+                            {member.name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{member.name}</p>
+                          {memberStats ? (
+                            <p className="text-xs text-gray-500">
+                              {memberStats.batting_runs}R · {memberStats.bowling_wickets}W · Synced {new Date(memberStats.last_synced_at).toLocaleDateString()}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-400">No stats yet</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => isEditing ? setEditingStatsId(null) : openStatsEdit(member.id)}
+                            className="p-1.5 text-gray-400 hover:text-primary-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            title={isEditing ? 'Close' : 'Edit stats'}
+                          >
+                            {isEditing ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
+                          </button>
+                          {memberStats && !isEditing && (
+                            <button
+                              onClick={() => handleDeleteStats(member.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                              title="Delete stats"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Stats edit form */}
+                      {isEditing && (
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 space-y-4">
+                          {/* Batting Section */}
+                          <div>
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Batting</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {[
+                                { field: 'batting_matches' as keyof MemberCricketStats, label: 'Matches', type: 'number' },
+                                { field: 'batting_innings' as keyof MemberCricketStats, label: 'Innings', type: 'number' },
+                                { field: 'batting_runs' as keyof MemberCricketStats, label: 'Runs', type: 'number' },
+                                { field: 'batting_highest_score' as keyof MemberCricketStats, label: 'High Score', type: 'number' },
+                                { field: 'batting_average' as keyof MemberCricketStats, label: 'Average', type: 'number' },
+                                { field: 'batting_strike_rate' as keyof MemberCricketStats, label: 'Strike Rate', type: 'number' },
+                                { field: 'batting_fifties' as keyof MemberCricketStats, label: '50s', type: 'number' },
+                                { field: 'batting_hundreds' as keyof MemberCricketStats, label: '100s', type: 'number' },
+                                { field: 'batting_ducks' as keyof MemberCricketStats, label: 'Ducks', type: 'number' },
+                                { field: 'batting_fours' as keyof MemberCricketStats, label: 'Fours', type: 'number' },
+                                { field: 'batting_sixes' as keyof MemberCricketStats, label: 'Sixes', type: 'number' },
+                              ].map(({ field, label, type }) => (
+                                <div key={field}>
+                                  <label className="text-xs text-gray-500 dark:text-gray-400 block mb-0.5">{label}</label>
+                                  <input
+                                    type={type}
+                                    value={(statsForm[field] as string | number) ?? 0}
+                                    onChange={e => updateStatsField(field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
+                                    className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    min="0"
+                                    step={field.includes('average') || field.includes('strike_rate') ? '0.01' : '1'}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Bowling Section */}
+                          <div>
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Bowling</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {[
+                                { field: 'bowling_matches' as keyof MemberCricketStats, label: 'Matches', type: 'number' },
+                                { field: 'bowling_innings' as keyof MemberCricketStats, label: 'Innings', type: 'number' },
+                                { field: 'bowling_overs' as keyof MemberCricketStats, label: 'Overs', type: 'number' },
+                                { field: 'bowling_wickets' as keyof MemberCricketStats, label: 'Wickets', type: 'number' },
+                                { field: 'bowling_runs_conceded' as keyof MemberCricketStats, label: 'Runs', type: 'number' },
+                                { field: 'bowling_economy' as keyof MemberCricketStats, label: 'Economy', type: 'number' },
+                                { field: 'bowling_average' as keyof MemberCricketStats, label: 'Average', type: 'number' },
+                                { field: 'bowling_strike_rate' as keyof MemberCricketStats, label: 'Strike Rate', type: 'number' },
+                                { field: 'bowling_five_wickets' as keyof MemberCricketStats, label: '5-fers', type: 'number' },
+                              ].map(({ field, label, type }) => (
+                                <div key={field}>
+                                  <label className="text-xs text-gray-500 dark:text-gray-400 block mb-0.5">{label}</label>
+                                  <input
+                                    type={type}
+                                    value={(statsForm[field] as string | number) ?? 0}
+                                    onChange={e => updateStatsField(field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
+                                    className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    min="0"
+                                    step={field.includes('economy') || field.includes('average') || field.includes('strike_rate') ? '0.01' : '1'}
+                                  />
+                                </div>
+                              ))}
+                              <div>
+                                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-0.5">Best Figures</label>
+                                <input
+                                  type="text"
+                                  value={(statsForm.bowling_best_figures as string) ?? '0/0'}
+                                  onChange={e => updateStatsField('bowling_best_figures', e.target.value)}
+                                  placeholder="e.g. 4/22"
+                                  className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Fielding Section */}
+                          <div>
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Fielding</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { field: 'fielding_catches' as keyof MemberCricketStats, label: 'Catches' },
+                                { field: 'fielding_stumpings' as keyof MemberCricketStats, label: 'Stumpings' },
+                                { field: 'fielding_run_outs' as keyof MemberCricketStats, label: 'Run Outs' },
+                              ].map(({ field, label }) => (
+                                <div key={field}>
+                                  <label className="text-xs text-gray-500 dark:text-gray-400 block mb-0.5">{label}</label>
+                                  <input
+                                    type="number"
+                                    value={(statsForm[field] as number) ?? 0}
+                                    onChange={e => updateStatsField(field, parseInt(e.target.value) || 0)}
+                                    className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    min="0"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* CricHeroes URL */}
+                          <div>
+                            <label className="text-xs text-gray-500 dark:text-gray-400 block mb-0.5">CricHeroes Profile URL (optional)</label>
+                            <input
+                              type="url"
+                              value={(statsForm.cricheroes_profile_url as string) ?? ''}
+                              onChange={e => updateStatsField('cricheroes_profile_url', e.target.value)}
+                              placeholder="https://cricheroes.com/player/..."
+                              className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            />
+                          </div>
+
+                          {/* Save feedback */}
+                          {statsError && (
+                            <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-xs">
+                              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                              {statsError}
+                            </div>
+                          )}
+                          {statsMsg && (
+                            <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-xs">
+                              <Check className="w-3.5 h-3.5 flex-shrink-0" />
+                              {statsMsg}
+                            </div>
+                          )}
+
+                          <div className="flex gap-2">
+                            <Button onClick={handleSaveStats} disabled={statsSaving} className="flex-1">
+                              <Save className="w-4 h-4 mr-2" />
+                              {statsSaving ? 'Saving...' : 'Save Stats'}
+                            </Button>
+                            <Button variant="secondary" onClick={() => { setEditingStatsId(null); setStatsMsg(''); setStatsError(''); }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {members.length === 0 && (
+                <p className="text-center text-sm text-gray-400 py-4">No members found.</p>
               )}
             </CardContent>
           </Card>

@@ -231,3 +231,54 @@ export interface Sponsor {
   updated_at: string;
   member?: Member;
 }
+
+// Cricket Stats Types
+export interface MemberCricketStats {
+  id: string;
+  member_id: string;
+  season: string;
+  // Batting
+  batting_matches: number;
+  batting_innings: number;
+  batting_runs: number;
+  batting_highest_score: number;
+  batting_average: number;
+  batting_strike_rate: number;
+  batting_fifties: number;
+  batting_hundreds: number;
+  batting_ducks: number;
+  batting_fours: number;
+  batting_sixes: number;
+  // Bowling
+  bowling_matches: number;
+  bowling_innings: number;
+  bowling_overs: number;
+  bowling_wickets: number;
+  bowling_runs_conceded: number;
+  bowling_economy: number;
+  bowling_average: number;
+  bowling_strike_rate: number;
+  bowling_best_figures: string;
+  bowling_five_wickets: number;
+  // Fielding
+  fielding_catches: number;
+  fielding_stumpings: number;
+  fielding_run_outs: number;
+  // Meta
+  cricheroes_profile_url: string | null;
+  last_synced_at: string;
+  created_at: string;
+  updated_at: string;
+  member?: Member;
+}
+
+export type AIInsightType =
+  | 'squad_selector'
+  | 'match_prediction'
+  | 'cricket_dna'
+  | 'leaderboard_commentary'
+  | 'form_tracker'
+  | 'training_recommendations'
+  | 'match_report'
+  | 'head_to_head'
+  | 'club_chat';
