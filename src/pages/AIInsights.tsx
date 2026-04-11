@@ -157,10 +157,10 @@ export function AIInsights() {
 
   const tabs: Array<{ id: Tab; label: string; icon: typeof Sparkles }> = [
     { id: 'overview', label: 'Overview', icon: Sparkles },
-    { id: 'squad', label: 'Squad AI', icon: Users },
-    { id: 'identity', label: 'Cricket DNA', icon: Zap },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'chat', label: 'AI Chat', icon: MessageSquare },
+    { id: 'identity', label: 'Cricket DNA', icon: Zap },
+    { id: 'squad', label: 'Squad AI', icon: Users },
   ];
 
   return (
