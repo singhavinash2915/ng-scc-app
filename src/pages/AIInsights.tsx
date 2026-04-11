@@ -338,7 +338,7 @@ export function AIInsights() {
                   ))}
                 </select>
               </div>
-              <Button onClick={handleSquadSelector} disabled={loadingInsight.squad} className="w-full">
+              <Button onClick={() => handleSquadSelector()} disabled={loadingInsight.squad} className="w-full">
                 <Sparkles className="w-4 h-4 mr-2" />
                 {loadingInsight.squad ? 'AI is selecting...' : 'Generate Best XI'}
               </Button>
@@ -372,7 +372,7 @@ export function AIInsights() {
                   ))}
                 </select>
               </div>
-              <Button onClick={handleMatchPrediction} disabled={loadingInsight.prediction} variant="secondary" className="w-full">
+              <Button onClick={() => handleMatchPrediction()} disabled={loadingInsight.prediction} variant="secondary" className="w-full">
                 <Brain className="w-4 h-4 mr-2" />
                 {loadingInsight.prediction ? 'Predicting...' : 'Predict Match Outcome'}
               </Button>
@@ -519,7 +519,7 @@ export function AIInsights() {
                 <Trophy className="w-4 h-4 text-amber-500" />
                 Season 2026-27 Leaderboard
               </h3>
-              <Button onClick={handleLeaderboardCommentary} disabled={loadingInsight.leaderboard} className="text-xs">
+              <Button onClick={() => handleLeaderboardCommentary()} disabled={loadingInsight.leaderboard} className="text-xs">
                 <Sparkles className="w-3.5 h-3.5 mr-1" />
                 AI Commentary
               </Button>
