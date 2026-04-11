@@ -144,7 +144,7 @@ export function AIInsights() {
           </div>
           <div>
             <h1 className="text-xl font-bold">SCC AI Intelligence</h1>
-            <p className="text-white/70 text-sm">Powered by Claude AI - Your cricket club's brain</p>
+            <p className="text-white/70 text-sm">Powered by AI — Your cricket club's brain</p>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3 mt-4">

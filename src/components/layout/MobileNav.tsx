@@ -4,7 +4,7 @@ import {
   Users,
   Calendar,
   Wallet,
-  BarChart3,
+  Brain,
   Menu,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -15,7 +15,7 @@ const navItems = [
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
-  { to: '/analytics', icon: BarChart3, label: 'Stats' },
+  { to: '/ai-insights', icon: Brain, label: 'AI' },
 ];
 
 export function MobileNav() {
