@@ -134,21 +134,54 @@ export function AIInsights() {
     const topRunScorer = [...stats].sort((a, b) => b.batting_runs - a.batting_runs)[0];
     const topWicketTaker = [...stats].filter(s => s.bowling_wickets > 0).sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0];
     const mvpPlayer = leaderboard[0];
-    const clubStats = {
+
+    // Build rich per-member profile: merge members table + cricket stats
+    const allMemberProfiles = members.map(m => {
+      const s = stats.find(st => st.member_id === m.id);
+      return {
+        name: m.name,
+        matches_played: m.matches_played,
+        status: m.status,
+        // Cricket stats (null if not imported yet)
+        batting_runs: s?.batting_runs ?? null,
+        batting_innings: s?.batting_innings ?? null,
+        batting_average: s?.batting_average ?? null,
+        batting_strike_rate: s?.batting_strike_rate ?? null,
+        batting_highest_score: s?.batting_highest_score ?? null,
+        batting_fifties: s?.batting_fifties ?? null,
+        batting_hundreds: s?.batting_hundreds ?? null,
+        bowling_wickets: s?.bowling_wickets ?? null,
+        bowling_economy: s?.bowling_economy ?? null,
+        bowling_best_figures: s?.bowling_best_figures ?? null,
+        fielding_catches: s?.fielding_catches ?? null,
+        fielding_run_outs: s?.fielding_run_outs ?? null,
+      };
+    });
+
+    const clubSummary = {
       totalMembers: members.length,
       activeMembers: members.filter(m => m.status === 'active').length,
       matchesPlayed: recentMatches.length,
       wins: recentMatches.filter(m => m.result === 'won').length,
-      topScorer: topRunScorer ? `${topRunScorer.member?.name} (${topRunScorer.batting_runs} runs)` : 'N/A',
-      topWicketTaker: topWicketTaker ? `${topWicketTaker.member?.name} (${topWicketTaker.bowling_wickets} wickets)` : 'N/A',
+      winRate: recentMatches.length > 0 ? Math.round(recentMatches.filter(m => m.result === 'won').length / recentMatches.length * 100) : 0,
+      topRunScorer: topRunScorer ? `${topRunScorer.member?.name} (${topRunScorer.batting_runs} runs, avg ${topRunScorer.batting_average})` : 'N/A',
+      topWicketTaker: topWicketTaker ? `${topWicketTaker.member?.name} (${topWicketTaker.bowling_wickets} wickets, eco ${topWicketTaker.bowling_economy})` : 'N/A',
       mvp: mvpPlayer ? `${mvpPlayer.member?.name} (${mvpPlayer.batting_runs}R · ${mvpPlayer.bowling_wickets}W)` : 'N/A',
     };
 
     const result = await generateInsight('club_chat', {
       question: userMsg,
-      members: members.map(m => ({ name: m.name, matches_played: m.matches_played, balance: m.balance })),
-      recentMatches: recentMatches.map(m => ({ date: m.date, result: m.result, opponent: m.opponent, venue: m.venue })),
-      stats: clubStats,
+      note: 'Answer ONLY from the data provided below. Member names may have slight spelling variations — match them approximately.',
+      clubSummary,
+      allMembers: allMemberProfiles,
+      recentMatches: recentMatches.map(m => ({
+        date: m.date,
+        result: m.result,
+        opponent: m.opponent,
+        venue: m.venue,
+        our_score: m.our_score,
+        opponent_score: m.opponent_score,
+      })),
     });
 
     setChatMessages(prev => [...prev, { role: 'ai', text: result || 'Sorry, I could not generate a response.' }]);

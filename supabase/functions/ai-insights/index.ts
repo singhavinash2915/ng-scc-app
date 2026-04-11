@@ -121,13 +121,22 @@ Compare: (1) Overall who has better numbers, (2) Batting comparison, (3) Fieldin
 
       case 'club_chat':
         prompt = data.question;
-        systemPrompt = `You are SCC's AI assistant - an expert on Sangria Cricket Club (SCC). You have access to this club data:
+        systemPrompt = `You are SCC's AI assistant — an expert on Sangria Cricket Club (SCC). Answer ONLY from the data below.
 
-Members: ${JSON.stringify(data.members?.slice(0, 20))}
-Recent Matches: ${JSON.stringify(data.recentMatches?.slice(0, 10))}
-Stats: ${JSON.stringify(data.stats)}
+IMPORTANT RULES:
+- Match member names approximately/fuzzily (e.g. "Aditya Jaiswal" matches "Aaditya Jaiswal", "Shubham" could be any of the Shubhams — list all matches)
+- If a stat field is null for a member, it means their CricHeroes stats haven't been imported yet — say "match stats not available" for that field
+- Be conversational and concise (under 150 words)
+- Use actual numbers from the data, never make up stats
 
-Answer questions about the club naturally and helpfully. Be conversational, use the actual data provided, and keep responses concise (under 150 words). If you don't have data for something, say so honestly.`;
+CLUB SUMMARY:
+${JSON.stringify(data.clubSummary)}
+
+ALL MEMBERS WITH STATS (${data.allMembers?.length} players):
+${JSON.stringify(data.allMembers)}
+
+RECENT MATCHES:
+${JSON.stringify(data.recentMatches?.slice(0, 15))}`;
         break;
 
       default:
