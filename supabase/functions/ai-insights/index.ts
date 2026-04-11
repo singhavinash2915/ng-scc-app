@@ -125,18 +125,28 @@ Compare: (1) Overall who has better numbers, (2) Batting comparison, (3) Fieldin
 
 IMPORTANT RULES:
 - Match member names approximately/fuzzily (e.g. "Aditya Jaiswal" matches "Aaditya Jaiswal", "Shubham" could be any of the Shubhams — list all matches)
-- If a stat field is null for a member, it means their CricHeroes stats haven't been imported yet — say "match stats not available" for that field
-- Be conversational and concise (under 150 words)
+- If a stat field is null for a member, it means their CricHeroes stats haven't been imported yet — say "stats not yet available" for that field
+- wallet_balance is the member's current club wallet balance; total_deposited is how much they've paid in total; total_fees_paid is match fees deducted
+- Be conversational and concise (under 200 words unless the question needs more detail)
 - Use actual numbers from the data, never make up stats
+- For financial questions, use recentTransactions and clubFinancials
+- For match history questions, use allMatches
+- For tournament questions, use tournaments
 
-CLUB SUMMARY:
+CLUB SUMMARY & FINANCIALS:
 ${JSON.stringify(data.clubSummary)}
 
-ALL MEMBERS WITH STATS (${data.allMembers?.length} players):
+ALL MEMBERS WITH STATS + WALLET INFO (${data.allMembers?.length} players):
 ${JSON.stringify(data.allMembers)}
 
-RECENT MATCHES:
-${JSON.stringify(data.recentMatches?.slice(0, 15))}`;
+ALL MATCHES (${data.allMatches?.length} total):
+${JSON.stringify(data.allMatches)}
+
+RECENT TRANSACTIONS (last 50):
+${JSON.stringify(data.recentTransactions)}
+
+TOURNAMENTS:
+${JSON.stringify(data.tournaments)}`;
         break;
 
       default:

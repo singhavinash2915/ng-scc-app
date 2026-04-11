@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { Sparkles, Brain, Users, TrendingUp, MessageSquare, Trophy, Target, Zap, ChevronRight, RefreshCw, Bot, Send, Shield } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
+import { useTransactions } from '../hooks/useTransactions';
+import { useTournaments } from '../hooks/useTournaments';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useAIInsight } from '../hooks/useAIInsight';
 import { AIInsightCard } from '../components/AIInsightCard';
@@ -15,6 +17,8 @@ type LBTab = 'mvp' | 'batting' | 'bowling' | 'fielding';
 export function AIInsights() {
   const { members } = useMembers();
   const { matches } = useMatches();
+  const { transactions } = useTransactions();
+  const { tournaments } = useTournaments();
   const { stats, getLeaderboard } = useCricketStats();
   const { generateInsight, error: aiError } = useAIInsight();
 
@@ -134,15 +138,25 @@ export function AIInsights() {
     const topRunScorer = [...stats].sort((a, b) => b.batting_runs - a.batting_runs)[0];
     const topWicketTaker = [...stats].filter(s => s.bowling_wickets > 0).sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0];
     const mvpPlayer = leaderboard[0];
+    const allMatchesCount = matches.length;
+    const completedMatches = matches.filter(m => ['won','lost','draw'].includes(m.result));
+    const wons = completedMatches.filter(m => m.result === 'won').length;
 
-    // Build rich per-member profile: merge members table + cricket stats
+    // ── 1. Members — full profile with balance + cricket stats ──────────────
     const allMemberProfiles = members.map(m => {
       const s = stats.find(st => st.member_id === m.id);
+      // Per-member transaction summary
+      const memberTxns = transactions.filter(t => t.member_id === m.id);
+      const totalDeposited = memberTxns.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
+      const totalFeesPaid  = memberTxns.filter(t => t.type === 'match_fee').reduce((sum, t) => sum + Math.abs(t.amount), 0);
       return {
         name: m.name,
-        matches_played: m.matches_played,
         status: m.status,
-        // Cricket stats (null if not imported yet)
+        matches_played: m.matches_played,
+        wallet_balance: m.balance,
+        total_deposited: totalDeposited,
+        total_fees_paid: totalFeesPaid,
+        // CricHeroes stats (null = not imported yet)
         batting_runs: s?.batting_runs ?? null,
         batting_innings: s?.batting_innings ?? null,
         batting_average: s?.batting_average ?? null,
@@ -150,38 +164,91 @@ export function AIInsights() {
         batting_highest_score: s?.batting_highest_score ?? null,
         batting_fifties: s?.batting_fifties ?? null,
         batting_hundreds: s?.batting_hundreds ?? null,
+        batting_ducks: s?.batting_ducks ?? null,
         bowling_wickets: s?.bowling_wickets ?? null,
+        bowling_overs: s?.bowling_overs ?? null,
         bowling_economy: s?.bowling_economy ?? null,
+        bowling_average: s?.bowling_average ?? null,
         bowling_best_figures: s?.bowling_best_figures ?? null,
+        bowling_five_wickets: s?.bowling_five_wickets ?? null,
         fielding_catches: s?.fielding_catches ?? null,
+        fielding_stumpings: s?.fielding_stumpings ?? null,
         fielding_run_outs: s?.fielding_run_outs ?? null,
       };
     });
 
+    // ── 2. All Matches ───────────────────────────────────────────────────────
+    const allMatchesData = matches.map(m => ({
+      date: m.date,
+      opponent: m.opponent,
+      result: m.result,
+      venue: m.venue,
+      our_score: m.our_score,
+      opponent_score: m.opponent_score,
+      match_fee: m.match_fee,
+      match_type: m.match_type,
+      man_of_match: m.man_of_match?.name ?? null,
+      players_count: m.players?.length ?? 0,
+    }));
+
+    // ── 3. Transactions — recent 50 + club financial totals ──────────────────
+    const recentTxns = [...transactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 50)
+      .map(t => ({
+        date: t.date,
+        type: t.type,
+        amount: t.amount,
+        member: t.member?.name ?? null,
+        description: t.description,
+      }));
+
+    const totalDepositsEver  = transactions.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0);
+    const totalExpensesEver  = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0);
+    const totalMatchFeesEver = transactions.filter(t => t.type === 'match_fee').reduce((s, t) => s + Math.abs(t.amount), 0);
+    const totalFunds         = members.reduce((s, m) => s + m.balance, 0);
+
+    // ── 4. Tournaments ───────────────────────────────────────────────────────
+    const tournamentsData = tournaments.map(t => ({
+      name: t.name,
+      status: t.status,
+      result: t.result,
+      our_position: t.our_position,
+      format: t.format,
+      start_date: t.start_date,
+      end_date: t.end_date,
+      venue: t.venue,
+      prize_money: t.prize_money,
+      entry_fee: t.entry_fee,
+    }));
+
+    // ── 5. Club summary ──────────────────────────────────────────────────────
     const clubSummary = {
       totalMembers: members.length,
       activeMembers: members.filter(m => m.status === 'active').length,
-      matchesPlayed: recentMatches.length,
-      wins: recentMatches.filter(m => m.result === 'won').length,
-      winRate: recentMatches.length > 0 ? Math.round(recentMatches.filter(m => m.result === 'won').length / recentMatches.length * 100) : 0,
-      topRunScorer: topRunScorer ? `${topRunScorer.member?.name} (${topRunScorer.batting_runs} runs, avg ${topRunScorer.batting_average})` : 'N/A',
-      topWicketTaker: topWicketTaker ? `${topWicketTaker.member?.name} (${topWicketTaker.bowling_wickets} wickets, eco ${topWicketTaker.bowling_economy})` : 'N/A',
+      totalMatchesRecorded: allMatchesCount,
+      externalMatchesCompleted: completedMatches.length,
+      wins: wons,
+      losses: completedMatches.filter(m => m.result === 'lost').length,
+      draws: completedMatches.filter(m => m.result === 'draw').length,
+      winRate: completedMatches.length > 0 ? `${Math.round(wons / completedMatches.length * 100)}%` : 'N/A',
+      clubFunds: `₹${totalFunds.toLocaleString('en-IN')}`,
+      totalDepositsEver: `₹${totalDepositsEver.toLocaleString('en-IN')}`,
+      totalExpensesEver: `₹${totalExpensesEver.toLocaleString('en-IN')}`,
+      totalMatchFeesCollected: `₹${totalMatchFeesEver.toLocaleString('en-IN')}`,
+      topRunScorer: topRunScorer ? `${topRunScorer.member?.name} — ${topRunScorer.batting_runs} runs (avg ${topRunScorer.batting_average})` : 'N/A',
+      topWicketTaker: topWicketTaker ? `${topWicketTaker.member?.name} — ${topWicketTaker.bowling_wickets} wkts (eco ${topWicketTaker.bowling_economy})` : 'N/A',
       mvp: mvpPlayer ? `${mvpPlayer.member?.name} (${mvpPlayer.batting_runs}R · ${mvpPlayer.bowling_wickets}W)` : 'N/A',
+      tournamentsPlayed: tournamentsData.length,
     };
 
     const result = await generateInsight('club_chat', {
       question: userMsg,
-      note: 'Answer ONLY from the data provided below. Member names may have slight spelling variations — match them approximately.',
       clubSummary,
       allMembers: allMemberProfiles,
-      recentMatches: recentMatches.map(m => ({
-        date: m.date,
-        result: m.result,
-        opponent: m.opponent,
-        venue: m.venue,
-        our_score: m.our_score,
-        opponent_score: m.opponent_score,
-      })),
+      allMatches: allMatchesData,
+      recentTransactions: recentTxns,
+      tournaments: tournamentsData,
     });
 
     setChatMessages(prev => [...prev, { role: 'ai', text: result || 'Sorry, I could not generate a response.' }]);
