@@ -93,17 +93,21 @@ export function AIInsights() {
   };
 
   const handleLeaderboardCommentary = () => {
-    const lb = leaderboard.slice(0, 10).map((s, i) => ({
-      rank: i + 1,
+    const mvpBoard = leaderboard.slice(0, 10).map((s, i) => ({
+      mvpRank: i + 1,
       name: s.member?.name,
       runs: s.batting_runs,
       wickets: s.bowling_wickets,
       matches: s.batting_matches,
       average: s.batting_average,
     }));
+    const topBatter = [...stats].sort((a, b) => b.batting_runs - a.batting_runs)[0];
+    const topBowler = [...stats].filter(s => s.bowling_wickets > 0).sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0];
     const won = recentMatches.filter(m => m.result === 'won').length;
     generateSingleInsight('leaderboard', 'leaderboard_commentary', {
-      leaderboard: lb,
+      mvpLeaderboard: mvpBoard,
+      topRunScorer: topBatter ? `${topBatter.member?.name} with ${topBatter.batting_runs} runs` : 'N/A',
+      topWicketTaker: topBowler ? `${topBowler.member?.name} with ${topBowler.bowling_wickets} wickets` : 'N/A',
       summary: `SCC played ${recentMatches.length} matches, won ${won}. Win rate: ${recentMatches.length > 0 ? Math.round(won / recentMatches.length * 100) : 0}%`,
     });
   };
@@ -127,12 +131,17 @@ export function AIInsights() {
     setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setChatLoading(true);
 
+    const topRunScorer = [...stats].sort((a, b) => b.batting_runs - a.batting_runs)[0];
+    const topWicketTaker = [...stats].filter(s => s.bowling_wickets > 0).sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0];
+    const mvpPlayer = leaderboard[0];
     const clubStats = {
       totalMembers: members.length,
       activeMembers: members.filter(m => m.status === 'active').length,
       matchesPlayed: recentMatches.length,
       wins: recentMatches.filter(m => m.result === 'won').length,
-      topScorer: leaderboard[0]?.member?.name || 'N/A',
+      topScorer: topRunScorer ? `${topRunScorer.member?.name} (${topRunScorer.batting_runs} runs)` : 'N/A',
+      topWicketTaker: topWicketTaker ? `${topWicketTaker.member?.name} (${topWicketTaker.bowling_wickets} wickets)` : 'N/A',
+      mvp: mvpPlayer ? `${mvpPlayer.member?.name} (${mvpPlayer.batting_runs}R · ${mvpPlayer.bowling_wickets}W)` : 'N/A',
     };
 
     const result = await generateInsight('club_chat', {
