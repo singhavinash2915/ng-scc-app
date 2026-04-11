@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Sparkles, Brain, Users, TrendingUp, MessageSquare, Trophy, Target, Zap, ChevronRight, RefreshCw, Bot, Send } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Sparkles, Brain, Users, TrendingUp, MessageSquare, Trophy, Target, Zap, ChevronRight, RefreshCw, Bot, Send, Shield } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useCricketStats } from '../hooks/useCricketStats';
@@ -10,6 +10,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 
 type Tab = 'overview' | 'squad' | 'identity' | 'chat' | 'leaderboard';
+type LBTab = 'mvp' | 'batting' | 'bowling' | 'fielding';
 
 export function AIInsights() {
   const { members } = useMembers();
@@ -18,6 +19,7 @@ export function AIInsights() {
   const { generateInsight, error: aiError } = useAIInsight();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [lbTab, setLbTab] = useState<LBTab>('mvp');
   const [selectedMember, setSelectedMember] = useState<string>('');
   const [selectedMatch, setSelectedMatch] = useState<string>('');
   const [insights, setInsights] = useState<Record<string, string | null>>({});
@@ -29,6 +31,24 @@ export function AIInsights() {
   const upcomingMatches = matches.filter(m => m.result === 'upcoming');
   const recentMatches = matches.filter(m => m.result !== 'upcoming').slice(0, 10);
   const leaderboard = getLeaderboard();
+
+  const battingLeaderboard = useMemo(() =>
+    [...stats].filter(s => s.batting_innings > 0).sort((a, b) => b.batting_runs - a.batting_runs),
+  [stats]);
+
+  const bowlingLeaderboard = useMemo(() =>
+    [...stats].filter(s => s.bowling_wickets > 0).sort((a, b) => {
+      if (b.bowling_wickets !== a.bowling_wickets) return b.bowling_wickets - a.bowling_wickets;
+      return (a.bowling_economy || 99) - (b.bowling_economy || 99);
+    }),
+  [stats]);
+
+  const fieldingLeaderboard = useMemo(() =>
+    [...stats]
+      .map(s => ({ ...s, _dismissals: s.fielding_catches + s.fielding_stumpings + s.fielding_run_outs }))
+      .filter(s => s._dismissals > 0)
+      .sort((a, b) => b._dismissals - a._dismissals),
+  [stats]);
 
   const generateSingleInsight = async (key: string, type: Parameters<typeof generateInsight>[0], data: Record<string, unknown>) => {
     setLoadingInsight(prev => ({ ...prev, [key]: true }));
@@ -482,8 +502,10 @@ export function AIInsights() {
       {/* Leaderboard Tab */}
       {activeTab === 'leaderboard' && (
         <div className="space-y-4">
+
+          {/* Header + AI Commentary */}
           <Card className="p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" />
                 Season 2026-27 Leaderboard
@@ -493,65 +515,260 @@ export function AIInsights() {
                 AI Commentary
               </Button>
             </div>
-
-            {/* AI Commentary */}
             {(insights.leaderboard || loadingInsight.leaderboard) && (
               <AIInsightCard
                 title="Season AI Commentary"
                 insight={insights.leaderboard || null}
                 loading={loadingInsight.leaderboard || false}
                 error={null}
-                className="mb-4"
                 onRefresh={handleLeaderboardCommentary}
               />
             )}
-
-            {/* Leaderboard Table */}
-            {leaderboard.length > 0 ? (
-              <div className="space-y-2">
-                {leaderboard.map((s, index) => (
-                  <div key={s.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                    index === 0 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' :
-                    index === 1 ? 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-700' :
-                    index === 2 ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' :
-                    'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700'
-                  }`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                      index === 0 ? 'bg-amber-400 text-white' :
-                      index === 1 ? 'bg-gray-400 text-white' :
-                      index === 2 ? 'bg-orange-400 text-white' :
-                      'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
-                    }`}>
-                      {index < 3 ? ['1','2','3'][index] : index + 1}
-                    </div>
-                    {s.member?.avatar_url ? (
-                      <img src={s.member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold text-sm">
-                        {s.member?.name?.charAt(0)}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{s.member?.name}</p>
-                      <p className="text-xs text-gray-500">{s.batting_matches}M · {s.batting_runs}R · {s.bowling_wickets}W</p>
-                    </div>
-                    <button
-                      onClick={() => { setSelectedMember(s.member_id); setActiveTab('identity'); handleCricketDNA(s.member_id); }}
-                      className="text-xs text-primary-500 hover:text-primary-700 font-medium whitespace-nowrap"
-                    >
-                      DNA
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No stats loaded yet</p>
-                <p className="text-gray-400 text-sm mt-1">Import cricket stats data in Settings</p>
-              </div>
-            )}
           </Card>
+
+          {/* Sub-section tab pills */}
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {([
+              { id: 'mvp',      label: 'MVP',      icon: '🏆', desc: 'Overall',  color: 'from-amber-500 to-orange-500'  },
+              { id: 'batting',  label: 'Batsman',  icon: '🏏', desc: 'Runs',     color: 'from-blue-500 to-indigo-500'   },
+              { id: 'bowling',  label: 'Bowler',   icon: '⚡', desc: 'Wickets',  color: 'from-rose-500 to-red-500'      },
+              { id: 'fielding', label: 'Fielder',  icon: '🧤', desc: 'Catches',  color: 'from-emerald-500 to-green-500' },
+            ] as { id: LBTab; label: string; icon: string; desc: string; color: string }[]).map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setLbTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all flex-shrink-0 ${
+                  lbTab === tab.id
+                    ? `bg-gradient-to-r ${tab.color} text-white shadow-lg scale-105`
+                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <span className="text-base">{tab.icon}</span>
+                <div className="text-left">
+                  <div className="leading-tight">{tab.label}</div>
+                  <div className={`text-[10px] font-normal leading-tight ${lbTab === tab.id ? 'text-white/70' : 'text-gray-400'}`}>{tab.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* ── MVP ─────────────────────────────── */}
+          {lbTab === 'mvp' && (
+            <Card className="overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+                <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                  🏆 Most Valuable Players — Runs + Wickets + Fielding combined score
+                </p>
+              </div>
+              {leaderboard.length > 0 ? (
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {leaderboard.map((s, index) => {
+                    const mvpScore = s.batting_runs + s.bowling_wickets * 20 + (s.fielding_catches + s.fielding_stumpings + s.fielding_run_outs) * 10;
+                    return (
+                      <div key={s.id} className={`flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/30 ${
+                        index === 0 ? 'bg-amber-50/60 dark:bg-amber-900/10' :
+                        index === 1 ? 'bg-gray-50/60 dark:bg-gray-700/20' :
+                        index === 2 ? 'bg-orange-50/60 dark:bg-orange-900/10' : ''
+                      }`}>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 ${
+                          index === 0 ? 'bg-amber-400 text-white shadow-md shadow-amber-200 dark:shadow-amber-900' :
+                          index === 1 ? 'bg-gray-400 text-white' :
+                          index === 2 ? 'bg-orange-400 text-white' :
+                          'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                        }`}>
+                          {index === 0 ? '👑' : index + 1}
+                        </div>
+                        {s.member?.avatar_url ? (
+                          <img src={s.member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0 ring-2 ring-white dark:ring-gray-800" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {s.member?.name?.charAt(0)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{s.member?.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span className="text-[10px] text-blue-500 font-semibold">{s.batting_runs}R</span>
+                            <span className="text-[10px] text-rose-500 font-semibold">{s.bowling_wickets}W</span>
+                            <span className="text-[10px] text-emerald-500 font-semibold">{s.fielding_catches + s.fielding_stumpings + s.fielding_run_outs} catches</span>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm font-black text-amber-600 dark:text-amber-400">{mvpScore}</p>
+                          <p className="text-[9px] text-gray-400 uppercase tracking-wide">MVP pts</p>
+                        </div>
+                        <button
+                          onClick={() => { setSelectedMember(s.member_id); setActiveTab('identity'); handleCricketDNA(s.member_id); }}
+                          className="text-[10px] text-primary-500 hover:text-primary-700 font-semibold px-2 py-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                        >
+                          DNA
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <Trophy className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm">No stats yet — import from Settings</p>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── BATTING ──────────────────────────── */}
+          {lbTab === 'batting' && (
+            <Card className="overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                <p className="text-[11px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-widest">🏏 Batting Leaderboard — Ranked by Runs</p>
+              </div>
+              {battingLeaderboard.length > 0 ? (
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {battingLeaderboard.map((s, index) => (
+                    <div key={s.id} className={`flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${index === 0 ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 ${
+                        index === 0 ? 'bg-blue-500 text-white shadow-md' :
+                        index === 1 ? 'bg-blue-300 text-white' :
+                        index === 2 ? 'bg-blue-200 text-blue-800' :
+                        'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                      }`}>
+                        {index === 0 ? '🏏' : index + 1}
+                      </div>
+                      {s.member?.avatar_url ? (
+                        <img src={s.member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          {s.member?.name?.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{s.member?.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400 flex-wrap">
+                          <span>{s.batting_innings} inn</span>
+                          <span>HS: {s.batting_highest_score}</span>
+                          <span>Avg: {s.batting_average?.toFixed(1)}</span>
+                          <span>SR: {s.batting_strike_rate?.toFixed(1)}</span>
+                          {s.batting_fifties > 0 && <span className="text-amber-500 font-semibold">{s.batting_fifties}×50</span>}
+                          {s.batting_hundreds > 0 && <span className="text-orange-500 font-semibold">{s.batting_hundreds}×100</span>}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-lg font-black text-blue-600 dark:text-blue-400">{s.batting_runs}</p>
+                        <p className="text-[9px] text-gray-400 uppercase tracking-wide">runs</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-gray-400 text-sm">No batting stats available</p>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── BOWLING ──────────────────────────── */}
+          {lbTab === 'bowling' && (
+            <Card className="overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20">
+                <p className="text-[11px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-widest">⚡ Bowling Leaderboard — Ranked by Wickets</p>
+              </div>
+              {bowlingLeaderboard.length > 0 ? (
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {bowlingLeaderboard.map((s, index) => (
+                    <div key={s.id} className={`flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${index === 0 ? 'bg-rose-50/50 dark:bg-rose-900/10' : ''}`}>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 ${
+                        index === 0 ? 'bg-rose-500 text-white shadow-md' :
+                        index === 1 ? 'bg-rose-300 text-white' :
+                        index === 2 ? 'bg-rose-200 text-rose-800' :
+                        'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                      }`}>
+                        {index === 0 ? '⚡' : index + 1}
+                      </div>
+                      {s.member?.avatar_url ? (
+                        <img src={s.member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          {s.member?.name?.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{s.member?.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400 flex-wrap">
+                          <span>{s.bowling_overs} ov</span>
+                          <span>Eco: {s.bowling_economy?.toFixed(2)}</span>
+                          <span>Avg: {s.bowling_average?.toFixed(1)}</span>
+                          {s.bowling_best_figures && <span className="text-rose-500 font-semibold">Best: {s.bowling_best_figures}</span>}
+                          {s.bowling_five_wickets > 0 && <span className="text-purple-500 font-semibold">{s.bowling_five_wickets}×5wkt</span>}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-lg font-black text-rose-600 dark:text-rose-400">{s.bowling_wickets}</p>
+                        <p className="text-[9px] text-gray-400 uppercase tracking-wide">wickets</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-gray-400 text-sm">No bowling stats available</p>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── FIELDING ─────────────────────────── */}
+          {lbTab === 'fielding' && (
+            <Card className="overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20">
+                <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">🧤 Fielding Leaderboard — Ranked by Dismissals</p>
+              </div>
+              {fieldingLeaderboard.length > 0 ? (
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {fieldingLeaderboard.map((s, index) => {
+                    const total = s.fielding_catches + s.fielding_stumpings + s.fielding_run_outs;
+                    return (
+                      <div key={s.id} className={`flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${index === 0 ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 ${
+                          index === 0 ? 'bg-emerald-500 text-white shadow-md' :
+                          index === 1 ? 'bg-emerald-300 text-white' :
+                          index === 2 ? 'bg-emerald-200 text-emerald-800' :
+                          'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                        }`}>
+                          {index === 0 ? '🧤' : index + 1}
+                        </div>
+                        {s.member?.avatar_url ? (
+                          <img src={s.member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {s.member?.name?.charAt(0)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{s.member?.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400 flex-wrap">
+                            {s.fielding_catches > 0 && <span className="text-emerald-600 font-semibold">{s.fielding_catches} catches</span>}
+                            {s.fielding_stumpings > 0 && <span className="text-teal-600 font-semibold">{s.fielding_stumpings} stump</span>}
+                            {s.fielding_run_outs > 0 && <span className="text-green-600 font-semibold">{s.fielding_run_outs} RO</span>}
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{total}</p>
+                          <p className="text-[9px] text-gray-400 uppercase tracking-wide">dismissals</p>
+                        </div>
+                        <Shield className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-gray-400 text-sm">No fielding stats available</p>
+                </div>
+              )}
+            </Card>
+          )}
+
         </div>
       )}
 
