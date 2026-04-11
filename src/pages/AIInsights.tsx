@@ -50,14 +50,14 @@ export function AIInsights() {
       .sort((a, b) => b._dismissals - a._dismissals),
   [stats]);
 
-  const generateSingleInsight = async (key: string, type: Parameters<typeof generateInsight>[0], data: Record<string, unknown>) => {
+  const generateSingleInsight = async (key: string, type: Parameters<typeof generateInsight>[0], data: Record<string, unknown>, noCache = false) => {
     setLoadingInsight(prev => ({ ...prev, [key]: true }));
-    const result = await generateInsight(type, data);
+    const result = await generateInsight(type, data, noCache ? undefined : key);
     setInsights(prev => ({ ...prev, [key]: result }));
     setLoadingInsight(prev => ({ ...prev, [key]: false }));
   };
 
-  const handleSquadSelector = () => {
+  const handleSquadSelector = (forceRefresh = false) => {
     const match = matches.find(m => m.id === selectedMatch);
     const availableMembers = members.map(m => {
       const s = stats.find(st => st.member_id === m.id);
@@ -70,10 +70,10 @@ export function AIInsights() {
         bowling_economy: s?.bowling_economy || 0,
       };
     });
-    generateSingleInsight('squad', 'squad_selector', { match, players: availableMembers });
+    generateSingleInsight('squad', 'squad_selector', { match, players: availableMembers }, forceRefresh);
   };
 
-  const handleMatchPrediction = () => {
+  const handleMatchPrediction = (forceRefresh = false) => {
     const match = matches.find(m => m.id === selectedMatch);
     const squadStats = stats.slice(0, 15).map(s => ({
       name: s.member?.name,
@@ -81,18 +81,18 @@ export function AIInsights() {
       bowling_wickets: s.bowling_wickets,
     }));
     const recentForm = recentMatches.slice(0, 5).map(m => ({ result: m.result, opponent: m.opponent, venue: m.venue }));
-    generateSingleInsight('prediction', 'match_prediction', { match, squadStats, recentForm });
+    generateSingleInsight('prediction', 'match_prediction', { match, squadStats, recentForm }, forceRefresh);
   };
 
-  const handleCricketDNA = async (memberId: string) => {
+  const handleCricketDNA = async (memberId: string, forceRefresh = false) => {
     const member = members.find(m => m.id === memberId);
     const memberStats = stats.find(s => s.member_id === memberId);
     if (!member) return;
     const key = `dna_${memberId}`;
-    generateSingleInsight(key, 'cricket_dna', { member, stats: memberStats || {} });
+    generateSingleInsight(key, 'cricket_dna', { member, stats: memberStats || {} }, forceRefresh);
   };
 
-  const handleLeaderboardCommentary = () => {
+  const handleLeaderboardCommentary = (forceRefresh = false) => {
     const mvpBoard = leaderboard.slice(0, 10).map((s, i) => ({
       mvpRank: i + 1,
       name: s.member?.name,
@@ -109,10 +109,10 @@ export function AIInsights() {
       topRunScorer: topBatter ? `${topBatter.member?.name} with ${topBatter.batting_runs} runs` : 'N/A',
       topWicketTaker: topBowler ? `${topBowler.member?.name} with ${topBowler.bowling_wickets} wickets` : 'N/A',
       summary: `SCC played ${recentMatches.length} matches, won ${won}. Win rate: ${recentMatches.length > 0 ? Math.round(won / recentMatches.length * 100) : 0}%`,
-    });
+    }, forceRefresh);
   };
 
-  const handleFormTracker = (memberId: string) => {
+  const handleFormTracker = (memberId: string, forceRefresh = false) => {
     const member = members.find(m => m.id === memberId);
     const memberStats = stats.find(s => s.member_id === memberId);
     const memberMatches = recentMatches.filter(m => m.players?.some(p => p.member_id === memberId)).slice(0, 5);
@@ -121,7 +121,7 @@ export function AIInsights() {
       stats: memberStats || {},
       recentMatches: memberMatches.map(m => ({ date: m.date, result: m.result, opponent: m.opponent })),
       careerAverage: memberStats?.batting_average || 0,
-    });
+    }, forceRefresh);
   };
 
   const handleChat = async () => {
@@ -304,7 +304,7 @@ export function AIInsights() {
                 onRefresh={() => generateSingleInsight('match_report', 'match_report', {
                   match: recentMatches[0],
                   players: recentMatches[0].players?.map(p => ({ name: p.member?.name, team: p.team })),
-                })}
+                }, true)}
               />
               {!insights.match_report && !loadingInsight.match_report && (
                 <div className="text-center py-4 text-gray-400 text-sm">
@@ -348,7 +348,7 @@ export function AIInsights() {
               insight={insights.squad || null}
               loading={loadingInsight.squad || false}
               error={aiError}
-              onRefresh={handleSquadSelector}
+              onRefresh={() => handleSquadSelector(true)}
             />
           </Card>
 
@@ -382,7 +382,7 @@ export function AIInsights() {
               insight={insights.prediction || null}
               loading={loadingInsight.prediction || false}
               error={aiError}
-              onRefresh={handleMatchPrediction}
+              onRefresh={() => handleMatchPrediction(true)}
             />
           </Card>
         </div>
@@ -456,7 +456,7 @@ export function AIInsights() {
                 insight={insights[`form_${selectedMember}`] || null}
                 loading={loadingInsight[`form_${selectedMember}`] || false}
                 error={null}
-                onRefresh={() => handleFormTracker(selectedMember)}
+                onRefresh={() => handleFormTracker(selectedMember, true)}
               />
               {!insights[`form_${selectedMember}`] && !loadingInsight[`form_${selectedMember}`] && (
                 <p className="text-sm text-gray-400 text-center py-3">Click Analyze to get form insights</p>
@@ -530,7 +530,7 @@ export function AIInsights() {
                 insight={insights.leaderboard || null}
                 loading={loadingInsight.leaderboard || false}
                 error={null}
-                onRefresh={handleLeaderboardCommentary}
+                onRefresh={() => handleLeaderboardCommentary(true)}
               />
             )}
           </Card>
