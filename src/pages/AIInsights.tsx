@@ -618,7 +618,7 @@ export function AIInsights() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" />
-                Season 2026-27 Leaderboard
+                Season 2025-26 Leaderboard
               </h3>
               <Button onClick={() => handleLeaderboardCommentary()} disabled={loadingInsight.leaderboard} className="text-xs">
                 <Sparkles className="w-3.5 h-3.5 mr-1" />

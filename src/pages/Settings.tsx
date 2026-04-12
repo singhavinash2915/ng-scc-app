@@ -45,7 +45,7 @@ export function Settings() {
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
 
-  const [statsSeason, setStatsSeason] = useState('2026-27');
+  const [statsSeason, setStatsSeason] = useState('2025-26');
   const { stats: cricketStats, upsertStats, deleteStats } = useCricketStats(statsSeason);
   const [editingStatsId, setEditingStatsId] = useState<string | null>(null);
   const [statsForm, setStatsForm] = useState<Partial<MemberCricketStats>>({});
@@ -774,7 +774,7 @@ export function Settings() {
                     onChange={e => setStatsSeason(e.target.value)}
                     className="text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1"
                   >
-                    {['2026-27', '2025-26', '2024-25'].map(s => (
+                    {['2025-26', '2024-25', '2023-24'].map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>

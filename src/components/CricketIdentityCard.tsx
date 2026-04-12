@@ -90,7 +90,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
           <div className="text-right">
             <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 text-center border border-white/20">
               <p className="text-xs text-white/60 uppercase tracking-wide">Season</p>
-              <p className="font-bold text-sm">2026-27</p>
+              <p className="font-bold text-sm">2025-26</p>
             </div>
           </div>
         </div>

@@ -236,7 +236,7 @@ export function Dashboard() {
               <div>
                 <h1 className="text-xl lg:text-2xl font-black text-white leading-tight">Sangria Cricket Club</h1>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="px-2 py-0.5 bg-green-400/20 border border-green-400/30 rounded-full text-green-300 text-[11px] font-semibold">Season 2026–27</span>
+                  <span className="px-2 py-0.5 bg-green-400/20 border border-green-400/30 rounded-full text-green-300 text-[11px] font-semibold">Season 2025–26</span>
                   <span className="text-white/40 text-[11px]">{stats.matchesPlayed} matches · {stats.activeMembers} active</span>
                 </div>
               </div>
@@ -409,7 +409,7 @@ export function Dashboard() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2">
                 <Star className="w-3.5 h-3.5 text-amber-500" fill="currentColor" />
-                Season 2026–27 Stars
+                Season 2025–26 Stars
               </h2>
               <Link to="/ai-insights" className="text-xs text-primary-600 dark:text-primary-400 flex items-center gap-0.5 font-semibold">
                 Full Leaderboard <ChevronRight className="w-3.5 h-3.5" />

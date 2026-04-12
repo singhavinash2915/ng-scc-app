@@ -99,7 +99,7 @@ function StatCell({ value, highlight, isTop }: { value: string | number; highlig
 }
 
 export function Leaderboard() {
-  const { stats, loading, error, fetchStats } = useCricketStats('2026-27');
+  const { stats, loading, error, fetchStats } = useCricketStats('2025-26');
   const [tab, setTab] = useState<Tab>('batting');
   const [sortKey, setSortKey] = useState<keyof MemberCricketStats>('batting_runs');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -176,7 +176,7 @@ export function Leaderboard() {
 
   return (
     <div className="space-y-6">
-      <Header title="Leaderboard" subtitle="Season 2026-27 • CricHeroes Stats" />
+      <Header title="Leaderboard" subtitle="Season 2025-26 • CricHeroes Stats" />
 
       {/* Season banner */}
       <div className="mx-4 sm:mx-0 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-700 dark:to-primary-900 p-5 text-white flex items-center justify-between">
@@ -186,7 +186,7 @@ export function Leaderboard() {
           </div>
           <div>
             <p className="text-primary-100 text-sm font-medium">Current Season</p>
-            <h2 className="text-xl font-bold">SCC Season 2026-27</h2>
+            <h2 className="text-xl font-bold">SCC Season 2025-26</h2>
             <p className="text-primary-200 text-xs">{stats.length} players · Synced from CricHeroes</p>
           </div>
         </div>
@@ -380,7 +380,7 @@ export function Leaderboard() {
       {/* Footer note */}
       {!loading && stats.length > 0 && (
         <p className="mx-4 sm:mx-0 text-xs text-gray-400 text-center pb-6">
-          Stats sourced from CricHeroes · Season 2026-27 · Updated daily
+          Stats sourced from CricHeroes · Season 2025-26 · Updated daily
         </p>
       )}
     </div>

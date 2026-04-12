@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { MemberCricketStats } from '../types';
 
-export function useCricketStats(season = '2026-27') {
+export function useCricketStats(season = '2025-26') {
   const [stats, setStats] = useState<MemberCricketStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
