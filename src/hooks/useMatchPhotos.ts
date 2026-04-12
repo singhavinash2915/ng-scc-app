@@ -69,10 +69,7 @@ export function useMatchPhotos() {
     try {
       setLoading(true);
 
-      // First, cleanup old photos
-      await cleanupOldPhotos();
-
-      // Then fetch remaining photos
+      // Fetch photos — cleanup runs only when a new photo is uploaded, not on every view
       const { data, error } = await supabase
         .from('match_photos')
         .select(`
@@ -133,6 +130,10 @@ export function useMatchPhotos() {
       if (dbError) throw dbError;
 
       setPhotos(prev => [data, ...prev]);
+
+      // Only clean up old photos after a new one is added
+      await cleanupOldPhotos();
+
       return data;
     } catch (err) {
       throw err instanceof Error ? err : new Error('Failed to upload photo');
