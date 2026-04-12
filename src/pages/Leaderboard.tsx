@@ -190,14 +190,18 @@ export function Leaderboard() {
             <p className="text-primary-200 text-xs">{stats.length} players · Synced from CricHeroes</p>
           </div>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="flex items-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-xl text-sm font-medium"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="Reload stats from database"
+            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-xl text-sm font-medium"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Loading...' : 'Reload'}
+          </button>
+          <span className="text-primary-200 text-[10px]">Stats auto-sync daily at 6 AM</span>
+        </div>
       </div>
 
       {/* Tab bar */}

@@ -312,9 +312,7 @@ export function Dashboard() {
                     <p className="text-white/50 text-xs truncate">vs {showManOfMatch.opponent}
                       {showManOfMatch.result === 'won' && <span className="text-green-400 ml-1">· Won 🏆</span>}
                     </p>
-                    {showManOfMatch.our_score && (
-                      <p className="text-white/40 text-xs">{showManOfMatch.our_score}</p>
-                    )}
+                    <p className="text-white/40 text-xs">{new Date(showManOfMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
                   </div>
                 </div>
               )}
