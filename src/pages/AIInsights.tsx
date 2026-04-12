@@ -247,6 +247,7 @@ export function AIInsights() {
       clubSummary,
       allMembers: allMemberProfiles,
       allMatches: allMatchesData,
+      chMatches: allMatchesData, // same source — populated by CricHeroes sync
       recentTransactions: recentTxns,
       tournaments: tournamentsData,
     });

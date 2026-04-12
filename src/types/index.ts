@@ -33,6 +33,7 @@ export interface Match {
   winning_team: InternalTeam | null; // For internal matches - which team won
   polling_enabled: boolean;
   polling_deadline: string | null;
+  ch_match_id?: string | null; // CricHeroes match ID for auto-sync
   created_at: string;
   players?: MatchPlayer[];
   man_of_match?: Member;

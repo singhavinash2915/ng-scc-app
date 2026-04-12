@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, CalendarDays, Trophy, Wallet, CreditCard, BarChart3, MessageSquare, Info, Receipt, Megaphone, Landmark, Brain } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, CalendarDays, Trophy, Wallet, CreditCard, BarChart3, MessageSquare, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -64,6 +64,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/members', icon: Users, label: 'Members' },
               { to: '/matches', icon: Calendar, label: 'Matches' },
               { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
+              { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
               { to: '/finance', icon: Wallet, label: 'Finance' },
               { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
               { to: '/payment', icon: CreditCard, label: 'Pay Online' },

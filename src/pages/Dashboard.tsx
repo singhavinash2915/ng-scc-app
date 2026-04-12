@@ -81,7 +81,11 @@ export function Dashboard() {
     return newer ? null : latestWonMatch;
   }, [matches, latestWonMatch]);
 
-  const nextUpcomingMatch = useMemo(() => matches.find(m => m.result === 'upcoming'), [matches]);
+  const nextUpcomingMatch = useMemo(() => {
+    const upcoming = matches.filter(m => m.result === 'upcoming');
+    upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return upcoming[0] ?? null;
+  }, [matches]);
 
   const lastFiveResults = useMemo(() =>
     matches.filter(m => m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result)).slice(0, 5),
@@ -236,17 +240,18 @@ export function Dashboard() {
               </div>
             </div>
 
-            {nextUpcomingMatch ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Next Match */}
+              {nextUpcomingMatch ? (
                 <div>
                   <p className="text-green-300/80 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
                     Next Match
                   </p>
-                  <h2 className="text-white text-2xl lg:text-3xl font-black mb-2">
+                  <h2 className="text-white text-xl lg:text-2xl font-black mb-1.5">
                     vs <span className="text-green-300">{nextUpcomingMatch.opponent || 'TBD'}</span>
                   </h2>
-                  <div className="flex items-center gap-4 text-white/55 text-sm flex-wrap">
+                  <div className="flex items-center gap-3 text-white/55 text-sm flex-wrap mb-3">
                     {nextUpcomingMatch.venue && (
                       <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{nextUpcomingMatch.venue}</span>
                     )}
@@ -254,52 +259,54 @@ export function Dashboard() {
                       {new Date(nextUpcomingMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
+                  <div className="flex gap-2">
+                    {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
+                      <div key={l} className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 min-w-[46px] border border-white/10">
+                        <span className="text-xl font-black text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
+                        <span className="text-white/45 text-[9px] font-semibold uppercase tracking-wide mt-0.5">{l}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-2 lg:justify-end">
-                  {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
-                    <div key={l} className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2.5 min-w-[50px] border border-white/10">
-                      <span className="text-2xl font-black text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
-                      <span className="text-white/45 text-[9px] font-semibold uppercase tracking-wide mt-0.5">{l}</span>
+              ) : (
+                <div className="flex items-center gap-6 flex-wrap">
+                  {[{ v: stats.matchesPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-green-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
+                    <div key={l} className="text-center">
+                      <div className={`text-3xl font-black tabular-nums ${c}`}>{v}</div>
+                      <div className="text-white/45 text-xs mt-0.5">{l}</div>
                     </div>
                   ))}
                 </div>
-              </div>
-            ) : showManOfMatch ? (
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="relative flex-shrink-0">
-                  {showManOfMatch.man_of_match?.avatar_url ? (
-                    <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-16 h-16 rounded-xl object-cover border-2 border-yellow-400/50 shadow-lg" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-yellow-500/20 border-2 border-yellow-400/40 flex items-center justify-center">
-                      <span className="text-2xl font-black text-yellow-200">{showManOfMatch.man_of_match?.name?.charAt(0)}</span>
+              )}
+
+              {/* Man of the Match — always shown when available */}
+              {showManOfMatch && (
+                <div className="flex items-center gap-3 bg-white/5 border border-yellow-400/20 rounded-2xl px-4 py-3 lg:justify-self-end">
+                  <div className="relative flex-shrink-0">
+                    {showManOfMatch.man_of_match?.avatar_url ? (
+                      <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-14 h-14 rounded-xl object-cover border-2 border-yellow-400/50 shadow-lg" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl bg-yellow-500/20 border-2 border-yellow-400/40 flex items-center justify-center">
+                        <span className="text-xl font-black text-yellow-200">{showManOfMatch.man_of_match?.name?.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+                      <Star className="w-3 h-3 text-yellow-900" fill="currentColor" />
                     </div>
-                  )}
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
-                    <Star className="w-3.5 h-3.5 text-yellow-900" fill="currentColor" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-yellow-300/80 text-[10px] font-bold uppercase tracking-widest mb-0.5">⭐ Man of the Match</p>
+                    <h3 className="text-base font-black text-white truncate">{showManOfMatch.man_of_match?.name}</h3>
+                    <p className="text-white/50 text-xs truncate">vs {showManOfMatch.opponent}
+                      {showManOfMatch.result === 'won' && <span className="text-green-400 ml-1">· Won 🏆</span>}
+                    </p>
+                    {showManOfMatch.our_score && (
+                      <p className="text-white/40 text-xs">{showManOfMatch.our_score}</p>
+                    )}
                   </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-yellow-300/80 text-[11px] font-bold uppercase tracking-widest mb-1">⭐ Man of the Match</p>
-                  <h2 className="text-xl font-black text-white truncate">{showManOfMatch.man_of_match?.name}</h2>
-                  <p className="text-white/55 text-sm">vs {showManOfMatch.opponent}
-                    {showManOfMatch.our_score && ` · ${showManOfMatch.our_score}`}
-                  </p>
-                </div>
-                <span className="text-3xl font-black text-green-400 hidden lg:block">WON 🏆</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-6 flex-wrap">
-                {[{ v: stats.matchesPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-green-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
-                  <div key={l} className="text-center">
-                    <div className={`text-3xl font-black tabular-nums ${c}`}>{v}</div>
-                    <div className="text-white/45 text-xs mt-0.5">{l}</div>
-                  </div>
-                ))}
-                <Link to="/matches" className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl text-white text-sm font-medium transition-colors">
-                  Matches <ChevronRight className="w-4 h-4" />
-                </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
