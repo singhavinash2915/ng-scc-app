@@ -69,7 +69,9 @@ export function Dashboard() {
     return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, won, lost, winRate, pendingRequests: getPendingCount() };
   }, [members, matches, getPendingCount, activeCount]);
 
-  const recentMatches = useMemo(() => matches.slice(0, 5), [matches]);
+  const recentMatches = useMemo(() =>
+    matches.filter(m => ['won', 'lost', 'draw'].includes(m.result)).slice(0, 5),
+  [matches]);
   const allLowBalanceMembers = useMemo(() => members.filter(m => isActive(m.id) && m.balance < 1000), [members, isActive]);
   const lowBalanceMembers = useMemo(() => allLowBalanceMembers.slice(0, 5), [allLowBalanceMembers]);
 
@@ -240,48 +242,58 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="flex flex-col lg:flex-row gap-0">
               {/* Next Match */}
-              {nextUpcomingMatch ? (
-                <div>
-                  <p className="text-green-300/80 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-                    Next Match
-                  </p>
-                  <h2 className="text-white text-xl lg:text-2xl font-black mb-1.5">
-                    vs <span className="text-green-300">{nextUpcomingMatch.opponent || 'TBD'}</span>
-                  </h2>
-                  <div className="flex items-center gap-3 text-white/55 text-sm flex-wrap mb-3">
-                    {nextUpcomingMatch.venue && (
-                      <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{nextUpcomingMatch.venue}</span>
-                    )}
-                    <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />
-                      {new Date(nextUpcomingMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
-                      <div key={l} className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 min-w-[46px] border border-white/10">
-                        <span className="text-xl font-black text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
-                        <span className="text-white/45 text-[9px] font-semibold uppercase tracking-wide mt-0.5">{l}</span>
+              <div className="flex-1">
+                {nextUpcomingMatch ? (
+                  <>
+                    <p className="text-green-300/80 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+                      Next Match
+                    </p>
+                    <h2 className="text-white text-xl lg:text-2xl font-black mb-1.5">
+                      vs <span className="text-green-300">{nextUpcomingMatch.opponent || 'TBD'}</span>
+                    </h2>
+                    <div className="flex items-center gap-3 text-white/55 text-sm flex-wrap mb-3">
+                      {nextUpcomingMatch.venue && (
+                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{nextUpcomingMatch.venue}</span>
+                      )}
+                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />
+                        {new Date(nextUpcomingMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
+                        <div key={l} className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 min-w-[46px] border border-white/10">
+                          <span className="text-xl font-black text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
+                          <span className="text-white/45 text-[9px] font-semibold uppercase tracking-wide mt-0.5">{l}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-6 flex-wrap">
+                    {[{ v: stats.matchesPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-green-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
+                      <div key={l} className="text-center">
+                        <div className={`text-3xl font-black tabular-nums ${c}`}>{v}</div>
+                        <div className="text-white/45 text-xs mt-0.5">{l}</div>
                       </div>
                     ))}
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-6 flex-wrap">
-                  {[{ v: stats.matchesPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-green-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
-                    <div key={l} className="text-center">
-                      <div className={`text-3xl font-black tabular-nums ${c}`}>{v}</div>
-                      <div className="text-white/45 text-xs mt-0.5">{l}</div>
-                    </div>
-                  ))}
-                </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              {showManOfMatch && (
+                <div className="hidden lg:block w-px bg-white/10 mx-5 self-stretch" />
+              )}
+              {showManOfMatch && (
+                <div className="lg:hidden h-px bg-white/10 my-4" />
               )}
 
-              {/* Man of the Match — always shown when available */}
+              {/* Man of the Match */}
               {showManOfMatch && (
-                <div className="flex items-center gap-3 bg-white/5 border border-yellow-400/20 rounded-2xl px-4 py-3 lg:justify-self-end">
+                <div className="flex items-center gap-3 flex-shrink-0 lg:w-64">
                   <div className="relative flex-shrink-0">
                     {showManOfMatch.man_of_match?.avatar_url ? (
                       <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-14 h-14 rounded-xl object-cover border-2 border-yellow-400/50 shadow-lg" />
