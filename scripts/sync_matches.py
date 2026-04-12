@@ -25,9 +25,8 @@ SUPABASE_URL = "https://zrrmpaatydhlkntfpcmw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1wYWF0eWRobGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4Mjc4ODM0N30.kHot4i6MNPjt2neNzJ_tMAplJi_9CiYNgFzAzmEgdeg"
 
 # ── Settings ──────────────────────────────────────────────────────────────────
-# How many days back to sync past matches (set to 0 to only sync upcoming)
-SYNC_PAST_DAYS = 90
-# How many days ahead to sync upcoming matches
+# Only sync upcoming matches (from today onwards) — never touch past manually-entered matches
+SYNC_PAST_DAYS = 0
 SYNC_FUTURE_DAYS = 60
 
 def ch_headers():
@@ -111,7 +110,7 @@ def parse_ch_match(m):
 
 def fetch_all_ch_matches():
     all_matches, pageno = [], 1
-    cutoff_past   = (datetime.date.today() - datetime.timedelta(days=SYNC_PAST_DAYS)).isoformat()
+    cutoff_past   = datetime.date.today().isoformat()  # today — no past matches touched
     cutoff_future = (datetime.date.today() + datetime.timedelta(days=SYNC_FUTURE_DAYS)).isoformat()
 
     while True:
@@ -137,10 +136,10 @@ def fetch_all_ch_matches():
             ts = m.get('match_start_time', '')
             date_str = str(ts)[:10] if ts else None
             if date_str and date_str < cutoff_past:
-                stop = True
+                stop = True  # matches are ordered desc — nothing older needed
                 break
             if date_str and date_str > cutoff_future:
-                continue
+                continue  # too far ahead
             all_matches.append(parse_ch_match(m))
 
         if stop:
