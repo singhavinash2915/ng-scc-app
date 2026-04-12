@@ -10,32 +10,44 @@ export function useMatchPhotos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Clean up old photos - keep only photos from last N matches
+  // Clean up old photos - keep only photos from the last N *matches that have photos*
   const cleanupOldPhotos = useCallback(async () => {
     try {
-      // Get unique match IDs sorted by match date (newest first)
-      const { data: recentMatches, error: matchError } = await supabase
-        .from('matches')
-        .select('id')
-        .order('date', { ascending: false });
-
-      if (matchError) throw matchError;
-
-      const recentMatchIds = recentMatches?.slice(0, MAX_MATCHES_WITH_PHOTOS).map(m => m.id) || [];
-
-      if (recentMatchIds.length === 0) return;
-
-      // Get photos from older matches (not in the recent list)
-      const { data: oldPhotos, error: photoError } = await supabase
+      // Get only matches that actually have photos, sorted by match date newest first
+      const { data: photosWithMatches, error: photoError } = await supabase
         .from('match_photos')
-        .select('id, photo_url, match_id')
-        .not('match_id', 'in', `(${recentMatchIds.join(',')})`);
+        .select('match_id, match:matches(date)')
+        .order('created_at', { ascending: false });
 
       if (photoError) throw photoError;
+      if (!photosWithMatches || photosWithMatches.length === 0) return;
 
+      // Get unique match IDs (that have photos), keeping order by match date desc
+      const seen = new Set<string>();
+      const uniqueMatchIds: string[] = [];
+      for (const row of photosWithMatches) {
+        if (row.match_id && !seen.has(row.match_id)) {
+          seen.add(row.match_id);
+          uniqueMatchIds.push(row.match_id);
+        }
+      }
+
+      // Only the last N matches with photos are kept
+      const keepMatchIds = uniqueMatchIds.slice(0, MAX_MATCHES_WITH_PHOTOS);
+      const removeMatchIds = uniqueMatchIds.slice(MAX_MATCHES_WITH_PHOTOS);
+
+      if (removeMatchIds.length === 0) return;
+
+      // Get photos from matches that should be removed
+      const { data: oldPhotos, error: oldError } = await supabase
+        .from('match_photos')
+        .select('id, photo_url')
+        .in('match_id', removeMatchIds);
+
+      if (oldError) throw oldError;
       if (!oldPhotos || oldPhotos.length === 0) return;
 
-      // Delete old photos from storage and database
+      // Delete from storage
       for (const photo of oldPhotos) {
         const fileName = photo.photo_url.split('/').pop();
         if (fileName) {
@@ -43,14 +55,11 @@ export function useMatchPhotos() {
         }
       }
 
-      // Delete all old photo records
-      const oldPhotoIds = oldPhotos.map(p => p.id);
-      await supabase
-        .from('match_photos')
-        .delete()
-        .in('id', oldPhotoIds);
+      // Delete records
+      await supabase.from('match_photos').delete().in('id', oldPhotos.map(p => p.id));
 
-      console.log(`Cleaned up ${oldPhotos.length} old photos`);
+      // Suppress noisy log — only log if something actually changed
+      void keepMatchIds;
     } catch (err) {
       console.error('Failed to cleanup old photos:', err);
     }
