@@ -260,9 +260,15 @@ export function Dashboard() {
                     <p className="text-green-300/80 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
                       Next Match
+                      {nextUpcomingMatch.match_type === 'internal' && (
+                        <span className="bg-yellow-400/20 text-yellow-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-yellow-400/30">🏏 INTERNAL</span>
+                      )}
                     </p>
                     <h2 className="text-white text-xl lg:text-2xl font-black mb-1.5">
-                      vs <span className="text-green-300">{nextUpcomingMatch.opponent || 'TBD'}</span>
+                      {nextUpcomingMatch.match_type === 'internal'
+                        ? <span className="text-green-300">{nextUpcomingMatch.opponent || 'Internal Match'}</span>
+                        : <>vs <span className="text-green-300">{nextUpcomingMatch.opponent || 'TBD'}</span></>
+                      }
                     </h2>
                     <div className="flex items-center gap-3 text-white/55 text-sm flex-wrap mb-3">
                       {nextUpcomingMatch.venue && (
