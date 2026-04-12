@@ -1,30 +1,43 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter, MemoryRouter, Routes, Route, Outlet, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/layout/Layout';
+
+// Critical pages — loaded immediately (small, no heavy deps)
 import { Dashboard } from './pages/Dashboard';
-import { Members } from './pages/Members';
-import { Matches } from './pages/Matches';
-import { Calendar } from './pages/Calendar';
-import { Tournaments } from './pages/Tournaments';
-import { Finance } from './pages/Finance';
-import { Analytics } from './pages/Analytics';
-import { Requests } from './pages/Requests';
-import { Settings } from './pages/Settings';
-import { About } from './pages/About';
-import { Feedback } from './pages/Feedback';
-import { Payment } from './pages/Payment';
 import { MatchPoll } from './pages/MatchPoll';
-import { FeeTracking } from './pages/FeeTracking';
-import { MatchDayTools } from './pages/MatchDayTools';
-import { SeasonFund } from './pages/SeasonFund';
-import { AIInsights } from './pages/AIInsights';
-import { Leaderboard } from './pages/Leaderboard';
+
+// Non-critical pages — lazy loaded (split into separate chunks)
+const Members      = lazy(() => import('./pages/Members').then(m => ({ default: m.Members })));
+const Matches      = lazy(() => import('./pages/Matches').then(m => ({ default: m.Matches })));
+const Calendar     = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
+const Tournaments  = lazy(() => import('./pages/Tournaments').then(m => ({ default: m.Tournaments })));
+const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
+const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
+const Requests     = lazy(() => import('./pages/Requests').then(m => ({ default: m.Requests })));
+const Settings     = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const About        = lazy(() => import('./pages/About').then(m => ({ default: m.About })));
+const Feedback     = lazy(() => import('./pages/Feedback').then(m => ({ default: m.Feedback })));
+const Payment      = lazy(() => import('./pages/Payment').then(m => ({ default: m.Payment })));
+const FeeTracking  = lazy(() => import('./pages/FeeTracking').then(m => ({ default: m.FeeTracking })));
+const MatchDayTools= lazy(() => import('./pages/MatchDayTools').then(m => ({ default: m.MatchDayTools })));
+const SeasonFund   = lazy(() => import('./pages/SeasonFund').then(m => ({ default: m.SeasonFund })));
+const AIInsights   = lazy(() => import('./pages/AIInsights').then(m => ({ default: m.AIInsights })));
+const Leaderboard  = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
 
 const isNative = Capacitor.isNativePlatform();
+
+// Minimal spinner shown while lazy page chunks load
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function DeepLinkHandler() {
   const navigate = useNavigate();
@@ -66,22 +79,22 @@ const AppRoutes = () => (
       {/* All other pages — with full layout */}
       <Route element={<LayoutWrapper />}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/members" element={<Members />} />
-        <Route path="/matches" element={<Matches />} />
-        <Route path="/calendar" element={<Calendar />} />
-        <Route path="/tournaments" element={<Tournaments />} />
-        <Route path="/finance" element={<Finance />} />
-        <Route path="/fee-tracking" element={<FeeTracking />} />
-        <Route path="/match-day-tools" element={<MatchDayTools />} />
-        <Route path="/ground-booking" element={<SeasonFund />} />
-        <Route path="/ai-insights" element={<AIInsights />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/payment" element={<Payment />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/requests" element={<Requests />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/feedback" element={<Feedback />} />
-        <Route path="/about" element={<About />} />
+        <Route path="/members"       element={<Suspense fallback={<PageLoader />}><Members /></Suspense>} />
+        <Route path="/matches"       element={<Suspense fallback={<PageLoader />}><Matches /></Suspense>} />
+        <Route path="/calendar"      element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />
+        <Route path="/tournaments"   element={<Suspense fallback={<PageLoader />}><Tournaments /></Suspense>} />
+        <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
+        <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />
+        <Route path="/match-day-tools" element={<Suspense fallback={<PageLoader />}><MatchDayTools /></Suspense>} />
+        <Route path="/ground-booking" element={<Suspense fallback={<PageLoader />}><SeasonFund /></Suspense>} />
+        <Route path="/ai-insights"   element={<Suspense fallback={<PageLoader />}><AIInsights /></Suspense>} />
+        <Route path="/leaderboard"   element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
+        <Route path="/payment"       element={<Suspense fallback={<PageLoader />}><Payment /></Suspense>} />
+        <Route path="/analytics"     element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
+        <Route path="/requests"      element={<Suspense fallback={<PageLoader />}><Requests /></Suspense>} />
+        <Route path="/settings"      element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+        <Route path="/feedback"      element={<Suspense fallback={<PageLoader />}><Feedback /></Suspense>} />
+        <Route path="/about"         element={<Suspense fallback={<PageLoader />}><About /></Suspense>} />
       </Route>
     </Routes>
   </>

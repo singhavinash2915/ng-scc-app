@@ -92,4 +92,22 @@ export default defineConfig({
     }),
   ].filter(Boolean),
   base: '/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React runtime — loads first
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Supabase client
+          'vendor-supabase': ['@supabase/supabase-js'],
+          // Charts — heavy, only needed on Analytics/Finance/AI pages
+          'vendor-charts': ['recharts'],
+          // Icons
+          'vendor-icons': ['lucide-react'],
+        },
+      },
+    },
+    // Raise warning threshold slightly — we have intentional vendor splits
+    chunkSizeWarningLimit: 600,
+  },
 })

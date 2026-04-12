@@ -48,13 +48,23 @@ function useCountdown(targetDate: string | null) {
 }
 
 export function Dashboard() {
+  // ── Critical data (loads immediately — needed for hero + stats) ────────────
   const { members, loading: membersLoading } = useMembers();
   const { matches, loading: matchesLoading, fetchMatches } = useMatches();
-  const { transactions, loading: transactionsLoading } = useTransactions();
-  const { getPendingCount } = useRequests();
-  const { photos: matchPhotos, loading: photosLoading } = useMatchPhotos();
   const { activeCount, isActive } = useMemberActivity(members, matches);
   const { isAdmin } = useAuth();
+  const { getPendingCount } = useRequests();
+
+  // ── Deferred data (loads after first paint — not needed for above-fold) ───
+  const [, setDeferred] = useState(false);
+  useEffect(() => {
+    // Wait one frame so the hero renders first, then kick off secondary fetches
+    const t = requestAnimationFrame(() => setDeferred(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
+
+  const { transactions, loading: transactionsLoading } = useTransactions();
+  const { photos: matchPhotos, loading: photosLoading } = useMatchPhotos();
   const { sponsors } = useSponsor();
   const { stats: cricketStats } = useCricketStats();
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
