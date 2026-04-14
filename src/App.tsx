@@ -7,10 +7,10 @@ import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/layout/Layout';
 
 // Critical pages — loaded immediately (small, no heavy deps)
-import { Dashboard } from './pages/Dashboard';
 import { MatchPoll } from './pages/MatchPoll';
 
-// Non-critical pages — lazy loaded (split into separate chunks)
+// All pages lazy loaded (Dashboard loads fast — recharts/photos deferred further)
+const Dashboard    = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Members      = lazy(() => import('./pages/Members').then(m => ({ default: m.Members })));
 const Matches      = lazy(() => import('./pages/Matches').then(m => ({ default: m.Matches })));
 const Calendar     = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
@@ -78,7 +78,7 @@ const AppRoutes = () => (
 
       {/* All other pages — with full layout */}
       <Route element={<LayoutWrapper />}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
         <Route path="/members"       element={<Suspense fallback={<PageLoader />}><Members /></Suspense>} />
         <Route path="/matches"       element={<Suspense fallback={<PageLoader />}><Matches /></Suspense>} />
         <Route path="/calendar"      element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />

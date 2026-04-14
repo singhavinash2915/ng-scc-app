@@ -1,30 +1,45 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Calendar, TrendingUp, Trophy, AlertCircle, ChevronRight,
-  IndianRupee, UserPlus, Star, Award, Camera, Swords,
-  MessageCircle, Building2, ExternalLink, Flame, MapPin, Activity,
+  IndianRupee, UserPlus, Star, Swords,
+  MessageCircle, Flame, MapPin, Activity,
 } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
-} from 'recharts';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
-import { PhotoCarousel } from '../components/PhotoCarousel';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
-import { useTransactions } from '../hooks/useTransactions';
 import { useRequests } from '../hooks/useRequests';
-import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
-import { useSponsor } from '../hooks/useSponsor';
-import { useCricketStats } from '../hooks/useCricketStats';
+
+// Lazy-loaded heavy components (recharts, photos, sponsor data load on-demand)
+const DashboardCharts = lazy(() => import('../components/DashboardCharts'));
+const DashboardDeferred = lazy(() => import('../components/DashboardDeferred'));
+
+function ChartsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse">
+      {[0, 1].map(i => (
+        <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              {[0, 1, 2].map(j => <div key={j} className="h-16 bg-gray-100 dark:bg-gray-700/50 rounded-xl" />)}
+            </div>
+            <div className="h-36 bg-gray-100 dark:bg-gray-700/50 rounded-xl" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function useCountdown(targetDate: string | null) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
@@ -54,20 +69,15 @@ export function Dashboard() {
   const { activeCount, isActive } = useMemberActivity(members, matches);
   const { isAdmin } = useAuth();
   const { getPendingCount } = useRequests();
-
-  // ── Deferred data (loads after first paint — not needed for above-fold) ───
-  const [, setDeferred] = useState(false);
-  useEffect(() => {
-    // Wait one frame so the hero renders first, then kick off secondary fetches
-    const t = requestAnimationFrame(() => setDeferred(true));
-    return () => cancelAnimationFrame(t);
-  }, []);
-
-  const { transactions, loading: transactionsLoading } = useTransactions();
-  const { photos: matchPhotos, loading: photosLoading } = useMatchPhotos();
-  const { sponsors } = useSponsor();
-  const { stats: cricketStats } = useCricketStats();
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+
+  // ── Deferred sections: mount after hero renders ───────────────────────────
+  const [showDeferred, setShowDeferred] = useState(false);
+  useEffect(() => {
+    if (membersLoading || matchesLoading) return;
+    const t = requestAnimationFrame(() => setShowDeferred(true));
+    return () => cancelAnimationFrame(t);
+  }, [membersLoading, matchesLoading]);
 
   const stats = useMemo(() => {
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
@@ -111,31 +121,6 @@ export function Dashboard() {
     return { result: first, count };
   }, [lastFiveResults]);
 
-  const monthlyFinanceData = useMemo(() => {
-    const today = new Date();
-    return Array.from({ length: 6 }, (_, i) => {
-      const date = new Date(today.getFullYear(), today.getMonth() - (5 - i), 1);
-      const start = new Date(date.getFullYear(), date.getMonth(), 1);
-      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-      const txns = transactions.filter(t => { const d = new Date(t.date); return d >= start && d <= end; });
-      return {
-        month: date.toLocaleDateString('en-IN', { month: 'short' }),
-        deposits: txns.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0),
-        expenses: txns.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0),
-      };
-    });
-  }, [transactions]);
-
-  const thisMonthFinance = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const txns = transactions.filter(t => { const d = new Date(t.date); return d >= start && d <= end; });
-    return {
-      deposits: txns.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0),
-    };
-  }, [transactions]);
-
   const matchResultData = useMemo(() => {
     const ext = matches.filter(m => m.match_type !== 'internal');
     return [
@@ -156,38 +141,6 @@ export function Dashboard() {
     };
   }, [matches]);
 
-  const topContributors = useMemo(() => {
-    const map = new Map<string, { name: string; total: number }>();
-    transactions.filter(t => t.type === 'deposit' && t.member).forEach(t => {
-      const e = map.get(t.member!.id);
-      if (e) e.total += t.amount; else map.set(t.member!.id, { name: t.member!.name, total: t.amount });
-    });
-    return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 3);
-  }, [transactions]);
-
-  const topPerformers = useMemo(() => {
-    if (!cricketStats.length) return [];
-    const result: { player: typeof cricketStats[0]; label: string; stat: number | string; unit: string; gradient: string; icon: string }[] = [];
-    // MVP — combined score
-    const byMVP = [...cricketStats].sort((a, b) => {
-      const scoreA = a.batting_runs + a.bowling_wickets * 20 + (a.fielding_catches + a.fielding_stumpings + a.fielding_run_outs) * 10;
-      const scoreB = b.batting_runs + b.bowling_wickets * 20 + (b.fielding_catches + b.fielding_stumpings + b.fielding_run_outs) * 10;
-      return scoreB - scoreA;
-    });
-    if (byMVP[0]) result.push({ player: byMVP[0], label: 'Season MVP', stat: byMVP[0].batting_runs + byMVP[0].bowling_wickets * 20 + (byMVP[0].fielding_catches + byMVP[0].fielding_stumpings + byMVP[0].fielding_run_outs) * 10, unit: 'MVP pts', gradient: 'from-amber-500 to-yellow-500', icon: '👑' });
-    // Top run scorer
-    const byRuns = [...cricketStats].sort((a, b) => b.batting_runs - a.batting_runs);
-    if (byRuns[0]) result.push({ player: byRuns[0], label: 'Top Batsman', stat: byRuns[0].batting_runs, unit: 'runs', gradient: 'from-blue-500 to-indigo-500', icon: '🏏' });
-    // Top wicket taker
-    const byWkts = [...cricketStats].filter(s => s.bowling_wickets > 0).sort((a, b) => b.bowling_wickets - a.bowling_wickets);
-    if (byWkts[0]) result.push({ player: byWkts[0], label: 'Top Bowler', stat: byWkts[0].bowling_wickets, unit: 'wickets', gradient: 'from-rose-500 to-red-600', icon: '⚡' });
-    // Best fielder
-    const byField = [...cricketStats].sort((a, b) => (b.fielding_catches + b.fielding_stumpings + b.fielding_run_outs) - (a.fielding_catches + a.fielding_stumpings + a.fielding_run_outs));
-    const fieldTotal = byField[0] ? byField[0].fielding_catches + byField[0].fielding_stumpings + byField[0].fielding_run_outs : 0;
-    if (byField[0] && fieldTotal > 0) result.push({ player: byField[0], label: 'Best Fielder', stat: fieldTotal, unit: 'dismissals', gradient: 'from-emerald-500 to-green-600', icon: '🧤' });
-    return result;
-  }, [cricketStats]);
-
   const avgBalance = useMemo(() => {
     const active = members.filter(m => isActive(m.id));
     return active.length ? Math.round(active.reduce((s, m) => s + m.balance, 0) / active.length) : 0;
@@ -204,7 +157,7 @@ export function Dashboard() {
   const animatedDhurandarsWins = useAnimatedValue(internalMatchStats.dhurandarsWins, 800);
   const animatedBazigarsWins = useAnimatedValue(internalMatchStats.bazigarsWins, 800);
 
-  const loading = membersLoading || matchesLoading || transactionsLoading || photosLoading;
+  const loading = membersLoading || matchesLoading;
 
   const winRateCirc = 2 * Math.PI * 16;
   const winRateDash = (stats.winRate / 100) * winRateCirc;
@@ -419,147 +372,21 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* ── SEASON STARS ────────────────────────── */}
-        {topPerformers.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                <Star className="w-3.5 h-3.5 text-amber-500" fill="currentColor" />
-                Season 2025–26 Stars
-              </h2>
-              <Link to="/ai-insights" className="text-xs text-primary-600 dark:text-primary-400 flex items-center gap-0.5 font-semibold">
-                Full Leaderboard <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {topPerformers.map(({ player, label, stat, unit, gradient, icon }) => (
-                <div key={`${player.member_id}-${label}`} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-4 shadow-lg group cursor-default`}>
-                  <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute -bottom-3 -left-3 w-10 h-10 bg-white/5 rounded-full" />
-                  <div className="text-xl mb-2 relative">{icon}</div>
-                  <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none relative">{stat}</p>
-                  <p className="text-white/55 text-[9px] uppercase tracking-wide relative mt-0.5">{unit}</p>
-                  <div className="mt-3 relative">
-                    <p className="text-white text-xs font-bold truncate">{player.member?.name || '—'}</p>
-                    <p className="text-white/50 text-[10px] truncate">{label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* ── SQUAD POLL ──────────────────────────── */}
         <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
 
-        {/* ── FINANCE PULSE + RESULTS ─────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card delay={300}>
-            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
-                <IndianRupee className="w-4 h-4 text-green-500" />
-                Finance Pulse
-              </h3>
-              <Link to="/finance" className="text-xs text-primary-600 dark:text-primary-400 flex items-center gap-0.5 font-semibold group">
-                Details <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </div>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                  <p className="text-lg font-black text-green-600 dark:text-green-400">₹{stats.totalFunds >= 1000 ? `${(stats.totalFunds / 1000).toFixed(1)}k` : stats.totalFunds}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Club Bank</p>
-                </div>
-                <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                  <p className="text-lg font-black text-blue-600 dark:text-blue-400">₹{thisMonthFinance.deposits >= 1000 ? `${(thisMonthFinance.deposits / 1000).toFixed(1)}k` : thisMonthFinance.deposits}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">This Month</p>
-                </div>
-                <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                  <p className="text-lg font-black text-purple-600 dark:text-purple-400">₹{avgBalance >= 1000 ? `${(avgBalance / 1000).toFixed(1)}k` : avgBalance}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Avg / Member</p>
-                </div>
-              </div>
-              <div className="h-36" style={{ minHeight: 144, minWidth: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyFinanceData} barSize={8} barGap={2}>
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <YAxis hide />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: 'rgba(255,255,255,0.97)', border: 'none', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: 11 }}
-                      formatter={(v) => [`₹${Number(v).toLocaleString('en-IN')}`, '']}
-                    />
-                    <Bar dataKey="deposits" fill="#22c55e" radius={[3, 3, 0, 0]} name="Deposits" />
-                    <Bar dataKey="expenses" fill="#ef4444" radius={[3, 3, 0, 0]} name="Expenses" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-5 mt-1">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-[10px] text-gray-400">Deposits</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[10px] text-gray-400">Expenses</span></div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card delay={350}>
-            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
-                <Trophy className="w-4 h-4 text-amber-500" />
-                Results & Top Contributors
-              </h3>
-            </div>
-            <CardContent className="p-4">
-              <div className="flex gap-3 items-center mb-4">
-                <div style={{ width: 140, minWidth: 140, height: 140 }}>
-                  {matchResultData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={matchResultData} cx="50%" cy="50%" innerRadius={38} outerRadius={58} paddingAngle={3} dataKey="value">
-                          {matchResultData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                        </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.97)', border: 'none', borderRadius: '8px', fontSize: 11 }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full flex items-center justify-center text-gray-400 text-xs">No matches yet</div>
-                  )}
-                </div>
-                <div className="flex-1 space-y-2">
-                  {matchResultData.map(item => (
-                    <div key={item.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-                        <span className="text-xs text-gray-600 dark:text-gray-400">{item.name}</span>
-                      </div>
-                      <span className="text-xs font-black text-gray-800 dark:text-gray-200">{item.value}</span>
-                    </div>
-                  ))}
-                  <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                    <div className="flex justify-between">
-                      <span className="text-[10px] text-gray-400">Win Rate</span>
-                      <span className="text-[10px] font-black text-green-600">{Math.round(stats.winRate)}%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {topContributors.length > 0 && (
-                <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Award className="w-3 h-3" /> Top Contributors
-                  </p>
-                  <div className="space-y-2">
-                    {topContributors.map((c, i) => (
-                      <div key={c.name} className="flex items-center gap-2">
-                        <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 ${i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : 'bg-orange-100 text-orange-700'}`}>{i + 1}</span>
-                        <span className="text-xs text-gray-700 dark:text-gray-300 flex-1 truncate">{c.name}</span>
-                        <span className="text-xs font-bold text-green-600">₹{c.total.toLocaleString('en-IN')}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {/* ── FINANCE PULSE + RESULTS (lazy — loads recharts on demand) ────── */}
+        {showDeferred && (
+          <Suspense fallback={<ChartsSkeleton />}>
+            <DashboardCharts
+              members={members}
+              totalFunds={stats.totalFunds}
+              winRate={stats.winRate}
+              matchResultData={matchResultData}
+              isActive={isActive}
+            />
+          </Suspense>
+        )}
 
         {/* ── INTERNAL BATTLE ─────────────────────── */}
         {internalMatchStats.total > 0 && (
@@ -720,15 +547,11 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* ── PHOTO GALLERY ───────────────────────── */}
-        {matchPhotos.length > 0 && (
-          <div>
-            <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-3">
-              <Camera className="w-3.5 h-3.5 text-primary-500" />
-              Team Gallery
-            </h2>
-            <PhotoCarousel photos={matchPhotos} autoPlayInterval={5000} />
-          </div>
+        {/* ── DEFERRED: Season Stars + Photos + Sponsor (loads after hero) ── */}
+        {showDeferred && (
+          <Suspense fallback={null}>
+            <DashboardDeferred />
+          </Suspense>
         )}
 
         {/* ── CALENDAR ────────────────────────────── */}
@@ -751,37 +574,6 @@ export function Dashboard() {
           </div>
         </Link>
 
-        {/* ── SPONSOR BANNER ──────────────────────── */}
-        {sponsors && sponsors.length > 0 && (
-          <div className="space-y-3">
-            {sponsors.map((s) => (
-              <Card key={s.id} delay={25}>
-                <CardContent className="p-4">
-                  <p className="text-[10px] font-bold text-primary-500 uppercase tracking-widest mb-3">Powered By</p>
-                  <div className="flex items-center gap-4">
-                    {s.logo_url ? (
-                      <img src={s.logo_url} alt={s.name} className="w-14 h-14 object-contain rounded-xl bg-gray-50 dark:bg-gray-700 p-1.5 flex-shrink-0 shadow-sm" />
-                    ) : (
-                      <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Building2 className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 dark:text-white truncate">{s.name}</h3>
-                      {s.tagline && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{s.tagline}</p>}
-                      {s.member && <p className="text-xs text-gray-400 mt-0.5">SCC Member: {s.member.name}</p>}
-                    </div>
-                    {s.website_url && (
-                      <a href={s.website_url} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0">
-                        <ExternalLink className="w-4 h-4 text-gray-400 hover:text-primary-500" />
-                      </a>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
 
       </div>
 
