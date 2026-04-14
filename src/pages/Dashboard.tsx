@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 
 // Lazy-loaded heavy components (recharts, photos, sponsor data load on-demand)
 const DashboardCharts = lazy(() => import('../components/DashboardCharts'));
+const DashboardStars = lazy(() => import('../components/DashboardStars'));
 const DashboardDeferred = lazy(() => import('../components/DashboardDeferred'));
 
 function ChartsSkeleton() {
@@ -372,6 +373,13 @@ export function Dashboard() {
           </div>
         </div>
 
+        {/* ── SEASON STARS (lazy — loads cricketStats on demand) ────────── */}
+        {showDeferred && (
+          <Suspense fallback={null}>
+            <DashboardStars />
+          </Suspense>
+        )}
+
         {/* ── SQUAD POLL ──────────────────────────── */}
         <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
 
@@ -547,10 +555,10 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* ── DEFERRED: Season Stars + Photos + Sponsor (loads after hero) ── */}
+        {/* ── PHOTO GALLERY (lazy) ─────────────────── */}
         {showDeferred && (
           <Suspense fallback={null}>
-            <DashboardDeferred />
+            <DashboardDeferred section="photos" />
           </Suspense>
         )}
 
@@ -574,6 +582,12 @@ export function Dashboard() {
           </div>
         </Link>
 
+        {/* ── SPONSOR (always at bottom) ─────────── */}
+        {showDeferred && (
+          <Suspense fallback={null}>
+            <DashboardDeferred section="sponsor" />
+          </Suspense>
+        )}
 
       </div>
 
