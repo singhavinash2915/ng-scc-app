@@ -49,18 +49,22 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff2}'],
+        // Force new SW to take over immediately — no more "close all tabs" dance
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            // Cache Supabase API calls (network-first with fallback)
+            // Supabase REST API — always fetch fresh, cache only as short offline fallback
             urlPattern: /^https:\/\/zrrmpaatydhlkntfpcmw\.supabase\.co\/rest\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'supabase-api-cache',
+              cacheName: 'supabase-api-cache-v2',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60, // 1 hour
+                maxAgeSeconds: 30, // 30 seconds — stale reads never last more than half a minute
               },
-              networkTimeoutSeconds: 10,
+              networkTimeoutSeconds: 5,
             },
           },
           {

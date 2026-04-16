@@ -9,6 +9,22 @@ async function init() {
 
   // Register PWA service worker only on web — not inside Capacitor WebView
   if (!isNative) {
+    // One-time purge of the v1 Supabase API cache that used a 1-hour TTL.
+    // Users still running the old SW will hit this before the new SW activates,
+    // so they immediately stop seeing stale match / member data.
+    if ('caches' in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(
+          keys
+            .filter(k => k === 'supabase-api-cache' || k.startsWith('workbox-'))
+            .map(k => caches.delete(k))
+        );
+      } catch {
+        /* ignore — best-effort cleanup */
+      }
+    }
+
     const { registerSW } = await import('virtual:pwa-register');
     registerSW({ immediate: true });
   }
