@@ -168,13 +168,13 @@ def get_existing_ch_ids():
 def find_existing(ch_id, date, opponent):
     """Find existing match by ch_match_id or by date+opponent (manual entries)."""
     # 1. By ch_match_id (fastest, exact)
-    code, data = sb_call("GET", "matches", params=f"ch_match_id=eq.{ch_id}&select=id,result,ch_match_id")
+    code, data = sb_call("GET", "matches", params=f"ch_match_id=eq.{ch_id}&select=id,result,ch_match_id,date,venue,opponent")
     if code == 200 and data:
         return data[0]
     # 2. By date + normalized opponent (catches manually entered matches)
     opp_enc = urllib.parse.quote(opponent[:30])
     code2, data2 = sb_call("GET", "matches",
-                            params=f"date=eq.{date}&opponent=ilike.{opp_enc}*&select=id,result,ch_match_id&limit=1")
+                            params=f"date=eq.{date}&opponent=ilike.{opp_enc}*&select=id,result,ch_match_id,date,venue,opponent&limit=1")
     if code2 == 200 and data2:
         return data2[0]
     return None
@@ -192,15 +192,26 @@ def upsert_match(row):
         code, _ = sb_call("POST", "matches", row)
         return 'inserted' if code == 201 else 'error'
 
-    # Existing match found — patch ch_match_id if missing, update result if changed
+    # Existing match found — build update payload
     update = {}
     if not existing.get('ch_match_id'):
         update['ch_match_id'] = ch_id
+
+    # Result changed from upcoming → completed: pull in scores
     if existing['result'] == 'upcoming' and row['result'] != 'upcoming':
         update.update({'result': row['result'], 'our_score': row['our_score'],
                        'opponent_score': row['opponent_score']})
         if row.get('notes'):
             update['notes'] = row['notes']
+
+    # Still upcoming: sync date/venue/opponent in case match was rescheduled
+    if existing['result'] == 'upcoming' and row['result'] == 'upcoming':
+        if existing.get('date') != row['date']:
+            update['date'] = row['date']
+        if existing.get('venue') != row.get('venue') and row.get('venue'):
+            update['venue'] = row['venue']
+        if existing.get('opponent') != row.get('opponent') and row.get('opponent'):
+            update['opponent'] = row['opponent']
 
     if update:
         code2, _ = sb_call("PATCH", "matches", body=update, params=f"id=eq.{existing['id']}")
