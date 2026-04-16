@@ -7,8 +7,10 @@ import App from './App.tsx';
 async function init() {
   const isNative = Capacitor.isNativePlatform();
 
-  // Register PWA service worker only on web — not inside Capacitor WebView
-  if (!isNative) {
+  // Register PWA service worker only on web — not inside Capacitor WebView.
+  // The import('virtual:pwa-register') is guarded by VITE_PLATFORM so Rollup
+  // doesn't try to resolve it during native builds (where VitePWA is disabled).
+  if (!isNative && import.meta.env.VITE_PLATFORM !== 'native') {
     // One-time purge of the v1 Supabase API cache that used a 1-hour TTL.
     // Users still running the old SW will hit this before the new SW activates,
     // so they immediately stop seeing stale match / member data.
