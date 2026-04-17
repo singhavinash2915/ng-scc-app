@@ -10,11 +10,27 @@ import {
   ChevronUp,
   ChevronDown,
   Star,
+  Crown,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { useCricketStats } from '../hooks/useCricketStats';
+import { useMOMCounts } from '../hooks/useMOMCounts';
 import type { MemberCricketStats } from '../types';
+
+// MOM count pill shown next to a player name
+function MOMBadge({ count }: { count: number }) {
+  if (!count) return null;
+  return (
+    <span
+      title={`${count} Man of the Match award${count > 1 ? 's' : ''} this season`}
+      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold whitespace-nowrap"
+    >
+      <Crown className="w-2.5 h-2.5" fill="currentColor" />
+      {count}
+    </span>
+  );
+}
 
 type Tab = 'batting' | 'bowling' | 'fielding' | 'overall';
 type SortDir = 'asc' | 'desc';
@@ -100,6 +116,7 @@ function StatCell({ value, highlight, isTop }: { value: string | number; highlig
 
 export function Leaderboard() {
   const { stats, loading, error, fetchStats } = useCricketStats('2025-26');
+  const { counts: momCounts } = useMOMCounts();
   const [tab, setTab] = useState<Tab>('batting');
   const [sortKey, setSortKey] = useState<keyof MemberCricketStats>('batting_runs');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -268,8 +285,9 @@ export function Leaderboard() {
                     realRank === 1 ? 'bg-yellow-500' : realRank === 2 ? 'bg-gray-400' : 'bg-orange-400'
                   }`}>{realRank}</span>
                 </div>
-                <p className="text-xs font-semibold text-gray-900 dark:text-white leading-tight mt-1">
+                <p className="text-xs font-semibold text-gray-900 dark:text-white leading-tight mt-1 flex items-center gap-1">
                   {name.split(' ')[0]}
+                  <MOMBadge count={momCounts[player.member_id] || 0} />
                 </p>
                 <p className={`font-bold ${realRank === 1 ? 'text-lg text-yellow-600 dark:text-yellow-400' : 'text-base text-primary-600 dark:text-primary-400'}`}>
                   {score}
@@ -298,7 +316,7 @@ export function Leaderboard() {
               <p className="text-sm text-gray-400 mt-1">Run the CricHeroes sync script to populate data</p>
             </div>
           ) : tab === 'overall' ? (
-            <OverallTable players={overallSorted} />
+            <OverallTable players={overallSorted} momCounts={momCounts} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -355,6 +373,7 @@ export function Leaderboard() {
                                 <span className="hidden sm:inline"> {name.split(' ').slice(1).join(' ')}</span>
                               )}
                             </span>
+                            <MOMBadge count={momCounts[player.member_id] || 0} />
                           </div>
                         </td>
                         {cols.map(col => {
@@ -387,7 +406,7 @@ export function Leaderboard() {
   );
 }
 
-function OverallTable({ players }: { players: MemberCricketStats[] }) {
+function OverallTable({ players, momCounts }: { players: MemberCricketStats[]; momCounts: Record<string, number> }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -433,6 +452,7 @@ function OverallTable({ players }: { players: MemberCricketStats[] }) {
                       </div>
                     )}
                     <span className="font-medium text-gray-900 dark:text-white whitespace-nowrap">{name}</span>
+                    <MOMBadge count={momCounts[player.member_id] || 0} />
                   </div>
                 </td>
                 <td className="px-3 py-3">

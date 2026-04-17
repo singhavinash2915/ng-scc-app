@@ -183,6 +183,19 @@ export function AIInsights() {
       entry_fee: t.entry_fee,
     }));
 
+    // ── MOM leaderboard — who has won Man of the Match most this season ──────
+    const momTally: Record<string, number> = {};
+    matches.forEach(m => {
+      const momName = m.man_of_match?.name;
+      if (momName && m.result && m.result !== 'upcoming' && m.result !== 'cancelled') {
+        momTally[momName] = (momTally[momName] || 0) + 1;
+      }
+    });
+    const momLeaderboard = Object.entries(momTally)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, awards: count }));
+    const topMOM = momLeaderboard[0];
+
     // ── 5. Club summary ──────────────────────────────────────────────────────
     const clubSummary = {
       totalMembers: members.length,
@@ -200,6 +213,8 @@ export function AIInsights() {
       topRunScorer: topRunScorer ? `${topRunScorer.member?.name} — ${topRunScorer.batting_runs} runs (avg ${topRunScorer.batting_average})` : 'N/A',
       topWicketTaker: topWicketTaker ? `${topWicketTaker.member?.name} — ${topWicketTaker.bowling_wickets} wkts (eco ${topWicketTaker.bowling_economy})` : 'N/A',
       mvp: mvpPlayer ? `${mvpPlayer.member?.name} (${mvpPlayer.batting_runs}R · ${mvpPlayer.bowling_wickets}W)` : 'N/A',
+      totalMOMAwardsThisSeason: momLeaderboard.reduce((s, x) => s + x.awards, 0),
+      topMOMWinner: topMOM ? `${topMOM.name} — ${topMOM.awards} MOM award${topMOM.awards > 1 ? 's' : ''}` : 'N/A',
       tournamentsPlayed: tournamentsData.length,
     };
 
@@ -209,6 +224,7 @@ export function AIInsights() {
       allMembers: allMemberProfiles,
       allMatches: allMatchesData,
       chMatches: allMatchesData, // same source — populated by CricHeroes sync
+      momLeaderboard,
       recentTransactions: recentTxns,
       tournaments: tournamentsData,
     });
