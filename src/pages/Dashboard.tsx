@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Calendar, TrendingUp, Trophy, AlertCircle, ChevronRight,
-  IndianRupee, UserPlus, Star, Swords,
-  MessageCircle, Flame, MapPin, Activity,
+  IndianRupee, UserPlus, Swords,
+  MessageCircle, Flame, MapPin, Activity, Crown, Zap, Radio,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -15,32 +15,14 @@ import { useMatches } from '../hooks/useMatches';
 import { useRequests } from '../hooks/useRequests';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
+import { useCricketStats } from '../hooks/useCricketStats';
+import { useMOMCounts } from '../hooks/useMOMCounts';
+import { useMonthSummary } from '../hooks/useMonthSummary';
 import { useAuth } from '../context/AuthContext';
 
-// Lazy-loaded heavy components (recharts, photos, sponsor data load on-demand)
-const DashboardCharts = lazy(() => import('../components/DashboardCharts'));
+// Lazy-loaded heavy components (photos, sponsor data load on-demand)
 const DashboardStars = lazy(() => import('../components/DashboardStars'));
 const DashboardDeferred = lazy(() => import('../components/DashboardDeferred'));
-
-function ChartsSkeleton() {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-pulse">
-      {[0, 1].map(i => (
-        <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-          <div className="p-4 space-y-3">
-            <div className="grid grid-cols-3 gap-2">
-              {[0, 1, 2].map(j => <div key={j} className="h-16 bg-gray-100 dark:bg-gray-700/50 rounded-xl" />)}
-            </div>
-            <div className="h-36 bg-gray-100 dark:bg-gray-700/50 rounded-xl" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function useCountdown(targetDate: string | null) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
@@ -68,6 +50,9 @@ export function Dashboard() {
   const { members, loading: membersLoading } = useMembers();
   const { matches, loading: matchesLoading, fetchMatches } = useMatches();
   const { activeCount, isActive } = useMemberActivity(members, matches);
+  const { counts: momCounts } = useMOMCounts();
+  const monthSummary = useMonthSummary();
+  const { stats: cricketStats } = useCricketStats('2025-26');
   const { isAdmin } = useAuth();
   const { getPendingCount } = useRequests();
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -122,15 +107,6 @@ export function Dashboard() {
     return { result: first, count };
   }, [lastFiveResults]);
 
-  const matchResultData = useMemo(() => {
-    const ext = matches.filter(m => m.match_type !== 'internal');
-    return [
-      { name: 'Won', value: ext.filter(m => m.result === 'won').length, color: '#22c55e' },
-      { name: 'Lost', value: ext.filter(m => m.result === 'lost').length, color: '#ef4444' },
-      { name: 'Draw', value: ext.filter(m => m.result === 'draw').length, color: '#f59e0b' },
-    ].filter(d => d.value > 0);
-  }, [matches]);
-
   const internalMatchStats = useMemo(() => {
     const int = matches.filter(m => m.match_type === 'internal');
     const completed = int.filter(m => ['won', 'lost', 'draw'].includes(m.result));
@@ -147,11 +123,67 @@ export function Dashboard() {
     return active.length ? Math.round(active.reduce((s, m) => s + m.balance, 0) / active.length) : 0;
   }, [members, isActive]);
 
+  // Top 5 MOM winners this season (joined with member profile for avatars)
+  const topMOMs = useMemo(() => {
+    const entries = Object.entries(momCounts)
+      .map(([memberId, count]) => ({
+        member: members.find(m => m.id === memberId),
+        count,
+      }))
+      .filter(e => e.member)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    return entries;
+  }, [momCounts, members]);
+
+  // Most recent completed match (for "Last Match" card)
+  const lastCompletedMatch = useMemo(() => {
+    return matches.find(m =>
+      ['won', 'lost', 'draw'].includes(m.result) && m.match_type !== 'internal'
+    );
+  }, [matches]);
+
+  // Season MVP — cricket stats + MOM count combined
+  const seasonMVP = useMemo(() => {
+    if (!cricketStats.length) return null;
+    const score = (s: typeof cricketStats[0]) =>
+      s.batting_runs + s.bowling_wickets * 20 +
+      (s.fielding_catches + s.fielding_stumpings + s.fielding_run_outs) * 10;
+    const top = [...cricketStats].sort((a, b) => score(b) - score(a))[0];
+    if (!top) return null;
+    return {
+      stats: top,
+      points: score(top),
+      moms: momCounts[top.member_id] || 0,
+      member: members.find(m => m.id === top.member_id),
+    };
+  }, [cricketStats, momCounts, members]);
+
+  // Live ticker items
+  const tickerItems = useMemo(() => {
+    const items: string[] = [];
+    if (nextUpcomingMatch) {
+      const d = new Date(nextUpcomingMatch.date);
+      const days = Math.ceil((d.getTime() - Date.now()) / 86400000);
+      const when = days <= 0 ? 'TODAY' : days === 1 ? 'tomorrow' : `in ${days} days`;
+      items.push(`⚡ Next: vs ${nextUpcomingMatch.opponent || 'TBD'} ${when}`);
+    }
+    if (topMOMs.length > 0) {
+      items.push(`${topMOMs[0].member!.name} leads MOM race (${topMOMs[0].count})`);
+    }
+    if (streak && streak.count >= 2) {
+      items.push(`${streak.count}-match ${streak.result === 'won' ? 'win streak 🔥' : 'run'}`);
+    }
+    if (lastCompletedMatch?.result === 'won') {
+      items.push(`Last match: WON vs ${lastCompletedMatch.opponent}`);
+    }
+    return items;
+  }, [nextUpcomingMatch, topMOMs, streak, lastCompletedMatch]);
+
   const countdown = useCountdown(nextUpcomingMatch ? nextUpcomingMatch.date : null);
 
   const animatedMembers = useAnimatedValue(stats.activeMembers, 800);
   const animatedFunds = useAnimatedValue(stats.totalFunds, 1200);
-  const animatedMatches = useAnimatedValue(stats.matchesPlayed, 800);
   const animatedWinRate = useAnimatedValue(Math.round(stats.winRate), 1000);
   const animatedWon = useAnimatedValue(stats.won, 800);
   const animatedLost = useAnimatedValue(stats.lost, 800);
@@ -159,9 +191,6 @@ export function Dashboard() {
   const animatedBazigarsWins = useAnimatedValue(internalMatchStats.bazigarsWins, 800);
 
   const loading = membersLoading || matchesLoading;
-
-  const winRateCirc = 2 * Math.PI * 16;
-  const winRateDash = (stats.winRate / 100) * winRateCirc;
 
   if (loading) {
     return (
@@ -183,218 +212,378 @@ export function Dashboard() {
 
       <div className="p-4 lg:p-8 space-y-5">
 
-        {/* ── HERO BANNER ─────────────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900" />
-          <div className="absolute inset-0 opacity-[0.06]" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='24' fill='none' stroke='white' stroke-width='1'/%3E%3Ccircle cx='30' cy='30' r='14' fill='none' stroke='white' stroke-width='1'/%3E%3Ccircle cx='30' cy='30' r='4' fill='white'/%3E%3Cline x1='0' y1='30' x2='60' y2='30' stroke='white' stroke-width='0.5'/%3E%3Cline x1='30' y1='0' x2='30' y2='60' stroke='white' stroke-width='0.5'/%3E%3C/svg%3E")`,
-            backgroundSize: '60px 60px',
-          }} />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-green-300/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-          <div className="absolute bottom-0 left-10 w-56 h-56 bg-teal-300/10 rounded-full blur-3xl translate-y-1/3 pointer-events-none" />
-
-          <div className="relative p-5 lg:p-8">
-            {/* Club identity row */}
-            <div className="flex items-center gap-4 mb-6">
-              <img src="/scc-logo.jpg" alt="SCC" className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl border-2 border-white/20 shadow-xl object-cover flex-shrink-0" />
-              <div>
-                <h1 className="text-xl lg:text-2xl font-black text-white leading-tight">Sangria Cricket Club</h1>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="px-2 py-0.5 bg-green-400/20 border border-green-400/30 rounded-full text-green-300 text-[11px] font-semibold">Season 2025–26</span>
-                  <span className="text-white/40 text-[11px]">{stats.matchesPlayed} matches · {stats.activeMembers} active</span>
-                </div>
-              </div>
+        {/* ── LIVE TICKER ──────────────────────────── */}
+        {tickerItems.length > 0 && (
+          <div className="flex items-center gap-4 overflow-x-auto py-2.5 px-4 bg-gray-900/80 dark:bg-gray-900 border border-gray-200/10 dark:border-gray-800 rounded-xl backdrop-blur-sm">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500 text-white text-[10px] font-black uppercase tracking-widest rounded-md flex-shrink-0">
+              <Radio className="w-3 h-3 animate-pulse" />
+              Live
+            </span>
+            <div className="flex items-center gap-8 text-sm text-gray-300 whitespace-nowrap">
+              {tickerItems.map((item, i) => (
+                <span key={i} className="flex items-center gap-2">
+                  {i > 0 && <span className="w-1 h-1 rounded-full bg-gray-500/40" />}
+                  {item}
+                </span>
+              ))}
             </div>
+          </div>
+        )}
 
-            <div className="flex flex-col lg:flex-row gap-0">
-              {/* Next Match */}
-              <div className="flex-1">
-                {nextUpcomingMatch ? (
-                  <>
-                    <p className="text-green-300/80 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-                      Next Match
-                      {nextUpcomingMatch.match_type === 'internal' && (
-                        <span className="bg-yellow-400/20 text-yellow-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-yellow-400/30">🏏 INTERNAL</span>
-                      )}
-                    </p>
-                    <h2 className="text-white text-xl lg:text-2xl font-black mb-1.5">
-                      {nextUpcomingMatch.match_type === 'internal'
-                        ? <span className="text-green-300">{nextUpcomingMatch.opponent || 'Internal Match'}</span>
-                        : <>vs <span className="text-green-300">{nextUpcomingMatch.opponent || 'TBD'}</span></>
-                      }
-                    </h2>
-                    <div className="flex items-center gap-3 text-white/55 text-sm flex-wrap mb-3">
-                      {nextUpcomingMatch.venue && (
-                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{nextUpcomingMatch.venue}</span>
-                      )}
-                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />
-                        {new Date(nextUpcomingMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
-                        <div key={l} className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 min-w-[46px] border border-white/10">
-                          <span className="text-xl font-black text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
-                          <span className="text-white/45 text-[9px] font-semibold uppercase tracking-wide mt-0.5">{l}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-6 flex-wrap">
-                    {[{ v: stats.matchesPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-green-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
-                      <div key={l} className="text-center">
-                        <div className={`text-3xl font-black tabular-nums ${c}`}>{v}</div>
-                        <div className="text-white/45 text-xs mt-0.5">{l}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Divider */}
-              {showManOfMatch && (
-                <div className="hidden lg:block w-px bg-white/10 mx-5 self-stretch" />
-              )}
-              {showManOfMatch && (
-                <div className="lg:hidden h-px bg-white/10 my-4" />
-              )}
-
-              {/* Man of the Match */}
-              {showManOfMatch && (
-                <div className="flex items-center gap-3 flex-shrink-0 lg:w-64">
-                  <div className="relative flex-shrink-0">
-                    {showManOfMatch.man_of_match?.avatar_url ? (
-                      <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-14 h-14 rounded-xl object-cover border-2 border-yellow-400/50 shadow-lg" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-xl bg-yellow-500/20 border-2 border-yellow-400/40 flex items-center justify-center">
-                        <span className="text-xl font-black text-yellow-200">{showManOfMatch.man_of_match?.name?.charAt(0)}</span>
-                      </div>
-                    )}
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
-                      <Star className="w-3 h-3 text-yellow-900" fill="currentColor" />
-                    </div>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-yellow-300/80 text-[10px] font-bold uppercase tracking-widest mb-0.5">⭐ Man of the Match</p>
-                    <h3 className="text-base font-black text-white truncate">{showManOfMatch.man_of_match?.name}</h3>
-                    <p className="text-white/50 text-xs truncate">vs {showManOfMatch.opponent}
-                      {showManOfMatch.result === 'won' && <span className="text-green-400 ml-1">· Won 🏆</span>}
-                    </p>
-                    <p className="text-white/40 text-xs">{new Date(showManOfMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
-                  </div>
-                </div>
-              )}
+        {/* ── CLUB IDENTITY ROW ─────────────────────── */}
+        <div className="flex items-center gap-3">
+          <img src="/scc-logo.jpg" alt="SCC" className="w-11 h-11 rounded-xl shadow-lg object-cover flex-shrink-0" />
+          <div>
+            <h1 className="text-lg lg:text-xl font-black text-gray-900 dark:text-white leading-tight">Sangria Cricket Club</h1>
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              <span className="px-2 py-0.5 bg-primary-500/10 dark:bg-primary-400/20 border border-primary-500/30 text-primary-700 dark:text-primary-300 text-[10px] font-bold rounded-full uppercase tracking-wide">Season 2025–26</span>
+              <span className="text-gray-400 dark:text-gray-500 text-[11px]">{stats.matchesPlayed} matches · {stats.activeMembers} active</span>
             </div>
           </div>
         </div>
 
-        {/* ── FORM STRIP ──────────────────────────── */}
-        {lastFiveResults.length > 0 && (
-          <div className="flex items-center gap-3 overflow-x-auto pb-1">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">Last {lastFiveResults.length}</span>
-            <div className="flex gap-1.5">
-              {lastFiveResults.map(m => (
-                <div key={m.id} title={`vs ${m.opponent} – ${m.result.toUpperCase()}`}
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black text-white shadow-md flex-shrink-0 transition-transform hover:scale-110 cursor-default ${
-                    m.result === 'won' ? 'bg-gradient-to-br from-green-400 to-green-600 shadow-green-500/25' :
-                    m.result === 'lost' ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-500/25' :
-                    'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/25'
-                  }`}>
-                  {m.result === 'won' ? 'W' : m.result === 'lost' ? 'L' : 'D'}
+        {/* ── BENTO GRID ────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 auto-rows-[minmax(120px,auto)]">
+
+          {/* FEATURED — Next Match (4x2 on lg, full width on mobile) */}
+          <div className="col-span-2 lg:col-span-4 lg:row-span-2 relative overflow-hidden rounded-2xl p-6 lg:p-7 shadow-2xl"
+               style={{
+                 background: 'radial-gradient(800px circle at 0% 0%, rgba(16,185,129,0.35), transparent 50%), radial-gradient(600px circle at 100% 100%, rgba(20,184,166,0.25), transparent 60%), linear-gradient(180deg, #061122, #0a1019)',
+               }}>
+            <div className="absolute inset-0 border border-emerald-500/25 rounded-2xl pointer-events-none" />
+            {nextUpcomingMatch ? (
+              <>
+                <div className="flex items-center gap-2 mb-3 relative">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-[2px]">Next Match</span>
+                  {nextUpcomingMatch.match_type === 'internal' && (
+                    <span className="bg-yellow-400/20 text-yellow-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-yellow-400/30">INTERNAL</span>
+                  )}
                 </div>
-              ))}
-            </div>
-            {streak && streak.count >= 2 && (
-              <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 ${
-                streak.result === 'won' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                streak.result === 'lost' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-              }`}>
-                {streak.result === 'won' ? <Flame className="w-3 h-3" /> : <Activity className="w-3 h-3" />}
-                {streak.count}-match {streak.result === 'won' ? 'win streak 🔥' : streak.result === 'lost' ? 'losing run' : 'draw streak'}
-              </span>
+                <h2 className="text-white text-3xl lg:text-4xl font-black tracking-tight leading-[1.05] relative">
+                  {nextUpcomingMatch.match_type === 'internal'
+                    ? <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">{nextUpcomingMatch.opponent || 'Internal Match'}</span>
+                    : <>vs <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">{nextUpcomingMatch.opponent || 'TBD'}</span></>
+                  }
+                </h2>
+                <div className="flex items-center gap-4 text-gray-400 text-xs mt-3 flex-wrap relative">
+                  {nextUpcomingMatch.venue && (
+                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{nextUpcomingMatch.venue}</span>
+                  )}
+                  <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />
+                    {new Date(nextUpcomingMatch.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+                <div className="flex gap-2 mt-5 relative">
+                  {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
+                    <div key={l} className="flex flex-col items-center bg-white/5 backdrop-blur-sm rounded-xl px-3 py-2.5 min-w-[56px] border border-white/8">
+                      <span className="text-xl lg:text-2xl font-black text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
+                      <span className="text-gray-500 text-[9px] font-semibold uppercase tracking-[1.5px] mt-1">{l}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Last MOM pinned to the bottom */}
+                {showManOfMatch?.man_of_match && (
+                  <div className="relative mt-6 pt-5 border-t border-white/8 flex items-center gap-3">
+                    {showManOfMatch.man_of_match.avatar_url ? (
+                      <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-10 h-10 rounded-xl object-cover border border-yellow-400/40" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center">
+                        <span className="text-sm font-black text-yellow-200">{showManOfMatch.man_of_match.name?.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-yellow-400 text-[9px] font-bold uppercase tracking-[1.5px]">⭐ Last Man of the Match</p>
+                      <h3 className="text-sm font-black text-white truncate">{showManOfMatch.man_of_match.name}
+                        <span className="text-gray-400 font-semibold ml-2">vs {showManOfMatch.opponent}</span>
+                      </h3>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-8 flex-wrap relative">
+                {[{ v: stats.matchesPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-emerald-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
+                  <div key={l} className="text-center">
+                    <div className={`text-4xl font-black tabular-nums ${c}`}>{v}</div>
+                    <div className="text-gray-500 text-xs mt-0.5 uppercase tracking-wider">{l}</div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        )}
 
-        {/* ── STATS GRID ──────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Active Members */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 p-4 lg:p-5 shadow-lg shadow-blue-500/20 group cursor-default">
-            <div className="absolute -top-5 -right-5 w-24 h-24 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-500" />
-            <div className="absolute -bottom-3 -left-3 w-14 h-14 bg-white/5 rounded-full" />
-            <Users className="w-5 h-5 text-blue-100/80 mb-3 relative" />
-            <p className="text-3xl font-black text-white tabular-nums relative">{animatedMembers}</p>
-            <p className="text-blue-100/65 text-xs font-medium mt-0.5 relative">Active Members</p>
-            <p className="text-blue-200/40 text-[10px] mt-1 relative">{stats.totalMembers} total</p>
+          {/* Members (2x1) */}
+          <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
+               style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)' }}>
+            <div className="absolute inset-0 border border-blue-500/25 rounded-2xl pointer-events-none" />
+            <div className="flex items-center gap-1.5 mb-2 relative">
+              <Users className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-blue-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Members</span>
+            </div>
+            <p className="text-4xl lg:text-5xl font-black text-white tabular-nums relative leading-none">{animatedMembers}</p>
+            <p className="text-gray-400 text-[11px] mt-2 relative">of {stats.totalMembers} · <span className="text-blue-300">active</span></p>
           </div>
 
-          {/* Total Funds */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-green-700 p-4 lg:p-5 shadow-lg shadow-emerald-500/20 group cursor-default">
-            <div className="absolute -top-5 -right-5 w-24 h-24 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-500" />
-            <div className="absolute -bottom-3 -left-3 w-14 h-14 bg-white/5 rounded-full" />
-            <IndianRupee className="w-5 h-5 text-emerald-100/80 mb-3 relative" />
-            <p className="text-2xl lg:text-3xl font-black text-white tabular-nums relative leading-tight">
+          {/* Club Funds (2x1) */}
+          <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
+               style={{ background: 'linear-gradient(135deg, #065f46 0%, #0a1019 100%)' }}>
+            <div className="absolute inset-0 border border-emerald-500/25 rounded-2xl pointer-events-none" />
+            <div className="flex items-center gap-1.5 mb-2 relative">
+              <IndianRupee className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Club Funds</span>
+            </div>
+            <p className="text-4xl lg:text-5xl font-black text-white tabular-nums relative leading-none">
               ₹{animatedFunds >= 1000 ? `${(animatedFunds / 1000).toFixed(1)}k` : animatedFunds.toLocaleString('en-IN')}
             </p>
-            <p className="text-emerald-100/65 text-xs font-medium mt-0.5 relative">Club Funds</p>
-            <p className="text-emerald-200/40 text-[10px] mt-1 relative">Avg ₹{avgBalance >= 1000 ? `${(avgBalance / 1000).toFixed(1)}k` : avgBalance} / member</p>
+            {/* Season growth trend pill */}
+            {(() => {
+              const seasonNet = monthSummary.seasonDeposits - monthSummary.seasonExpenses;
+              const starting = stats.totalFunds - seasonNet;
+              const pct = starting > 0 ? Math.round((seasonNet / starting) * 100) : 0;
+              if (seasonNet === 0 || monthSummary.loading) {
+                return <p className="text-gray-400 text-[11px] mt-2 relative">Avg ₹{avgBalance >= 1000 ? `${(avgBalance / 1000).toFixed(1)}k` : avgBalance} / member</p>;
+              }
+              const up = seasonNet > 0;
+              return (
+                <div className="relative mt-2 flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    up ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                       : 'bg-red-500/15 text-red-300 border border-red-500/30'
+                  }`}>
+                    {up ? '↑' : '↓'} {Math.abs(pct)}%
+                    <span className="opacity-70 font-semibold">this season</span>
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
-          {/* Matches Played */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 p-4 lg:p-5 shadow-lg shadow-violet-500/20 group cursor-default">
-            <div className="absolute -top-5 -right-5 w-24 h-24 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-500" />
-            <div className="absolute -bottom-3 -left-3 w-14 h-14 bg-white/5 rounded-full" />
-            <Calendar className="w-5 h-5 text-violet-100/80 mb-3 relative" />
-            <p className="text-3xl font-black text-white tabular-nums relative">{animatedMatches}</p>
-            <p className="text-violet-100/65 text-xs font-medium mt-0.5 relative">Matches Played</p>
-            <p className="text-violet-200/40 text-[10px] mt-1 relative">{animatedWon}W · {animatedLost}L</p>
-          </div>
-
-          {/* Win Rate with SVG ring */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 p-4 lg:p-5 shadow-lg shadow-amber-500/20 group cursor-default">
-            <div className="absolute -top-5 -right-5 w-24 h-24 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-500" />
-            <div className="absolute -bottom-3 -left-3 w-14 h-14 bg-white/5 rounded-full" />
-            <div className="flex items-start justify-between relative">
-              <div>
-                <Trophy className="w-5 h-5 text-amber-100/80 mb-3" />
-                <p className="text-3xl font-black text-white tabular-nums">{animatedWinRate}%</p>
-                <p className="text-amber-100/65 text-xs font-medium mt-0.5">Win Rate</p>
-              </div>
-              <svg className="w-14 h-14 -rotate-90 flex-shrink-0" viewBox="0 0 40 40">
-                <circle cx="20" cy="20" r="16" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3.5" />
-                <circle cx="20" cy="20" r="16" fill="none" stroke="white" strokeWidth="3.5"
-                  strokeDasharray={`${winRateDash.toFixed(2)} ${winRateCirc.toFixed(2)}`}
-                  strokeLinecap="round" style={{ transition: 'stroke-dasharray 1s ease' }} />
-              </svg>
+          {/* Win Rate Donut (2x2) */}
+          <div className="col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5"
+               style={{ background: 'linear-gradient(135deg, #9a3412 0%, #0a1019 100%)' }}>
+            <div className="absolute inset-0 border border-orange-500/25 rounded-2xl pointer-events-none" />
+            <div className="flex items-center gap-1.5 mb-3 relative">
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Win Rate</span>
             </div>
+            <div className="flex items-center gap-5 relative">
+              <svg width="110" height="110" viewBox="0 0 42 42" className="flex-shrink-0">
+                <circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+                <circle cx="21" cy="21" r="15.9" fill="none" stroke="#f59e0b" strokeWidth="3"
+                  strokeDasharray={`${stats.winRate} 100`} transform="rotate(-90 21 21)" strokeLinecap="round" />
+                <text x="21" y="23.5" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900">{animatedWinRate}%</text>
+              </svg>
+              <div className="flex-1 min-w-0">
+                <div className="flex gap-4">
+                  <div>
+                    <div className="text-2xl font-black text-emerald-400 tabular-nums">{animatedWon}</div>
+                    <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Won</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-red-400 tabular-nums">{animatedLost}</div>
+                    <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Lost</div>
+                  </div>
+                </div>
+                {lastFiveResults.length > 0 && (
+                  <div className="mt-3">
+                    <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">Last 5</div>
+                    <div className="flex gap-1.5">
+                      {lastFiveResults.map(m => (
+                        <div key={m.id}
+                          className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black text-white shadow-md ${
+                            m.result === 'won' ? 'bg-gradient-to-br from-green-400 to-green-600' :
+                            m.result === 'lost' ? 'bg-gradient-to-br from-red-400 to-red-600' :
+                            'bg-gradient-to-br from-amber-400 to-amber-600'
+                          }`}>
+                          {m.result === 'won' ? 'W' : m.result === 'lost' ? 'L' : 'D'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            {streak && streak.count >= 2 && (
+              <div className={`inline-flex items-center gap-1 mt-4 px-2.5 py-1 rounded-full text-[10px] font-bold relative ${
+                streak.result === 'won' ? 'bg-green-500/15 text-green-300 border border-green-500/30' :
+                streak.result === 'lost' ? 'bg-red-500/15 text-red-300 border border-red-500/30' :
+                'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+              }`}>
+                {streak.result === 'won' ? <Flame className="w-3 h-3" /> : <Activity className="w-3 h-3" />}
+                {streak.count}-match {streak.result === 'won' ? 'win streak 🔥' : streak.result === 'lost' ? 'tough run' : 'draw streak'}
+              </div>
+            )}
           </div>
+
+          {/* MOM Race Leaderboard (2x2) */}
+          {topMOMs.length > 0 && (
+            <div className="col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5"
+                 style={{ background: 'linear-gradient(135deg, #854d0e 0%, #0a1019 100%)' }}>
+              <div className="absolute inset-0 border border-yellow-500/25 rounded-2xl pointer-events-none" />
+              <div className="flex items-center justify-between mb-3 relative">
+                <div className="flex items-center gap-1.5">
+                  <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
+                  <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">MOM Race</span>
+                </div>
+                <Link to="/leaderboard" className="text-[10px] text-amber-300/60 hover:text-amber-300 font-semibold">All →</Link>
+              </div>
+              <div className="space-y-1 relative">
+                {topMOMs.map((entry, idx) => (
+                  <div key={entry.member!.id} className="flex items-center gap-2.5 py-1.5 border-t border-white/6 first:border-0">
+                    <div className={`w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-[10px] font-black ${
+                      idx === 0 ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-yellow-950 shadow-lg shadow-amber-500/30' :
+                      idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-900' :
+                      idx === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-500 text-orange-950' :
+                      'bg-white/5 text-gray-400'
+                    }`}>{idx + 1}</div>
+                    {entry.member!.avatar_url ? (
+                      <img src={entry.member!.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-white/10" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[10px] font-black text-yellow-950">{entry.member!.name.charAt(0)}</span>
+                      </div>
+                    )}
+                    <span className="text-xs font-semibold text-white truncate flex-1">{entry.member!.name.split(' ').slice(0, 2).join(' ')}</span>
+                    <span className="flex items-center gap-0.5 text-amber-300 text-xs font-black tabular-nums">
+                      {entry.count}
+                      {idx === 0 && <span className="text-[10px]">🏆</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Season MVP (2x1) */}
+          {seasonMVP && seasonMVP.member && (
+            <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
+                 style={{ background: 'radial-gradient(300px circle at 0% 0%, rgba(251,191,36,0.2), transparent 55%), linear-gradient(135deg, #78350f 0%, #1a0f05 55%, #0a1019 100%)' }}>
+              <div className="absolute inset-0 border border-amber-500/30 rounded-2xl pointer-events-none" />
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-amber-400/10 rounded-full blur-2xl" />
+              <div className="flex items-center justify-between mb-2 relative">
+                <div className="flex items-center gap-1.5">
+                  <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
+                  <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Season MVP</span>
+                </div>
+                {seasonMVP.moms > 0 && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[10px] font-black">
+                    <Crown className="w-2.5 h-2.5" fill="currentColor" />
+                    {seasonMVP.moms}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 relative">
+                {seasonMVP.member.avatar_url ? (
+                  <img src={seasonMVP.member.avatar_url} alt="" className="w-12 h-12 rounded-xl object-cover border-2 border-amber-400/40 shadow-lg shadow-amber-500/30 flex-shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 border-2 border-amber-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/30">
+                    <span className="text-lg font-black text-yellow-950">{seasonMVP.member.name.charAt(0)}</span>
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-white tabular-nums leading-none"
+                          style={{ background: 'linear-gradient(180deg, #fff, #fde68a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      {seasonMVP.points}
+                    </span>
+                    <span className="text-amber-300/60 text-[9px] uppercase tracking-widest font-bold">pts</span>
+                  </div>
+                  <div className="text-sm font-bold text-white truncate">{seasonMVP.member.name}</div>
+                  <div className="text-[10px] text-amber-200/50">
+                    {seasonMVP.stats.batting_runs}R · {seasonMVP.stats.bowling_wickets}W · {seasonMVP.stats.fielding_catches + seasonMVP.stats.fielding_stumpings + seasonMVP.stats.fielding_run_outs}C
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* This Month (2x1) */}
+          <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
+               style={{ background: 'linear-gradient(135deg, #064e3b 0%, #0a1019 100%)' }}>
+            <div className="absolute inset-0 border border-emerald-500/25 rounded-2xl pointer-events-none" />
+            <div className="flex items-center gap-1.5 mb-2 relative">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">This Month</span>
+            </div>
+            <p className="text-3xl lg:text-4xl font-black text-white tabular-nums relative leading-none">
+              <span className={monthSummary.deposits - monthSummary.expenses >= 0 ? 'text-emerald-300' : 'text-red-300'}>
+                {monthSummary.deposits - monthSummary.expenses >= 0 ? '+' : '−'}₹{Math.abs(monthSummary.deposits - monthSummary.expenses).toLocaleString('en-IN')}
+              </span>
+            </p>
+            <p className="text-gray-400 text-[11px] mt-2 relative">
+              <span className="text-emerald-400">₹{monthSummary.deposits.toLocaleString('en-IN')} in</span>
+              <span className="mx-1.5 text-gray-600">·</span>
+              <span className="text-red-400">₹{monthSummary.expenses.toLocaleString('en-IN')} out</span>
+            </p>
+          </div>
+
+          {/* Last Match (full-width banner) */}
+          {lastCompletedMatch && (
+            <div className="col-span-2 lg:col-span-6 relative overflow-hidden rounded-2xl p-4 lg:p-5"
+                 style={{ background: lastCompletedMatch.result === 'won'
+                   ? 'linear-gradient(135deg, #065f46 0%, #0a1019 100%)'
+                   : lastCompletedMatch.result === 'lost'
+                   ? 'linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)'
+                   : 'linear-gradient(135deg, #854d0e 0%, #0a1019 100%)'
+                 }}>
+              <div className={`absolute inset-0 rounded-2xl pointer-events-none border ${
+                lastCompletedMatch.result === 'won' ? 'border-emerald-500/25'
+                : lastCompletedMatch.result === 'lost' ? 'border-red-500/25'
+                : 'border-amber-500/25'
+              }`} />
+              <div className="flex items-center gap-1.5 mb-2 relative">
+                <Zap className={`w-3.5 h-3.5 ${
+                  lastCompletedMatch.result === 'won' ? 'text-emerald-400'
+                  : lastCompletedMatch.result === 'lost' ? 'text-red-400'
+                  : 'text-amber-400'
+                }`} />
+                <span className={`text-[10px] font-bold uppercase tracking-[1.5px] ${
+                  lastCompletedMatch.result === 'won' ? 'text-emerald-300/80'
+                  : lastCompletedMatch.result === 'lost' ? 'text-red-300/80'
+                  : 'text-amber-300/80'
+                }`}>Last Match · {lastCompletedMatch.result.toUpperCase()}</span>
+              </div>
+              <div className="flex items-center gap-3 relative">
+                {lastCompletedMatch.man_of_match?.avatar_url ? (
+                  <img src={lastCompletedMatch.man_of_match.avatar_url} alt="" className="w-11 h-11 rounded-xl object-cover border border-yellow-400/40 flex-shrink-0" />
+                ) : lastCompletedMatch.man_of_match ? (
+                  <div className="w-11 h-11 rounded-xl bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-black text-yellow-200">{lastCompletedMatch.man_of_match.name.charAt(0)}</span>
+                  </div>
+                ) : null}
+                <div className="min-w-0 flex-1">
+                  {lastCompletedMatch.our_score && lastCompletedMatch.opponent_score ? (
+                    <div className="text-lg font-black text-white tabular-nums leading-tight">
+                      {lastCompletedMatch.our_score}
+                      <span className="text-gray-500 font-bold text-sm mx-1.5">vs</span>
+                      {lastCompletedMatch.opponent_score}
+                    </div>
+                  ) : (
+                    <div className="text-base font-black text-white">vs {lastCompletedMatch.opponent}</div>
+                  )}
+                  <p className="text-gray-400 text-[11px] mt-0.5 truncate">
+                    vs {lastCompletedMatch.opponent}
+                    {lastCompletedMatch.man_of_match && (
+                      <> · <span className="text-yellow-300">MOM: {lastCompletedMatch.man_of_match.name.split(' ')[0]}</span></>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── SEASON STARS (lazy — loads cricketStats on demand) ────────── */}
         {showDeferred && (
           <Suspense fallback={null}>
-            <DashboardStars />
+            <DashboardStars momCounts={momCounts} />
           </Suspense>
         )}
 
         {/* ── SQUAD POLL ──────────────────────────── */}
         <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
-
-        {/* ── FINANCE PULSE + RESULTS (lazy — loads recharts on demand) ────── */}
-        {showDeferred && (
-          <Suspense fallback={<ChartsSkeleton />}>
-            <DashboardCharts
-              members={members}
-              totalFunds={stats.totalFunds}
-              winRate={stats.winRate}
-              matchResultData={matchResultData}
-              isActive={isActive}
-            />
-          </Suspense>
-        )}
 
         {/* ── INTERNAL BATTLE ─────────────────────── */}
         {internalMatchStats.total > 0 && (

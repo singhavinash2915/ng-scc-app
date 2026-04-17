@@ -26,3 +26,9 @@ dist-ssr
 # Backups
 backups/
 backup-db.mjs
+
+# Local preview / scratch files
+dashboard-concepts.html
+scc-logo.jpg.old
+scc_cricheroes_data.json
+scc_matches.json
