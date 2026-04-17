@@ -10,7 +10,7 @@ Fetches all SCC matches from CricHeroes and syncs them to Supabase matches table
 
 Auth token rotates — grab a fresh 'authorization' header from DevTools if needed.
 """
-import json, urllib.request, urllib.error, urllib.parse, datetime, sys, time, argparse
+import json, urllib.request, urllib.error, urllib.parse, datetime, sys, time, argparse, re
 
 # ── CricHeroes API config ─────────────────────────────────────────────────────
 CH_API_KEY   = "cr!CkH3r0s"
@@ -200,18 +200,73 @@ def get_existing_ch_ids():
         return set()
     return {row['ch_match_id'] for row in data if row.get('ch_match_id')}
 
+# ── Fuzzy opponent matching — prevents duplicate rows when the manual entry
+# ──  used a different spelling (e.g. "Yashwin Hinjewadi" vs "Yashwin Hinjawadi"),
+# ──  an abbreviation ("YNR" vs "Yashwin Night Riders"), or minor typos.
+_FILLERS = {'xi', '11', 'x1', 'cricket', 'club', 'the'}
+
+def _norm(name):
+    """Lowercase, strip punctuation/parens, collapse spaces, drop filler words."""
+    if not name:
+        return ''
+    s = re.sub(r'\([^)]*\)', ' ', name.lower())
+    s = re.sub(r'[^a-z0-9]+', ' ', s)
+    return ' '.join(t for t in s.split() if t and t not in _FILLERS).strip()
+
+def _lev(a, b):
+    """Levenshtein edit distance."""
+    if len(a) < len(b):
+        a, b = b, a
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a):
+        cur = [i + 1]
+        for j, cb in enumerate(b):
+            cur.append(min(prev[j + 1] + 1, cur[j] + 1, prev[j] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+def _raw_initials(name):
+    s = re.sub(r'\([^)]*\)', ' ', name or '')
+    words = re.sub(r'[^a-zA-Z ]+', ' ', s).split()
+    return ''.join(w[0].lower() for w in words if w)
+
+def same_team(a, b):
+    """True if two opponent names look like the same team."""
+    na, nb = _norm(a), _norm(b)
+    if not na or not nb:
+        return False
+    if na == nb or na in nb or nb in na:
+        return True
+    short, long = (a, b) if len(a) < len(b) else (b, a)
+    short_raw = re.sub(r'[^a-z]', '', short.lower())
+    if 2 <= len(short_raw) <= 6 and _raw_initials(long) == short_raw:
+        return True
+    d = _lev(na, nb)
+    if d <= 2 and min(len(na), len(nb)) >= 4:
+        return True
+    if max(len(na), len(nb)) > 0 and d / max(len(na), len(nb)) <= 0.25:
+        return True
+    pa = na.split()[0] if na.split() else ''
+    pb = nb.split()[0] if nb.split() else ''
+    return bool(pa and pb and pa[:4] == pb[:4] and len(pa) >= 4)
+
 def find_existing(ch_id, date, opponent):
-    """Find existing match by ch_match_id or by date+opponent (manual entries)."""
-    # 1. By ch_match_id (fastest, exact)
-    code, data = sb_call("GET", "matches", params=f"ch_match_id=eq.{ch_id}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id")
+    """Find existing match by ch_match_id, or fuzzy date+opponent match."""
+    # 1. Exact match by ch_match_id (fastest, always wins)
+    code, data = sb_call("GET", "matches",
+                          params=f"ch_match_id=eq.{ch_id}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id")
     if code == 200 and data:
         return data[0]
-    # 2. By date + normalized opponent (catches manually entered matches)
-    opp_enc = urllib.parse.quote(opponent[:30])
+
+    # 2. Fetch ALL matches on this date; fuzzy-match opponent in Python
     code2, data2 = sb_call("GET", "matches",
-                            params=f"date=eq.{date}&opponent=ilike.{opp_enc}*&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id&limit=1")
+                            params=f"date=eq.{date}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id")
     if code2 == 200 and data2:
-        return data2[0]
+        for row in data2:
+            if same_team(row.get('opponent', ''), opponent):
+                return row
     return None
 
 def upsert_match(row):
