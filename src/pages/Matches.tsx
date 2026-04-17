@@ -684,12 +684,13 @@ export function Matches() {
                           >
                             <Edit className="w-4 h-4" /> Edit Match
                           </button>
-                          {match.result === 'upcoming' && (
+                          {match.result !== 'cancelled' && (
                             <button
                               onClick={() => openResultModal(match)}
                               className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                             >
-                              <Trophy className="w-4 h-4" /> Update Result
+                              <Trophy className="w-4 h-4" />
+                              {match.result === 'upcoming' ? 'Update Result' : 'Edit Result / MOM'}
                             </button>
                           )}
                           {match.result === 'upcoming' && (

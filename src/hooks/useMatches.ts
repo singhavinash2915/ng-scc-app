@@ -115,83 +115,175 @@ export function useMatches() {
     }
   };
 
+  // Ensure fees are settled (deducted + transaction logged + fee_paid marked) for every
+  // player of a completed match whose deduct_from_balance is on and match_fee > 0.
+  // Idempotent — already-paid players are skipped. Called after every updateMatch to
+  // cover both "upcoming → completed" transitions AND editing fee/deduct/players on a
+  // match that was already completed (e.g. matches synced from CricHeroes).
+  const settleMatchFees = async (matchId: string): Promise<void> => {
+    const { data: match } = await supabase
+      .from('matches')
+      .select('*')
+      .eq('id', matchId)
+      .single();
+    if (!match) return;
+
+    const isCompleted = match.result !== 'upcoming' && match.result !== 'cancelled';
+    if (!isCompleted || !match.deduct_from_balance || !match.match_fee || match.match_fee <= 0) return;
+
+    const { data: players } = await supabase
+      .from('match_players')
+      .select('member_id, fee_paid')
+      .eq('match_id', matchId);
+    if (!players) return;
+
+    const matchTypeLabel = match.match_type === 'internal' ? 'Internal Match' : 'Match';
+    const fee = match.match_fee;
+
+    for (const player of players) {
+      if (player.fee_paid) continue;
+
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('balance')
+        .eq('id', player.member_id)
+        .single();
+      if (!memberData) continue;
+
+      await supabase.from('members')
+        .update({ balance: memberData.balance - fee })
+        .eq('id', player.member_id);
+
+      await supabase.from('transactions').insert([{
+        type: 'match_fee',
+        amount: -fee,
+        member_id: player.member_id,
+        match_id: matchId,
+        description: `${matchTypeLabel} fee - ${match.venue}`,
+      }]);
+
+      await supabase.from('match_players')
+        .update({ fee_paid: true })
+        .eq('match_id', matchId)
+        .eq('member_id', player.member_id);
+    }
+  };
+
   const updateMatch = async (
     id: string,
     updates: Partial<Match>,
     playerIds?: string[]
   ) => {
     try {
-      // Check if result is changing from 'upcoming' to a completed result
       const existingMatch = matches.find(m => m.id === id);
-      const wasUpcoming = existingMatch?.result === 'upcoming';
-      const isNowCompleted = updates.result && updates.result !== 'upcoming' && updates.result !== 'cancelled';
-      const shouldDeductNow = wasUpcoming && isNowCompleted && existingMatch?.deduct_from_balance && existingMatch?.match_fee > 0;
+      if (!existingMatch) throw new Error('Match not found');
 
+      // Update match row
       const { data, error } = await supabase
         .from('matches')
         .update(updates)
         .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
 
-      // Update players if provided
+      // Effective state after this update
+      const effResult = updates.result ?? existingMatch.result;
+      const wasCompleted = existingMatch.result !== 'upcoming' && existingMatch.result !== 'cancelled';
+      const isCompleted = effResult !== 'upcoming' && effResult !== 'cancelled';
+
+      const existingPlayers = existingMatch.players || [];
+      const existingPlayerMap = new Map(existingPlayers.map(p => [p.member_id, p]));
+
+      // ── Player diff (preserves fee_paid status for kept players) ────────────
       if (playerIds !== undefined) {
-        // Remove existing players
-        await supabase.from('match_players').delete().eq('match_id', id);
+        const newPlayerSet = new Set(playerIds);
+        const removedPlayers = existingPlayers.filter(p => !newPlayerSet.has(p.member_id));
+        const addedPlayers = playerIds.filter(pid => !existingPlayerMap.has(pid));
 
-        // Add new players
-        if (playerIds.length > 0) {
-          const matchPlayers = playerIds.map(memberId => ({
-            match_id: id,
-            member_id: memberId,
-            fee_paid: false,
-          }));
-
-          await supabase.from('match_players').insert(matchPlayers);
-        }
-      }
-
-      // Deduct fees when match moves from upcoming → completed result
-      if (shouldDeductNow && existingMatch?.players && existingMatch.players.length > 0) {
-        for (const player of existingMatch.players) {
+        // Removed players: refund fee if paid, decrement matches_played if match was completed
+        for (const player of removedPlayers) {
           const { data: memberData } = await supabase
             .from('members')
             .select('balance, matches_played')
             .eq('id', player.member_id)
             .single();
+          if (!memberData) continue;
 
-          if (memberData) {
-            const matchTypeLabel = existingMatch.match_type === 'internal' ? 'Internal Match' : 'Match';
-
-            // Deduct fee and increment matches_played
-            await supabase
-              .from('members')
-              .update({
-                balance: memberData.balance - existingMatch.match_fee,
-                matches_played: (memberData.matches_played || 0) + 1,
-              })
-              .eq('id', player.member_id);
-
-            // Create transaction record
-            await supabase.from('transactions').insert([{
-              type: 'match_fee',
-              amount: -existingMatch.match_fee,
-              member_id: player.member_id,
-              match_id: id,
-              description: `${matchTypeLabel} fee - ${existingMatch.venue}`,
-            }]);
-
-            // Mark fee as paid
-            await supabase
-              .from('match_players')
-              .update({ fee_paid: true })
+          const memberUpdate: { balance?: number; matches_played?: number } = {};
+          if (wasCompleted) {
+            memberUpdate.matches_played = Math.max(0, (memberData.matches_played || 0) - 1);
+          }
+          if (player.fee_paid && existingMatch.match_fee > 0) {
+            memberUpdate.balance = memberData.balance + existingMatch.match_fee;
+          }
+          if (Object.keys(memberUpdate).length > 0) {
+            await supabase.from('members').update(memberUpdate).eq('id', player.member_id);
+          }
+          if (player.fee_paid) {
+            await supabase.from('transactions')
+              .delete()
               .eq('match_id', id)
-              .eq('member_id', player.member_id);
+              .eq('member_id', player.member_id)
+              .eq('type', 'match_fee');
+          }
+        }
+        if (removedPlayers.length > 0) {
+          await supabase.from('match_players')
+            .delete()
+            .eq('match_id', id)
+            .in('member_id', removedPlayers.map(p => p.member_id));
+        }
+
+        // Added players: insert, increment matches_played if match is completed
+        if (addedPlayers.length > 0) {
+          await supabase.from('match_players').insert(
+            addedPlayers.map(memberId => ({
+              match_id: id,
+              member_id: memberId,
+              fee_paid: false,
+              team: null,
+            }))
+          );
+          if (isCompleted) {
+            for (const memberId of addedPlayers) {
+              const { data: memberData } = await supabase
+                .from('members')
+                .select('matches_played')
+                .eq('id', memberId)
+                .single();
+              if (memberData) {
+                await supabase.from('members')
+                  .update({ matches_played: (memberData.matches_played || 0) + 1 })
+                  .eq('id', memberId);
+              }
+            }
           }
         }
       }
+
+      // Result transition upcoming → completed: increment matches_played for kept players
+      // (added players already handled above; existing-kept players need the bump)
+      if (!wasCompleted && isCompleted) {
+        const keptPlayerIds = playerIds !== undefined
+          ? playerIds.filter(pid => existingPlayerMap.has(pid))
+          : existingPlayers.map(p => p.member_id);
+        for (const memberId of keptPlayerIds) {
+          const { data: memberData } = await supabase
+            .from('members')
+            .select('matches_played')
+            .eq('id', memberId)
+            .single();
+          if (memberData) {
+            await supabase.from('members')
+              .update({ matches_played: (memberData.matches_played || 0) + 1 })
+              .eq('id', memberId);
+          }
+        }
+      }
+
+      // Settle any unpaid fees (handles upcoming→completed AND editing fee on already-completed match)
+      await settleMatchFees(id);
 
       await fetchMatches();
       return data;
