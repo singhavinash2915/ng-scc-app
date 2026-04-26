@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Auto-mirrored to ~/.scc-sync after each commit (see scripts/hooks/post-commit)
 """
 CricHeroes → Supabase match sync for SCC.
 Run: python3 scripts/sync_matches.py

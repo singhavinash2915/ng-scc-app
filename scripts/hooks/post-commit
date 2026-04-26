@@ -1,0 +1,32 @@
+#!/bin/sh
+# Auto-mirror sync scripts to ~/.scc-sync/ after each commit so the launchd
+# agent (which can't read ~/Documents/ due to macOS TCC) always has the
+# latest version.
+#
+# Only runs when files under scripts/ changed in the latest commit.
+
+MIRROR_DIR="$HOME/.scc-sync"
+SCRIPTS="daily_sync.py sync_matches.py sync_cricheroes.py"
+
+# Were any scripts/* files touched in the last commit?
+if ! git diff-tree --no-commit-id --name-only -r HEAD | grep -q '^scripts/'; then
+    exit 0
+fi
+
+mkdir -p "$MIRROR_DIR"
+
+CHANGED=0
+for f in $SCRIPTS; do
+    SRC="scripts/$f"
+    DEST="$MIRROR_DIR/$f"
+    if [ -f "$SRC" ]; then
+        if ! cmp -s "$SRC" "$DEST" 2>/dev/null; then
+            cp "$SRC" "$DEST"
+            CHANGED=$((CHANGED + 1))
+        fi
+    fi
+done
+
+if [ "$CHANGED" -gt 0 ]; then
+    echo "✓ Mirrored $CHANGED sync script(s) → $MIRROR_DIR (for launchd)"
+fi
