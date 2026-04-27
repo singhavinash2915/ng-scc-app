@@ -1,3 +1,9 @@
+export type PlayerRole = 'batsman' | 'bowler' | 'all_rounder' | 'wicket_keeper';
+export type BattingStyle = 'right_hand' | 'left_hand';
+export type BowlingStyle =
+  | 'right_arm_fast' | 'right_arm_medium' | 'off_spin' | 'leg_spin'
+  | 'left_arm_fast' | 'left_arm_spin' | 'none';
+
 export interface Member {
   id: string;
   name: string;
@@ -9,6 +15,10 @@ export interface Member {
   balance: number;
   matches_played: number;
   avatar_url: string | null;
+  role: PlayerRole | null;
+  batting_style: BattingStyle | null;
+  bowling_style: BowlingStyle | null;
+  jersey_number: number | null;
   created_at: string;
 }
 
@@ -34,9 +44,13 @@ export interface Match {
   polling_enabled: boolean;
   polling_deadline: string | null;
   ch_match_id?: string | null; // CricHeroes match ID for auto-sync
+  captain_id: string | null;
+  vice_captain_id: string | null;
   created_at: string;
   players?: MatchPlayer[];
   man_of_match?: Member;
+  captain?: Member;
+  vice_captain?: Member;
   polls?: MatchPoll[];
 }
 

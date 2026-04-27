@@ -16,6 +16,7 @@ import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
+import { useFormGuide, type FormResult } from '../hooks/useFormGuide';
 import type { MemberCricketStats } from '../types';
 
 // MOM count pill shown next to a player name
@@ -28,6 +29,25 @@ function MOMBadge({ count }: { count: number }) {
     >
       <Crown className="w-2.5 h-2.5" fill="currentColor" />
       {count}
+    </span>
+  );
+}
+
+// Last-5 form: small colored dots
+function FormDots({ form }: { form: FormResult[] | undefined }) {
+  if (!form || form.length === 0) return null;
+  return (
+    <span className="inline-flex gap-0.5 ml-2" title={`Form: ${form.map(r => r.charAt(0).toUpperCase()).join(' · ')}`}>
+      {form.map((r, i) => (
+        <span
+          key={i}
+          className={`w-2 h-2 rounded-full inline-block ${
+            r === 'won' ? 'bg-green-500'
+            : r === 'lost' ? 'bg-red-500'
+            : 'bg-amber-500'
+          }`}
+        />
+      ))}
     </span>
   );
 }
@@ -117,6 +137,7 @@ function StatCell({ value, highlight, isTop }: { value: string | number; highlig
 export function Leaderboard() {
   const { stats, loading, error, fetchStats } = useCricketStats('2025-26');
   const { counts: momCounts } = useMOMCounts();
+  const { formByMember } = useFormGuide();
   const [tab, setTab] = useState<Tab>('batting');
   const [sortKey, setSortKey] = useState<keyof MemberCricketStats>('batting_runs');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -316,7 +337,7 @@ export function Leaderboard() {
               <p className="text-sm text-gray-400 mt-1">Run the CricHeroes sync script to populate data</p>
             </div>
           ) : tab === 'overall' ? (
-            <OverallTable players={overallSorted} momCounts={momCounts} />
+            <OverallTable players={overallSorted} momCounts={momCounts} formByMember={formByMember} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -374,6 +395,7 @@ export function Leaderboard() {
                               )}
                             </span>
                             <MOMBadge count={momCounts[player.member_id] || 0} />
+                            <FormDots form={formByMember[player.member_id]} />
                           </div>
                         </td>
                         {cols.map(col => {
@@ -406,7 +428,7 @@ export function Leaderboard() {
   );
 }
 
-function OverallTable({ players, momCounts }: { players: MemberCricketStats[]; momCounts: Record<string, number> }) {
+function OverallTable({ players, momCounts, formByMember }: { players: MemberCricketStats[]; momCounts: Record<string, number>; formByMember: Record<string, FormResult[]> }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -453,6 +475,7 @@ function OverallTable({ players, momCounts }: { players: MemberCricketStats[]; m
                     )}
                     <span className="font-medium text-gray-900 dark:text-white whitespace-nowrap">{name}</span>
                     <MOMBadge count={momCounts[player.member_id] || 0} />
+                    <FormDots form={formByMember[player.member_id]} />
                   </div>
                 </td>
                 <td className="px-3 py-3">

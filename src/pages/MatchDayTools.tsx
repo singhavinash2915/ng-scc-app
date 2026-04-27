@@ -102,6 +102,8 @@ export function MatchDayTools() {
     winning_team: null,
     polling_enabled: false,
     polling_deadline: null,
+    captain_id: null,
+    vice_captain_id: null,
     created_at: new Date().toISOString(),
     players: selectedPlayers.map(memberId => ({
       id: 'temp-' + memberId,

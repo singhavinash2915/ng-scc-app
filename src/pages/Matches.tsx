@@ -95,6 +95,9 @@ export function Matches() {
     // Polling fields
     polling_enabled: false,
     polling_deadline: '',
+    // Leadership
+    captain_id: '' as string,
+    vice_captain_id: '' as string,
   });
 
   // For internal matches - track which team each player is on
@@ -184,6 +187,8 @@ export function Matches() {
           polling_deadline: !isCurrentOrPastDate && formData.polling_enabled && formData.polling_deadline
             ? new Date(formData.polling_deadline).toISOString()
             : null,
+          captain_id: formData.captain_id || null,
+          vice_captain_id: formData.vice_captain_id || null,
         },
         selectedPlayers,
         formData.match_type === 'internal' ? playerTeams : undefined
@@ -214,6 +219,8 @@ export function Matches() {
           other_expenses: formData.other_expenses ? parseFloat(formData.other_expenses) : 0,
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
+          captain_id: formData.captain_id || null,
+          vice_captain_id: formData.vice_captain_id || null,
         },
         selectedPlayers
       );
@@ -286,6 +293,8 @@ export function Matches() {
       winning_team: '',
       polling_enabled: false,
       polling_deadline: '',
+      captain_id: '',
+      vice_captain_id: '',
     });
     setSelectedPlayers([]);
     setPlayerTeams({});
@@ -384,6 +393,8 @@ export function Matches() {
       polling_deadline: match.polling_deadline
         ? new Date(match.polling_deadline).toISOString().slice(0, 16)
         : '',
+      captain_id: match.captain_id || '',
+      vice_captain_id: match.vice_captain_id || '',
     });
     setSelectedPlayers(match.players?.map(p => p.member_id) || []);
     // Restore player teams for internal matches
@@ -627,6 +638,22 @@ export function Matches() {
                         <span>₹{match.match_fee}/player</span>
                       </div>
                     </div>
+                    {(match.captain || match.vice_captain) && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {match.captain && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                            <span className="font-black">🅒</span>
+                            {match.captain.name}
+                          </span>
+                        )}
+                        {match.vice_captain && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                            <span className="font-black">🅥🅒</span>
+                            {match.vice_captain.name}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {match.our_score && (
                       <div className="mt-2 flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-yellow-500" />
@@ -1076,6 +1103,40 @@ export function Matches() {
             rows={2}
           />
 
+          {/* Captain & Vice-captain */}
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
+            <Select
+              label="🅒 Captain"
+              value={formData.captain_id}
+              onChange={(e) => setFormData({ ...formData, captain_id: e.target.value })}
+              options={[
+                { value: '', label: '— Select —' },
+                ...(selectedPlayers.length > 0
+                  ? selectedPlayers.map(pid => {
+                      const m = members.find(mb => mb.id === pid);
+                      return { value: pid, label: m?.name || 'Unknown' };
+                    })
+                  : members.map(m => ({ value: m.id, label: m.name }))
+                ),
+              ]}
+            />
+            <Select
+              label="🅥🅒 Vice-captain"
+              value={formData.vice_captain_id}
+              onChange={(e) => setFormData({ ...formData, vice_captain_id: e.target.value })}
+              options={[
+                { value: '', label: '— Select —' },
+                ...(selectedPlayers.length > 0
+                  ? selectedPlayers.filter(pid => pid !== formData.captain_id).map(pid => {
+                      const m = members.find(mb => mb.id === pid);
+                      return { value: pid, label: m?.name || 'Unknown' };
+                    })
+                  : members.filter(m => m.id !== formData.captain_id).map(m => ({ value: m.id, label: m.name }))
+                ),
+              ]}
+            />
+          </div>
+
           {/* Availability Poll - Only for future matches */}
           {!isCurrentOrPastDate && (
             <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl space-y-3 border border-indigo-200 dark:border-indigo-800">
@@ -1412,6 +1473,40 @@ export function Matches() {
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={2}
           />
+
+          {/* Captain & Vice-captain (Edit) */}
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
+            <Select
+              label="🅒 Captain"
+              value={formData.captain_id}
+              onChange={(e) => setFormData({ ...formData, captain_id: e.target.value })}
+              options={[
+                { value: '', label: '— Select —' },
+                ...(selectedPlayers.length > 0
+                  ? selectedPlayers.map(pid => {
+                      const m = members.find(mb => mb.id === pid);
+                      return { value: pid, label: m?.name || 'Unknown' };
+                    })
+                  : members.map(m => ({ value: m.id, label: m.name }))
+                ),
+              ]}
+            />
+            <Select
+              label="🅥🅒 Vice-captain"
+              value={formData.vice_captain_id}
+              onChange={(e) => setFormData({ ...formData, vice_captain_id: e.target.value })}
+              options={[
+                { value: '', label: '— Select —' },
+                ...(selectedPlayers.length > 0
+                  ? selectedPlayers.filter(pid => pid !== formData.captain_id).map(pid => {
+                      const m = members.find(mb => mb.id === pid);
+                      return { value: pid, label: m?.name || 'Unknown' };
+                    })
+                  : members.filter(m => m.id !== formData.captain_id).map(m => ({ value: m.id, label: m.name }))
+                ),
+              ]}
+            />
+          </div>
 
           {/* Player Selection */}
           <div>

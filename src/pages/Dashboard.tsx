@@ -10,6 +10,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
+import { BirthdayBanner } from '../components/BirthdayBanner';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useRequests } from '../hooks/useRequests';
@@ -211,6 +212,9 @@ export function Dashboard() {
       <Header title="Dashboard" subtitle="Sangria Cricket Club" />
 
       <div className="p-4 lg:p-8 space-y-5">
+
+        {/* ── BIRTHDAY BANNER (only on someone's birthday) ───────────── */}
+        <BirthdayBanner members={members} />
 
         {/* ── LIVE TICKER ──────────────────────────── */}
         {tickerItems.length > 0 && (

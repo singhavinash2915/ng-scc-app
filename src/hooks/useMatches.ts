@@ -22,7 +22,9 @@ export function useMatches() {
             team,
             member:members(id, name, balance, avatar_url)
           ),
-          man_of_match:members!matches_man_of_match_id_fkey(id, name, avatar_url)
+          man_of_match:members!matches_man_of_match_id_fkey(id, name, avatar_url),
+          captain:members!matches_captain_id_fkey(id, name, avatar_url),
+          vice_captain:members!matches_vice_captain_id_fkey(id, name, avatar_url)
         `)
         .order('date', { ascending: false });
 

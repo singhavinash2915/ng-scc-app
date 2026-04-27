@@ -27,6 +27,7 @@ const MatchDayTools= lazy(() => import('./pages/MatchDayTools').then(m => ({ def
 const SeasonFund   = lazy(() => import('./pages/SeasonFund').then(m => ({ default: m.SeasonFund })));
 const AIInsights   = lazy(() => import('./pages/AIInsights').then(m => ({ default: m.AIInsights })));
 const Leaderboard  = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const Records      = lazy(() => import('./pages/Records').then(m => ({ default: m.Records })));
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -89,6 +90,7 @@ const AppRoutes = () => (
         <Route path="/ground-booking" element={<Suspense fallback={<PageLoader />}><SeasonFund /></Suspense>} />
         <Route path="/ai-insights"   element={<Suspense fallback={<PageLoader />}><AIInsights /></Suspense>} />
         <Route path="/leaderboard"   element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
+        <Route path="/records"       element={<Suspense fallback={<PageLoader />}><Records /></Suspense>} />
         <Route path="/payment"       element={<Suspense fallback={<PageLoader />}><Payment /></Suspense>} />
         <Route path="/analytics"     element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
         <Route path="/requests"      element={<Suspense fallback={<PageLoader />}><Requests /></Suspense>} />

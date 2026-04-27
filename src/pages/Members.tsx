@@ -3,7 +3,7 @@ import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { Input, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Badge } from '../components/ui/Badge';
@@ -18,6 +18,19 @@ import type { Member } from '../types';
 // Member access PIN — shared with Ground Booking page
 const MEMBER_PIN = 'scc';
 const PIN_STORAGE_KEY = 'scc-member-access';
+
+// Cricket profile display helpers
+const ROLE_ICON: Record<string, string> = {
+  batsman: '🏏', bowler: '⚡', all_rounder: '🌟', wicket_keeper: '🧤',
+};
+const ROLE_LABEL: Record<string, string> = {
+  batsman: 'Batsman', bowler: 'Bowler', all_rounder: 'All-rounder', wicket_keeper: 'Keeper',
+};
+const BAT_ABBR: Record<string, string> = { right_hand: 'RHB', left_hand: 'LHB' };
+const BOWL_ABBR: Record<string, string> = {
+  right_arm_fast: 'RF', right_arm_medium: 'RM', off_spin: 'OS', leg_spin: 'LS',
+  left_arm_fast: 'LF', left_arm_spin: 'LS', none: '',
+};
 
 export function Members() {
   const { members, loading, addMember, updateMember, deleteMember, addFunds, adjustBalance, uploadAvatar, removeAvatar } = useMembers();
@@ -64,6 +77,10 @@ export function Members() {
     birthday: '',
     status: 'active' as 'active' | 'inactive',
     balance: 0,
+    role: '' as '' | 'batsman' | 'bowler' | 'all_rounder' | 'wicket_keeper',
+    batting_style: '' as '' | 'right_hand' | 'left_hand',
+    bowling_style: '' as '' | 'right_arm_fast' | 'right_arm_medium' | 'off_spin' | 'leg_spin' | 'left_arm_fast' | 'left_arm_spin' | 'none',
+    jersey_number: '',
   });
 
   const [fundAmount, setFundAmount] = useState('');
@@ -133,9 +150,13 @@ export function Members() {
         balance: formData.balance,
         join_date: new Date().toISOString().split('T')[0],
         avatar_url: null,
+        role: formData.role || null,
+        batting_style: formData.batting_style || null,
+        bowling_style: formData.bowling_style || null,
+        jersey_number: formData.jersey_number ? parseInt(formData.jersey_number) : null,
       });
       setShowAddModal(false);
-      setFormData({ name: '', phone: '', email: '', birthday: '', status: 'active', balance: 0 });
+      setFormData({ name: '', phone: '', email: '', birthday: '', status: 'active', balance: 0, role: '', batting_style: '', bowling_style: '', jersey_number: '' });
     } catch (error) {
       console.error('Failed to add member:', error);
     } finally {
@@ -154,6 +175,10 @@ export function Members() {
         phone: formData.phone || null,
         email: formData.email || null,
         birthday: formData.birthday || null,
+        role: formData.role || null,
+        batting_style: formData.batting_style || null,
+        bowling_style: formData.bowling_style || null,
+        jersey_number: formData.jersey_number ? parseInt(formData.jersey_number) : null,
       });
       setShowEditModal(false);
       setSelectedMember(null);
@@ -242,6 +267,10 @@ export function Members() {
       birthday: member.birthday || '',
       status: member.status,
       balance: member.balance,
+      role: member.role || '',
+      batting_style: member.batting_style || '',
+      bowling_style: member.bowling_style || '',
+      jersey_number: member.jersey_number?.toString() || '',
     });
     setShowEditModal(true);
     setMenuOpen(null);
@@ -514,11 +543,35 @@ export function Members() {
                       <User className="w-7 h-7 text-primary-600 dark:text-primary-400" />
                     </div>
                   )}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{member.name}</h3>
-                    <Badge variant={isActive(member.id) ? 'success' : 'default'} size="sm">
-                      {isActive(member.id) ? 'active' : 'inactive'}
-                    </Badge>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">{member.name}</h3>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <Badge variant={isActive(member.id) ? 'success' : 'default'} size="sm">
+                        {isActive(member.id) ? 'active' : 'inactive'}
+                      </Badge>
+                      {member.jersey_number != null && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 tabular-nums">
+                          #{member.jersey_number}
+                        </span>
+                      )}
+                    </div>
+                    {(member.role || member.batting_style || member.bowling_style) && (
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {member.role && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                            <span>{ROLE_ICON[member.role]}</span>
+                            {ROLE_LABEL[member.role]}
+                          </span>
+                        )}
+                        {(member.batting_style || (member.bowling_style && member.bowling_style !== 'none')) && (
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
+                            {member.batting_style && BAT_ABBR[member.batting_style]}
+                            {member.batting_style && member.bowling_style && member.bowling_style !== 'none' && ' · '}
+                            {member.bowling_style && member.bowling_style !== 'none' && BOWL_ABBR[member.bowling_style]}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -598,12 +651,66 @@ export function Members() {
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
-          <Input
-            label="Birthday"
-            type="date"
-            value={formData.birthday}
-            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Birthday"
+              type="date"
+              value={formData.birthday}
+              onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+            />
+            <Input
+              label="Jersey #"
+              type="number"
+              placeholder="e.g. 7"
+              value={formData.jersey_number}
+              onChange={(e) => setFormData({ ...formData, jersey_number: e.target.value })}
+            />
+          </div>
+
+          {/* Cricket player attributes */}
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
+            <Select
+              label="Role"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as typeof formData.role })}
+              options={[
+                { value: '', label: '— Select role —' },
+                { value: 'batsman', label: '🏏 Batsman' },
+                { value: 'bowler', label: '⚡ Bowler' },
+                { value: 'all_rounder', label: '🌟 All-rounder' },
+                { value: 'wicket_keeper', label: '🧤 Wicket-keeper' },
+              ]}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="Batting Style"
+                value={formData.batting_style}
+                onChange={(e) => setFormData({ ...formData, batting_style: e.target.value as typeof formData.batting_style })}
+                options={[
+                  { value: '', label: '—' },
+                  { value: 'right_hand', label: 'Right-hand' },
+                  { value: 'left_hand', label: 'Left-hand' },
+                ]}
+              />
+              <Select
+                label="Bowling Style"
+                value={formData.bowling_style}
+                onChange={(e) => setFormData({ ...formData, bowling_style: e.target.value as typeof formData.bowling_style })}
+                options={[
+                  { value: '', label: '—' },
+                  { value: 'right_arm_fast', label: 'Right-arm Fast' },
+                  { value: 'right_arm_medium', label: 'Right-arm Medium' },
+                  { value: 'off_spin', label: 'Off-spin' },
+                  { value: 'leg_spin', label: 'Leg-spin' },
+                  { value: 'left_arm_fast', label: 'Left-arm Fast' },
+                  { value: 'left_arm_spin', label: 'Left-arm Spin' },
+                  { value: 'none', label: "Doesn't bowl" },
+                ]}
+              />
+            </div>
+          </div>
+
           <Input
             label="Initial Balance (₹)"
             type="number"
@@ -641,12 +748,66 @@ export function Members() {
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
-          <Input
-            label="Birthday"
-            type="date"
-            value={formData.birthday}
-            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Birthday"
+              type="date"
+              value={formData.birthday}
+              onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+            />
+            <Input
+              label="Jersey #"
+              type="number"
+              placeholder="e.g. 7"
+              value={formData.jersey_number}
+              onChange={(e) => setFormData({ ...formData, jersey_number: e.target.value })}
+            />
+          </div>
+
+          {/* Cricket player attributes */}
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
+            <Select
+              label="Role"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as typeof formData.role })}
+              options={[
+                { value: '', label: '— Select role —' },
+                { value: 'batsman', label: '🏏 Batsman' },
+                { value: 'bowler', label: '⚡ Bowler' },
+                { value: 'all_rounder', label: '🌟 All-rounder' },
+                { value: 'wicket_keeper', label: '🧤 Wicket-keeper' },
+              ]}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="Batting Style"
+                value={formData.batting_style}
+                onChange={(e) => setFormData({ ...formData, batting_style: e.target.value as typeof formData.batting_style })}
+                options={[
+                  { value: '', label: '—' },
+                  { value: 'right_hand', label: 'Right-hand' },
+                  { value: 'left_hand', label: 'Left-hand' },
+                ]}
+              />
+              <Select
+                label="Bowling Style"
+                value={formData.bowling_style}
+                onChange={(e) => setFormData({ ...formData, bowling_style: e.target.value as typeof formData.bowling_style })}
+                options={[
+                  { value: '', label: '—' },
+                  { value: 'right_arm_fast', label: 'Right-arm Fast' },
+                  { value: 'right_arm_medium', label: 'Right-arm Medium' },
+                  { value: 'off_spin', label: 'Off-spin' },
+                  { value: 'leg_spin', label: 'Leg-spin' },
+                  { value: 'left_arm_fast', label: 'Left-arm Fast' },
+                  { value: 'left_arm_spin', label: 'Left-arm Spin' },
+                  { value: 'none', label: "Doesn't bowl" },
+                ]}
+              />
+            </div>
+          </div>
+
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)} className="flex-1">
               Cancel

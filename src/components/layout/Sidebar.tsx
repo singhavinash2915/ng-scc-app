@@ -21,6 +21,7 @@ import {
   Landmark,
   Brain,
   ListOrdered,
+  Award,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -34,6 +35,7 @@ const publicNavItems = [
   { to: '/matches', icon: Calendar, label: 'Matches' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
+  { to: '/records', icon: Award, label: 'Hall of Fame' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
   { to: '/payment', icon: CreditCard, label: 'Pay Online' },
