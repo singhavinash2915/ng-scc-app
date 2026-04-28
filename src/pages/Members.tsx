@@ -8,6 +8,7 @@ import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Badge } from '../components/ui/Badge';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
+import { MyProfileModal } from '../components/MyProfileModal';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
@@ -65,6 +66,7 @@ export function Members() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [balanceFilter, setBalanceFilter] = useState<'all' | 'low' | 'critical'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showMyProfileModal, setShowMyProfileModal] = useState(false);
   const [showFundModal, setShowFundModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -416,6 +418,10 @@ export function Members() {
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
+            <Button variant="secondary" onClick={() => setShowMyProfileModal(true)}>
+              <User className="w-4 h-4 mr-2" />
+              My Profile
+            </Button>
             {isAdmin && (
               <Button onClick={() => setShowAddModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -987,6 +993,12 @@ export function Members() {
         onClose={() => setShowWhatsAppModal(false)}
         members={lowBalanceMembers}
         threshold={1000}
+      />
+
+      {/* My Profile Self-Edit Modal */}
+      <MyProfileModal
+        isOpen={showMyProfileModal}
+        onClose={() => setShowMyProfileModal(false)}
       />
 
       {/* Transaction History Modal */}
