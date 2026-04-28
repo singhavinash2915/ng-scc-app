@@ -19,7 +19,32 @@ export interface Member {
   batting_style: BattingStyle | null;
   bowling_style: BowlingStyle | null;
   jersey_number: number | null;
+  membership_expires_at: string | null;
+  membership_tier: 'full' | 'associate' | 'youth' | null;
   created_at: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  type: 'general' | 'match' | 'congrats' | 'urgent';
+  pinned: boolean;
+  expires_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface CustomAward {
+  id: string;
+  member_id: string;
+  award_name: string;
+  description: string | null;
+  season: string | null;
+  icon: string | null;
+  awarded_at: string;
+  created_at: string;
+  member?: Member;
 }
 
 export type MatchType = 'external' | 'internal';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, CalendarDays, Trophy, Wallet, CreditCard, BarChart3, MessageSquare, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Trophy, Wallet, CreditCard, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -69,12 +69,9 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/finance', icon: Wallet, label: 'Finance' },
               { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
               { to: '/payment', icon: CreditCard, label: 'Pay Online' },
-              { to: '/analytics', icon: BarChart3, label: 'Analytics' },
               { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
               { to: '/tournaments', icon: Trophy, label: 'Tournaments' },
               { to: '/about', icon: Info, label: 'About' },
-              { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
-              { to: '/feedback', icon: MessageSquare, label: 'Feedback' },
             ].map((item) => (
               <NavLink
                 key={item.to}
@@ -110,6 +107,21 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 >
                   <Megaphone className="w-5 h-5" />
                   <span className="font-medium">Match Day Tools</span>
+                </NavLink>
+
+                <NavLink
+                  to="/annual-report"
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`
+                  }
+                >
+                  <FileText className="w-5 h-5" />
+                  <span className="font-medium">Annual Report</span>
                 </NavLink>
 
                 <NavLink

@@ -28,6 +28,7 @@ const SeasonFund   = lazy(() => import('./pages/SeasonFund').then(m => ({ defaul
 const AIInsights   = lazy(() => import('./pages/AIInsights').then(m => ({ default: m.AIInsights })));
 const Leaderboard  = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
 const Records      = lazy(() => import('./pages/Records').then(m => ({ default: m.Records })));
+const AnnualReport = lazy(() => import('./pages/AnnualReport').then(m => ({ default: m.AnnualReport })));
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -91,6 +92,7 @@ const AppRoutes = () => (
         <Route path="/ai-insights"   element={<Suspense fallback={<PageLoader />}><AIInsights /></Suspense>} />
         <Route path="/leaderboard"   element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
         <Route path="/records"       element={<Suspense fallback={<PageLoader />}><Records /></Suspense>} />
+        <Route path="/annual-report" element={<Suspense fallback={<PageLoader />}><AnnualReport /></Suspense>} />
         <Route path="/payment"       element={<Suspense fallback={<PageLoader />}><Payment /></Suspense>} />
         <Route path="/analytics"     element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
         <Route path="/requests"      element={<Suspense fallback={<PageLoader />}><Requests /></Suspense>} />

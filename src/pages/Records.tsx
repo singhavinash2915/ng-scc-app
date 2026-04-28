@@ -1,12 +1,21 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Trophy, Crown, Award, Zap, Shield, TrendingUp, TrendingDown,
-  Flame, Star,
+  Flame, Star, Sword, CalendarDays, Plus, X, Trash2,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMatches } from '../hooks/useMatches';
+import { useMembers } from '../hooks/useMembers';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
+import { useHeadToHead } from '../hooks/useHeadToHead';
+import { useCustomAwards } from '../hooks/useCustomAwards';
+import { usePlayerOfPeriod } from '../hooks/usePlayerOfPeriod';
+import { useAuth } from '../context/AuthContext';
+import { Modal } from '../components/ui/Modal';
+import { Input, Select } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import type { Match, MemberCricketStats } from '../types';
 
 // Parse "120/9 (15.0 Ov)" → { runs: 120, wkts: 9 }
@@ -59,8 +68,41 @@ function RecordCard({ icon, label, value, subtitle, gradient, border }: RecordCa
 
 export function Records() {
   const { matches } = useMatches();
+  const { members } = useMembers();
   const { stats } = useCricketStats('2025-26');
   const { counts: momCounts } = useMOMCounts();
+  const { isAdmin } = useAuth();
+  const { awards, addAward, deleteAward } = useCustomAwards();
+  const h2h = useHeadToHead(matches);
+  const { playerOfMonth, playerOfWeek, monthlyHistory } = usePlayerOfPeriod(matches, members, stats);
+
+  const [showAwardModal, setShowAwardModal] = useState(false);
+  const [confirmDelAward, setConfirmDelAward] = useState<string | null>(null);
+  const [submittingAward, setSubmittingAward] = useState(false);
+  const [awardForm, setAwardForm] = useState({
+    member_id: '', award_name: '', description: '', icon: '🌟',
+  });
+
+
+  const handleAddAward = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!awardForm.member_id || !awardForm.award_name.trim()) return;
+    setSubmittingAward(true);
+    try {
+      await addAward({
+        member_id: awardForm.member_id,
+        award_name: awardForm.award_name.trim(),
+        description: awardForm.description.trim() || null,
+        season: '2025-26',
+        icon: awardForm.icon || null,
+        awarded_at: new Date().toISOString().split('T')[0],
+      });
+      setAwardForm({ member_id: '', award_name: '', description: '', icon: '🌟' });
+      setShowAwardModal(false);
+    } finally {
+      setSubmittingAward(false);
+    }
+  };
 
   // ── Team records (from matches table) ────────────────────────────────────
   const teamRecords = useMemo(() => {
@@ -327,10 +369,293 @@ export function Records() {
           </div>
         )}
 
+        {/* ── PLAYERS OF THE WEEK + MONTH (side by side) ─────────────── */}
+        {(playerOfWeek || playerOfMonth) && (
+          <div>
+            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+              <CalendarDays className="w-3.5 h-3.5 text-amber-400" />
+              Players in Form
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Player of the Week */}
+              {playerOfWeek && (
+                <div className="relative overflow-hidden rounded-2xl p-5 lg:p-6 shadow-xl"
+                     style={{ background: 'radial-gradient(400px circle at 0% 0%, rgba(244,114,182,0.3), transparent 50%), linear-gradient(135deg, #831843 0%, #1a0510 60%, #0a1019 100%)' }}>
+                  <div className="absolute inset-0 border border-pink-500/30 rounded-2xl pointer-events-none" />
+                  <div className="absolute -top-12 -right-12 w-44 h-44 bg-pink-400/15 rounded-full blur-3xl" />
+                  <div className="relative flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5 text-pink-300" fill="currentColor" />
+                      <span className="text-pink-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Player of the Week</span>
+                    </div>
+                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-pink-400/15 border border-pink-400/30 text-pink-200 text-[10px] font-black">
+                      <Crown className="w-2.5 h-2.5" fill="currentColor" />
+                      {playerOfWeek.moms}
+                    </span>
+                  </div>
+                  <div className="relative flex items-center gap-4">
+                    {playerOfWeek.member.avatar_url ? (
+                      <img src={playerOfWeek.member.avatar_url} alt=""
+                           className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl object-cover border-2 border-pink-400/40 shadow-xl shadow-pink-500/30 flex-shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-xl shadow-pink-500/30">
+                        <span className="text-2xl font-black text-pink-950">{playerOfWeek.member.name.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-xl lg:text-2xl font-black text-white truncate">{playerOfWeek.member.name}</h3>
+                      <p className="text-pink-200/60 text-xs mt-0.5">{playerOfWeek.matchesPlayedInPeriod} match{playerOfWeek.matchesPlayedInPeriod !== 1 ? 'es' : ''} · last 7 days</p>
+                      {playerOfWeek.tieBroken && (
+                        <p className="text-pink-300/40 text-[10px] mt-1">tie-broken by season MVP score</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Player of the Month */}
+              {playerOfMonth && (
+                <div className="relative overflow-hidden rounded-2xl p-5 lg:p-6 shadow-xl"
+                     style={{ background: 'radial-gradient(400px circle at 0% 0%, rgba(251,191,36,0.25), transparent 50%), linear-gradient(135deg, #78350f 0%, #1a0f05 60%, #0a1019 100%)' }}>
+                  <div className="absolute inset-0 border border-amber-500/30 rounded-2xl pointer-events-none" />
+                  <div className="absolute -top-12 -right-12 w-44 h-44 bg-amber-400/15 rounded-full blur-3xl" />
+                  <div className="relative flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5 text-amber-300" fill="currentColor" />
+                      <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Player of the Month</span>
+                    </div>
+                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-200 text-[10px] font-black">
+                      <Crown className="w-2.5 h-2.5" fill="currentColor" />
+                      {playerOfMonth.moms}
+                    </span>
+                  </div>
+                  <div className="relative flex items-center gap-4">
+                    {playerOfMonth.member.avatar_url ? (
+                      <img src={playerOfMonth.member.avatar_url} alt=""
+                           className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl object-cover border-2 border-amber-400/50 shadow-xl shadow-amber-500/30 flex-shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 border-2 border-amber-400/50 flex items-center justify-center flex-shrink-0 shadow-xl shadow-amber-500/30">
+                        <span className="text-2xl font-black text-yellow-950">{playerOfMonth.member.name.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-xl lg:text-2xl font-black text-white truncate">{playerOfMonth.member.name}</h3>
+                      <p className="text-amber-200/60 text-xs mt-0.5">{playerOfMonth.matchesPlayedInPeriod} match{playerOfMonth.matchesPlayedInPeriod !== 1 ? 'es' : ''} · {playerOfMonth.periodLabel}</p>
+                      {playerOfMonth.tieBroken && (
+                        <p className="text-amber-300/40 text-[10px] mt-1">tie-broken by season MVP score</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 6-month history timeline */}
+            {monthlyHistory.some(m => m.winner) && (
+              <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
+                  <Crown className="w-3 h-3 text-amber-400" fill="currentColor" />
+                  Last 6 Months · Player of the Month
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {monthlyHistory.map(h => (
+                    <div key={h.month}
+                         className="rounded-xl border border-gray-100 dark:border-gray-800 p-2.5 text-center hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{h.monthLabel}</p>
+                      {h.winner ? (
+                        <>
+                          {h.winner.member.avatar_url ? (
+                            <img src={h.winner.member.avatar_url} alt=""
+                                 className="w-9 h-9 rounded-full mx-auto mt-2 object-cover border border-amber-300 dark:border-amber-700" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full mx-auto mt-2 bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center">
+                              <span className="text-xs font-black text-yellow-950">{h.winner.member.name.charAt(0)}</span>
+                            </div>
+                          )}
+                          <p className="text-[11px] font-bold text-gray-800 dark:text-gray-200 mt-1.5 truncate">{h.winner.member.name.split(' ')[0]}</p>
+                          <p className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold">👑 {h.winner.moms}</p>
+                        </>
+                      ) : (
+                        <div className="mt-2 text-[10px] text-gray-300 dark:text-gray-600 italic py-3">—</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── HEAD-TO-HEAD vs every opponent ──────────────────────────── */}
+        {h2h.length > 0 && (
+          <div>
+            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+              <Sword className="w-3.5 h-3.5 text-rose-400" />
+              Head-to-Head Records
+            </h3>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Opponent</th>
+                      <th className="px-3 py-3 text-center text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">P</th>
+                      <th className="px-3 py-3 text-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">W</th>
+                      <th className="px-3 py-3 text-center text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">L</th>
+                      <th className="px-3 py-3 text-center text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">D</th>
+                      <th className="px-3 py-3 text-right text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Win%</th>
+                      <th className="px-3 py-3 text-center text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Last</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {h2h.map(r => (
+                      <tr key={r.opponent} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                        <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white truncate max-w-[200px]">
+                          {r.opponent}
+                        </td>
+                        <td className="px-3 py-3 text-center text-gray-700 dark:text-gray-300 tabular-nums">{r.played}</td>
+                        <td className="px-3 py-3 text-center text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">{r.won}</td>
+                        <td className="px-3 py-3 text-center text-red-600 dark:text-red-400 font-bold tabular-nums">{r.lost}</td>
+                        <td className="px-3 py-3 text-center text-amber-600 dark:text-amber-400 font-bold tabular-nums">{r.drawn}</td>
+                        <td className="px-3 py-3 text-right">
+                          <span className={`inline-block w-12 text-center px-2 py-0.5 rounded-full text-xs font-bold tabular-nums ${
+                            r.winRate >= 60 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                            : r.winRate >= 40 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                          }`}>{r.winRate}%</span>
+                        </td>
+                        <td className="px-3 py-3 text-center hidden sm:table-cell">
+                          {r.lastResult && (
+                            <span className={`inline-block w-6 h-6 rounded-md text-[10px] font-black text-white leading-6 ${
+                              r.lastResult === 'won' ? 'bg-emerald-500'
+                              : r.lastResult === 'lost' ? 'bg-red-500'
+                              : 'bg-amber-500'
+                            }`} title={r.lastDate || ''}>
+                              {r.lastResult === 'won' ? 'W' : r.lastResult === 'lost' ? 'L' : 'D'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CUSTOM AWARDS ───────────────────────────────────────────── */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
+              <Award className="w-3.5 h-3.5 text-violet-400" />
+              Custom Awards
+            </h3>
+            {isAdmin && (
+              <button
+                onClick={() => setShowAwardModal(true)}
+                className="text-xs text-primary-600 dark:text-primary-400 flex items-center gap-1 font-semibold hover:text-primary-700"
+              >
+                <Plus className="w-3.5 h-3.5" /> Grant Award
+              </button>
+            )}
+          </div>
+          {awards.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-400 dark:text-gray-500">
+              {isAdmin ? 'No custom awards yet. Click "+ Grant Award" to recognise a player.' : 'No custom awards yet.'}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {awards.map(a => (
+                <div key={a.id} className="relative overflow-hidden rounded-2xl p-5 group"
+                     style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #0a1019 100%)' }}>
+                  <div className="absolute inset-0 border border-violet-500/25 rounded-2xl pointer-events-none" />
+                  <div className="relative flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-violet-500/20 border border-violet-400/40 flex items-center justify-center flex-shrink-0 text-2xl">
+                      {a.icon || '🌟'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-violet-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">{a.award_name}</p>
+                      {a.member && (
+                        <h4 className="text-sm font-black text-white mt-0.5 truncate">{a.member.name}</h4>
+                      )}
+                      {a.description && (
+                        <p className="text-[11px] text-gray-400 truncate mt-0.5">{a.description}</p>
+                      )}
+                    </div>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setConfirmDelAward(a.id)}
+                        className="p-1.5 rounded-md text-red-300 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <p className="text-xs text-gray-400 text-center pt-4">
           Records derived from match results & CricHeroes-synced player stats · Season 2025–26
         </p>
       </div>
+
+      {/* Grant award modal */}
+      <Modal isOpen={showAwardModal} onClose={() => setShowAwardModal(false)} title="Grant Custom Award">
+        <form onSubmit={handleAddAward} className="space-y-4">
+          <Select
+            label="Player *"
+            value={awardForm.member_id}
+            onChange={e => setAwardForm({ ...awardForm, member_id: e.target.value })}
+            options={[
+              { value: '', label: '— Select player —' },
+              ...members.map(m => ({ value: m.id, label: m.name })),
+            ]}
+          />
+          <Input
+            label="Award Name *"
+            placeholder="e.g. Best Improved Player"
+            value={awardForm.award_name}
+            onChange={e => setAwardForm({ ...awardForm, award_name: e.target.value })}
+            required
+          />
+          <Input
+            label="Icon (emoji)"
+            placeholder="🌟"
+            value={awardForm.icon}
+            onChange={e => setAwardForm({ ...awardForm, icon: e.target.value })}
+          />
+          <Input
+            label="Description (optional)"
+            placeholder="e.g. for outstanding contribution this season"
+            value={awardForm.description}
+            onChange={e => setAwardForm({ ...awardForm, description: e.target.value })}
+          />
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setShowAwardModal(false)} className="flex-1">
+              <X className="w-4 h-4 mr-1.5" /> Cancel
+            </Button>
+            <Button type="submit" loading={submittingAward} className="flex-1">
+              Grant Award
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmModal
+        isOpen={!!confirmDelAward}
+        onClose={() => setConfirmDelAward(null)}
+        onConfirm={async () => {
+          if (confirmDelAward) await deleteAward(confirmDelAward);
+          setConfirmDelAward(null);
+        }}
+        title="Remove award?"
+        message="This will permanently remove the award from this player."
+        confirmLabel="Remove"
+      />
     </div>
   );
 }

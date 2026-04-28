@@ -11,12 +11,16 @@ import { CalendarWidget } from '../components/CalendarWidget';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
 import { BirthdayBanner } from '../components/BirthdayBanner';
+import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
+import { AnnouncementWall } from '../components/AnnouncementWall';
+import { useWeather } from '../hooks/useWeather';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useRequests } from '../hooks/useRequests';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useCricketStats } from '../hooks/useCricketStats';
+import { usePlayerOfPeriod } from '../hooks/usePlayerOfPeriod';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useMonthSummary } from '../hooks/useMonthSummary';
 import { useAuth } from '../context/AuthContext';
@@ -54,6 +58,10 @@ export function Dashboard() {
   const { counts: momCounts } = useMOMCounts();
   const monthSummary = useMonthSummary();
   const { stats: cricketStats } = useCricketStats('2025-26');
+  const { playerOfMonth, playerOfWeek } = usePlayerOfPeriod(matches, members, cricketStats);
+  // If a match was played in the last 7 days, show "of the Week"; else "of the Month"
+  const featuredPlayer = playerOfWeek || playerOfMonth;
+  const featuredLabel = playerOfWeek ? 'Player of the Week' : 'Player of the Month';
   const { isAdmin } = useAuth();
   const { getPendingCount } = useRequests();
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -144,21 +152,6 @@ export function Dashboard() {
     );
   }, [matches]);
 
-  // Season MVP — cricket stats + MOM count combined
-  const seasonMVP = useMemo(() => {
-    if (!cricketStats.length) return null;
-    const score = (s: typeof cricketStats[0]) =>
-      s.batting_runs + s.bowling_wickets * 20 +
-      (s.fielding_catches + s.fielding_stumpings + s.fielding_run_outs) * 10;
-    const top = [...cricketStats].sort((a, b) => score(b) - score(a))[0];
-    if (!top) return null;
-    return {
-      stats: top,
-      points: score(top),
-      moms: momCounts[top.member_id] || 0,
-      member: members.find(m => m.id === top.member_id),
-    };
-  }, [cricketStats, momCounts, members]);
 
   // Live ticker items
   const tickerItems = useMemo(() => {
@@ -182,6 +175,7 @@ export function Dashboard() {
   }, [nextUpcomingMatch, topMOMs, streak, lastCompletedMatch]);
 
   const countdown = useCountdown(nextUpcomingMatch ? nextUpcomingMatch.date : null);
+  const { forecast: matchWeather } = useWeather(nextUpcomingMatch?.date || null);
 
   const animatedMembers = useAnimatedValue(stats.activeMembers, 800);
   const animatedFunds = useAnimatedValue(stats.totalFunds, 1200);
@@ -215,6 +209,9 @@ export function Dashboard() {
 
         {/* ── BIRTHDAY BANNER (only on someone's birthday) ───────────── */}
         <BirthdayBanner members={members} />
+
+        {/* ── RENEWAL REMINDER (only when memberships are expiring) ──── */}
+        <RenewalReminderBanner members={members} />
 
         {/* ── LIVE TICKER ──────────────────────────── */}
         {tickerItems.length > 0 && (
@@ -277,6 +274,16 @@ export function Dashboard() {
                   <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />
                     {new Date(nextUpcomingMatch.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
+                  {matchWeather && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/8 border border-white/15 text-white"
+                          title={`${matchWeather.label} · ${matchWeather.precipitation}% rain probability`}>
+                      <span>{matchWeather.emoji}</span>
+                      <span className="font-semibold tabular-nums">{matchWeather.tempMax}°/{matchWeather.tempMin}°</span>
+                      {matchWeather.precipitation >= 30 && (
+                        <span className="text-blue-300 text-[10px] font-bold">· {matchWeather.precipitation}% rain</span>
+                      )}
+                    </span>
+                  )}
                 </div>
                 <div className="flex gap-2 mt-5 relative">
                   {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
@@ -460,44 +467,36 @@ export function Dashboard() {
             </div>
           )}
 
-          {/* Season MVP (2x1) */}
-          {seasonMVP && seasonMVP.member && (
+          {/* Player of the Month / Week (2x1) */}
+          {featuredPlayer && (
             <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
-                 style={{ background: 'radial-gradient(300px circle at 0% 0%, rgba(251,191,36,0.2), transparent 55%), linear-gradient(135deg, #78350f 0%, #1a0f05 55%, #0a1019 100%)' }}>
-              <div className="absolute inset-0 border border-amber-500/30 rounded-2xl pointer-events-none" />
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-amber-400/10 rounded-full blur-2xl" />
+                 style={{ background: 'radial-gradient(300px circle at 0% 0%, rgba(244,114,182,0.25), transparent 55%), linear-gradient(135deg, #831843 0%, #1a0510 55%, #0a1019 100%)' }}>
+              <div className="absolute inset-0 border border-pink-500/30 rounded-2xl pointer-events-none" />
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-pink-400/15 rounded-full blur-2xl" />
               <div className="flex items-center justify-between mb-2 relative">
                 <div className="flex items-center gap-1.5">
-                  <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
-                  <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Season MVP</span>
+                  <Crown className="w-3.5 h-3.5 text-pink-300" fill="currentColor" />
+                  <span className="text-pink-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">{featuredLabel}</span>
                 </div>
-                {seasonMVP.moms > 0 && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[10px] font-black">
-                    <Crown className="w-2.5 h-2.5" fill="currentColor" />
-                    {seasonMVP.moms}
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-pink-400/15 border border-pink-400/30 text-pink-200 text-[10px] font-black">
+                  <Crown className="w-2.5 h-2.5" fill="currentColor" />
+                  {featuredPlayer.moms} MOM{featuredPlayer.moms > 1 ? 's' : ''}
+                </span>
               </div>
               <div className="flex items-center gap-3 relative">
-                {seasonMVP.member.avatar_url ? (
-                  <img src={seasonMVP.member.avatar_url} alt="" className="w-12 h-12 rounded-xl object-cover border-2 border-amber-400/40 shadow-lg shadow-amber-500/30 flex-shrink-0" />
+                {featuredPlayer.member.avatar_url ? (
+                  <img src={featuredPlayer.member.avatar_url} alt="" className="w-14 h-14 rounded-xl object-cover border-2 border-pink-400/40 shadow-lg shadow-pink-500/30 flex-shrink-0" />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 border-2 border-amber-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/30">
-                    <span className="text-lg font-black text-yellow-950">{seasonMVP.member.name.charAt(0)}</span>
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-pink-500/30">
+                    <span className="text-xl font-black text-pink-950">{featuredPlayer.member.name.charAt(0)}</span>
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-white tabular-nums leading-none"
-                          style={{ background: 'linear-gradient(180deg, #fff, #fde68a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                      {seasonMVP.points}
-                    </span>
-                    <span className="text-amber-300/60 text-[9px] uppercase tracking-widest font-bold">pts</span>
-                  </div>
-                  <div className="text-sm font-bold text-white truncate">{seasonMVP.member.name}</div>
-                  <div className="text-[10px] text-amber-200/50">
-                    {seasonMVP.stats.batting_runs}R · {seasonMVP.stats.bowling_wickets}W · {seasonMVP.stats.fielding_catches + seasonMVP.stats.fielding_stumpings + seasonMVP.stats.fielding_run_outs}C
-                  </div>
+                  <div className="text-lg font-black text-white truncate leading-tight">{featuredPlayer.member.name}</div>
+                  <div className="text-[10px] text-pink-200/60 mt-0.5 font-semibold">{featuredPlayer.periodLabel}</div>
+                  {featuredPlayer.tieBroken && (
+                    <div className="text-[9px] text-pink-300/40 mt-0.5">tie-broken by season MVP score</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -588,6 +587,9 @@ export function Dashboard() {
 
         {/* ── SQUAD POLL ──────────────────────────── */}
         <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
+
+        {/* ── ANNOUNCEMENT WALL ───────────────────── */}
+        <AnnouncementWall />
 
         {/* ── INTERNAL BATTLE ─────────────────────── */}
         {internalMatchStats.total > 0 && (

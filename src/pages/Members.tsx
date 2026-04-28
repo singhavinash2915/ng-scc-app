@@ -81,6 +81,8 @@ export function Members() {
     batting_style: '' as '' | 'right_hand' | 'left_hand',
     bowling_style: '' as '' | 'right_arm_fast' | 'right_arm_medium' | 'off_spin' | 'leg_spin' | 'left_arm_fast' | 'left_arm_spin' | 'none',
     jersey_number: '',
+    membership_expires_at: '',
+    membership_tier: '' as '' | 'full' | 'associate' | 'youth',
   });
 
   const [fundAmount, setFundAmount] = useState('');
@@ -154,9 +156,11 @@ export function Members() {
         batting_style: formData.batting_style || null,
         bowling_style: formData.bowling_style || null,
         jersey_number: formData.jersey_number ? parseInt(formData.jersey_number) : null,
+        membership_expires_at: formData.membership_expires_at || null,
+        membership_tier: formData.membership_tier || null,
       });
       setShowAddModal(false);
-      setFormData({ name: '', phone: '', email: '', birthday: '', status: 'active', balance: 0, role: '', batting_style: '', bowling_style: '', jersey_number: '' });
+      setFormData({ name: '', phone: '', email: '', birthday: '', status: 'active', balance: 0, role: '', batting_style: '', bowling_style: '', jersey_number: '', membership_expires_at: '', membership_tier: '' });
     } catch (error) {
       console.error('Failed to add member:', error);
     } finally {
@@ -179,6 +183,8 @@ export function Members() {
         batting_style: formData.batting_style || null,
         bowling_style: formData.bowling_style || null,
         jersey_number: formData.jersey_number ? parseInt(formData.jersey_number) : null,
+        membership_expires_at: formData.membership_expires_at || null,
+        membership_tier: formData.membership_tier || null,
       });
       setShowEditModal(false);
       setSelectedMember(null);
@@ -271,6 +277,8 @@ export function Members() {
       batting_style: member.batting_style || '',
       bowling_style: member.bowling_style || '',
       jersey_number: member.jersey_number?.toString() || '',
+      membership_expires_at: member.membership_expires_at || '',
+      membership_tier: member.membership_tier || '',
     });
     setShowEditModal(true);
     setMenuOpen(null);
@@ -711,6 +719,27 @@ export function Members() {
             </div>
           </div>
 
+          {/* Membership tier + renewal */}
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Membership Tier"
+              value={formData.membership_tier}
+              onChange={(e) => setFormData({ ...formData, membership_tier: e.target.value as typeof formData.membership_tier })}
+              options={[
+                { value: '', label: '—' },
+                { value: 'full', label: 'Full Member' },
+                { value: 'associate', label: 'Associate' },
+                { value: 'youth', label: 'Youth' },
+              ]}
+            />
+            <Input
+              label="Renewal Date"
+              type="date"
+              value={formData.membership_expires_at}
+              onChange={(e) => setFormData({ ...formData, membership_expires_at: e.target.value })}
+            />
+          </div>
+
           <Input
             label="Initial Balance (₹)"
             type="number"
@@ -806,6 +835,27 @@ export function Members() {
                 ]}
               />
             </div>
+          </div>
+
+          {/* Membership tier + renewal */}
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Membership Tier"
+              value={formData.membership_tier}
+              onChange={(e) => setFormData({ ...formData, membership_tier: e.target.value as typeof formData.membership_tier })}
+              options={[
+                { value: '', label: '—' },
+                { value: 'full', label: 'Full Member' },
+                { value: 'associate', label: 'Associate' },
+                { value: 'youth', label: 'Youth' },
+              ]}
+            />
+            <Input
+              label="Renewal Date"
+              type="date"
+              value={formData.membership_expires_at}
+              onChange={(e) => setFormData({ ...formData, membership_expires_at: e.target.value })}
+            />
           </div>
 
           <div className="flex gap-3 pt-4">

@@ -4,17 +4,14 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
-  CalendarDays,
   Trophy,
   Wallet,
-  BarChart3,
   UserPlus,
   Settings,
   Shield,
   LogOut,
   Lock,
   Info,
-  MessageSquare,
   CreditCard,
   Receipt,
   Megaphone,
@@ -22,6 +19,7 @@ import {
   Brain,
   ListOrdered,
   Award,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -39,16 +37,14 @@ const publicNavItems = [
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
   { to: '/payment', icon: CreditCard, label: 'Pay Online' },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
   { to: '/tournaments', icon: Trophy, label: 'Tournaments' },
   { to: '/about', icon: Info, label: 'About' },
-  { to: '/calendar', icon: CalendarDays, label: 'Calendar' },
-  { to: '/feedback', icon: MessageSquare, label: 'Feedback' },
 ];
 
 const adminNavItems = [
   { to: '/match-day-tools', icon: Megaphone, label: 'Match Day Tools' },
+  { to: '/annual-report', icon: FileText, label: 'Annual Report' },
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
