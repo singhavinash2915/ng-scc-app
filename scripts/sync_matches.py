@@ -41,7 +41,7 @@ CH_PLAYER_NAMES = {
     3142063: "Honey Porwal", 30974333: "Mayank Nayak", 26805965: "Nikhil",
     4842518: "Niraj Parmeshwar", 16794243: "Piyush Pankaj", 16937743: "Prateek Singh",
     6100183: "Pratik Patil", 15337300: "Rajat", 30406057: "Raushan",
-    33275197: "Rishi Gupta", 26739447: "Ritik Lodha", 3954444: "Rohan Kumar Rao",
+    33275197: "Rishi Gupta", 26739447: "Ritik Lodha", 3954444: "Rohan Rao",
     14464945: "Saurabh Lele", 4541847: "Shakhil Srivastava", 34079971: "Shubham Chavhan",
     26805068: "Shubham Garethiya", 29767342: "Shubham Patil",
     26769030: "Soumyaranjan Mohapatra", 26869497: "Sudhakar Dama", 5536842: "Sushil Yadav",
