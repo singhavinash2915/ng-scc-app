@@ -33,7 +33,7 @@ SYNC_FUTURE_DAYS = 60
 
 # ── CricHeroes player_id → SCC member name (for MOM mapping) ──────────────────
 CH_PLAYER_NAMES = {
-    680643: "Shaan Shaikh", 3855641: "Avinash Singh", 26474497: "Adarsh Dwivedi",
+    680643: "Shaan Shaikh", 3855641: "Avinash", 26474497: "Adarsh Dwivedi",
     5447632: "Aaditya Jaiswal", 20844962: "Aditya Purohit", 1450076: "Ajinkya Gharpure",
     4391800: "Akash Jadhav", 30975147: "Anand", 26769238: "Animesh Saxena",
     14518769: "Aprmay Kumar", 2793490: "Arpan Thakur", 36043018: "Bharat Mishra",
@@ -51,6 +51,11 @@ CH_PLAYER_NAMES = {
 
 # Populated at startup from Supabase: lowercased member name → member UUID
 MEMBER_NAME_TO_ID = {}
+
+# Set by --update-mom CLI flag. When True, CH's MOM overwrites the existing
+# value in Supabase (default behaviour: only fill in missing MOMs, never
+# overwrite — protects admin's manual picks).
+FORCE_UPDATE_MOM = False
 
 def ch_headers():
     return {
@@ -85,13 +90,41 @@ def innings_score(all_innings, team_id):
     return None
 
 def resolve_mom_member_id(pom_player_id):
-    """CricHeroes pom_player_id → Supabase member UUID (or None if not found)."""
+    """CricHeroes pom_player_id → Supabase member UUID (or None if not found).
+
+    Lookup strategy (in order):
+      1. Exact name match (lowercased)
+      2. First-name match (Supabase has "Avinash" but CH map has "Avinash Singh")
+      3. Last-name match (rare, but covers "AKASH JADHAV" vs "Akash")
+    """
     if not pom_player_id:
         return None
     ch_name = CH_PLAYER_NAMES.get(pom_player_id)
     if not ch_name:
         return None
-    return MEMBER_NAME_TO_ID.get(ch_name.lower().strip())
+
+    norm = ch_name.lower().strip()
+    # 1. Exact match
+    if norm in MEMBER_NAME_TO_ID:
+        return MEMBER_NAME_TO_ID[norm]
+
+    # 2. First-name fallback (Supabase has only "Avinash"; CH map has "Avinash Singh")
+    parts = norm.split()
+    if parts and parts[0] in MEMBER_NAME_TO_ID:
+        return MEMBER_NAME_TO_ID[parts[0]]
+
+    # 3. Last-name fallback
+    if len(parts) > 1 and parts[-1] in MEMBER_NAME_TO_ID:
+        return MEMBER_NAME_TO_ID[parts[-1]]
+
+    # 4. Substring fallback — any Supabase name that starts with the CH first name
+    if parts:
+        first = parts[0]
+        for member_name, member_id in MEMBER_NAME_TO_ID.items():
+            if member_name.split()[0] == first:
+                return member_id
+
+    return None
 
 def parse_ch_match(m):
     """Convert CricHeroes match → Supabase matches row."""
@@ -314,9 +347,15 @@ def upsert_match(row):
         if existing.get('opponent') != row.get('opponent') and row.get('opponent'):
             update['opponent'] = row['opponent']
 
-    # Backfill Man of the Match if missing (never overwrite a manually-set one)
-    if not existing.get('man_of_match_id') and row.get('man_of_match_id'):
-        update['man_of_match_id'] = row['man_of_match_id']
+    # Man of the Match handling:
+    #   - Default: only fill in if missing (preserves admin's manual picks)
+    #   - With --update-mom: overwrite from CricHeroes whenever CH has one
+    #     (use when CH later updates the MOM after the match was scored)
+    if row.get('man_of_match_id'):
+        if not existing.get('man_of_match_id'):
+            update['man_of_match_id'] = row['man_of_match_id']
+        elif FORCE_UPDATE_MOM and existing.get('man_of_match_id') != row.get('man_of_match_id'):
+            update['man_of_match_id'] = row['man_of_match_id']
 
     if update:
         code2, _ = sb_call("PATCH", "matches", body=update, params=f"id=eq.{existing['id']}")
@@ -334,13 +373,20 @@ def load_supabase_members():
     return len(MEMBER_NAME_TO_ID)
 
 def main():
+    global FORCE_UPDATE_MOM
     parser = argparse.ArgumentParser(description='Sync CricHeroes matches → Supabase')
     parser.add_argument('--past-days', type=int, default=SYNC_PAST_DAYS,
                         help='How many past days to include (default 0 = upcoming only). '
                              'Use a larger value to backfill historic data.')
     parser.add_argument('--future-days', type=int, default=SYNC_FUTURE_DAYS,
                         help='How many future days to fetch (default 60).')
+    parser.add_argument('--update-mom', action='store_true',
+                        help='Overwrite the existing Man of the Match in Supabase with '
+                             'whatever CricHeroes currently has. Use this when CH updates '
+                             'a match\'s MOM after it was already synced. Default: never '
+                             'overwrites (only fills missing MOMs).')
     args = parser.parse_args()
+    FORCE_UPDATE_MOM = args.update_mom
 
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
     print(f"[{now}] Starting CricHeroes → Supabase match sync...")
