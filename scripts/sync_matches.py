@@ -254,18 +254,28 @@ def same_team(a, b):
     return bool(pa and pb and pa[:4] == pb[:4] and len(pa) >= 4)
 
 def find_existing(ch_id, date, opponent):
-    """Find existing match by ch_match_id, or fuzzy date+opponent match."""
+    """Find existing match by ch_match_id, or fuzzy date+opponent match.
+
+    For the fuzzy step, we deliberately SKIP rows that already have a
+    different ch_match_id assigned. Otherwise a same-day doubleheader
+    against the same team (e.g. two matches vs The Renegades on May 2)
+    would conflate the second sync into the first row.
+    """
     # 1. Exact match by ch_match_id (fastest, always wins)
     code, data = sb_call("GET", "matches",
                           params=f"ch_match_id=eq.{ch_id}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id")
     if code == 200 and data:
         return data[0]
 
-    # 2. Fetch ALL matches on this date; fuzzy-match opponent in Python
+    # 2. Fetch matches on this date; fuzzy-match opponent in Python — but
+    # only against rows whose ch_match_id is null (i.e. unlinked manual
+    # entries). Rows with a different ch_match_id are different matches.
     code2, data2 = sb_call("GET", "matches",
                             params=f"date=eq.{date}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id")
     if code2 == 200 and data2:
         for row in data2:
+            if row.get('ch_match_id'):
+                continue  # already linked to a different CH match — don't conflate
             if same_team(row.get('opponent', ''), opponent):
                 return row
     return None
