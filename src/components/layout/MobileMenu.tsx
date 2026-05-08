@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Trophy, Wallet, CreditCard, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Trophy, Wallet, CreditCard, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Gavel } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -107,6 +107,21 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 >
                   <Megaphone className="w-5 h-5" />
                   <span className="font-medium">Match Day Tools</span>
+                </NavLink>
+
+                <NavLink
+                  to="/auction"
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`
+                  }
+                >
+                  <Gavel className="w-5 h-5" />
+                  <span className="font-medium">Auction</span>
                 </NavLink>
 
                 <NavLink

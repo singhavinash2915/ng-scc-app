@@ -20,6 +20,7 @@ import {
   ListOrdered,
   Award,
   FileText,
+  Gavel,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -44,6 +45,7 @@ const publicNavItems = [
 
 const adminNavItems = [
   { to: '/match-day-tools', icon: Megaphone, label: 'Match Day Tools' },
+  { to: '/auction', icon: Gavel, label: 'Auction' },
   { to: '/annual-report', icon: FileText, label: 'Annual Report' },
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
   { to: '/settings', icon: Settings, label: 'Settings' },
