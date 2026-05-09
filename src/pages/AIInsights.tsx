@@ -6,6 +6,7 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useTournaments } from '../hooks/useTournaments';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useAIInsight } from '../hooks/useAIInsight';
+import { useScorecardHighlights } from '../hooks/useScorecardHighlights';
 import { AIInsightCard } from '../components/AIInsightCard';
 import { CricketIdentityCard } from '../components/CricketIdentityCard';
 import { Card } from '../components/ui/Card';
@@ -20,6 +21,7 @@ export function AIInsights() {
   const { tournaments } = useTournaments();
   const { stats, getLeaderboard } = useCricketStats();
   const { generateInsight, error: aiError } = useAIInsight();
+  const { matchHighlights, seasonRecords, playerCareerBests } = useScorecardHighlights();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [selectedMember, setSelectedMember] = useState<string>('');
@@ -218,6 +220,11 @@ export function AIInsights() {
       tournamentsPlayed: tournamentsData.length,
     };
 
+    // Compact scorecard summaries (only most recent 50 matches to keep prompt size sane)
+    const recentMatchHighlights = matchHighlights.slice(0, 50);
+    // Top 30 players by season runs — covers all active SCC members
+    const topCareerStats = playerCareerBests.slice(0, 30);
+
     const result = await generateInsight('club_chat', {
       question: userMsg,
       clubSummary,
@@ -227,6 +234,12 @@ export function AIInsights() {
       momLeaderboard,
       recentTransactions: recentTxns,
       tournaments: tournamentsData,
+      // ── NEW: detailed scorecard data (synced from CricHeroes per match) ──
+      // Use these to answer questions about specific matches, individual
+      // batting/bowling performances, season records, and player bests.
+      matchHighlights: recentMatchHighlights,  // [{date, scores, best_batter, best_bowler, ...}]
+      seasonRecords,                            // highest individual, best bowling, highest team total, lowest all-out
+      playerCareerBests: topCareerStats,        // [{name, highest_score, best_bowling, total_runs, total_wickets}]
     });
 
     setChatMessages(prev => [...prev, { role: 'ai', text: result || 'Sorry, I could not generate a response.' }]);

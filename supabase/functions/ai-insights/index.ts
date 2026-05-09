@@ -131,9 +131,12 @@ IMPORTANT RULES:
 - Use actual numbers from the data, never make up stats
 - For financial questions, use recentTransactions and clubFinancials
 - For match history, use allMatches (internal SCC records) or chMatches (full CricHeroes history)
-- For player cricket stats (runs, wickets, averages), use allMembers[*].cricketStats
+- For SEASON cricket stats (totals over the season), use allMembers[*].cricketStats
+- For PER-MATCH stats (e.g. "what did Avinash score on May 7?"), use matchHighlights — each entry has the date, scores, best_batter and best_bowler for that match
+- For PLAYER career bests this season (highest score, best bowling figures), use playerCareerBests
+- For SEASON RECORDS (highest individual score, best bowling, highest team total, lowest all-out), use seasonRecords
+- For MOM tally / leaderboard, use momLeaderboard
 - For tournament questions, use tournaments
-- For "last month" / "recent" match questions, filter chMatches by date
 
 CLUB SUMMARY & FINANCIALS:
 ${JSON.stringify(data.clubSummary)}
@@ -146,6 +149,18 @@ ${JSON.stringify(data.allMatches)}
 
 CRICHEROES FULL MATCH HISTORY (${data.chMatches?.length ?? 0} matches, most recent first):
 ${JSON.stringify(data.chMatches?.slice(0, 80))}
+
+PER-MATCH HIGHLIGHTS — best batter & best bowler from CricHeroes scorecards for the most recent ${data.matchHighlights?.length ?? 0} matches:
+${JSON.stringify(data.matchHighlights)}
+
+SEASON RECORDS (highest individual score, best bowling, highest team total, lowest all-out):
+${JSON.stringify(data.seasonRecords)}
+
+PLAYER CAREER BESTS THIS SEASON (sorted by total runs, top ${data.playerCareerBests?.length ?? 0} players):
+${JSON.stringify(data.playerCareerBests)}
+
+MOM LEADERBOARD:
+${JSON.stringify(data.momLeaderboard)}
 
 RECENT TRANSACTIONS (last 50):
 ${JSON.stringify(data.recentTransactions)}

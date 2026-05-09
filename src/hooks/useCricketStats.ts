@@ -2,7 +2,23 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { MemberCricketStats } from '../types';
 
-export function useCricketStats(season = '2025-26') {
+// Helper: compare two "5/14"-style bowling figures and return the better one.
+// Better = more wickets, tie-broken by fewer runs.
+function pickBetterBowling(a: string | null, b: string | null): string {
+  if (!a) return b || '';
+  if (!b) return a;
+  const pa = a.match(/(\d+)\/(\d+)/);
+  const pb = b.match(/(\d+)\/(\d+)/);
+  if (!pa) return b;
+  if (!pb) return a;
+  const aw = parseInt(pa[1]), ar = parseInt(pa[2]);
+  const bw = parseInt(pb[1]), br = parseInt(pb[2]);
+  if (bw > aw) return b;
+  if (bw === aw && br < ar) return b;
+  return a;
+}
+
+export function useCricketStats(season: string = '2025-26') {
   const [stats, setStats] = useState<MemberCricketStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -10,14 +26,79 @@ export function useCricketStats(season = '2025-26') {
   const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('member_cricket_stats')
-        .select('*, member:members(id, name, avatar_url, matches_played)')
-        .eq('season', season)
-        .order('batting_runs', { ascending: false });
 
-      if (error) throw error;
-      setStats(data || []);
+      if (season === 'all') {
+        // Aggregate all seasons by summing per-member rows
+        const { data, error } = await supabase
+          .from('member_cricket_stats')
+          .select('*, member:members(id, name, avatar_url, matches_played)')
+          .order('batting_runs', { ascending: false });
+        if (error) throw error;
+
+        const byMember: Record<string, MemberCricketStats> = {};
+        for (const row of (data || []) as MemberCricketStats[]) {
+          const existing = byMember[row.member_id];
+          if (!existing) {
+            byMember[row.member_id] = { ...row, season: 'all' };
+            continue;
+          }
+          // Sum the totals; for averages/SR/best-of, recompute or pick the better
+          const merged: MemberCricketStats = {
+            ...existing,
+            batting_matches: existing.batting_matches + row.batting_matches,
+            batting_innings: existing.batting_innings + row.batting_innings,
+            batting_runs: existing.batting_runs + row.batting_runs,
+            batting_fours: existing.batting_fours + row.batting_fours,
+            batting_sixes: existing.batting_sixes + row.batting_sixes,
+            batting_fifties: existing.batting_fifties + row.batting_fifties,
+            batting_hundreds: existing.batting_hundreds + row.batting_hundreds,
+            batting_ducks: existing.batting_ducks + row.batting_ducks,
+            // Highest score: take the max
+            batting_highest_score: Math.max(existing.batting_highest_score || 0, row.batting_highest_score || 0),
+            bowling_innings: existing.bowling_innings + row.bowling_innings,
+            bowling_overs: existing.bowling_overs + row.bowling_overs,
+            bowling_runs_conceded: existing.bowling_runs_conceded + row.bowling_runs_conceded,
+            bowling_wickets: existing.bowling_wickets + row.bowling_wickets,
+            bowling_five_wickets: existing.bowling_five_wickets + row.bowling_five_wickets,
+            // Best bowling: keep best of two strings ("5/14" vs "4/22") — quick parse
+            bowling_best_figures: pickBetterBowling(existing.bowling_best_figures, row.bowling_best_figures),
+            fielding_catches: existing.fielding_catches + row.fielding_catches,
+            fielding_stumpings: existing.fielding_stumpings + row.fielding_stumpings,
+            fielding_run_outs: existing.fielding_run_outs + row.fielding_run_outs,
+          };
+          // Recompute averages — batting average = runs / innings (treating not-outs roughly)
+          merged.batting_average = merged.batting_innings > 0
+            ? Math.round((merged.batting_runs / merged.batting_innings) * 100) / 100
+            : 0;
+          // Strike rate weighted by total runs across all seasons
+          const totalSeasonRunsExisting = existing.batting_runs;
+          const totalSeasonRunsRow = row.batting_runs;
+          const totalRuns = totalSeasonRunsExisting + totalSeasonRunsRow;
+          merged.batting_strike_rate = totalRuns > 0
+            ? ((existing.batting_strike_rate * totalSeasonRunsExisting) + (row.batting_strike_rate * totalSeasonRunsRow)) / totalRuns
+            : 0;
+          merged.batting_strike_rate = Math.round(merged.batting_strike_rate * 100) / 100;
+          merged.bowling_economy = merged.bowling_overs > 0
+            ? Math.round((merged.bowling_runs_conceded / merged.bowling_overs) * 100) / 100
+            : 0;
+          merged.bowling_average = merged.bowling_wickets > 0
+            ? Math.round((merged.bowling_runs_conceded / merged.bowling_wickets) * 100) / 100
+            : 0;
+          merged.bowling_strike_rate = merged.bowling_wickets > 0
+            ? Math.round((merged.bowling_overs * 6 / merged.bowling_wickets) * 100) / 100
+            : 0;
+          byMember[row.member_id] = merged;
+        }
+        setStats(Object.values(byMember).sort((a, b) => b.batting_runs - a.batting_runs));
+      } else {
+        const { data, error } = await supabase
+          .from('member_cricket_stats')
+          .select('*, member:members(id, name, avatar_url, matches_played)')
+          .eq('season', season)
+          .order('batting_runs', { ascending: false });
+        if (error) throw error;
+        setStats(data || []);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch stats');
     } finally {
