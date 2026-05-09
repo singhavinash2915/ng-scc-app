@@ -6,7 +6,7 @@
 # Only runs when files under scripts/ changed in the latest commit.
 
 MIRROR_DIR="$HOME/.scc-sync"
-SCRIPTS="daily_sync.py sync_matches.py sync_cricheroes.py"
+SCRIPTS="daily_sync.py sync_matches.py sync_cricheroes.py sync_scorecards.py"
 
 # Were any scripts/* files touched in the last commit?
 if ! git diff-tree --no-commit-id --name-only -r HEAD | grep -q '^scripts/'; then

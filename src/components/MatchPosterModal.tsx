@@ -4,7 +4,24 @@ import { toPng } from 'html-to-image';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { useMatchScorecard, type BatterRow, type BowlerRow } from '../hooks/useMatchScorecard';
 import type { Match } from '../types';
+
+// Tiny helpers to find best batter/bowler from a batting/bowling array
+function bestBatter(batting: BatterRow[] | null | undefined): BatterRow | null {
+  if (!batting || batting.length === 0) return null;
+  const sorted = [...batting].filter(b => b.balls > 0).sort((a, b) => b.runs - a.runs);
+  return sorted[0] || null;
+}
+
+function bestBowler(bowling: BowlerRow[] | null | undefined): BowlerRow | null {
+  if (!bowling || bowling.length === 0) return null;
+  const sorted = [...bowling].sort((a, b) => {
+    if (b.wickets !== a.wickets) return b.wickets - a.wickets;
+    return a.runs - b.runs;
+  });
+  return sorted[0] || null;
+}
 
 interface Props {
   isOpen: boolean;
@@ -56,6 +73,26 @@ function deriveResultBanner(match: Match): string {
 export function MatchPosterModal({ isOpen, onClose, match }: Props) {
   const posterRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const { scorecard } = useMatchScorecard(match.id);
+  const [includeDetailedTables, setIncludeDetailedTables] = useState(true);
+
+  // Top performers from scorecard data (auto-computed)
+  const topBatter = useMemo(() => {
+    if (!scorecard) return null;
+    const candidates = [
+      ...(scorecard.innings1_batting || []),
+      ...(scorecard.innings2_batting || []),
+    ];
+    return bestBatter(candidates);
+  }, [scorecard]);
+  const topBowler = useMemo(() => {
+    if (!scorecard) return null;
+    const candidates = [
+      ...(scorecard.innings1_bowling || []),
+      ...(scorecard.innings2_bowling || []),
+    ];
+    return bestBowler(candidates);
+  }, [scorecard]);
 
   // Editable header (defaults to "SCC Match Day")
   const [tournamentName, setTournamentName] = useState('SCC MATCH DAY');
@@ -119,17 +156,37 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
       <div className="space-y-4">
 
         {/* Customise header */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-          <Input
-            label="Tournament / Header"
-            value={tournamentName}
-            onChange={e => setTournamentName(e.target.value)}
-          />
-          <Input
-            label="Subtitle / Match #"
-            value={matchSubtitle}
-            onChange={e => setMatchSubtitle(e.target.value)}
-          />
+        <div className="space-y-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Tournament / Header"
+              value={tournamentName}
+              onChange={e => setTournamentName(e.target.value)}
+            />
+            <Input
+              label="Subtitle / Match #"
+              value={matchSubtitle}
+              onChange={e => setMatchSubtitle(e.target.value)}
+            />
+          </div>
+          {scorecard ? (
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={includeDetailedTables}
+                onChange={e => setIncludeDetailedTables(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="font-semibold">Include detailed scorecard tables</span>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 ml-auto">
+                ✓ Synced from CricHeroes
+              </span>
+            </label>
+          ) : (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              ℹ️ No detailed scorecard yet. Run <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">python3 scripts/sync_scorecards.py</code> to fetch batter/bowler tables from CricHeroes.
+            </p>
+          )}
         </div>
 
         {/* The actual poster — what gets exported */}
@@ -315,6 +372,168 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                 {isInternal ? 'INTERNAL MATCH' : `${winningTeamShort.toUpperCase()} ${resultBanner}`}
               </div>
             </div>
+
+            {/* DETAILED SCORECARD TABLES (if scorecard exists) */}
+            {includeDetailedTables && scorecard && (
+              <div style={{ marginTop: 32, position: 'relative' }}>
+                {[
+                  { label: scorecard.innings1_team_name || 'Innings 1', batting: scorecard.innings1_batting, bowling: scorecard.innings1_bowling, extras: scorecard.innings1_extras, summary: scorecard.innings1_summary, idx: 0 },
+                  { label: scorecard.innings2_team_name || 'Innings 2', batting: scorecard.innings2_batting, bowling: scorecard.innings2_bowling, extras: scorecard.innings2_extras, summary: scorecard.innings2_summary, idx: 1 },
+                ].filter(inn => inn.batting && inn.batting.length > 0).map(inn => {
+                  const totalExtras = inn.summary?.total_extra ?? 0;
+                  const total = inn.summary?.score ?? `${inn.summary?.total_run ?? 0}/${inn.summary?.total_wicket ?? 0}`;
+                  const overs = inn.summary?.over ?? `(${inn.summary?.overs_played ?? 0} Ov)`;
+                  return (
+                    <div key={inn.idx} style={{ marginBottom: 24 }}>
+                      <div style={{
+                        background: 'linear-gradient(90deg, rgba(16,185,129,0.18), rgba(16,185,129,0.04))',
+                        border: '1px solid rgba(16,185,129,0.3)',
+                        padding: '12px 20px', borderRadius: '12px 12px 0 0',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      }}>
+                        <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: 1, color: '#fff', textTransform: 'uppercase' }}>
+                          {inn.label}
+                        </span>
+                        <span style={{ fontSize: 14, color: '#34d399', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                          {total} {overs}
+                        </span>
+                      </div>
+
+                      {/* BATTING */}
+                      <div style={{
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderTop: 'none',
+                        padding: '12px 16px',
+                      }}>
+                        <table style={{ width: '100%', fontSize: 13, color: '#e5e7eb', borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums' }}>
+                          <thead>
+                            <tr style={{ color: '#9ca3af', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>
+                              <th style={{ textAlign: 'left', padding: '6px 4px', fontWeight: 700 }}>Batter</th>
+                              <th style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 700, width: 50 }}>R</th>
+                              <th style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 700, width: 50 }}>B</th>
+                              <th style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 700, width: 40 }}>4s</th>
+                              <th style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 700, width: 40 }}>6s</th>
+                              <th style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 700, width: 60 }}>SR</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(inn.batting || []).map((b: BatterRow, i: number) => (
+                              <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                <td style={{ padding: '7px 4px' }}>
+                                  <div style={{ fontWeight: 700, color: '#fff' }}>{b.name}</div>
+                                  {b.how_to_out && (
+                                    <div style={{ fontSize: 10, color: '#6b7280', marginTop: 1 }}>{b.how_to_out}</div>
+                                  )}
+                                </td>
+                                <td style={{ textAlign: 'right', padding: '7px 4px', fontWeight: 900, color: '#34d399' }}>{b.runs}</td>
+                                <td style={{ textAlign: 'right', padding: '7px 4px' }}>{b.balls}</td>
+                                <td style={{ textAlign: 'right', padding: '7px 4px' }}>{b['4s']}</td>
+                                <td style={{ textAlign: 'right', padding: '7px 4px' }}>{b['6s']}</td>
+                                <td style={{ textAlign: 'right', padding: '7px 4px', color: '#9ca3af' }}>{b.SR}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {totalExtras > 0 && (
+                          <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8, paddingTop: 8, borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
+                            EXTRAS: {totalExtras}
+                            {inn.extras?.wide ? ` (wd ${inn.extras.wide}` : ''}
+                            {inn.extras?.noball ? `${inn.extras?.wide ? ', ' : ' ('}nb ${inn.extras.noball}` : ''}
+                            {(inn.extras?.wide || inn.extras?.noball) ? ')' : ''}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* BOWLING */}
+                      {inn.bowling && inn.bowling.length > 0 && (
+                        <div style={{
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderTop: 'none',
+                          padding: '12px 16px',
+                          borderRadius: '0 0 12px 12px',
+                        }}>
+                          <p style={{ fontSize: 11, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: '0 0 8px 0' }}>
+                            Bowling
+                          </p>
+                          <table style={{ width: '100%', fontSize: 13, color: '#e5e7eb', borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums' }}>
+                            <thead>
+                              <tr style={{ color: '#9ca3af', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>
+                                <th style={{ textAlign: 'left', padding: '4px 4px', fontWeight: 700 }}>Bowler</th>
+                                <th style={{ textAlign: 'right', padding: '4px 4px', fontWeight: 700, width: 50 }}>O</th>
+                                <th style={{ textAlign: 'right', padding: '4px 4px', fontWeight: 700, width: 40 }}>M</th>
+                                <th style={{ textAlign: 'right', padding: '4px 4px', fontWeight: 700, width: 50 }}>R</th>
+                                <th style={{ textAlign: 'right', padding: '4px 4px', fontWeight: 700, width: 40 }}>W</th>
+                                <th style={{ textAlign: 'right', padding: '4px 4px', fontWeight: 700, width: 60 }}>ECO</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(inn.bowling || []).map((bw: BowlerRow, i: number) => (
+                                <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                  <td style={{ padding: '6px 4px', fontWeight: 700, color: '#fff' }}>{bw.name}</td>
+                                  <td style={{ textAlign: 'right', padding: '6px 4px' }}>{bw.overs}{bw.balls > 0 ? `.${bw.balls}` : ''}</td>
+                                  <td style={{ textAlign: 'right', padding: '6px 4px' }}>{bw.maidens}</td>
+                                  <td style={{ textAlign: 'right', padding: '6px 4px' }}>{bw.runs}</td>
+                                  <td style={{ textAlign: 'right', padding: '6px 4px', fontWeight: 900, color: '#fbbf24' }}>{bw.wickets}</td>
+                                  <td style={{ textAlign: 'right', padding: '6px 4px', color: '#9ca3af' }}>{bw.economy_rate}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* TOP PERFORMERS BAR (when scorecard exists) */}
+            {scorecard && (topBatter || topBowler || match.man_of_match) && (
+              <div style={{
+                marginTop: 32, position: 'relative',
+                background: 'linear-gradient(135deg, #1e293b 0%, #0a1019 100%)',
+                border: '1px solid rgba(251,191,36,0.3)',
+                borderRadius: 16,
+                padding: 18,
+              }}>
+                <p style={{ fontSize: 12, fontWeight: 900, letterSpacing: 3, color: '#fbbf24', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 16px 0' }}>
+                  ⭐ Top Performers
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 11, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Player of the Match</p>
+                    <p style={{ fontSize: 22, fontWeight: 900, color: '#fff', margin: '4px 0 0 0', lineHeight: 1.1 }}>
+                      {match.man_of_match?.name?.split(' ')[0] || '—'}
+                    </p>
+                    {match.man_of_match?.name && match.man_of_match.name.split(' ').length > 1 && (
+                      <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
+                        {match.man_of_match.name.split(' ').slice(1).join(' ')}
+                      </p>
+                    )}
+                  </div>
+                  {topBatter && (
+                    <div style={{ textAlign: 'center', borderLeft: '1px solid rgba(255,255,255,0.08)', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+                      <p style={{ fontSize: 11, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Best Batter</p>
+                      <p style={{ fontSize: 22, fontWeight: 900, color: '#34d399', margin: '4px 0 0 0', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+                        {topBatter.runs} <span style={{ color: '#9ca3af', fontSize: 14, fontWeight: 700 }}>({topBatter.balls})</span>
+                      </p>
+                      <p style={{ fontSize: 12, color: '#fff', margin: '2px 0 0 0', fontWeight: 700 }}>{topBatter.name}</p>
+                    </div>
+                  )}
+                  {topBowler && (
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ fontSize: 11, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Best Bowler</p>
+                      <p style={{ fontSize: 22, fontWeight: 900, color: '#fbbf24', margin: '4px 0 0 0', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+                        {topBowler.wickets}/{topBowler.runs}
+                      </p>
+                      <p style={{ fontSize: 12, color: '#fff', margin: '2px 0 0 0', fontWeight: 700 }}>{topBowler.name}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* MAN OF THE MATCH */}
             {match.man_of_match && (
