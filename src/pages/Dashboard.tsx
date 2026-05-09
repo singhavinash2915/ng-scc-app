@@ -21,6 +21,7 @@ import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { usePlayerOfPeriod } from '../hooks/usePlayerOfPeriod';
+import { useMatchMemories } from '../hooks/useMatchMemories';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useMonthSummary } from '../hooks/useMonthSummary';
 import { useAuth } from '../context/AuthContext';
@@ -59,6 +60,13 @@ export function Dashboard() {
   const monthSummary = useMonthSummary();
   const { stats: cricketStats } = useCricketStats('2025-26');
   const { playerOfMonth, playerOfWeek } = usePlayerOfPeriod(matches, members, cricketStats);
+  const memories = useMatchMemories(matches);
+
+  // Live match alert — match scheduled today (in any state: upcoming or completed-today)
+  const liveMatchToday = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return matches.find(m => m.date === today);
+  }, [matches]);
   // If a match was played in the last 7 days, show "of the Week"; else "of the Month"
   const featuredPlayer = playerOfWeek || playerOfMonth;
   const featuredLabel = playerOfWeek ? 'Player of the Week' : 'Player of the Month';
@@ -212,6 +220,67 @@ export function Dashboard() {
 
         {/* ── RENEWAL REMINDER (only when memberships are expiring) ──── */}
         <RenewalReminderBanner members={members} />
+
+        {/* ── MATCH LIVE TODAY ─────────────────────── */}
+        {liveMatchToday && liveMatchToday.ch_match_id && (
+          <a
+            href={`https://cricheroes.in/scorecard/${liveMatchToday.ch_match_id}/x/x/live`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block group"
+          >
+            <div className="relative overflow-hidden rounded-2xl shadow-lg">
+              <div className="absolute inset-0"
+                   style={{ background: 'linear-gradient(135deg, #dc2626 0%, #f97316 50%, #fbbf24 100%)' }} />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+              <div className="relative p-4 lg:p-5 flex items-center gap-3">
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-[10px] font-black uppercase tracking-widest border border-white/30 flex-shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  Live Today
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm lg:text-base font-black truncate">
+                    {liveMatchToday.match_type === 'internal' ? 'Internal Match' : `vs ${liveMatchToday.opponent || 'TBD'}`}
+                    {liveMatchToday.our_score && (
+                      <span className="ml-2 text-white/90 font-black tabular-nums">{liveMatchToday.our_score}</span>
+                    )}
+                    {liveMatchToday.opponent_score && (
+                      <span className="ml-1 text-white/70 font-bold tabular-nums">vs {liveMatchToday.opponent_score}</span>
+                    )}
+                  </p>
+                  <p className="text-white/80 text-[11px] mt-0.5">📺 Tap to watch live on CricHeroes →</p>
+                </div>
+              </div>
+            </div>
+          </a>
+        )}
+
+        {/* ── ON THIS DAY MEMORIES ─────────────────── */}
+        {memories.length > 0 && (
+          <div className="rounded-2xl border border-pink-200 dark:border-pink-900/40 bg-pink-50 dark:bg-pink-900/10 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">🗓️</span>
+              <span className="text-pink-600 dark:text-pink-400 text-[10px] font-bold uppercase tracking-[2px]">
+                On this day · {memories.length} year{memories.length > 1 ? 's' : ''} ago
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {memories.slice(0, 2).map(m => (
+                <p key={m.match.id} className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="font-bold">{m.yearsAgo === 1 ? '1 year ago' : `${m.yearsAgo} years ago`}</span>
+                  {' — '}
+                  {m.match.match_type === 'internal' ? 'Dhurandars vs Bazigars' : `vs ${m.match.opponent || 'TBD'}`}
+                  <span className={`ml-1.5 text-xs font-black ${
+                    m.match.result === 'won' ? 'text-emerald-600 dark:text-emerald-400'
+                    : m.match.result === 'lost' ? 'text-red-600 dark:text-red-400'
+                    : 'text-amber-600 dark:text-amber-400'
+                  }`}>{m.match.result.toUpperCase()}</span>
+                  {m.match.our_score && <span className="text-gray-500 ml-1.5 text-xs">· {m.match.our_score} vs {m.match.opponent_score}</span>}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── LIVE TICKER ──────────────────────────── */}
         {tickerItems.length > 0 && (

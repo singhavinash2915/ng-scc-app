@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X, MessageCircle, History, ArrowUpRight, ArrowDownRight, RotateCcw, Settings2, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -545,20 +546,20 @@ export function Members() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-4 mb-4">
+                <Link to={`/profile/${member.id}`} className="flex items-center gap-4 mb-4 group">
                   {member.avatar_url ? (
                     <img
                       src={member.avatar_url}
                       alt={member.name}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-primary-200 dark:border-primary-800"
+                      className="w-14 h-14 rounded-full object-cover border-2 border-primary-200 dark:border-primary-800 group-hover:scale-105 transition-transform"
                     />
                   ) : (
-                    <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                    <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform">
                       <User className="w-7 h-7 text-primary-600 dark:text-primary-400" />
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">{member.name}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{member.name}</h3>
                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                       <Badge variant={isActive(member.id) ? 'success' : 'default'} size="sm">
                         {isActive(member.id) ? 'active' : 'inactive'}
@@ -587,7 +588,7 @@ export function Members() {
                       </div>
                     )}
                   </div>
-                </div>
+                </Link>
 
                 <div className="space-y-2 text-sm">
                   {member.phone && (
