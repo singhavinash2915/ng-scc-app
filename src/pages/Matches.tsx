@@ -37,6 +37,7 @@ import { useAuth } from '../context/AuthContext';
 import { PollSummaryBadge } from '../components/PollSummaryBadge';
 import { PollManageModal } from '../components/PollManageModal';
 import { SquadGraphicModal } from '../components/SquadGraphicModal';
+import { MatchPosterModal } from '../components/MatchPosterModal';
 import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
 import type { Match, MatchType, InternalTeam } from '../types';
 
@@ -70,6 +71,8 @@ export function Matches() {
   const [pollMatch, setPollMatch] = useState<Match | null>(null);
   const [showSquadGraphicModal, setShowSquadGraphicModal] = useState(false);
   const [squadGraphicMatch, setSquadGraphicMatch] = useState<Match | null>(null);
+  const [showPosterModal, setShowPosterModal] = useState(false);
+  const [posterMatch, setPosterMatch] = useState<Match | null>(null);
   const [showMatchDayModal, setShowMatchDayModal] = useState(false);
   const [matchDayMatch, setMatchDayMatch] = useState<Match | null>(null);
   const [confirmDeleteMatch, setConfirmDeleteMatch] = useState<string | null>(null);
@@ -754,6 +757,18 @@ export function Matches() {
                               className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-primary-600 dark:text-primary-400"
                             >
                               <ImageDown className="w-4 h-4" /> Squad Graphic
+                            </button>
+                          )}
+                          {['won', 'lost', 'draw'].includes(match.result) && (
+                            <button
+                              onClick={() => {
+                                setPosterMatch(match);
+                                setShowPosterModal(true);
+                                setMenuOpen(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold"
+                            >
+                              <ImageDown className="w-4 h-4" /> 🏆 Result Poster
                             </button>
                           )}
                           {match.result === 'upcoming' && (
@@ -1870,6 +1885,14 @@ export function Matches() {
       )}
 
       {/* Squad Graphic Modal */}
+      {showPosterModal && posterMatch && (
+        <MatchPosterModal
+          isOpen={showPosterModal}
+          onClose={() => { setShowPosterModal(false); setPosterMatch(null); }}
+          match={posterMatch}
+        />
+      )}
+
       {showSquadGraphicModal && squadGraphicMatch && (
         <SquadGraphicModal
           isOpen={showSquadGraphicModal}
