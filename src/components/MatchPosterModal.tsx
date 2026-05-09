@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { Download, Share2, Loader2, ExternalLink } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import { toPng, toJpeg } from 'html-to-image';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -74,7 +74,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
   const posterRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const { scorecard } = useMatchScorecard(match.id);
-  const [includeDetailedTables, setIncludeDetailedTables] = useState(true);
+  const [includeDetailedTables, setIncludeDetailedTables] = useState(false);  // Compact by default
 
   // Top performers from scorecard data (auto-computed)
   const topBatter = useMemo(() => {
@@ -109,38 +109,49 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
 
   const winningTeamShort = isOurWin ? 'SCC' : (match.opponent?.split(' ')[0] || 'Opp');
 
-  const downloadPNG = async () => {
+  // ── Export helpers ────────────────────────────────────────────────────
+  // We use JPEG at 90% quality for the share/download buttons. JPEG is
+  // 5-10× smaller than PNG for cricket posters (lots of solid color +
+  // photo content) and stays under WhatsApp's 1MB share limit.
+  // Pixel ratio 1.5 gives crisp results without bloating the file.
+  const exportImage = async (format: 'png' | 'jpeg' = 'jpeg') => {
+    if (!posterRef.current) return null;
+    const opts = { cacheBust: true, pixelRatio: 1.5, backgroundColor: '#0a1019' };
+    return format === 'png'
+      ? await toPng(posterRef.current, opts)
+      : await toJpeg(posterRef.current, { ...opts, quality: 0.92 });
+  };
+
+  const downloadPoster = async () => {
     if (!posterRef.current) return;
     setDownloading(true);
     try {
-      const dataUrl = await toPng(posterRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-        backgroundColor: '#000000',
-      });
+      const dataUrl = await exportImage('jpeg');
+      if (!dataUrl) return;
       const link = document.createElement('a');
-      link.download = `scc-${match.date}-${(match.opponent || 'match').replace(/\s+/g, '-').toLowerCase()}.png`;
+      link.download = `scc-${match.date}-${(match.opponent || 'match').replace(/\s+/g, '-').toLowerCase()}.jpg`;
       link.href = dataUrl;
       link.click();
     } catch (e) {
-      console.error('PNG export failed', e);
+      console.error('Export failed', e);
       alert('Could not export. Please try again.');
     } finally {
       setDownloading(false);
     }
   };
 
-  const sharePNG = async () => {
+  const sharePoster = async () => {
     if (!posterRef.current) return;
     setDownloading(true);
     try {
-      const dataUrl = await toPng(posterRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#000000' });
+      const dataUrl = await exportImage('jpeg');
+      if (!dataUrl) return;
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `scc-${match.date}.png`, { type: 'image/png' });
+      const file = new File([blob], `scc-${match.date}.jpg`, { type: 'image/jpeg' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'SCC Match Result' });
       } else {
-        downloadPNG();
+        downloadPoster();
       }
     } catch {/* user cancelled / unsupported */}
     finally { setDownloading(false); }
@@ -178,6 +189,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                 className="w-4 h-4"
               />
               <span className="font-semibold">Include detailed scorecard tables</span>
+              <span className="text-xs text-gray-400 ml-1">(makes poster taller — larger file)</span>
               <span className="text-xs text-emerald-600 dark:text-emerald-400 ml-auto">
                 ✓ Synced from CricHeroes
               </span>
@@ -187,6 +199,9 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
               ℹ️ No detailed scorecard yet. Run <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">python3 scripts/sync_scorecards.py</code> to fetch batter/bowler tables from CricHeroes.
             </p>
           )}
+          <p className="text-[11px] text-gray-500">
+            💡 Compact poster ≈ 300–500 KB · Detailed poster ≈ 1–2 MB · Both work in WhatsApp.
+          </p>
         </div>
 
         {/* The actual poster — what gets exported */}
@@ -195,179 +210,144 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
             ref={posterRef}
             style={{
               width: '1080px',
-              minHeight: '1350px',
-              padding: '40px 36px',
+              minHeight: includeDetailedTables ? '1350px' : '1080px',
+              padding: '32px 28px',
               fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-              background: 'radial-gradient(800px circle at 0% 0%, rgba(16,185,129,0.25), transparent 50%), radial-gradient(700px circle at 100% 100%, rgba(245,158,11,0.18), transparent 60%), linear-gradient(135deg, #061122 0%, #0a1019 100%)',
+              background: 'linear-gradient(135deg, #064e3b 0%, #0a1019 60%, #0a1019 100%)',
               color: '#ffffff',
-              transform: 'scale(var(--poster-scale, 1))',
-              transformOrigin: 'top left',
+              position: 'relative',
             }}
           >
-            {/* Faint cricket ground pattern */}
-            <div style={{
-              position: 'absolute', inset: 0, opacity: 0.04,
-              backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'80\' height=\'80\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'30\' fill=\'none\' stroke=\'white\' stroke-width=\'1\'/%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'15\' fill=\'none\' stroke=\'white\' stroke-width=\'1\'/%3E%3C/svg%3E")',
-              backgroundSize: '80px 80px',
-              pointerEvents: 'none',
-            }} />
-
-            {/* HEADER STRIP */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-              <img src="/scc-logo.jpg" alt="SCC" style={{ width: 80, height: 80, borderRadius: 16, objectFit: 'cover', boxShadow: '0 8px 24px rgba(16,185,129,0.4)' }} />
-              <div style={{ flex: 1, marginLeft: 24 }}>
+            {/* HEADER STRIP — compact */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <img src="/scc-logo.jpg" alt="SCC" style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover' }} />
+              <div style={{ flex: 1 }}>
                 <h1 style={{
-                  fontSize: 56, fontWeight: 900, margin: 0, letterSpacing: '-1px', lineHeight: 1.05,
-                  background: 'linear-gradient(180deg, #ffffff 30%, #6ee7b7 100%)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  fontSize: 38, fontWeight: 900, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05,
+                  color: '#ffffff',
                 }}>{tournamentName}</h1>
-                <p style={{ fontSize: 18, fontWeight: 700, letterSpacing: '3px', color: '#34d399', margin: '4px 0 0 0', textTransform: 'uppercase' }}>
+                <p style={{ fontSize: 14, fontWeight: 700, letterSpacing: '2.5px', color: '#34d399', margin: '4px 0 0 0', textTransform: 'uppercase' }}>
                   {matchSubtitle}
                 </p>
               </div>
             </div>
 
-            {/* SCORECARD BANNER */}
-            <div style={{ marginTop: 32, position: 'relative' }}>
-              <div style={{
-                background: 'linear-gradient(90deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0) 100%)',
-                border: '1px solid rgba(245,158,11,0.3)',
-                borderRadius: 12,
-                padding: '14px 24px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: '4px', color: '#fbbf24', textTransform: 'uppercase' }}>
-                  📋 Match Result
-                </span>
-                <span style={{ fontSize: 14, color: '#9ca3af' }}>
-                  📍 {match.venue} · 🗓️ {dateStr}
-                </span>
-              </div>
+            {/* META — date + venue */}
+            <div style={{
+              marginTop: 16, padding: '10px 16px', borderRadius: 10,
+              background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '3px', color: '#fbbf24', textTransform: 'uppercase' }}>
+                Match Result
+              </span>
+              <span style={{ fontSize: 12, color: '#cbd5e1', fontWeight: 600 }}>
+                📍 {match.venue} · 🗓️ {dateStr}
+              </span>
             </div>
 
-            {/* TWO TEAMS + SCORE */}
-            <div style={{ marginTop: 36, display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 28, alignItems: 'center', position: 'relative' }}>
-
+            {/* TWO TEAMS + SCORE — compact */}
+            <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 18, alignItems: 'center' }}>
               {/* OUR TEAM */}
               <div style={{
-                background: 'radial-gradient(400px circle at 0% 0%, rgba(16,185,129,0.35), transparent 60%), linear-gradient(135deg, #064e3b 0%, #0a1019 100%)',
-                border: '2px solid rgba(16,185,129,0.4)',
-                borderRadius: 24,
-                padding: 28,
-                textAlign: 'center',
-                boxShadow: isOurWin ? '0 0 40px rgba(16,185,129,0.4)' : 'none',
-                position: 'relative',
+                background: isOurWin ? '#064e3b' : '#1f2937',
+                border: isOurWin ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 18, padding: 20, textAlign: 'center', position: 'relative',
               }}>
                 {isOurWin && (
                   <div style={{
-                    position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)',
-                    background: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
-                    color: '#1a0f05', fontSize: 14, fontWeight: 900, letterSpacing: '2px',
-                    padding: '6px 16px', borderRadius: 999, textTransform: 'uppercase',
+                    position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+                    background: '#fbbf24', color: '#1a0f05',
+                    fontSize: 11, fontWeight: 900, letterSpacing: '2px',
+                    padding: '4px 12px', borderRadius: 999, textTransform: 'uppercase',
                   }}>🏆 Winner</div>
                 )}
-                <img src="/scc-logo.jpg" alt="" style={{ width: 80, height: 80, borderRadius: 18, objectFit: 'cover', margin: '0 auto', display: 'block' }} />
-                <h3 style={{ fontSize: 22, fontWeight: 900, margin: '14px 0 4px', color: '#ffffff', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+                <img src="/scc-logo.jpg" alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', margin: '0 auto', display: 'block' }} />
+                <h3 style={{ fontSize: 16, fontWeight: 900, margin: '8px 0 2px', color: '#ffffff' }}>
                   {isInternal ? 'SCC' : 'Sangria CC'}
                 </h3>
-                {ourScore ? (
+                {ourScore && (
                   <>
                     <p style={{
-                      fontSize: 64, fontWeight: 900, margin: '4px 0 0 0', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
-                      background: isOurWin ? 'linear-gradient(180deg, #ffffff, #fde68a)' : 'linear-gradient(180deg, #ffffff, #cbd5e1)',
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      fontSize: 52, fontWeight: 900, margin: '4px 0 0 0', lineHeight: 1,
+                      fontVariantNumeric: 'tabular-nums',
+                      color: isOurWin ? '#fde68a' : '#ffffff',
                     }}>
                       {ourScore.runs}/{ourScore.wkts}
                     </p>
                     {ourScore.overs && (
-                      <p style={{ fontSize: 16, color: '#9ca3af', margin: '6px 0 0', fontWeight: 600 }}>
+                      <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0', fontWeight: 600 }}>
                         ({ourScore.overs} Ov)
                       </p>
                     )}
                   </>
-                ) : (
-                  <p style={{ fontSize: 28, color: '#9ca3af', margin: '20px 0', fontStyle: 'italic' }}>—</p>
                 )}
               </div>
 
               {/* CENTER VS */}
-              <div style={{ textAlign: 'center', alignSelf: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
                 <div style={{
-                  width: 80, height: 80, borderRadius: '50%',
+                  width: 60, height: 60, borderRadius: '50%',
                   background: 'rgba(255,255,255,0.06)', border: '2px solid rgba(255,255,255,0.15)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
                 }}>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '1px' }}>VS</span>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>VS</span>
                 </div>
               </div>
 
               {/* OPPONENT */}
               <div style={{
-                background: !isOurWin && match.result === 'won'
-                  ? 'radial-gradient(400px circle at 100% 0%, rgba(16,185,129,0.35), transparent 60%), linear-gradient(135deg, #1f2937 0%, #0a1019 100%)'
-                  : 'linear-gradient(135deg, #1f2937 0%, #0a1019 100%)',
-                border: !isOurWin && match.result === 'lost' ? '2px solid rgba(16,185,129,0.4)' : '2px solid rgba(255,255,255,0.1)',
-                borderRadius: 24,
-                padding: 28,
-                textAlign: 'center',
-                boxShadow: !isOurWin && match.result === 'lost' ? '0 0 40px rgba(16,185,129,0.4)' : 'none',
-                position: 'relative',
+                background: !isOurWin && match.result === 'lost' ? '#064e3b' : '#1f2937',
+                border: !isOurWin && match.result === 'lost' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 18, padding: 20, textAlign: 'center', position: 'relative',
               }}>
                 {!isOurWin && match.result === 'lost' && (
                   <div style={{
-                    position: 'absolute', top: -16, left: '50%', transform: 'translateX(-50%)',
-                    background: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
-                    color: '#1a0f05', fontSize: 14, fontWeight: 900, letterSpacing: '2px',
-                    padding: '6px 16px', borderRadius: 999, textTransform: 'uppercase',
+                    position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+                    background: '#fbbf24', color: '#1a0f05',
+                    fontSize: 11, fontWeight: 900, letterSpacing: '2px',
+                    padding: '4px 12px', borderRadius: 999, textTransform: 'uppercase',
                   }}>🏆 Winner</div>
                 )}
                 <div style={{
-                  width: 80, height: 80, borderRadius: 18,
-                  background: 'linear-gradient(135deg, #475569, #1e293b)',
+                  width: 56, height: 56, borderRadius: 12, background: '#475569',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
                 }}>
-                  <span style={{ fontSize: 36, fontWeight: 900, color: '#cbd5e1' }}>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: '#cbd5e1' }}>
                     {(match.opponent || 'O').charAt(0)}
                   </span>
                 </div>
-                <h3 style={{ fontSize: 22, fontWeight: 900, margin: '14px 0 4px', color: '#ffffff', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 900, margin: '8px 0 2px', color: '#ffffff' }}>
                   {match.opponent || 'TBD'}
                 </h3>
-                {theirScore ? (
+                {theirScore && (
                   <>
                     <p style={{
-                      fontSize: 64, fontWeight: 900, margin: '4px 0 0 0', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
-                      background: 'linear-gradient(180deg, #ffffff, #cbd5e1)',
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      fontSize: 52, fontWeight: 900, margin: '4px 0 0 0', lineHeight: 1,
+                      fontVariantNumeric: 'tabular-nums', color: '#ffffff',
                     }}>
                       {theirScore.runs}/{theirScore.wkts}
                     </p>
                     {theirScore.overs && (
-                      <p style={{ fontSize: 16, color: '#9ca3af', margin: '6px 0 0', fontWeight: 600 }}>
+                      <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0', fontWeight: 600 }}>
                         ({theirScore.overs} Ov)
                       </p>
                     )}
                   </>
-                ) : (
-                  <p style={{ fontSize: 28, color: '#9ca3af', margin: '20px 0', fontStyle: 'italic' }}>—</p>
                 )}
               </div>
             </div>
 
             {/* RESULT BANNER */}
-            <div style={{ marginTop: 32, textAlign: 'center', position: 'relative' }}>
+            <div style={{ marginTop: 22, textAlign: 'center' }}>
               <div style={{
-                display: 'inline-block',
-                padding: '18px 40px',
-                background: match.result === 'won'
-                  ? 'linear-gradient(90deg, #fbbf24, #f59e0b)'
-                  : match.result === 'lost'
-                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
-                  : 'linear-gradient(90deg, #6b7280, #4b5563)',
+                display: 'inline-block', padding: '12px 28px',
+                background: match.result === 'won' ? '#fbbf24'
+                  : match.result === 'lost' ? '#dc2626'
+                  : '#6b7280',
                 color: match.result === 'won' ? '#1a0f05' : '#ffffff',
-                borderRadius: 16,
-                fontSize: 28, fontWeight: 900, letterSpacing: '2px',
-                boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+                borderRadius: 12,
+                fontSize: 22, fontWeight: 900, letterSpacing: '1.5px',
               }}>
                 {isInternal ? 'INTERNAL MATCH' : `${winningTeamShort.toUpperCase()} ${resultBanner}`}
               </div>
@@ -489,152 +469,138 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
               </div>
             )}
 
-            {/* TOP PERFORMERS BAR (when scorecard exists) */}
-            {scorecard && (topBatter || topBowler || match.man_of_match) && (
+            {/* TOP PERFORMERS — compact horizontal strip */}
+            {(match.man_of_match || topBatter || topBowler) && (
               <div style={{
-                marginTop: 32, position: 'relative',
-                background: 'linear-gradient(135deg, #1e293b 0%, #0a1019 100%)',
+                marginTop: 22,
+                background: '#1e293b',
                 border: '1px solid rgba(251,191,36,0.3)',
-                borderRadius: 16,
-                padding: 18,
+                borderRadius: 14,
+                padding: '14px 18px',
               }}>
-                <p style={{ fontSize: 12, fontWeight: 900, letterSpacing: 3, color: '#fbbf24', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 16px 0' }}>
+                <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: '3px', color: '#fbbf24', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 12px 0' }}>
                   ⭐ Top Performers
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: 11, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Player of the Match</p>
-                    <p style={{ fontSize: 22, fontWeight: 900, color: '#fff', margin: '4px 0 0 0', lineHeight: 1.1 }}>
-                      {match.man_of_match?.name?.split(' ')[0] || '—'}
-                    </p>
-                    {match.man_of_match?.name && match.man_of_match.name.split(' ').length > 1 && (
-                      <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
-                        {match.man_of_match.name.split(' ').slice(1).join(' ')}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                  {match.man_of_match && (
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ fontSize: 9, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Player of the Match</p>
+                      <p style={{ fontSize: 18, fontWeight: 900, color: '#fbbf24', margin: '3px 0 0 0', lineHeight: 1.1 }}>
+                        👑 {match.man_of_match.name}
                       </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   {topBatter && (
                     <div style={{ textAlign: 'center', borderLeft: '1px solid rgba(255,255,255,0.08)', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
-                      <p style={{ fontSize: 11, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Best Batter</p>
-                      <p style={{ fontSize: 22, fontWeight: 900, color: '#34d399', margin: '4px 0 0 0', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-                        {topBatter.runs} <span style={{ color: '#9ca3af', fontSize: 14, fontWeight: 700 }}>({topBatter.balls})</span>
+                      <p style={{ fontSize: 9, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Best Batter</p>
+                      <p style={{ fontSize: 18, fontWeight: 900, color: '#34d399', margin: '3px 0 0 0', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+                        {topBatter.runs} <span style={{ color: '#9ca3af', fontSize: 11, fontWeight: 700 }}>({topBatter.balls})</span>
                       </p>
-                      <p style={{ fontSize: 12, color: '#fff', margin: '2px 0 0 0', fontWeight: 700 }}>{topBatter.name}</p>
+                      <p style={{ fontSize: 11, color: '#fff', margin: '1px 0 0 0', fontWeight: 700 }}>{topBatter.name}</p>
                     </div>
                   )}
                   {topBowler && (
                     <div style={{ textAlign: 'center' }}>
-                      <p style={{ fontSize: 11, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Best Bowler</p>
-                      <p style={{ fontSize: 22, fontWeight: 900, color: '#fbbf24', margin: '4px 0 0 0', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+                      <p style={{ fontSize: 9, color: '#9ca3af', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, margin: 0 }}>Best Bowler</p>
+                      <p style={{ fontSize: 18, fontWeight: 900, color: '#f87171', margin: '3px 0 0 0', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
                         {topBowler.wickets}/{topBowler.runs}
                       </p>
-                      <p style={{ fontSize: 12, color: '#fff', margin: '2px 0 0 0', fontWeight: 700 }}>{topBowler.name}</p>
+                      <p style={{ fontSize: 11, color: '#fff', margin: '1px 0 0 0', fontWeight: 700 }}>{topBowler.name}</p>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* MAN OF THE MATCH */}
+            {/* MAN OF THE MATCH — compact, only show when no top-performers card OR detailed mode */}
             {match.man_of_match && (
-              <div style={{ marginTop: 36, position: 'relative' }}>
-                <div style={{
-                  background: 'radial-gradient(500px circle at 0% 0%, rgba(251,191,36,0.25), transparent 60%), linear-gradient(135deg, #78350f 0%, #1a0f05 60%, #0a1019 100%)',
-                  border: '2px solid rgba(251,191,36,0.4)',
-                  borderRadius: 24, padding: 28,
-                  display: 'flex', alignItems: 'center', gap: 24,
-                }}>
-                  {match.man_of_match.avatar_url ? (
-                    <img src={match.man_of_match.avatar_url} alt="" style={{
-                      width: 120, height: 120, borderRadius: 24, objectFit: 'cover',
-                      border: '4px solid rgba(251,191,36,0.6)',
-                      boxShadow: '0 12px 36px rgba(251,191,36,0.5)',
-                    }} />
-                  ) : (
-                    <div style={{
-                      width: 120, height: 120, borderRadius: 24,
-                      background: 'linear-gradient(135deg, #fbbf24, #b45309)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      border: '4px solid rgba(251,191,36,0.6)',
-                    }}>
-                      <span style={{ fontSize: 56, fontWeight: 900, color: '#451a03' }}>
-                        {match.man_of_match.name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 14, fontWeight: 900, letterSpacing: '4px', color: '#fbbf24', textTransform: 'uppercase', margin: 0 }}>
-                      👑 Man of the Match
-                    </p>
-                    <h3 style={{ fontSize: 48, fontWeight: 900, color: '#ffffff', margin: '8px 0 0 0', letterSpacing: '-1px', lineHeight: 1.05 }}>
-                      {match.man_of_match.name}
-                    </h3>
+              <div style={{
+                marginTop: 16,
+                background: '#78350f',
+                border: '2px solid rgba(251,191,36,0.5)',
+                borderRadius: 16, padding: 16,
+                display: 'flex', alignItems: 'center', gap: 14,
+              }}>
+                {match.man_of_match.avatar_url ? (
+                  <img src={match.man_of_match.avatar_url} alt="" style={{
+                    width: 80, height: 80, borderRadius: 14, objectFit: 'cover',
+                    border: '3px solid rgba(251,191,36,0.6)',
+                  }} />
+                ) : (
+                  <div style={{
+                    width: 80, height: 80, borderRadius: 14,
+                    background: '#fbbf24',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span style={{ fontSize: 32, fontWeight: 900, color: '#451a03' }}>
+                      {match.man_of_match.name.charAt(0)}
+                    </span>
                   </div>
+                )}
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: '3px', color: '#fde68a', textTransform: 'uppercase', margin: 0 }}>
+                    👑 Man of the Match
+                  </p>
+                  <h3 style={{ fontSize: 32, fontWeight: 900, color: '#ffffff', margin: '4px 0 0 0', letterSpacing: '-0.5px', lineHeight: 1.05 }}>
+                    {match.man_of_match.name}
+                  </h3>
                 </div>
               </div>
             )}
 
-            {/* CAPTAIN / VICE-CAPTAIN */}
+            {/* CAPTAIN / VICE-CAPTAIN — single inline row */}
             {(match.captain || match.vice_captain) && (
-              <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: match.captain && match.vice_captain ? '1fr 1fr' : '1fr', gap: 16, position: 'relative' }}>
+              <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {match.captain && (
                   <div style={{
-                    background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)',
+                    background: '#1e3a8a',
                     border: '1px solid rgba(59,130,246,0.4)',
-                    borderRadius: 16, padding: 18,
-                    display: 'flex', alignItems: 'center', gap: 14,
+                    borderRadius: 12, padding: 12,
+                    display: 'flex', alignItems: 'center', gap: 10,
                   }}>
-                    {match.captain.avatar_url ? (
-                      <img src={match.captain.avatar_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: 56, height: 56, borderRadius: 14, background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900 }}>
-                        {match.captain.name.charAt(0)}
-                      </div>
-                    )}
-                    <div>
-                      <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: '2px', color: '#93c5fd', textTransform: 'uppercase', margin: 0 }}>🅒 Captain</p>
-                      <h4 style={{ fontSize: 22, fontWeight: 900, color: '#fff', margin: '2px 0 0 0' }}>{match.captain.name}</h4>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, flexShrink: 0 }}>
+                      🅒
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 9, fontWeight: 900, letterSpacing: '1.5px', color: '#93c5fd', textTransform: 'uppercase', margin: 0 }}>Captain</p>
+                      <h4 style={{ fontSize: 16, fontWeight: 900, color: '#fff', margin: '1px 0 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{match.captain.name}</h4>
                     </div>
                   </div>
                 )}
                 {match.vice_captain && (
                   <div style={{
-                    background: 'linear-gradient(135deg, #4c1d95 0%, #0a1019 100%)',
+                    background: '#4c1d95',
                     border: '1px solid rgba(168,85,247,0.4)',
-                    borderRadius: 16, padding: 18,
-                    display: 'flex', alignItems: 'center', gap: 14,
+                    borderRadius: 12, padding: 12,
+                    display: 'flex', alignItems: 'center', gap: 10,
                   }}>
-                    {match.vice_captain.avatar_url ? (
-                      <img src={match.vice_captain.avatar_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: 56, height: 56, borderRadius: 14, background: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900 }}>
-                        {match.vice_captain.name.charAt(0)}
-                      </div>
-                    )}
-                    <div>
-                      <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: '2px', color: '#d8b4fe', textTransform: 'uppercase', margin: 0 }}>🅥🅒 Vice-Captain</p>
-                      <h4 style={{ fontSize: 22, fontWeight: 900, color: '#fff', margin: '2px 0 0 0' }}>{match.vice_captain.name}</h4>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, flexShrink: 0 }}>
+                      🅥🅒
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 9, fontWeight: 900, letterSpacing: '1.5px', color: '#d8b4fe', textTransform: 'uppercase', margin: 0 }}>Vice-Captain</p>
+                      <h4 style={{ fontSize: 16, fontWeight: 900, color: '#fff', margin: '1px 0 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{match.vice_captain.name}</h4>
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* FOOTER */}
+            {/* FOOTER — compact */}
             <div style={{
-              marginTop: 40, paddingTop: 24,
+              marginTop: 18, paddingTop: 14,
               borderTop: '1px solid rgba(255,255,255,0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <img src="/scc-logo.jpg" alt="" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <img src="/scc-logo.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 7, objectFit: 'cover' }} />
                 <div>
-                  <p style={{ fontSize: 16, fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.3px' }}>Sangria Cricket Club</p>
-                  <p style={{ fontSize: 12, color: '#9ca3af', margin: '2px 0 0', letterSpacing: '1px' }}>Pune · Est. 2024</p>
+                  <p style={{ fontSize: 12, fontWeight: 900, color: '#fff', margin: 0 }}>Sangria Cricket Club</p>
+                  <p style={{ fontSize: 9, color: '#9ca3af', margin: '1px 0 0', letterSpacing: '1px' }}>PUNE · EST 2024</p>
                 </div>
               </div>
               {cricheroesUrl && (
-                <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, letterSpacing: '1px', textAlign: 'right' }}>
+                <p style={{ fontSize: 9, color: '#9ca3af', margin: 0, textAlign: 'right' }}>
                   Full scorecard:<br />
                   <span style={{ color: '#34d399', fontWeight: 700 }}>cricheroes.in/scorecard/{match.ch_match_id}</span>
                 </p>
@@ -645,11 +611,11 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
 
         {/* Action buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Button onClick={downloadPNG} loading={downloading} className="!py-3">
+          <Button onClick={downloadPoster} loading={downloading} className="!py-3">
             {downloading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Download className="w-4 h-4 mr-1.5" />}
-            Download PNG
+            Download JPG
           </Button>
-          <Button onClick={sharePNG} loading={downloading} variant="secondary" className="!py-3">
+          <Button onClick={sharePoster} loading={downloading} variant="secondary" className="!py-3">
             <Share2 className="w-4 h-4 mr-1.5" />
             Share to WhatsApp
           </Button>
