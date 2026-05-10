@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { User, Lock, CheckCircle2, X } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { User, Lock, CheckCircle2, X, Camera, Loader2 } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { Input, Select } from './ui/Input';
 import { Button } from './ui/Button';
@@ -18,12 +18,14 @@ interface Props {
  * Cannot change: balance, status, avatar, name (those need admin).
  */
 export function MyProfileModal({ isOpen, onClose }: Props) {
-  const { members, updateMember } = useMembers();
+  const { members, updateMember, uploadAvatar } = useMembers();
   const [step, setStep] = useState<'pick' | 'verify' | 'edit' | 'done'>('pick');
   const [pickedMember, setPickedMember] = useState<Member | null>(null);
   const [pinDigits, setPinDigits] = useState('');
   const [pinError, setPinError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     phone: '',
     email: '',
@@ -105,6 +107,31 @@ export function MyProfileModal({ isOpen, onClose }: Props) {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!pickedMember || !e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be under 5MB');
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const newAvatarUrl = await uploadAvatar(pickedMember.id, file);
+      // Update local picked-member with new URL so the UI reflects it
+      setPickedMember({ ...pickedMember, avatar_url: newAvatarUrl });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to upload photo. Try a smaller image.');
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="My Profile">
 
@@ -170,16 +197,38 @@ export function MyProfileModal({ isOpen, onClose }: Props) {
       {step === 'edit' && pickedMember && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
-            {pickedMember.avatar_url ? (
-              <img src={pickedMember.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-emerald-500/30 flex items-center justify-center">
-                <User className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
-              </div>
-            )}
+            <div className="relative flex-shrink-0">
+              {pickedMember.avatar_url ? (
+                <img src={pickedMember.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-emerald-300 dark:border-emerald-700" />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-emerald-500/30 flex items-center justify-center">
+                  <User className="w-7 h-7 text-emerald-700 dark:text-emerald-300" />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary-500 hover:bg-primary-600 active:scale-95 transition-all border-2 border-white dark:border-gray-900 flex items-center justify-center shadow-lg"
+                title="Upload new photo"
+              >
+                {avatarUploading
+                  ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                  : <Camera className="w-3.5 h-3.5 text-white" />}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{pickedMember.name}</p>
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Updating your own profile</p>
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                {avatarUploading ? 'Uploading photo…' : 'Tap the camera icon to upload a new profile photo'}
+              </p>
             </div>
           </div>
 

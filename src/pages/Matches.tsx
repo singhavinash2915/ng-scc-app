@@ -38,6 +38,7 @@ import { PollSummaryBadge } from '../components/PollSummaryBadge';
 import { PollManageModal } from '../components/PollManageModal';
 import { SquadGraphicModal } from '../components/SquadGraphicModal';
 import { MatchPosterModal } from '../components/MatchPosterModal';
+import { SquadSelectorModal } from '../components/SquadSelectorModal';
 import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
 import type { Match, MatchType, InternalTeam } from '../types';
 
@@ -73,6 +74,8 @@ export function Matches() {
   const [squadGraphicMatch, setSquadGraphicMatch] = useState<Match | null>(null);
   const [showPosterModal, setShowPosterModal] = useState(false);
   const [posterMatch, setPosterMatch] = useState<Match | null>(null);
+  const [showSquadSelectorModal, setShowSquadSelectorModal] = useState(false);
+  const [squadSelectorMatch, setSquadSelectorMatch] = useState<Match | null>(null);
   const [showMatchDayModal, setShowMatchDayModal] = useState(false);
   const [matchDayMatch, setMatchDayMatch] = useState<Match | null>(null);
   const [confirmDeleteMatch, setConfirmDeleteMatch] = useState<string | null>(null);
@@ -747,6 +750,18 @@ export function Matches() {
                           >
                             <Camera className="w-4 h-4" /> Photos ({getPhotosByMatch(match.id).length})
                           </button>
+                          {match.result === 'upcoming' && (
+                            <button
+                              onClick={() => {
+                                setSquadSelectorMatch(match);
+                                setShowSquadSelectorModal(true);
+                                setMenuOpen(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold"
+                            >
+                              <Users className="w-4 h-4" /> 🏏 Pick Playing XI
+                            </button>
+                          )}
                           {match.players && match.players.length > 0 && (
                             <button
                               onClick={() => {
@@ -1890,6 +1905,14 @@ export function Matches() {
           isOpen={showPosterModal}
           onClose={() => { setShowPosterModal(false); setPosterMatch(null); }}
           match={posterMatch}
+        />
+      )}
+
+      {showSquadSelectorModal && squadSelectorMatch && (
+        <SquadSelectorModal
+          isOpen={showSquadSelectorModal}
+          onClose={() => { setShowSquadSelectorModal(false); setSquadSelectorMatch(null); }}
+          match={squadSelectorMatch}
         />
       )}
 

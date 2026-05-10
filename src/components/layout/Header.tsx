@@ -38,9 +38,7 @@ export function Header({ title, subtitle }: HeaderProps) {
             </div>
           )}
           <Notifications members={members} matches={matches} />
-          <div className="hidden lg:block">
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </div>
       </div>
     </header>
