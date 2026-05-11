@@ -124,7 +124,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
   // 5-10× smaller than PNG for cricket posters (lots of solid color +
   // photo content) and stays under WhatsApp's 1MB share limit.
   // Pixel ratio 1.5 gives crisp results without bloating the file.
-  const exportImage = async (format: 'png' | 'jpeg' = 'jpeg') => {
+  const exportImage = async (format: 'png' | 'jpeg' = 'jpeg', forShare = false) => {
     if (!posterRef.current) return null;
 
     // Pre-warm avatar images with CORS so html-to-image can paint them.
@@ -143,15 +143,17 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
       });
     }));
 
+    // Smaller ratio for share so iOS/Android share sheet doesn't reject
+    // ("please select different item" — usually means the file is too big).
     const opts = {
       cacheBust: true,
-      pixelRatio: 1.5,
+      pixelRatio: forShare ? 1.15 : 1.5,
       backgroundColor: '#0a1019',
       fetchRequestInit: { mode: 'cors' as RequestMode },
     };
     return format === 'png'
       ? await toPng(posterRef.current, opts)
-      : await toJpeg(posterRef.current, { ...opts, quality: 0.92 });
+      : await toJpeg(posterRef.current, { ...opts, quality: forShare ? 0.85 : 0.92 });
   };
 
   const downloadPoster = async () => {
@@ -176,17 +178,43 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
     if (!posterRef.current) return;
     setDownloading(true);
     try {
-      const dataUrl = await exportImage('jpeg');
+      const dataUrl = await exportImage('jpeg', /* forShare */ true);
       if (!dataUrl) return;
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `scc-${match.date}.jpg`, { type: 'image/jpeg' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'SCC Match Result' });
-      } else {
-        downloadPoster();
+      if (!blob || blob.size === 0) throw new Error('Empty image blob');
+
+      const file = new File([blob], `scc-${match.date}.jpg`, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      });
+
+      // Web Share API path
+      if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'SCC Match Result',
+            text: `🏏 SCC vs ${match.opponent || 'opponent'} — ${match.result.toUpperCase()}`,
+          });
+          return;
+        } catch (shareErr) {
+          if ((shareErr as Error).name === 'AbortError') return;  // user cancelled
+          console.warn('Web Share failed, falling back to download:', shareErr);
+        }
       }
-    } catch {/* user cancelled / unsupported */}
-    finally { setDownloading(false); }
+
+      // Fallback: trigger a download
+      const link = document.createElement('a');
+      link.download = file.name;
+      link.href = dataUrl;
+      link.click();
+      alert("Couldn't open the share sheet — image downloaded instead. Attach it to WhatsApp manually.");
+    } catch (e) {
+      console.error('Share error:', e);
+      alert('Could not generate the poster. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const dateStr = new Date(match.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });

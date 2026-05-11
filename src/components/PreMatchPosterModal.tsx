@@ -145,19 +145,50 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
     setDownloading(true);
     try {
       await preWarmImages(posterRef.current);
+      // Use a smaller pixel ratio for sharing so the file stays well under
+      // the ~1MB WhatsApp limit and iOS doesn't reject it ("please select
+      // different item").
       const dataUrl = await toJpeg(posterRef.current, {
-        cacheBust: true, pixelRatio: 1.5, quality: 0.92, backgroundColor: '#1a0b3d',
+        cacheBust: true, pixelRatio: 1.15, quality: 0.85, backgroundColor: '#1a0b3d',
         fetchRequestInit: { mode: 'cors' as RequestMode },
       });
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `scc-squad-${match.date}.jpg`, { type: 'image/jpeg' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'SCC Squad' });
-      } else {
-        downloadPoster();
+      if (!blob || blob.size === 0) throw new Error('Empty image blob');
+
+      const file = new File([blob], `scc-squad-${match.date}.jpg`, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      });
+
+      // Web Share API path
+      if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'SCC Squad',
+            text: `🏏 ${tournamentName} · ${matchSubtitle}\nvs ${match.opponent || 'TBD'}`,
+          });
+          return;
+        } catch (shareErr) {
+          // User cancelled → quietly stop
+          if ((shareErr as Error).name === 'AbortError') return;
+          // Real failure (file too big, format rejected, etc.) → fall back
+          console.warn('Web Share failed, falling back to download:', shareErr);
+        }
       }
-    } catch { /* user cancelled */ }
-    finally { setDownloading(false); }
+
+      // Fallback: trigger a download with the same data URL
+      const link = document.createElement('a');
+      link.download = file.name;
+      link.href = dataUrl;
+      link.click();
+      alert("Couldn't open the share sheet — image downloaded instead. Attach it to WhatsApp manually.");
+    } catch (e) {
+      console.error('Share error:', e);
+      alert('Could not generate the poster. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
