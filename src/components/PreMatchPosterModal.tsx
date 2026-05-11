@@ -27,9 +27,25 @@ function useCountdown(target: string | null) {
   return { days, hours, mins, isPast: false };
 }
 
+// Role → emoji for the right-side icon badge
 const ROLE_ICON: Record<string, string> = {
-  batsman: '🏏', bowler: '⚡', all_rounder: '🌟', wicket_keeper: '🧤',
+  batsman: '🏏',
+  bowler: '🎯',
+  all_rounder: '⚡',
+  wicket_keeper: '🧤',
 };
+const ROLE_SUFFIX: Record<string, string> = {
+  wicket_keeper: ' (WK)',
+};
+
+// Convert "Avinash Singh" → "AVINASH SINGH"; preserve C / VC / WK markers
+function formatPlayerName(name: string, isCaptain: boolean, isVC: boolean, role?: string | null): string {
+  let label = name.toUpperCase();
+  if (role && ROLE_SUFFIX[role]) label += ROLE_SUFFIX[role];
+  if (isCaptain) label += ' (C)';
+  else if (isVC) label += ' (VC)';
+  return label;
+}
 
 export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
   const posterRef = useRef<HTMLDivElement>(null);
@@ -51,39 +67,65 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
   const countdown = useCountdown(match.date);
   const isInternal = match.match_type === 'internal';
 
-  const squad = useMemo<Member[]>(() => {
+  // Build the playing list. Sort with Captain first, VC second, then by role (keeper → batters → all-rounders → bowlers), else alphabetical.
+  const squad = useMemo<Array<{ member: Member; isCaptain: boolean; isVC: boolean }>>(() => {
     if (!match.players) return [];
-    return match.players
+    const rawList = match.players
       .map(p => p.member)
-      .filter((m): m is Member => !!m);
-  }, [match.players]);
+      .filter((m): m is Member => !!m)
+      .map(m => ({
+        member: m,
+        isCaptain: m.id === match.captain_id,
+        isVC: m.id === match.vice_captain_id,
+      }));
 
-  const captain = match.captain;
-  const viceCaptain = match.vice_captain;
+    const rolePriority: Record<string, number> = {
+      wicket_keeper: 1,
+      batsman: 2,
+      all_rounder: 3,
+      bowler: 4,
+    };
 
-  const dateStr = matchDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+    rawList.sort((a, b) => {
+      if (a.isCaptain && !b.isCaptain) return -1;
+      if (!a.isCaptain && b.isCaptain) return 1;
+      if (a.isVC && !b.isVC) return -1;
+      if (!a.isVC && b.isVC) return 1;
+      const ra = a.member.role ? rolePriority[a.member.role] ?? 5 : 5;
+      const rb = b.member.role ? rolePriority[b.member.role] ?? 5 : 5;
+      if (ra !== rb) return ra - rb;
+      return a.member.name.localeCompare(b.member.name);
+    });
+
+    return rawList;
+  }, [match.players, match.captain_id, match.vice_captain_id]);
+
+  const squadSize = squad.length;
+  const playingTitle = squadSize > 0 ? `PLAYING ${squadSize === 12 ? 'XII' : squadSize === 11 ? 'XI' : `${squadSize}`}` : 'SQUAD';
+
+  const dateStr = matchDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+
+  const preWarmImages = async (root: HTMLElement) => {
+    const imgs = Array.from(root.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise<void>(resolve => {
+        const probe = new Image();
+        probe.crossOrigin = 'anonymous';
+        probe.onload = () => resolve();
+        probe.onerror = () => resolve();
+        probe.src = img.src;
+      });
+    }));
+  };
 
   const downloadPoster = async () => {
     if (!posterRef.current) return;
     setDownloading(true);
     try {
-      const imgs = Array.from(posterRef.current.querySelectorAll('img'));
-      await Promise.all(imgs.map(img => {
-        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-        return new Promise<void>(resolve => {
-          const probe = new Image();
-          probe.crossOrigin = 'anonymous';
-          probe.onload = () => resolve();
-          probe.onerror = () => resolve();
-          probe.src = img.src;
-        });
-      }));
-
+      await preWarmImages(posterRef.current);
       const dataUrl = await toJpeg(posterRef.current, {
-        cacheBust: true,
-        pixelRatio: 1.5,
-        quality: 0.92,
-        backgroundColor: '#0a1019',
+        cacheBust: true, pixelRatio: 1.5, quality: 0.92, backgroundColor: '#1a0b3d',
         fetchRequestInit: { mode: 'cors' as RequestMode },
       });
       const link = document.createElement('a');
@@ -102,19 +144,9 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
     if (!posterRef.current) return;
     setDownloading(true);
     try {
-      const imgs = Array.from(posterRef.current.querySelectorAll('img'));
-      await Promise.all(imgs.map(img => {
-        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-        return new Promise<void>(resolve => {
-          const probe = new Image();
-          probe.crossOrigin = 'anonymous';
-          probe.onload = () => resolve();
-          probe.onerror = () => resolve();
-          probe.src = img.src;
-        });
-      }));
+      await preWarmImages(posterRef.current);
       const dataUrl = await toJpeg(posterRef.current, {
-        cacheBust: true, pixelRatio: 1.5, quality: 0.92, backgroundColor: '#0a1019',
+        cacheBust: true, pixelRatio: 1.5, quality: 0.92, backgroundColor: '#1a0b3d',
         fetchRequestInit: { mode: 'cors' as RequestMode },
       });
       const blob = await (await fetch(dataUrl)).blob();
@@ -139,249 +171,249 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
             <Input label="Subtitle / Match #" value={matchSubtitle} onChange={e => setMatchSubtitle(e.target.value)} />
           </div>
           <Input label="Tagline (e.g. 'Tomorrow · Be there!')" value={tagline} onChange={e => setTagline(e.target.value)} />
-          {squad.length === 0 && (
+          {squadSize === 0 && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
               ⚠️ No squad picked yet for this match. The admin can use "Pick Squad" from the match menu.
             </p>
           )}
         </div>
 
-        {/* The actual poster */}
+        {/* The actual poster — portrait list format */}
         <div className="overflow-x-auto rounded-2xl bg-black">
           <div
             ref={posterRef}
             style={{
-              width: '1280px',
-              minHeight: '720px',
-              padding: '24px 28px',
+              width: '1080px',
+              minHeight: '1350px',
+              padding: '0',
               fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-              background: 'linear-gradient(135deg, #064e3b 0%, #0a1019 50%, #1e1b4b 100%)',
+              background: `
+                radial-gradient(900px circle at 50% 0%, rgba(124,58,237,0.55), transparent 50%),
+                radial-gradient(800px circle at 50% 100%, rgba(236,72,153,0.35), transparent 55%),
+                linear-gradient(180deg, #2e1065 0%, #1a0b3d 50%, #0f0820 100%)
+              `,
               color: '#ffffff',
               position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            {/* HEADER */}
+            {/* Decorative diamond pattern — left edge */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              paddingBottom: 14,
-              borderBottom: '1px solid rgba(255,255,255,0.08)',
-            }}>
-              <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="SCC" style={{ width: 52, height: 52, borderRadius: 11, objectFit: 'cover' }} />
-              <div style={{ flex: 1 }}>
-                <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05, color: '#fff' }}>
-                  {tournamentName}
-                </h1>
-                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', color: '#34d399', margin: '2px 0 0 0', textTransform: 'uppercase' }}>
-                  {matchSubtitle}
-                </p>
-              </div>
-              <div style={{
-                background: 'rgba(245,158,11,0.1)',
-                border: '1px solid rgba(245,158,11,0.25)',
-                borderRadius: 10,
-                padding: '8px 14px',
-                textAlign: 'right',
-              }}>
-                <p style={{ fontSize: 9, fontWeight: 900, letterSpacing: '2px', color: '#fbbf24', textTransform: 'uppercase', margin: 0 }}>
-                  📍 {match.venue}
-                </p>
-                <p style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 600, margin: '3px 0 0 0' }}>
-                  🗓️ {dateStr}
-                </p>
-              </div>
-            </div>
+              position: 'absolute', left: 0, top: 0, bottom: 0, width: 80,
+              backgroundImage: `
+                linear-gradient(45deg, rgba(236,72,153,0.5) 25%, transparent 25%, transparent 75%, rgba(236,72,153,0.5) 75%, rgba(236,72,153,0.5)),
+                linear-gradient(45deg, rgba(236,72,153,0.5) 25%, transparent 25%, transparent 75%, rgba(236,72,153,0.5) 75%, rgba(236,72,153,0.5))
+              `,
+              backgroundSize: '40px 40px',
+              backgroundPosition: '0 0, 20px 20px',
+              opacity: 0.6,
+              maskImage: 'linear-gradient(to right, black 0%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 0%, transparent 100%)',
+            }} />
+            {/* Decorative diamond pattern — right edge */}
+            <div style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 80,
+              backgroundImage: `
+                linear-gradient(45deg, rgba(34,211,238,0.45) 25%, transparent 25%, transparent 75%, rgba(34,211,238,0.45) 75%, rgba(34,211,238,0.45)),
+                linear-gradient(45deg, rgba(34,211,238,0.45) 25%, transparent 25%, transparent 75%, rgba(34,211,238,0.45) 75%, rgba(34,211,238,0.45))
+              `,
+              backgroundSize: '40px 40px',
+              backgroundPosition: '0 0, 20px 20px',
+              opacity: 0.6,
+              maskImage: 'linear-gradient(to left, black 0%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to left, black 0%, transparent 100%)',
+            }} />
+            {/* Stadium silhouette suggestion at bottom */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: 180,
+              background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.4))',
+              pointerEvents: 'none',
+            }} />
 
-            {/* HERO — opponent + tagline + countdown */}
-            <div style={{
-              marginTop: 22,
-              position: 'relative',
-              padding: '24px 28px',
-              borderRadius: 16,
-              background: 'radial-gradient(500px circle at 0% 0%, rgba(16,185,129,0.25), transparent 60%), linear-gradient(135deg, #064e3b 0%, #0a1019 100%)',
-              border: '2px solid rgba(16,185,129,0.4)',
-              display: 'grid',
-              gridTemplateColumns: '1fr auto',
-              gap: 24,
-              alignItems: 'center',
-            }}>
-              <div>
-                <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: '4px', color: '#fbbf24', textTransform: 'uppercase', margin: 0 }}>
-                  🔥 {tagline}
-                </p>
-                <h2 style={{
-                  fontSize: 42, fontWeight: 900, margin: '8px 0 0 0',
-                  letterSpacing: '-1px', lineHeight: 1.05, color: '#ffffff',
+            {/* CONTENT */}
+            <div style={{ position: 'relative', padding: '60px 110px 50px 110px' }}>
+
+              {/* TOP LOGO STRIP — small trophy + tournament tag */}
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 10,
+                  padding: '8px 18px',
+                  background: 'rgba(0,0,0,0.35)',
+                  border: '1px solid rgba(251,191,36,0.35)',
+                  borderRadius: 999,
                 }}>
-                  {isInternal
-                    ? <>Dhurandars <span style={{ color: '#fbbf24' }}>vs</span> Bazigars</>
-                    : <>SCC <span style={{ color: '#fbbf24' }}>vs</span> <span style={{ color: '#34d399' }}>{match.opponent || 'TBD'}</span></>
-                  }
-                </h2>
-                <p style={{ fontSize: 14, color: '#cbd5e1', margin: '8px 0 0', fontWeight: 600 }}>
-                  📍 {match.venue}
-                </p>
-              </div>
-
-              {/* Countdown badge */}
-              {countdown && !countdown.isPast && (
-                <div style={{ textAlign: 'center', minWidth: 160 }}>
-                  <p style={{ fontSize: 10, fontWeight: 900, letterSpacing: '2px', color: '#34d399', textTransform: 'uppercase', margin: 0 }}>
-                    Starts in
-                  </p>
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 8 }}>
-                    {[
-                      { v: countdown.days, l: 'D' },
-                      { v: countdown.hours, l: 'H' },
-                      { v: countdown.mins, l: 'M' },
-                    ].map(({ v, l }) => (
-                      <div key={l} style={{
-                        background: 'rgba(255,255,255,0.08)',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        borderRadius: 8,
-                        padding: '8px 10px',
-                        minWidth: 44,
-                      }}>
-                        <p style={{ fontSize: 22, fontWeight: 900, color: '#fff', margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                          {String(v).padStart(2, '0')}
-                        </p>
-                        <p style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', margin: '4px 0 0', letterSpacing: '1px' }}>
-                          {l}
-                        </p>
-                      </div>
-                    ))}
+                  <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="SCC" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: '3px', color: '#fbbf24', margin: 0, textTransform: 'uppercase' }}>
+                      Sangria Cricket Club
+                    </p>
+                    <p style={{ fontSize: 10, color: '#cbd5e1', margin: '2px 0 0', letterSpacing: '2px' }}>
+                      {dateStr}
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* SQUAD GRID */}
-            {squad.length > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: '3px', color: '#fbbf24', textTransform: 'uppercase', margin: 0 }}>
-                    📋 Playing Squad ({squad.length})
-                  </p>
-                  {captain && (
-                    <p style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, margin: 0 }}>
-                      Led by <span style={{ color: '#fbbf24', fontWeight: 900 }}>{captain.name}</span>
-                      {viceCaptain && <> · VC <span style={{ color: '#a78bfa', fontWeight: 900 }}>{viceCaptain.name}</span></>}
-                    </p>
-                  )}
-                </div>
-
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${Math.min(6, squad.length)}, 1fr)`,
-                  gap: 10,
+              {/* MAIN TITLE */}
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <h1 style={{
+                  fontSize: 60, fontWeight: 900, margin: 0, letterSpacing: '-1px', lineHeight: 1.0,
+                  color: '#ffffff',
+                  textShadow: '0 4px 24px rgba(124,58,237,0.6)',
                 }}>
-                  {squad.slice(0, 12).map(m => {
-                    const isCaptain = m.id === captain?.id;
-                    const isVC = m.id === viceCaptain?.id;
+                  {tournamentName}
+                </h1>
+                <h2 style={{
+                  fontSize: 56, fontWeight: 900, margin: '6px 0 0', letterSpacing: '4px', lineHeight: 1.0,
+                  color: '#fbbf24',
+                  textShadow: '0 4px 16px rgba(251,191,36,0.4)',
+                }}>
+                  {playingTitle}
+                </h2>
+              </div>
+
+              {/* SUBTITLE — match info */}
+              <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                <p style={{ fontSize: 12, fontWeight: 800, letterSpacing: '3px', color: '#a78bfa', margin: 0, textTransform: 'uppercase' }}>
+                  {tagline}
+                </p>
+                <h3 style={{ fontSize: 30, fontWeight: 900, color: '#ffffff', margin: '6px 0 0', letterSpacing: '-0.3px' }}>
+                  {isInternal
+                    ? <>Dhurandars <span style={{ color: '#fbbf24' }}>vs</span> Bazigars</>
+                    : <>vs <span style={{ color: '#22d3ee' }}>{(match.opponent || 'TBD').toUpperCase()}</span></>
+                  }
+                </h3>
+                <p style={{ fontSize: 13, color: '#cbd5e1', margin: '6px 0 0', fontWeight: 600 }}>
+                  📍 {match.venue} · 🗓️ {matchSubtitle}
+                </p>
+                {countdown && !countdown.isPast && (countdown.days > 0 || countdown.hours > 0) && (
+                  <p style={{ fontSize: 12, color: '#34d399', margin: '8px 0 0', fontWeight: 800, letterSpacing: '2px' }}>
+                    ⏰ Starts in {countdown.days > 0 ? `${countdown.days}d ` : ''}{countdown.hours}h {countdown.mins}m
+                  </p>
+                )}
+              </div>
+
+              {/* PLAYER LIST */}
+              {squad.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  {squad.map(({ member, isCaptain, isVC }, i) => {
+                    const role = member.role;
+                    const icon = role ? ROLE_ICON[role] : '🏏';
+                    const isKeeper = role === 'wicket_keeper';
                     return (
-                      <div key={m.id} style={{
-                        background: isCaptain
-                          ? 'linear-gradient(135deg, #78350f 0%, #0a1019 100%)'
-                          : isVC
-                          ? 'linear-gradient(135deg, #4c1d95 0%, #0a1019 100%)'
-                          : 'linear-gradient(135deg, #1e293b 0%, #0a1019 100%)',
-                        border: isCaptain
-                          ? '2px solid rgba(251,191,36,0.5)'
-                          : isVC
-                          ? '2px solid rgba(168,85,247,0.5)'
-                          : '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 12,
-                        padding: 10,
-                        textAlign: 'center',
-                        position: 'relative',
+                      <div key={member.id} style={{
+                        display: 'flex',
+                        alignItems: 'stretch',
+                        gap: 0,
+                        height: 64,
                       }}>
-                        {(isCaptain || isVC) && (
-                          <div style={{
-                            position: 'absolute', top: -7, left: '50%', transform: 'translateX(-50%)',
-                            background: isCaptain ? '#fbbf24' : '#a855f7',
-                            color: isCaptain ? '#1a0f05' : '#fff',
-                            fontSize: 8, fontWeight: 900, letterSpacing: '1.5px',
-                            padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase',
-                          }}>
-                            {isCaptain ? 'C' : 'VC'}
-                          </div>
-                        )}
-                        {m.avatar_url ? (
-                          <img
-                            crossOrigin="anonymous"
-                            src={m.avatar_url}
-                            alt=""
-                            style={{
-                              width: 64, height: 64, borderRadius: 12, objectFit: 'cover',
-                              margin: '0 auto', display: 'block',
-                              border: isCaptain ? '2px solid rgba(251,191,36,0.6)' : isVC ? '2px solid rgba(168,85,247,0.6)' : '2px solid rgba(255,255,255,0.15)',
-                            }}
-                          />
-                        ) : (
-                          <div style={{
-                            width: 64, height: 64, borderRadius: 12, margin: '0 auto',
-                            background: 'linear-gradient(135deg, #475569, #1e293b)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: isCaptain ? '2px solid rgba(251,191,36,0.6)' : isVC ? '2px solid rgba(168,85,247,0.6)' : '2px solid rgba(255,255,255,0.15)',
-                          }}>
-                            <span style={{ fontSize: 28, fontWeight: 900, color: '#cbd5e1' }}>
-                              {m.name.charAt(0)}
-                            </span>
-                          </div>
-                        )}
-                        <p style={{
-                          fontSize: 12, fontWeight: 900, color: '#fff', margin: '8px 0 0',
-                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                          letterSpacing: '-0.2px',
+                        {/* Number badge — gold */}
+                        <div style={{
+                          width: 70, flexShrink: 0,
+                          background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                          color: '#1a0b3d',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 30, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
+                          borderRadius: '12px 0 0 12px',
+                          boxShadow: 'inset 0 -3px 8px rgba(0,0,0,0.15)',
                         }}>
-                          {m.name.split(' ')[0]}
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 2, minHeight: 14 }}>
-                          {m.jersey_number != null && (
-                            <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-                              #{m.jersey_number}
+                          {i + 1}
+                        </div>
+
+                        {/* Name strip — cyan/teal */}
+                        <div style={{
+                          flex: 1,
+                          background: isCaptain
+                            ? 'linear-gradient(90deg, #06b6d4 0%, #0891b2 100%)'
+                            : isVC
+                            ? 'linear-gradient(90deg, #14b8a6 0%, #0d9488 100%)'
+                            : 'linear-gradient(90deg, #22d3ee 0%, #06b6d4 100%)',
+                          color: '#ffffff',
+                          display: 'flex', alignItems: 'center',
+                          padding: '0 24px',
+                          fontSize: 24, fontWeight: 900,
+                          letterSpacing: '0.5px',
+                          textShadow: '0 2px 4px rgba(0,0,0,0.25)',
+                          borderTop: isCaptain ? '2px solid #fbbf24' : 'none',
+                          borderBottom: isCaptain ? '2px solid #fbbf24' : 'none',
+                        }}>
+                          <span style={{
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
+                          }}>
+                            {formatPlayerName(member.name, isCaptain, isVC, role)}
+                          </span>
+                          {member.jersey_number != null && (
+                            <span style={{
+                              fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.7)',
+                              fontVariantNumeric: 'tabular-nums', marginLeft: 12,
+                              padding: '2px 8px', borderRadius: 6,
+                              background: 'rgba(0,0,0,0.18)',
+                            }}>
+                              #{member.jersey_number}
                             </span>
                           )}
-                          {m.role && (
-                            <span style={{ fontSize: 11 }}>
-                              {ROLE_ICON[m.role]}
-                            </span>
-                          )}
+                        </div>
+
+                        {/* Icon badge — gold */}
+                        <div style={{
+                          width: 70, flexShrink: 0,
+                          background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: isKeeper ? 30 : 32,
+                          borderRadius: '0 12px 12px 0',
+                          boxShadow: 'inset 0 -3px 8px rgba(0,0,0,0.15)',
+                        }}>
+                          {icon}
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div style={{
+                  padding: '40px 20px',
+                  background: 'rgba(0,0,0,0.25)',
+                  border: '1px dashed rgba(255,255,255,0.15)',
+                  borderRadius: 16, textAlign: 'center',
+                }}>
+                  <p style={{ fontSize: 16, color: '#cbd5e1', margin: 0, fontWeight: 600 }}>
+                    Squad not picked yet
+                  </p>
+                  <p style={{ fontSize: 12, color: '#9ca3af', margin: '6px 0 0' }}>
+                    Admin will lock in the playing XII closer to match day
+                  </p>
+                </div>
+              )}
 
-            {squad.length === 0 && (
+              {/* FOOTER */}
               <div style={{
-                marginTop: 20, padding: '40px 20px',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px dashed rgba(255,255,255,0.15)',
-                borderRadius: 16, textAlign: 'center',
+                marginTop: 36,
+                paddingTop: 18,
+                borderTop: '1px solid rgba(255,255,255,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                position: 'relative',
               }}>
-                <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>
-                  Squad not picked yet · Admin will lock in the playing 12 closer to match day
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '0.5px' }}>
+                      SANGRIA CRICKET CLUB
+                    </p>
+                    <p style={{ fontSize: 10, color: '#a78bfa', margin: '2px 0 0', letterSpacing: '2px', fontWeight: 700 }}>
+                      PUNE · EST 2024
+                    </p>
+                  </div>
+                </div>
+                <div style={{
+                  padding: '8px 16px',
+                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                  borderRadius: 8,
+                  color: '#1a0b3d',
+                  fontSize: 12, fontWeight: 900, letterSpacing: '2px',
+                }}>
+                  CHAMPIONS PLAY HERE 🏏
+                </div>
               </div>
-            )}
-
-            {/* FOOTER */}
-            <div style={{
-              marginTop: 18, paddingTop: 12,
-              borderTop: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
-                <p style={{ fontSize: 11, fontWeight: 900, color: '#fff', margin: 0 }}>
-                  Sangria Cricket Club <span style={{ color: '#9ca3af', fontWeight: 500 }}>· Pune · Est 2024</span>
-                </p>
-              </div>
-              <p style={{ fontSize: 10, color: '#34d399', fontWeight: 900, margin: 0, letterSpacing: '1.5px' }}>
-                Champions Play Here 🏏
-              </p>
             </div>
           </div>
         </div>
@@ -407,7 +439,7 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
         )}
 
         <p className="text-[11px] text-gray-400 text-center">
-          💡 Compact landscape poster ≈ 300–500 KB · WhatsApp & Instagram friendly.
+          💡 Portrait poster ≈ 500–800 KB · WhatsApp & Instagram story friendly.
         </p>
       </div>
     </Modal>
