@@ -38,6 +38,7 @@ import { PollSummaryBadge } from '../components/PollSummaryBadge';
 import { PollManageModal } from '../components/PollManageModal';
 import { SquadGraphicModal } from '../components/SquadGraphicModal';
 import { MatchPosterModal } from '../components/MatchPosterModal';
+import { PreMatchPosterModal } from '../components/PreMatchPosterModal';
 import { SquadSelectorModal } from '../components/SquadSelectorModal';
 import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
 import type { Match, MatchType, InternalTeam } from '../types';
@@ -74,6 +75,8 @@ export function Matches() {
   const [squadGraphicMatch, setSquadGraphicMatch] = useState<Match | null>(null);
   const [showPosterModal, setShowPosterModal] = useState(false);
   const [posterMatch, setPosterMatch] = useState<Match | null>(null);
+  const [showPreMatchPosterModal, setShowPreMatchPosterModal] = useState(false);
+  const [preMatchPosterMatch, setPreMatchPosterMatch] = useState<Match | null>(null);
   const [showSquadSelectorModal, setShowSquadSelectorModal] = useState(false);
   const [squadSelectorMatch, setSquadSelectorMatch] = useState<Match | null>(null);
   const [showMatchDayModal, setShowMatchDayModal] = useState(false);
@@ -700,7 +703,28 @@ export function Matches() {
                     )}
                   </div>
 
-                  {/* Actions */}
+                  {/* Public "Share Poster" button — visible to ALL users */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        if (match.result === 'upcoming') {
+                          setPreMatchPosterMatch(match);
+                          setShowPreMatchPosterModal(true);
+                        } else if (['won', 'lost', 'draw'].includes(match.result)) {
+                          setPosterMatch(match);
+                          setShowPosterModal(true);
+                        }
+                      }}
+                      title={match.result === 'upcoming' ? 'Pre-Match Squad Poster' : 'Result Poster'}
+                      className="p-2 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/30 hover:from-amber-200 hover:to-amber-300 dark:hover:from-amber-900/50 dark:hover:to-amber-800/50 transition-colors flex items-center gap-1.5"
+                    >
+                      <ImageDown className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                      <span className="hidden sm:inline text-xs font-bold text-amber-700 dark:text-amber-400">
+                        {match.result === 'upcoming' ? 'Squad' : 'Result'}
+                      </span>
+                    </button>
+
+                  {/* Admin Actions */}
                   {isAdmin && (
                     <div className="relative">
                       <button
@@ -808,6 +832,7 @@ export function Matches() {
                       )}
                     </div>
                   )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1905,6 +1930,14 @@ export function Matches() {
           isOpen={showPosterModal}
           onClose={() => { setShowPosterModal(false); setPosterMatch(null); }}
           match={posterMatch}
+        />
+      )}
+
+      {showPreMatchPosterModal && preMatchPosterMatch && (
+        <PreMatchPosterModal
+          isOpen={showPreMatchPosterModal}
+          onClose={() => { setShowPreMatchPosterModal(false); setPreMatchPosterMatch(null); }}
+          match={preMatchPosterMatch}
         />
       )}
 
