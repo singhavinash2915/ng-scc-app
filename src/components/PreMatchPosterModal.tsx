@@ -262,27 +262,34 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
             }} />
 
             {/* CONTENT */}
-            <div style={{ position: 'relative', padding: '60px 110px 50px 110px' }}>
+            <div style={{ position: 'relative', padding: '40px 110px 50px 110px' }}>
 
-              {/* TOP LOGO STRIP — small trophy + tournament tag */}
-              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              {/* BIG CENTRE LOGO — SCC branding hero */}
+              <div style={{ textAlign: 'center', marginBottom: 14 }}>
                 <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 10,
-                  padding: '8px 18px',
-                  background: 'rgba(0,0,0,0.35)',
-                  border: '1px solid rgba(251,191,36,0.35)',
-                  borderRadius: 999,
+                  display: 'inline-block', position: 'relative',
+                  padding: 8,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                  boxShadow: '0 0 40px rgba(251,191,36,0.4)',
                 }}>
-                  <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="SCC" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: 11, fontWeight: 900, letterSpacing: '3px', color: '#fbbf24', margin: 0, textTransform: 'uppercase' }}>
-                      Sangria Cricket Club
-                    </p>
-                    <p style={{ fontSize: 10, color: '#cbd5e1', margin: '2px 0 0', letterSpacing: '2px' }}>
-                      {dateStr}
-                    </p>
-                  </div>
+                  <img
+                    src="/scc-logo.jpg"
+                    alt="SCC"
+                    style={{
+                      width: 100, height: 100, borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '4px solid #1a0b3d',
+                      display: 'block',
+                    }}
+                  />
                 </div>
+                <p style={{ fontSize: 13, fontWeight: 900, letterSpacing: '4px', color: '#fbbf24', margin: '12px 0 0', textTransform: 'uppercase' }}>
+                  Sangria Cricket Club
+                </p>
+                <p style={{ fontSize: 11, color: '#cbd5e1', margin: '4px 0 0', letterSpacing: '2px', fontWeight: 600 }}>
+                  {dateStr}
+                </p>
               </div>
 
               {/* MAIN TITLE */}
@@ -425,7 +432,7 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
                 position: 'relative',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
+                  <img src="/scc-logo.jpg" alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '0.5px' }}>
                       SANGRIA CRICKET CLUB
