@@ -4,6 +4,7 @@ import { toJpeg } from 'html-to-image';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 import type { Match, Member } from '../types';
 
 interface Props {
@@ -274,7 +275,7 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
                   boxShadow: '0 0 40px rgba(251,191,36,0.4)',
                 }}>
                   <img
-                    src="/scc-logo.jpg"
+                    src={SCC_LOGO_DATA_URL}
                     alt="SCC"
                     style={{
                       width: 100, height: 100, borderRadius: '50%',
@@ -432,7 +433,7 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
                 position: 'relative',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <img src="/scc-logo.jpg" alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
+                  <img src={SCC_LOGO_DATA_URL} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '0.5px' }}>
                       SANGRIA CRICKET CLUB
