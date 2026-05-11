@@ -13,33 +13,10 @@ interface Props {
   match: Match;
 }
 
-function useCountdown(target: string | null) {
-  const [now, setNow] = useState(Date.now());
-  useMemo(() => {
-    const id = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(id);
-  }, []);
-  if (!target) return null;
-  const diff = new Date(target).getTime() - now;
-  if (diff <= 0) return { days: 0, hours: 0, mins: 0, isPast: true };
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  return { days, hours, mins, isPast: false };
-}
-
-// Role → emoji for the right-side icon badge
-const ROLE_ICON: Record<string, string> = {
-  batsman: '🏏',
-  bowler: '🎯',
-  all_rounder: '⚡',
-  wicket_keeper: '🧤',
-};
 const ROLE_SUFFIX: Record<string, string> = {
   wicket_keeper: ' (WK)',
 };
 
-// Convert "Avinash Singh" → "AVINASH SINGH"; preserve C / VC / WK markers
 function formatPlayerName(name: string, isCaptain: boolean, isVC: boolean, role?: string | null): string {
   let label = name.toUpperCase();
   if (role && ROLE_SUFFIX[role]) label += ROLE_SUFFIX[role];
@@ -48,27 +25,28 @@ function formatPlayerName(name: string, isCaptain: boolean, isVC: boolean, role?
   return label;
 }
 
+// Cricket-bat SVG (small) — used as right-side icon on every player row
+const CRICKET_BAT_SVG = (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* bat */}
+    <rect x="9" y="3" width="6" height="3" rx="1" transform="rotate(45 12 4.5)" fill="#3b1d6a" />
+    <rect x="13" y="6" width="14" height="4" rx="1" transform="rotate(45 20 8)" fill="#3b1d6a" />
+    <rect x="14" y="7" width="10" height="2.5" rx="0.5" transform="rotate(45 19 8.5)" fill="#5b2b9f" />
+    {/* ball */}
+    <circle cx="6" cy="24" r="3.4" fill="#dc2626" stroke="#7f1d1d" strokeWidth="0.5" />
+    <path d="M 4 22 Q 6 24 8 26" stroke="#fef2f2" strokeWidth="0.4" fill="none" />
+  </svg>
+);
+
 export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
   const posterRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
   const [tournamentName, setTournamentName] = useState('SCC MATCH DAY');
   const matchDate = useMemo(() => new Date(match.date), [match.date]);
-  const [matchSubtitle, setMatchSubtitle] = useState(() =>
-    matchDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase()
-  );
-  const [tagline, setTagline] = useState(() => {
-    const diff = matchDate.getTime() - Date.now();
-    if (diff > 86400000 * 2) return 'GET READY!';
-    if (diff > 86400000) return 'TOMORROW · BE THERE 🏏';
-    if (diff > 0) return 'TODAY · MATCH DAY 🔥';
-    return 'TODAY · LIVE NOW';
-  });
 
-  const countdown = useCountdown(match.date);
   const isInternal = match.match_type === 'internal';
 
-  // Build the playing list. Sort with Captain first, VC second, then by role (keeper → batters → all-rounders → bowlers), else alphabetical.
   const squad = useMemo<Array<{ member: Member; isCaptain: boolean; isVC: boolean }>>(() => {
     if (!match.players) return [];
     const rawList = match.players
@@ -104,7 +82,8 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
   const squadSize = squad.length;
   const playingTitle = squadSize > 0 ? `PLAYING ${squadSize === 12 ? 'XII' : squadSize === 11 ? 'XI' : `${squadSize}`}` : 'SQUAD';
 
-  const dateStr = matchDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+  const dateStrTop = matchDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+  const dateStrInline = matchDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
 
   const preWarmImages = async (root: HTMLElement) => {
     const imgs = Array.from(root.querySelectorAll('img'));
@@ -146,9 +125,6 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
     setDownloading(true);
     try {
       await preWarmImages(posterRef.current);
-      // Use a smaller pixel ratio for sharing so the file stays well under
-      // the ~1MB WhatsApp limit and iOS doesn't reject it ("please select
-      // different item").
       const dataUrl = await toJpeg(posterRef.current, {
         cacheBust: true, pixelRatio: 1.15, quality: 0.85, backgroundColor: '#1a0b3d',
         fetchRequestInit: { mode: 'cors' as RequestMode },
@@ -161,24 +137,20 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
         lastModified: Date.now(),
       });
 
-      // Web Share API path
       if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
             title: 'SCC Squad',
-            text: `🏏 ${tournamentName} · ${matchSubtitle}\nvs ${match.opponent || 'TBD'}`,
+            text: `🏏 ${tournamentName} · ${dateStrInline}\nvs ${match.opponent || 'TBD'}`,
           });
           return;
         } catch (shareErr) {
-          // User cancelled → quietly stop
           if ((shareErr as Error).name === 'AbortError') return;
-          // Real failure (file too big, format rejected, etc.) → fall back
           console.warn('Web Share failed, falling back to download:', shareErr);
         }
       }
 
-      // Fallback: trigger a download with the same data URL
       const link = document.createElement('a');
       link.download = file.name;
       link.href = dataUrl;
@@ -198,11 +170,7 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
 
         {/* Customise header */}
         <div className="space-y-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input label="Tournament / Header" value={tournamentName} onChange={e => setTournamentName(e.target.value)} />
-            <Input label="Subtitle / Match #" value={matchSubtitle} onChange={e => setMatchSubtitle(e.target.value)} />
-          </div>
-          <Input label="Tagline (e.g. 'Tomorrow · Be there!')" value={tagline} onChange={e => setTagline(e.target.value)} />
+          <Input label="Title (e.g. SCC MATCH DAY)" value={tournamentName} onChange={e => setTournamentName(e.target.value)} />
           {squadSize === 0 && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
               ⚠️ No squad picked yet for this match. The admin can use "Pick Squad" from the match menu.
@@ -216,12 +184,12 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
             ref={posterRef}
             style={{
               width: '1080px',
-              minHeight: '1350px',
-              padding: '0',
-              fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+              minHeight: '1500px',
+              padding: 0,
+              fontFamily: '"Helvetica Neue", "Arial Black", system-ui, sans-serif',
               background: `
                 radial-gradient(900px circle at 50% 0%, rgba(124,58,237,0.55), transparent 50%),
-                radial-gradient(800px circle at 50% 100%, rgba(236,72,153,0.35), transparent 55%),
+                radial-gradient(800px circle at 50% 100%, rgba(236,72,153,0.30), transparent 55%),
                 linear-gradient(180deg, #2e1065 0%, #1a0b3d 50%, #0f0820 100%)
               `,
               color: '#ffffff',
@@ -229,152 +197,190 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
               overflow: 'hidden',
             }}
           >
-            {/* Decorative diamond pattern — left edge */}
-            <div style={{
-              position: 'absolute', left: 0, top: 0, bottom: 0, width: 80,
-              backgroundImage: `
-                linear-gradient(45deg, rgba(236,72,153,0.5) 25%, transparent 25%, transparent 75%, rgba(236,72,153,0.5) 75%, rgba(236,72,153,0.5)),
-                linear-gradient(45deg, rgba(236,72,153,0.5) 25%, transparent 25%, transparent 75%, rgba(236,72,153,0.5) 75%, rgba(236,72,153,0.5))
-              `,
-              backgroundSize: '40px 40px',
-              backgroundPosition: '0 0, 20px 20px',
-              opacity: 0.6,
-              maskImage: 'linear-gradient(to right, black 0%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, transparent 100%)',
-            }} />
-            {/* Decorative diamond pattern — right edge */}
-            <div style={{
-              position: 'absolute', right: 0, top: 0, bottom: 0, width: 80,
-              backgroundImage: `
-                linear-gradient(45deg, rgba(34,211,238,0.45) 25%, transparent 25%, transparent 75%, rgba(34,211,238,0.45) 75%, rgba(34,211,238,0.45)),
-                linear-gradient(45deg, rgba(34,211,238,0.45) 25%, transparent 25%, transparent 75%, rgba(34,211,238,0.45) 75%, rgba(34,211,238,0.45))
-              `,
-              backgroundSize: '40px 40px',
-              backgroundPosition: '0 0, 20px 20px',
-              opacity: 0.6,
-              maskImage: 'linear-gradient(to left, black 0%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to left, black 0%, transparent 100%)',
-            }} />
-            {/* Stadium silhouette suggestion at bottom */}
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0, height: 180,
-              background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.4))',
-              pointerEvents: 'none',
-            }} />
+            {/* ── DECORATIVE PAINT STROKES — corners ────────────── */}
+            <svg
+              width="1080" height="1500" viewBox="0 0 1080 1500"
+              style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* TOP-LEFT — gold diagonal strokes */}
+              <g transform="rotate(-25 100 100)" opacity="0.85">
+                <path d="M -50 80 Q 100 60 280 70 L 280 95 Q 100 80 -50 105 Z" fill="#fbbf24" />
+                <path d="M -50 130 Q 120 110 250 115 L 250 142 Q 120 130 -50 150 Z" fill="#f59e0b" />
+                <path d="M -30 175 Q 80 165 180 170 L 180 188 Q 80 178 -30 195 Z" fill="#fbbf24" opacity="0.7" />
+              </g>
+              {/* TOP-RIGHT — purple/pink strokes */}
+              <g transform="rotate(20 980 100)" opacity="0.85">
+                <path d="M 830 60 Q 950 50 1130 65 L 1130 92 Q 950 75 830 85 Z" fill="#a855f7" />
+                <path d="M 850 115 Q 960 105 1130 120 L 1130 145 Q 960 130 850 140 Z" fill="#ec4899" opacity="0.75" />
+                <path d="M 870 165 Q 980 160 1130 170 L 1130 188 Q 980 178 870 188 Z" fill="#c084fc" opacity="0.6" />
+              </g>
+              {/* BOTTOM-LEFT — gold/purple strokes */}
+              <g transform="rotate(-15 100 1400)" opacity="0.85">
+                <path d="M -40 1320 Q 100 1310 240 1320 L 240 1345 Q 100 1335 -40 1345 Z" fill="#fbbf24" opacity="0.7" />
+                <path d="M -30 1380 Q 80 1370 220 1380 L 220 1402 Q 80 1395 -30 1405 Z" fill="#a855f7" opacity="0.55" />
+              </g>
+              {/* BOTTOM-RIGHT — purple strokes */}
+              <g transform="rotate(20 980 1400)" opacity="0.85">
+                <path d="M 850 1320 Q 970 1310 1130 1325 L 1130 1348 Q 970 1335 850 1345 Z" fill="#ec4899" opacity="0.7" />
+                <path d="M 870 1380 Q 970 1370 1130 1380 L 1130 1402 Q 970 1395 870 1405 Z" fill="#fbbf24" opacity="0.6" />
+              </g>
 
-            {/* CONTENT */}
-            <div style={{ position: 'relative', padding: '40px 110px 50px 110px' }}>
+              {/* STADIUM SILHOUETTE — soft light glow at bottom (suggests floodlights) */}
+              <defs>
+                <radialGradient id="stadiumGlow" cx="50%" cy="100%" r="60%">
+                  <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.18" />
+                  <stop offset="60%" stopColor="#a855f7" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="transparent" />
+                </radialGradient>
+              </defs>
+              <rect x="0" y="900" width="1080" height="600" fill="url(#stadiumGlow)" />
+              {/* horizontal light beams */}
+              <line x1="0" y1="700" x2="1080" y2="640" stroke="#fbbf24" strokeWidth="2" opacity="0.18" />
+              <line x1="0" y1="780" x2="1080" y2="720" stroke="#a855f7" strokeWidth="2" opacity="0.16" />
+            </svg>
 
-              {/* BIG CENTRE LOGO — SCC branding hero */}
-              <div style={{ textAlign: 'center', marginBottom: 14 }}>
+            {/* ── CONTENT ─────────────────────────────────────────── */}
+            <div style={{ position: 'relative', padding: '60px 90px 40px 90px' }}>
+
+              {/* LOGO — circular, gold ring */}
+              <div style={{ textAlign: 'center', marginBottom: 10 }}>
                 <div style={{
-                  display: 'inline-block', position: 'relative',
-                  padding: 8,
+                  display: 'inline-block',
+                  padding: 6,
                   borderRadius: '50%',
                   background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                  boxShadow: '0 0 40px rgba(251,191,36,0.4)',
+                  boxShadow: '0 0 50px rgba(251,191,36,0.45)',
                 }}>
                   <img
                     src={SCC_LOGO_DATA_URL}
                     alt="SCC"
                     style={{
-                      width: 100, height: 100, borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '4px solid #1a0b3d',
-                      display: 'block',
+                      width: 110, height: 110, borderRadius: '50%',
+                      objectFit: 'cover', border: '4px solid #1a0b3d', display: 'block',
                     }}
                   />
                 </div>
-                <p style={{ fontSize: 13, fontWeight: 900, letterSpacing: '4px', color: '#fbbf24', margin: '12px 0 0', textTransform: 'uppercase' }}>
+                <p style={{
+                  fontSize: 18, fontWeight: 900, letterSpacing: '5px',
+                  color: '#fbbf24', margin: '14px 0 0', textTransform: 'uppercase',
+                  textShadow: '0 2px 12px rgba(251,191,36,0.4)',
+                }}>
                   Sangria Cricket Club
                 </p>
-                <p style={{ fontSize: 11, color: '#cbd5e1', margin: '4px 0 0', letterSpacing: '2px', fontWeight: 600 }}>
-                  {dateStr}
+                <p style={{
+                  fontSize: 13, color: '#cbd5e1', margin: '6px 0 0',
+                  letterSpacing: '3px', fontWeight: 700,
+                }}>
+                  {dateStrTop}
                 </p>
               </div>
 
-              {/* MAIN TITLE */}
-              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              {/* BIG TITLE */}
+              <div style={{ textAlign: 'center', marginTop: 24 }}>
                 <h1 style={{
-                  fontSize: 60, fontWeight: 900, margin: 0, letterSpacing: '-1px', lineHeight: 1.0,
+                  fontSize: 90, fontWeight: 900, margin: 0,
+                  letterSpacing: '-2px', lineHeight: 0.95,
                   color: '#ffffff',
-                  textShadow: '0 4px 24px rgba(124,58,237,0.6)',
+                  textShadow: '0 6px 24px rgba(0,0,0,0.5), 0 0 60px rgba(124,58,237,0.4)',
+                  fontStyle: 'italic',
+                  transform: 'skewX(-3deg)',
                 }}>
                   {tournamentName}
                 </h1>
+                {/* PLAYING XII — massive gold */}
                 <h2 style={{
-                  fontSize: 56, fontWeight: 900, margin: '6px 0 0', letterSpacing: '4px', lineHeight: 1.0,
-                  color: '#fbbf24',
-                  textShadow: '0 4px 16px rgba(251,191,36,0.4)',
+                  fontSize: 130, fontWeight: 900, margin: '4px 0 0',
+                  letterSpacing: '-3px', lineHeight: 0.9,
+                  background: 'linear-gradient(180deg, #fbbf24 30%, #f59e0b 100%)',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  textShadow: '0 6px 24px rgba(251,191,36,0.35)',
+                  fontStyle: 'italic',
+                  transform: 'skewX(-5deg)',
+                  filter: 'drop-shadow(0 4px 12px rgba(251,191,36,0.4))',
                 }}>
                   {playingTitle}
                 </h2>
               </div>
 
-              {/* SUBTITLE — match info */}
-              <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <p style={{ fontSize: 12, fontWeight: 800, letterSpacing: '3px', color: '#a78bfa', margin: 0, textTransform: 'uppercase' }}>
-                  {tagline}
-                </p>
-                <h3 style={{ fontSize: 30, fontWeight: 900, color: '#ffffff', margin: '6px 0 0', letterSpacing: '-0.3px' }}>
+              {/* OPPONENT */}
+              <div style={{ textAlign: 'center', marginTop: 32 }}>
+                <h3 style={{
+                  fontSize: 44, fontWeight: 900, margin: 0,
+                  letterSpacing: '-0.5px', color: '#ffffff',
+                  textTransform: 'uppercase',
+                }}>
                   {isInternal
-                    ? <>Dhurandars <span style={{ color: '#fbbf24' }}>vs</span> Bazigars</>
-                    : <>vs <span style={{ color: '#22d3ee' }}>{(match.opponent || 'TBD').toUpperCase()}</span></>
+                    ? <>DHURANDARS <span style={{
+                        background: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
+                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      }}>vs</span> BAZIGARS</>
+                    : <>VS <span style={{
+                        background: 'linear-gradient(90deg, #06b6d4, #22d3ee)',
+                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                        textShadow: '0 2px 12px rgba(34,211,238,0.4)',
+                      }}>{(match.opponent || 'TBD').toUpperCase()}</span></>
                   }
                 </h3>
-                <p style={{ fontSize: 13, color: '#cbd5e1', margin: '6px 0 0', fontWeight: 600 }}>
-                  📍 {match.venue} · 🗓️ {matchSubtitle}
-                </p>
-                {countdown && !countdown.isPast && (countdown.days > 0 || countdown.hours > 0) && (
-                  <p style={{ fontSize: 12, color: '#34d399', margin: '8px 0 0', fontWeight: 800, letterSpacing: '2px' }}>
-                    ⏰ Starts in {countdown.days > 0 ? `${countdown.days}d ` : ''}{countdown.hours}h {countdown.mins}m
-                  </p>
-                )}
+
+                {/* Venue + Date inline */}
+                <div style={{
+                  marginTop: 18, display: 'inline-flex', alignItems: 'center',
+                  gap: 16, padding: '10px 22px',
+                  background: 'rgba(0,0,0,0.35)',
+                  border: '1px solid rgba(251,191,36,0.3)',
+                  borderRadius: 999,
+                }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '2px' }}>
+                    📍 {match.venue.toUpperCase()}
+                  </span>
+                  <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.25)' }} />
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '2px' }}>
+                    🗓️ {dateStrInline}
+                  </span>
+                </div>
               </div>
 
               {/* PLAYER LIST */}
               {squad.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {squad.map(({ member, isCaptain, isVC }, i) => {
                     const role = member.role;
-                    const icon = role ? ROLE_ICON[role] : '🏏';
-                    const isKeeper = role === 'wicket_keeper';
                     return (
                       <div key={member.id} style={{
                         display: 'flex',
                         alignItems: 'stretch',
-                        gap: 0,
-                        height: 64,
+                        height: 58,
+                        boxShadow: isCaptain
+                          ? '0 0 28px rgba(251,191,36,0.5)'
+                          : '0 4px 12px rgba(0,0,0,0.4)',
                       }}>
                         {/* Number badge — gold */}
                         <div style={{
-                          width: 70, flexShrink: 0,
+                          width: 64, flexShrink: 0,
                           background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
                           color: '#1a0b3d',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 30, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
-                          borderRadius: '12px 0 0 12px',
-                          boxShadow: 'inset 0 -3px 8px rgba(0,0,0,0.15)',
+                          fontStyle: 'italic',
+                          borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
+                          boxShadow: 'inset 0 -3px 8px rgba(0,0,0,0.18)',
                         }}>
                           {i + 1}
                         </div>
 
-                        {/* Name strip — cyan/teal */}
+                        {/* Name strip — gold gradient with skew effect */}
                         <div style={{
                           flex: 1,
-                          background: isCaptain
-                            ? 'linear-gradient(90deg, #06b6d4 0%, #0891b2 100%)'
-                            : isVC
-                            ? 'linear-gradient(90deg, #14b8a6 0%, #0d9488 100%)'
-                            : 'linear-gradient(90deg, #22d3ee 0%, #06b6d4 100%)',
-                          color: '#ffffff',
+                          background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)',
+                          color: '#1a0b3d',
                           display: 'flex', alignItems: 'center',
-                          padding: '0 24px',
-                          fontSize: 24, fontWeight: 900,
+                          padding: '0 22px',
+                          fontSize: 22, fontWeight: 900,
                           letterSpacing: '0.5px',
-                          textShadow: '0 2px 4px rgba(0,0,0,0.25)',
-                          borderTop: isCaptain ? '2px solid #fbbf24' : 'none',
-                          borderBottom: isCaptain ? '2px solid #fbbf24' : 'none',
+                          fontStyle: 'italic',
+                          textShadow: '0 1px 0 rgba(255,255,255,0.2)',
                         }}>
                           <span style={{
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
@@ -383,26 +389,25 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
                           </span>
                           {member.jersey_number != null && (
                             <span style={{
-                              fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,0.7)',
-                              fontVariantNumeric: 'tabular-nums', marginLeft: 12,
+                              fontSize: 14, fontWeight: 900, color: 'rgba(26,11,61,0.7)',
+                              fontVariantNumeric: 'tabular-nums', marginLeft: 10,
                               padding: '2px 8px', borderRadius: 6,
-                              background: 'rgba(0,0,0,0.18)',
+                              background: 'rgba(26,11,61,0.15)',
                             }}>
                               #{member.jersey_number}
                             </span>
                           )}
                         </div>
 
-                        {/* Icon badge — gold */}
+                        {/* Icon badge — gold square with bat */}
                         <div style={{
-                          width: 70, flexShrink: 0,
+                          width: 64, flexShrink: 0,
                           background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: isKeeper ? 30 : 32,
-                          borderRadius: '0 12px 12px 0',
-                          boxShadow: 'inset 0 -3px 8px rgba(0,0,0,0.15)',
+                          borderTopRightRadius: 12, borderBottomRightRadius: 12,
+                          boxShadow: 'inset 0 -3px 8px rgba(0,0,0,0.18)',
                         }}>
-                          {icon}
+                          {CRICKET_BAT_SVG}
                         </div>
                       </div>
                     );
@@ -410,16 +415,13 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
                 </div>
               ) : (
                 <div style={{
-                  padding: '40px 20px',
-                  background: 'rgba(0,0,0,0.25)',
+                  marginTop: 32, padding: '40px 20px',
+                  background: 'rgba(0,0,0,0.3)',
                   border: '1px dashed rgba(255,255,255,0.15)',
                   borderRadius: 16, textAlign: 'center',
                 }}>
                   <p style={{ fontSize: 16, color: '#cbd5e1', margin: 0, fontWeight: 600 }}>
                     Squad not picked yet
-                  </p>
-                  <p style={{ fontSize: 12, color: '#9ca3af', margin: '6px 0 0' }}>
-                    Admin will lock in the playing XII closer to match day
                   </p>
                 </div>
               )}
@@ -427,28 +429,35 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
               {/* FOOTER */}
               <div style={{
                 marginTop: 36,
-                paddingTop: 18,
-                borderTop: '1px solid rgba(255,255,255,0.12)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                position: 'relative',
+                gap: 16,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <img src={SCC_LOGO_DATA_URL} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
+                  <img src={SCC_LOGO_DATA_URL} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover' }} />
                   <div>
-                    <p style={{ fontSize: 14, fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '0.5px' }}>
+                    <p style={{ fontSize: 15, fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '1px' }}>
                       SANGRIA CRICKET CLUB
                     </p>
-                    <p style={{ fontSize: 10, color: '#a78bfa', margin: '2px 0 0', letterSpacing: '2px', fontWeight: 700 }}>
+                    <p style={{ fontSize: 11, color: '#a78bfa', margin: '2px 0 0', letterSpacing: '3px', fontWeight: 700 }}>
                       PUNE · EST 2024
                     </p>
                   </div>
                 </div>
+
+                {/* Stars */}
+                <div style={{ display: 'flex', gap: 8, fontSize: 22, color: '#fbbf24' }}>
+                  <span>★</span><span>★</span>
+                </div>
+
                 <div style={{
-                  padding: '8px 16px',
+                  padding: '10px 16px',
                   background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                  border: '2px solid rgba(255,255,255,0.2)',
                   borderRadius: 8,
                   color: '#1a0b3d',
-                  fontSize: 12, fontWeight: 900, letterSpacing: '2px',
+                  fontSize: 12, fontWeight: 900, letterSpacing: '2.5px',
+                  fontStyle: 'italic',
+                  boxShadow: '0 4px 14px rgba(251,191,36,0.4)',
                 }}>
                   CHAMPIONS PLAY HERE 🏏
                 </div>
