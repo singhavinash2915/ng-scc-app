@@ -197,13 +197,40 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
               overflow: 'hidden',
             }}
           >
-            {/* ── DECORATIVE PAINT STROKES — corners ────────────── */}
+            {/* ── ART LAYER: bat, ball, batsman silhouette, floodlights ─── */}
             <svg
               width="1080" height="1500" viewBox="0 0 1080 1500"
               style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
               xmlns="http://www.w3.org/2000/svg"
             >
-              {/* TOP-LEFT — gold diagonal strokes */}
+              <defs>
+                {/* Wood grain gradient for the cricket-bat blade */}
+                <linearGradient id="batBlade" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#d4a574" />
+                  <stop offset="35%" stopColor="#f3d8a8" />
+                  <stop offset="60%" stopColor="#e8c293" />
+                  <stop offset="100%" stopColor="#a87740" />
+                </linearGradient>
+                {/* Ball seam gradient */}
+                <linearGradient id="ballGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ef4444" />
+                  <stop offset="55%" stopColor="#dc2626" />
+                  <stop offset="100%" stopColor="#7f1d1d" />
+                </linearGradient>
+                {/* Floodlight cone */}
+                <linearGradient id="floodlight" x1="50%" y1="0%" x2="50%" y2="100%">
+                  <stop offset="0%" stopColor="#fbbf24" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#fde68a" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.35" />
+                </linearGradient>
+                <radialGradient id="stadiumGlow" cx="50%" cy="100%" r="65%">
+                  <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.22" />
+                  <stop offset="55%" stopColor="#a855f7" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="transparent" />
+                </radialGradient>
+              </defs>
+
+              {/* TOP-LEFT — gold diagonal paint strokes */}
               <g transform="rotate(-25 100 100)" opacity="0.85">
                 <path d="M -50 80 Q 100 60 280 70 L 280 95 Q 100 80 -50 105 Z" fill="#fbbf24" />
                 <path d="M -50 130 Q 120 110 250 115 L 250 142 Q 120 130 -50 150 Z" fill="#f59e0b" />
@@ -226,18 +253,101 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
                 <path d="M 870 1380 Q 970 1370 1130 1380 L 1130 1402 Q 970 1395 870 1405 Z" fill="#fbbf24" opacity="0.6" />
               </g>
 
-              {/* STADIUM SILHOUETTE — soft light glow at bottom (suggests floodlights) */}
-              <defs>
-                <radialGradient id="stadiumGlow" cx="50%" cy="100%" r="60%">
-                  <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.18" />
-                  <stop offset="60%" stopColor="#a855f7" stopOpacity="0.08" />
-                  <stop offset="100%" stopColor="transparent" />
-                </radialGradient>
-              </defs>
+              {/* ── FLOODLIGHTS at bottom ── */}
+              <g opacity="0.55">
+                {/* light cones rising from below */}
+                <path d="M 60 1500 L 0 950 L 240 950 Z" fill="url(#floodlight)" />
+                <path d="M 540 1500 L 380 920 L 700 920 Z" fill="url(#floodlight)" opacity="0.8" />
+                <path d="M 1020 1500 L 840 950 L 1080 950 Z" fill="url(#floodlight)" />
+              </g>
               <rect x="0" y="900" width="1080" height="600" fill="url(#stadiumGlow)" />
-              {/* horizontal light beams */}
-              <line x1="0" y1="700" x2="1080" y2="640" stroke="#fbbf24" strokeWidth="2" opacity="0.18" />
-              <line x1="0" y1="780" x2="1080" y2="720" stroke="#a855f7" strokeWidth="2" opacity="0.16" />
+
+              {/* ── CRICKET BAT — vertical, left side ── */}
+              <g transform="translate(20, 700) rotate(-12 70 0)" opacity="0.85">
+                {/* Cylindrical grip at the top */}
+                <rect x="60" y="-100" width="22" height="110" rx="6" fill="#0f0820" />
+                {/* Grip ridges (rubber wrap diagonal lines) */}
+                {[0, 12, 24, 36, 48, 60, 72, 84, 96].map(o => (
+                  <line key={o} x1="56" y1={-95 + o} x2="86" y2={-95 + o + 6} stroke="#3b1d6a" strokeWidth="1.2" />
+                ))}
+                {/* Shoulder (transition from handle to blade) */}
+                <path d="M 60 10 L 82 10 L 96 60 L 46 60 Z" fill="#0f0820" />
+                {/* Blade — wood gradient */}
+                <path d="M 46 60 L 96 60 L 110 720 L 32 720 Z" fill="url(#batBlade)" />
+                {/* Blade highlight (single light stripe) */}
+                <path d="M 60 80 L 70 80 L 76 700 L 56 700 Z" fill="#fef3c7" opacity="0.25" />
+                {/* SANGRIA brand strip on the blade */}
+                <rect x="42" y="380" width="62" height="50" fill="#0a0420" />
+                <text x="73" y="412" textAnchor="middle" fill="#fbbf24" fontWeight="900" fontSize="13" letterSpacing="2"
+                      fontFamily='"Arial Black", "Helvetica Neue", sans-serif'>
+                  SANGRIA
+                </text>
+                {/* Bat outline */}
+                <path d="M 46 60 L 96 60 L 110 720 L 32 720 Z M 60 -100 L 82 -100 L 82 10 L 60 10 Z"
+                      stroke="rgba(0,0,0,0.4)" strokeWidth="1.5" fill="none" />
+              </g>
+
+              {/* ── CRICKET BALL — bottom-left ── */}
+              <g transform="translate(70, 1180)">
+                <circle cx="0" cy="0" r="48" fill="url(#ballGrad)" stroke="#7f1d1d" strokeWidth="2" />
+                {/* Seam — two curved strands of white stitching */}
+                <path d="M -42 -16 Q 0 -8 42 -16" stroke="#fef2f2" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <path d="M -42 16 Q 0 8 42 16" stroke="#fef2f2" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                {/* Small stitches */}
+                {[-32, -22, -12, -2, 8, 18, 28].map(x => (
+                  <line key={x} x1={x} y1="-19" x2={x} y2="-13" stroke="#fff7ed" strokeWidth="1.4" />
+                ))}
+                {[-32, -22, -12, -2, 8, 18, 28].map(x => (
+                  <line key={`b${x}`} x1={x} y1="13" x2={x} y2="19" stroke="#fff7ed" strokeWidth="1.4" />
+                ))}
+                {/* Subtle shine */}
+                <ellipse cx="-12" cy="-16" rx="14" ry="6" fill="#fecaca" opacity="0.55" />
+              </g>
+
+              {/* ── BATSMAN SILHOUETTE — right side, simplified stance ── */}
+              <g transform="translate(820, 660)" opacity="0.7">
+                {/* Body — torso */}
+                <path d="M 70 80
+                         C 50 80 45 110 50 150
+                         L 60 280
+                         L 100 280
+                         L 110 150
+                         C 115 110 105 80 80 80 Z"
+                      fill="#312e81" stroke="#a78bfa" strokeWidth="2" />
+                {/* Head with helmet */}
+                <ellipse cx="80" cy="55" rx="28" ry="32" fill="#312e81" stroke="#a78bfa" strokeWidth="2" />
+                {/* Helmet visor */}
+                <path d="M 55 50 Q 80 75 105 50 L 105 60 Q 80 80 55 60 Z" fill="#0f0820" />
+                {/* Grille lines */}
+                <line x1="58" y1="56" x2="102" y2="56" stroke="#a78bfa" strokeWidth="1" />
+                <line x1="58" y1="64" x2="102" y2="64" stroke="#a78bfa" strokeWidth="1" />
+                {/* Front leg (bent, anchor) */}
+                <path d="M 75 280 L 60 380 L 80 400 L 100 380 L 92 280 Z" fill="#1e1b4b" stroke="#a78bfa" strokeWidth="2" />
+                {/* Back leg */}
+                <path d="M 92 280 L 130 360 L 145 380 L 130 395 L 110 380 L 102 280 Z" fill="#1e1b4b" stroke="#a78bfa" strokeWidth="2" />
+                {/* Pads (white legguards) */}
+                <rect x="58" y="290" width="22" height="100" rx="6" fill="#e5e7eb" opacity="0.85" />
+                <rect x="100" y="290" width="20" height="80" rx="6" fill="#e5e7eb" opacity="0.7" />
+                {/* Bat in hand */}
+                <g transform="translate(140, 140) rotate(50)">
+                  <rect x="0" y="0" width="14" height="60" fill="#0f0820" />
+                  <rect x="-2" y="60" width="18" height="180" fill="url(#batBlade)" stroke="#1f2937" strokeWidth="1" />
+                </g>
+                {/* Front arm */}
+                <path d="M 110 130 Q 145 130 155 145 L 145 155 Q 120 145 110 145 Z" fill="#312e81" stroke="#a78bfa" strokeWidth="1.5" />
+                {/* Back arm gripping bat */}
+                <path d="M 100 145 Q 130 140 145 155 L 140 165 Q 110 165 100 160 Z" fill="#312e81" stroke="#a78bfa" strokeWidth="1.5" />
+              </g>
+
+              {/* Decorative paint speckles */}
+              <g opacity="0.6">
+                <circle cx="180" cy="430" r="4" fill="#fbbf24" />
+                <circle cx="160" cy="470" r="3" fill="#fbbf24" />
+                <circle cx="220" cy="460" r="2" fill="#fbbf24" />
+                <circle cx="900" cy="430" r="4" fill="#ec4899" />
+                <circle cx="920" cy="470" r="2.5" fill="#a855f7" />
+                <circle cx="870" cy="500" r="3" fill="#ec4899" />
+              </g>
             </svg>
 
             {/* ── CONTENT ─────────────────────────────────────────── */}
