@@ -759,7 +759,7 @@ export function Matches() {
                               }}
                               className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold"
                             >
-                              <Users className="w-4 h-4" /> 🏏 Pick Playing XI
+                              <Users className="w-4 h-4" /> 🏏 Pick Squad (12)
                             </button>
                           )}
                           {match.players && match.players.length > 0 && (

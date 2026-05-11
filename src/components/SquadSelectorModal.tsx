@@ -92,7 +92,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
     return m;
   }, [members]);
 
-  // Auto-pick top 11 — fills based on poll responses (available > maybe > rest)
+  // Auto-pick top 12 — fills based on poll responses (available > maybe > rest)
   const autoPickSquad = () => {
     const available = members.filter(m => m.status === 'active' && pollByMember[m.id]?.response === 'available');
     const maybe = members.filter(m => m.status === 'active' && pollByMember[m.id]?.response === 'maybe');
@@ -103,7 +103,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
       pollByMember[m.id]?.response !== 'unavailable'
     );
     const pool = [...available, ...maybe, ...others];
-    const xi = pool.slice(0, 11).map(m => m.id);
+    const xi = pool.slice(0, 12).map(m => m.id);
     setSquad(xi);
   };
 
@@ -135,7 +135,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
 
   const handleSave = async () => {
     if (squad.length === 0) {
-      alert('Add at least one player to the playing XI');
+      alert('Add at least one player to the playing squad');
       return;
     }
     setSaving(true);
@@ -160,7 +160,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
   const handleShareWhatsApp = () => {
     const xi = squad.map((id, i) => `${i + 1}. ${memberById[id]?.name || '—'}${id === captainId ? ' (C)' : id === viceCaptainId ? ' (VC)' : ''}`).join('\n');
     const dateStr = new Date(match.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
-    const msg = `🏏 *SCC Playing XI* 🏏\n\n📅 ${dateStr}\n📍 ${match.venue}${match.opponent ? `\nvs ${match.opponent}` : ''}\n\n*Squad:*\n${xi}\n\n- Sangria Cricket Club`;
+    const msg = `🏏 *SCC Squad* 🏏\n\n📅 ${dateStr}\n📍 ${match.venue}${match.opponent ? `\nvs ${match.opponent}` : ''}\n\n*Playing 12:*\n${xi}\n\n- Sangria Cricket Club`;
     if (navigator.share) {
       navigator.share({ text: msg }).catch(() => navigator.clipboard.writeText(msg));
     } else {
@@ -185,11 +185,11 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-sm font-black tabular-nums ${
-              squad.length === 11 ? 'text-emerald-600 dark:text-emerald-400'
-              : squad.length > 11 ? 'text-red-600 dark:text-red-400'
+              squad.length === 12 ? 'text-emerald-600 dark:text-emerald-400'
+              : squad.length > 12 ? 'text-red-600 dark:text-red-400'
               : 'text-amber-600 dark:text-amber-400'
             }`}>
-              {squad.length} / 11
+              {squad.length} / 12
             </span>
             <span className="text-xs text-gray-400">selected</span>
           </div>
@@ -221,7 +221,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5" fill="currentColor" />
-                Playing XI ({squad.length})
+                Playing Squad ({squad.length})
               </h3>
             </div>
             {squad.length === 0 ? (
@@ -341,9 +341,9 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                     <button
                       key={m.id}
                       onClick={() => addToSquad(m.id)}
-                      disabled={squad.length >= 11}
+                      disabled={squad.length >= 12}
                       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-colors text-left ${
-                        squad.length >= 11
+                        squad.length >= 12
                           ? 'opacity-40 cursor-not-allowed border-gray-200 dark:border-gray-700'
                           : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
                       }`}
@@ -393,7 +393,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
         </div>
 
         <p className="text-[11px] text-gray-400 text-center">
-          Tip: tap "Auto-pick" to fill the XI based on who said "I'm in" on the poll.
+          Tip: tap "Auto-pick" to fill the 12 based on who said "I'm in" on the poll.
         </p>
       </div>
     </Modal>

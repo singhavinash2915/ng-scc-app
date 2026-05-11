@@ -126,7 +126,29 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
   // Pixel ratio 1.5 gives crisp results without bloating the file.
   const exportImage = async (format: 'png' | 'jpeg' = 'jpeg') => {
     if (!posterRef.current) return null;
-    const opts = { cacheBust: true, pixelRatio: 1.5, backgroundColor: '#0a1019' };
+
+    // Pre-warm avatar images with CORS so html-to-image can paint them.
+    // Without this, Supabase Storage images sometimes render as blank
+    // boxes when exported because their CORS state hadn't been established
+    // before the html-to-image serializer ran.
+    const imgs = Array.from(posterRef.current.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise<void>(resolve => {
+        const probe = new Image();
+        probe.crossOrigin = 'anonymous';
+        probe.onload = () => resolve();
+        probe.onerror = () => resolve();
+        probe.src = img.src;
+      });
+    }));
+
+    const opts = {
+      cacheBust: true,
+      pixelRatio: 1.5,
+      backgroundColor: '#0a1019',
+      fetchRequestInit: { mode: 'cors' as RequestMode },
+    };
     return format === 'png'
       ? await toPng(posterRef.current, opts)
       : await toJpeg(posterRef.current, { ...opts, quality: 0.92 });
@@ -239,7 +261,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                   paddingBottom: 14,
                   borderBottom: '1px solid rgba(255,255,255,0.08)',
                 }}>
-                  <img src="/scc-logo.jpg" alt="SCC" style={{ width: 52, height: 52, borderRadius: 11, objectFit: 'cover' }} />
+                  <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="SCC" style={{ width: 52, height: 52, borderRadius: 11, objectFit: 'cover' }} />
                   <div style={{ flex: 1 }}>
                     <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05, color: '#fff' }}>
                       {tournamentName}
@@ -280,7 +302,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                         padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase',
                       }}>🏆 Winner</div>
                     )}
-                    <img src="/scc-logo.jpg" alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', margin: '0 auto', display: 'block' }} />
+                    <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', margin: '0 auto', display: 'block' }} />
                     <h3 style={{ fontSize: 14, fontWeight: 900, margin: '6px 0 2px', color: '#fff' }}>
                       {isInternal ? 'SCC' : 'Sangria CC'}
                     </h3>
@@ -465,7 +487,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                       display: 'flex', alignItems: 'center', gap: 12,
                     }}>
                       {match.man_of_match.avatar_url ? (
-                        <img src={match.man_of_match.avatar_url} alt="" style={{
+                        <img crossOrigin="anonymous" src={match.man_of_match.avatar_url} alt="" style={{
                           width: 56, height: 56, borderRadius: 12, objectFit: 'cover',
                           border: '2px solid rgba(251,191,36,0.6)',
                         }} />
@@ -532,7 +554,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <img src="/scc-logo.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
+                    <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
                     <p style={{ fontSize: 11, fontWeight: 900, color: '#fff', margin: 0 }}>
                       Sangria Cricket Club <span style={{ color: '#9ca3af', fontWeight: 500 }}>· Pune · Est 2024</span>
                     </p>
@@ -553,7 +575,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
               <>
                 {/* HEADER STRIP — compact */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <img src="/scc-logo.jpg" alt="SCC" style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover' }} />
+                  <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="SCC" style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover' }} />
                   <div style={{ flex: 1 }}>
                     <h1 style={{
                       fontSize: 38, fontWeight: 900, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05,
@@ -594,7 +616,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                         padding: '4px 12px', borderRadius: 999, textTransform: 'uppercase',
                       }}>🏆 Winner</div>
                     )}
-                    <img src="/scc-logo.jpg" alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', margin: '0 auto', display: 'block' }} />
+                    <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', margin: '0 auto', display: 'block' }} />
                     <h3 style={{ fontSize: 16, fontWeight: 900, margin: '8px 0 2px', color: '#ffffff' }}>
                       {isInternal ? 'SCC' : 'Sangria CC'}
                     </h3>
@@ -786,7 +808,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                     display: 'flex', alignItems: 'center', gap: 14,
                   }}>
                     {match.man_of_match.avatar_url ? (
-                      <img src={match.man_of_match.avatar_url} alt="" style={{
+                      <img crossOrigin="anonymous" src={match.man_of_match.avatar_url} alt="" style={{
                         width: 80, height: 80, borderRadius: 14, objectFit: 'cover',
                         border: '3px solid rgba(251,191,36,0.6)',
                       }} />
@@ -829,7 +851,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                 {/* FOOTER */}
                 <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <img src="/scc-logo.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 7, objectFit: 'cover' }} />
+                    <img crossOrigin="anonymous" src="/scc-logo.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 7, objectFit: 'cover' }} />
                     <div>
                       <p style={{ fontSize: 12, fontWeight: 900, color: '#fff', margin: 0 }}>Sangria Cricket Club</p>
                       <p style={{ fontSize: 9, color: '#9ca3af', margin: '1px 0 0', letterSpacing: '1px' }}>PUNE · EST 2024</p>
