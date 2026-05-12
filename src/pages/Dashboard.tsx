@@ -10,6 +10,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
+import { MyStatsButton } from '../components/MyStatsButton';
 import { BirthdayBanner } from '../components/BirthdayBanner';
 import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
 import { AnnouncementWall } from '../components/AnnouncementWall';
@@ -303,13 +304,14 @@ export function Dashboard() {
         {/* ── CLUB IDENTITY ROW ─────────────────────── */}
         <div className="flex items-center gap-3">
           <img src="/scc-logo.jpg" alt="SCC" className="w-11 h-11 rounded-xl shadow-lg object-cover flex-shrink-0" />
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-lg lg:text-xl font-black text-gray-900 dark:text-white leading-tight">Sangria Cricket Club</h1>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <span className="px-2 py-0.5 bg-primary-500/10 dark:bg-primary-400/20 border border-primary-500/30 text-primary-700 dark:text-primary-300 text-[10px] font-bold rounded-full uppercase tracking-wide">Season 2025–26</span>
               <span className="text-gray-400 dark:text-gray-500 text-[11px]">{stats.matchesPlayed} matches · {stats.activeMembers} active</span>
             </div>
           </div>
+          <MyStatsButton />
         </div>
 
         {/* ── ANNOUNCEMENT WALL (pinned at top) ───── */}
