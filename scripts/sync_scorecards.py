@@ -40,22 +40,37 @@ def get_build_id():
     _BUILD_ID = m.group(1)
     return _BUILD_ID
 
-def fetch_scorecard(ch_match_id):
-    """Returns the parsed pageProps.scorecard list, or None if not found / no data."""
+def fetch_scorecard(ch_match_id, max_retries=3):
+    """Returns the parsed pageProps.scorecard list, or None if not found / no data.
+
+    Retries transient network errors (e.g. ConnectionResetError [Errno 54])
+    with exponential backoff so a single flaky connection doesn't crash the
+    entire batch sync.
+    """
     build_id = get_build_id()
     url = f'https://cricheroes.com/_next/data/{build_id}/scorecard/{ch_match_id}/x/x/scorecard.json'
-    req = urllib.request.Request(url, headers=WEB_HEADERS)
-    try:
-        data = json.loads(urllib.request.urlopen(req, timeout=15).read())
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return None  # match doesn't exist on CH
-        raise
-    pp = data.get('pageProps', {})
-    sc = pp.get('scorecard', [])
-    if not sc:
-        return None
-    return sc
+
+    last_err = None
+    for attempt in range(max_retries):
+        req = urllib.request.Request(url, headers=WEB_HEADERS)
+        try:
+            data = json.loads(urllib.request.urlopen(req, timeout=20).read())
+            pp = data.get('pageProps', {})
+            sc = pp.get('scorecard', [])
+            return sc if sc else None
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None  # match doesn't exist on CH — don't retry
+            last_err = e
+        except (ConnectionResetError, urllib.error.URLError, TimeoutError, OSError) as e:
+            # Transient network issue → back off and retry
+            last_err = e
+            time.sleep(1.5 * (attempt + 1))  # 1.5s, 3s, 4.5s
+            continue
+
+    # Exhausted all retries — log but don't crash the whole batch
+    print(f"    ⚠️  ch={ch_match_id} failed after {max_retries} retries: {type(last_err).__name__}")
+    return 'ERROR'  # sentinel so main loop knows to count it as error, not "no-data"
 
 def sb(method, path, body=None, params=""):
     url = f"{SUPABASE_URL}/rest/v1/{path}{('?' + params) if params else ''}"
@@ -218,6 +233,9 @@ def main():
             counts['error'] += 1
             continue
 
+        if sc == 'ERROR':
+            counts['error'] += 1
+            continue
         if not sc:
             print(f"  · {date}  ch={cid}  no scorecard yet on CH")
             counts['no-data'] += 1
