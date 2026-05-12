@@ -1,12 +1,14 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Crown, Trophy, Target, TrendingUp, ChevronRight, Sparkles, Medal,
+  Crown, Trophy, Target, TrendingUp, ChevronRight, ChevronDown, Sparkles, Medal,
+  Shield, Eye, EyeOff,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Button } from '../components/ui/Button';
 import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
+import { useAuth } from '../context/AuthContext';
 import { usePredictionLeaderboard, usePredictions } from '../hooks/usePredictions';
 import { supabase } from '../lib/supabase';
 import { deriveOutcome, PREDICTION_POINTS } from '../lib/predictionScorer';
@@ -20,8 +22,11 @@ const fmtDate = (iso: string) =>
 export function Predictions() {
   const { matches } = useMatches();
   const { members } = useMembers();
+  const { isAdmin } = useAuth();
   const { leaderboard } = usePredictionLeaderboard();
   const { predictions: allPredictions } = usePredictions();
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
+  const [adminViewOpen, setAdminViewOpen] = useState(false);
 
   // Auto-score any unscored predictions whose match has settled and has a scorecard
   const [scoring, setScoring] = useState(false);
@@ -305,6 +310,137 @@ export function Predictions() {
           </div>
         )}
 
+        {/* ── ADMIN-ONLY: ALL PREDICTIONS ───────────────────────── */}
+        {isAdmin && allPredictions.length > 0 && (
+          <div className="rounded-2xl overflow-hidden border border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50/60 to-orange-50/30 dark:from-amber-900/10 dark:to-orange-900/5">
+            <button
+              onClick={() => setAdminViewOpen(o => !o)}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-amber-100/40 dark:hover:bg-amber-900/20 transition-colors text-left"
+            >
+              <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-[11px] font-black uppercase tracking-[2px] text-amber-700 dark:text-amber-400">
+                  Admin View · All Predictions
+                </p>
+                <p className="text-xs text-amber-700/70 dark:text-amber-300/70 mt-0.5">
+                  {allPredictions.length} total prediction{allPredictions.length === 1 ? '' : 's'} across {new Set(allPredictions.map(p => p.match_id)).size} match{new Set(allPredictions.map(p => p.match_id)).size === 1 ? '' : 'es'} · only you can see this
+                </p>
+              </div>
+              {adminViewOpen
+                ? <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                : <Eye className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              }
+            </button>
+
+            {adminViewOpen && (
+              <div className="bg-white dark:bg-gray-900 border-t border-amber-200 dark:border-amber-800">
+                {(() => {
+                  // Group predictions by match, newest match first
+                  const matchIds = [...new Set(allPredictions.map(p => p.match_id))];
+                  const matchWithPicks = matchIds
+                    .map(mid => ({
+                      match: matches.find(m => m.id === mid),
+                      picks: allPredictions.filter(p => p.match_id === mid),
+                    }))
+                    .filter(x => x.match)
+                    .sort((a, b) => (b.match!.date || '').localeCompare(a.match!.date || ''));
+
+                  return matchWithPicks.map(({ match, picks }) => {
+                    if (!match) return null;
+                    const isExpanded = expandedMatchId === match.id;
+                    const settled = ['won', 'lost', 'draw'].includes(match.result);
+                    return (
+                      <div key={match.id} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                        <button
+                          onClick={() => setExpandedMatchId(isExpanded ? null : match.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${
+                            !settled ? 'bg-purple-500'
+                            : match.result === 'won' ? 'bg-emerald-500'
+                            : match.result === 'lost' ? 'bg-red-500'
+                            : 'bg-amber-500'
+                          }`}>
+                            {!settled ? '?' : match.result === 'won' ? 'W' : match.result === 'lost' ? 'L' : 'D'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                              {match.match_type === 'internal' ? 'Dhurandars vs Bazigars' : `vs ${match.opponent || 'TBD'}`}
+                            </p>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                              {fmtDate(match.date)} · 🎰 {picks.length} prediction{picks.length === 1 ? '' : 's'}
+                              {settled && ` · scored: ${picks.filter(p => p.points_earned !== null).length}/${picks.length}`}
+                            </p>
+                          </div>
+                          {isExpanded
+                            ? <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            : <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          }
+                        </button>
+
+                        {isExpanded && (
+                          <div className="bg-gray-50 dark:bg-gray-800/30 px-4 py-3 space-y-2">
+                            {picks
+                              .sort((a, b) => (b.points_earned ?? -1) - (a.points_earned ?? -1))
+                              .map(p => {
+                                const predictor = memberById[p.member_id];
+                                if (!predictor) return null;
+                                const winnerLabel =
+                                  p.winner === 'scc' ? 'SCC'
+                                  : p.winner === 'opponent' ? (match.opponent || 'Opponent')
+                                  : p.winner === 'draw' ? 'Draw'
+                                  : '—';
+                                const topScorer = p.top_scorer_id ? memberById[p.top_scorer_id]?.name : null;
+                                const topWkt = p.top_wicket_taker_id ? memberById[p.top_wicket_taker_id]?.name : null;
+                                const mom = p.mom_id ? memberById[p.mom_id]?.name : null;
+                                return (
+                                  <div key={p.id} className="rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3">
+                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                      <Link to={`/profile/${predictor.id}`} className="flex items-center gap-2 hover:text-primary-600">
+                                        {predictor.avatar_url ? (
+                                          <img src={predictor.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                                        ) : (
+                                          <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                                            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400">{predictor.name.charAt(0)}</span>
+                                          </div>
+                                        )}
+                                        <span className="text-sm font-bold text-gray-900 dark:text-white">{predictor.name}</span>
+                                      </Link>
+                                      {p.points_earned !== null ? (
+                                        <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-full ${
+                                          p.points_earned > 0
+                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                                        }`}>
+                                          {p.points_earned > 0 ? `+${p.points_earned}` : '0'} pts
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] text-gray-400 font-medium">Unscored</span>
+                                      )}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                                      <PickRow label="Winner" value={winnerLabel} />
+                                      <PickRow label="Top Scorer" value={topScorer || '—'} />
+                                      <PickRow label="Top Wkt" value={topWkt || '—'} />
+                                      <PickRow label="MOM" value={mom || '—'} />
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1.5">
+                                      Locked {new Date(p.locked_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                                    </p>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {predictMatch && (
@@ -314,6 +450,15 @@ export function Predictions() {
           match={predictMatch}
         />
       )}
+    </div>
+  );
+}
+
+function PickRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline gap-1.5 min-w-0">
+      <span className="text-[9px] uppercase tracking-wider font-bold text-gray-400 flex-shrink-0">{label}</span>
+      <span className="font-semibold text-gray-700 dark:text-gray-200 truncate">{value}</span>
     </div>
   );
 }
