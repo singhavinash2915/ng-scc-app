@@ -20,6 +20,7 @@ import {
   Award,
   FileText,
   Gavel,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -34,6 +35,7 @@ const publicNavItems = [
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
   { to: '/records', icon: Award, label: 'Hall of Fame' },
+  { to: '/predictions', icon: Sparkles, label: 'Predictions' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
   { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
