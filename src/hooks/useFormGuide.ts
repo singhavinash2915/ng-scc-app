@@ -19,8 +19,9 @@ export function useFormGuide(seasonStart = '2025-09-01', limit = 5) {
     (async () => {
       setLoading(true);
 
-      // Fetch every match_player row for completed external matches in this season,
-      // ordered by date desc. Then group in JS.
+      // Fetch every match_player row for completed external matches in this season.
+      // NOTE: we do NOT rely on Supabase foreign-table ordering (unreliable via REST);
+      // instead we sort in JS after the fetch so "last N" is always truly date-based.
       const { data, error } = await supabase
         .from('match_players')
         .select(`
@@ -29,8 +30,7 @@ export function useFormGuide(seasonStart = '2025-09-01', limit = 5) {
         `)
         .gte('match.date', seasonStart)
         .in('match.result', ['won', 'lost', 'draw'])
-        .eq('match.match_type', 'external')
-        .order('date', { foreignTable: 'matches', ascending: false });
+        .eq('match.match_type', 'external');
 
       if (cancelled) return;
       if (error || !data) {
@@ -39,14 +39,24 @@ export function useFormGuide(seasonStart = '2025-09-01', limit = 5) {
         return;
       }
 
-      const tally: Record<string, FormResult[]> = {};
+      // Group all results per member, keeping the date for sorting
       type Row = { member_id: string; match: { date: string; result: string; match_type: string } | null };
+      const raw: Record<string, Array<{ date: string; result: FormResult }>> = {};
       for (const row of (data as unknown as Row[])) {
         if (!row.match) continue;
         const r = row.match.result as FormResult;
         if (!['won', 'lost', 'draw'].includes(r)) continue;
-        if (!tally[row.member_id]) tally[row.member_id] = [];
-        if (tally[row.member_id].length < limit) tally[row.member_id].push(r);
+        if (!raw[row.member_id]) raw[row.member_id] = [];
+        raw[row.member_id].push({ date: row.match.date, result: r });
+      }
+
+      // Sort each member's results by date DESC, take the most recent `limit`
+      const tally: Record<string, FormResult[]> = {};
+      for (const [memberId, entries] of Object.entries(raw)) {
+        const sorted = entries
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, limit);
+        tally[memberId] = sorted.map(e => e.result); // newest-first
       }
 
       setFormByMember(tally);
