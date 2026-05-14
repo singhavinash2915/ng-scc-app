@@ -50,14 +50,18 @@ const TIER_BORDER: Record<string, string> = {
   diamond: 'rgba(168,85,247,0.6)',
 };
 
-function FormDots({ form }: { form: FormResult[] | undefined }) {
+// useFormGuide returns newest-first; we reverse to show oldest→newest left-to-right
+function FormBlocks({ form }: { form: FormResult[] | FormResult[] | undefined }) {
   if (!form || form.length === 0) return null;
+  const ordered = [...form].reverse(); // oldest → newest
   return (
     <span className="inline-flex gap-1">
-      {form.map((r, i) => (
-        <span key={i} className={`w-2.5 h-2.5 rounded-full ${
+      {ordered.map((r, i) => (
+        <span key={i} className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-black text-white ${
           r === 'won' ? 'bg-emerald-500' : r === 'lost' ? 'bg-red-500' : 'bg-amber-500'
-        }`} />
+        }`}>
+          {r === 'won' ? 'W' : r === 'lost' ? 'L' : 'D'}
+        </span>
       ))}
     </span>
   );
@@ -266,9 +270,10 @@ export function MemberProfile() {
               </div>
 
               {form && form.length > 0 && (
-                <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Recent form</span>
-                  <FormDots form={form} />
+                <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start flex-wrap">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Last {form.length} matches</span>
+                  <FormBlocks form={form} />
+                  <span className="text-[9px] text-gray-600 font-medium">← older · newer →</span>
                 </div>
               )}
             </div>
@@ -654,20 +659,6 @@ function WalletCard({ balance, feesPaid }: { balance: number; feesPaid: number }
         </div>
       </div>
     </div>
-  );
-}
-
-function FormBlocks({ form }: { form: FormResult[] }) {
-  return (
-    <span className="inline-flex gap-1">
-      {form.map((r, i) => (
-        <span key={i} className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black text-white ${
-          r === 'won' ? 'bg-emerald-500' : r === 'lost' ? 'bg-red-500' : 'bg-amber-500'
-        }`}>
-          {r === 'won' ? 'W' : r === 'lost' ? 'L' : 'D'}
-        </span>
-      ))}
-    </span>
   );
 }
 
