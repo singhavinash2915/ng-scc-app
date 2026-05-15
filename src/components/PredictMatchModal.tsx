@@ -3,7 +3,7 @@ import { CheckCircle2, Lock, Crown, Trophy, Zap, TrendingUp } from 'lucide-react
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Select } from './ui/Input';
-import { usePredictions, type PredictionInput } from '../hooks/usePredictions';
+import { usePredictions, type PredictionInput, type PredictionWinner } from '../hooks/usePredictions';
 import { useMembers } from '../hooks/useMembers';
 import type { Match } from '../types';
 
@@ -33,7 +33,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
   const [pinError, setPinError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<PredictionInput>({
-    winner: 'scc',
+    winner: match.match_type === 'internal' ? 'dhurandars' : 'scc',
     top_scorer_id: null,
     top_wicket_taker_id: null,
     mom_id: null,
@@ -70,7 +70,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     setMemberId('');
     setPinDigits('');
     setPinError('');
-    setForm({ winner: 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null });
+    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null });
   };
 
   const handleClose = () => { handleReset(); onClose(); };
@@ -130,16 +130,27 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
       .map(m => ({ value: m.id, label: m.name })),
   ], [eligibleMembers]);
 
-  // Aggregate of others' predictions for "X picked SCC" social signal
+  // Aggregate of others' predictions for social signal
   const tally = useMemo(() => {
-    const t = { scc: 0, opponent: 0, draw: 0 };
+    const t: Record<string, number> = {};
     for (const p of predictions) {
-      if (p.winner === 'scc') t.scc++;
-      else if (p.winner === 'opponent') t.opponent++;
-      else if (p.winner === 'draw') t.draw++;
+      if (p.winner) t[p.winner] = (t[p.winner] || 0) + 1;
     }
     return t;
   }, [predictions]);
+
+  // Winner options depend on match type
+  const winnerOptions: Array<{ value: PredictionWinner; label: string; color: string }> = isInternal
+    ? [
+        { value: 'dhurandars', label: '🔴 Dhurandars', color: 'text-red-600 dark:text-red-400' },
+        { value: 'draw',        label: 'DRAW',           color: 'text-gray-500' },
+        { value: 'bazigars',   label: '🔵 Bazigars',    color: 'text-blue-600 dark:text-blue-400' },
+      ]
+    : [
+        { value: 'scc',      label: 'SCC',                                                       color: 'text-emerald-600 dark:text-emerald-400' },
+        { value: 'draw',     label: 'DRAW',                                                      color: 'text-gray-500' },
+        { value: 'opponent', label: (match.opponent?.split(' ')[0] || 'OPP').toUpperCase(),       color: 'text-red-600 dark:text-red-400' },
+      ];
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Predict the Match" size="lg">
@@ -248,23 +259,22 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
               <Trophy className="w-3.5 h-3.5 text-amber-500" /> Who wins? <span className="text-amber-600">+5 pts</span>
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {(['scc', 'draw', 'opponent'] as const).map(option => {
-                const label = option === 'scc' ? 'SCC' : option === 'draw' ? 'DRAW' : (match.opponent?.split(' ')[0] || 'OPP').toUpperCase();
-                const count = tally[option];
-                const isSelected = form.winner === option;
+              {winnerOptions.map(opt => {
+                const count = tally[opt.value] || 0;
+                const isSelected = form.winner === opt.value;
                 return (
                   <button
-                    key={option}
+                    key={opt.value}
                     type="button"
                     disabled={isLocked}
-                    onClick={() => setForm({ ...form, winner: option })}
+                    onClick={() => setForm({ ...form, winner: opt.value })}
                     className={`p-3 rounded-xl border-2 font-bold text-sm transition-all ${
                       isSelected
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 ring-2 ring-primary-500/30'
                         : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                     } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}
                   >
-                    {label}
+                    <span className={isSelected ? '' : opt.color}>{opt.label}</span>
                     {count > 0 && (
                       <div className="text-[10px] font-medium text-gray-400 mt-1">{count} picked</div>
                     )}

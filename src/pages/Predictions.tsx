@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Crown, Trophy, Target, TrendingUp, ChevronRight, ChevronDown, Sparkles, Medal,
-  Shield, Eye, EyeOff,
+  Shield, Eye, EyeOff, Gift, Pencil, Check, X,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Button } from '../components/ui/Button';
@@ -27,6 +27,28 @@ export function Predictions() {
   const { predictions: allPredictions } = usePredictions();
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [adminViewOpen, setAdminViewOpen] = useState(false);
+
+  // ── Prizes (admin-configurable, stored in localStorage) ──
+  const PRIZES_KEY = 'scc-prediction-prizes';
+  const defaultPrizes = [
+    { rank: 1, emoji: '🥇', label: '1st Place', prize: 'Gift Hamper 🎁' },
+    { rank: 2, emoji: '🥈', label: '2nd Place', prize: 'Gift Voucher' },
+    { rank: 3, emoji: '🥉', label: '3rd Place', prize: 'Surprise Gift' },
+  ];
+  type Prize = typeof defaultPrizes[0];
+  const [prizes, setPrizes] = useState<Prize[]>(() => {
+    try { return JSON.parse(localStorage.getItem(PRIZES_KEY) || 'null') || defaultPrizes; }
+    catch { return defaultPrizes; }
+  });
+  const [editingPrize, setEditingPrize] = useState<number | null>(null); // rank being edited
+  const [editText, setEditText] = useState('');
+
+  const savePrize = (rank: number, text: string) => {
+    const updated = prizes.map(p => p.rank === rank ? { ...p, prize: text } : p);
+    setPrizes(updated);
+    localStorage.setItem(PRIZES_KEY, JSON.stringify(updated));
+    setEditingPrize(null);
+  };
 
   // Auto-score any unscored predictions whose match has settled and has a scorecard
   const [scoring, setScoring] = useState(false);
@@ -158,6 +180,58 @@ export function Predictions() {
           </div>
         )}
 
+        {/* ── SEASON PRIZES ── */}
+        <div className="relative overflow-hidden rounded-2xl p-5"
+             style={{ background: 'radial-gradient(400px circle at 0% 100%, rgba(251,191,36,0.2), transparent 60%), linear-gradient(135deg, #1a1306 0%, #0f0d1a 100%)' }}>
+          <div className="absolute inset-0 rounded-2xl pointer-events-none border border-amber-500/25" />
+          <div className="absolute -top-8 -right-8 w-40 h-40 bg-amber-400/10 rounded-full blur-2xl" />
+          <div className="relative flex items-center gap-3 mb-4">
+            <Gift className="w-5 h-5 text-amber-400 flex-shrink-0" />
+            <h3 className="text-sm font-black text-amber-300 uppercase tracking-[2px]">Season Prizes</h3>
+            <span className="text-[10px] text-amber-400/60 font-medium">Top predictors at season end</span>
+          </div>
+          <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {prizes.map(p => (
+              <div key={p.rank} className={`rounded-xl p-4 border ${
+                p.rank === 1 ? 'bg-amber-400/10 border-amber-400/30'
+                : p.rank === 2 ? 'bg-gray-400/10 border-gray-400/20'
+                : 'bg-orange-400/10 border-orange-400/20'
+              }`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-2xl">{p.emoji}</span>
+                  {isAdmin && editingPrize !== p.rank && (
+                    <button onClick={() => { setEditingPrize(p.rank); setEditText(p.prize); }}
+                            className="text-gray-500 hover:text-amber-400 transition-colors">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">{p.label}</p>
+                {editingPrize === p.rank ? (
+                  <div className="flex items-center gap-1 mt-1">
+                    <input
+                      autoFocus
+                      value={editText}
+                      onChange={e => setEditText(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') savePrize(p.rank, editText); if (e.key === 'Escape') setEditingPrize(null); }}
+                      className="flex-1 text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white outline-none focus:border-amber-400"
+                    />
+                    <button onClick={() => savePrize(p.rank, editText)} className="text-emerald-400 hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => setEditingPrize(null)} className="text-gray-500 hover:text-gray-300"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                ) : (
+                  <p className="text-sm font-black text-white">{p.prize}</p>
+                )}
+              </div>
+            ))}
+          </div>
+          {isAdmin && (
+            <p className="relative text-[10px] text-amber-400/50 mt-3 text-center">
+              ✏️ Click the pencil icon on any prize to edit it
+            </p>
+          )}
+        </div>
+
         {/* SCORING RULES */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
@@ -274,7 +348,9 @@ export function Predictions() {
             <div className="space-y-3">
               {settledWithPredictions.slice(0, 5).map(({ match, predictions }) => {
                 const correctWinner = predictions.filter(p => {
-                  const actual = match.result === 'won' ? 'scc' : match.result === 'lost' ? 'opponent' : 'draw';
+                  const actual = match.match_type === 'internal'
+                    ? (match.winning_team || 'draw')
+                    : match.result === 'won' ? 'scc' : match.result === 'lost' ? 'opponent' : 'draw';
                   return p.winner === actual;
                 }).length;
                 return (
@@ -389,6 +465,8 @@ export function Predictions() {
                                   p.winner === 'scc' ? 'SCC'
                                   : p.winner === 'opponent' ? (match.opponent || 'Opponent')
                                   : p.winner === 'draw' ? 'Draw'
+                                  : p.winner === 'dhurandars' ? '🔴 Dhurandars'
+                                  : p.winner === 'bazigars' ? '🔵 Bazigars'
                                   : '—';
                                 const topScorer = p.top_scorer_id ? memberById[p.top_scorer_id]?.name : null;
                                 const topWkt = p.top_wicket_taker_id ? memberById[p.top_wicket_taker_id]?.name : null;

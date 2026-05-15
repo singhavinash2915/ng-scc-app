@@ -8,7 +8,7 @@ import type { MatchScorecard, BatterRow, BowlerRow } from '../hooks/useMatchScor
 const SCC_TEAM_ID = 7927431;
 
 export interface MatchOutcome {
-  winner: 'scc' | 'opponent' | 'draw';
+  winner: 'scc' | 'opponent' | 'draw' | 'dhurandars' | 'bazigars';
   top_scorer_id: string | null;
   top_wicket_taker_id: string | null;
   mom_id: string | null;
@@ -36,10 +36,13 @@ export function deriveOutcome(
 ): MatchOutcome | null {
   if (!['won', 'lost', 'draw'].includes(match.result)) return null;
 
-  const winner: MatchOutcome['winner'] =
-    match.result === 'won' ? 'scc'
-    : match.result === 'lost' ? 'opponent'
-    : 'draw';
+  // For internal matches, winner is whichever SCC team won
+  let winner: MatchOutcome['winner'];
+  if (match.match_type === 'internal') {
+    winner = (match.winning_team as 'dhurandars' | 'bazigars' | null) || 'draw';
+  } else {
+    winner = match.result === 'won' ? 'scc' : match.result === 'lost' ? 'opponent' : 'draw';
+  }
 
   let topScorer: BatterRow | null = null;
   let topWicketTaker: BowlerRow | null = null;

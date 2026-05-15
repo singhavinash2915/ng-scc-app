@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 
+// 'dhurandars' / 'bazigars' are used for internal (SCC vs SCC) matches
+export type PredictionWinner = 'scc' | 'opponent' | 'draw' | 'dhurandars' | 'bazigars';
+
 export interface MatchPrediction {
   id: string;
   match_id: string;
   member_id: string;
-  winner: 'scc' | 'opponent' | 'draw' | null;
+  winner: PredictionWinner | null;
   top_scorer_id: string | null;
   top_wicket_taker_id: string | null;
   mom_id: string | null;
@@ -15,7 +18,7 @@ export interface MatchPrediction {
 }
 
 export interface PredictionInput {
-  winner: 'scc' | 'opponent' | 'draw';
+  winner: PredictionWinner;
   top_scorer_id: string | null;
   top_wicket_taker_id: string | null;
   mom_id: string | null;
