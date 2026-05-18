@@ -103,6 +103,15 @@ export function AIInsights() {
           season_catches: s?.fielding_catches || 0,
         };
       })
+      // Hard filter: exclude players with 0 recent matches AND no poll response
+      // (ghost-active: listed active but haven't shown up in any of the last 15 games)
+      // Exception: keep anyone who explicitly polled 'available' or 'maybe' — they signalled intent
+      .filter(p =>
+        p.poll_response === 'available' ||
+        p.poll_response === 'maybe' ||
+        p.last_15_matches_played > 0
+        // 'unavailable' are intentionally kept so the AI can name them in "Squad Concerns"
+      )
       // Sort: poll=available first, then by recent participation
       .sort((a, b) => {
         const pollOrder = { available: 0, maybe: 1, no_response: 2, unavailable: 3 };

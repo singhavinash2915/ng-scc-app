@@ -39,7 +39,7 @@ Type: ${data.match.match_type}` : 'Match TBD'}
 1. NEVER select players with poll_response = "unavailable". They are NOT available.
 2. STRONGLY PREFER poll_response = "available" (confirmed attending).
 3. For players with poll_response = "maybe" or "no_response", use last_15_matches_played as a proxy — higher = more likely to show up.
-4. Weight last_15_matches_played heavily: 10+ = core regular, 5–9 = semi-regular, <5 = fringe/likely absent.
+4. Weight last_15_matches_played heavily: 10+ = core regular, 5–9 = semi-regular, 1–4 = fringe. Players with last_15_matches_played = 0 have NOT played recently — do NOT select them unless they polled "available".
 5. recent_results = their team's W/L record in matches they played (W = win, L = loss, newest first). Longer winning streaks = better form.
 6. Use season stats (runs, avg, wickets, economy) ONLY for quality ranking AFTER availability filtering.
 7. If a player has unavailable poll but great stats — still EXCLUDE them. No exceptions.
