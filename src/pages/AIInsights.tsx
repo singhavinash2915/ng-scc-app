@@ -36,11 +36,19 @@ export function AIInsights() {
   const recentMatches = matches.filter(m => m.result !== 'upcoming').slice(0, 10);
   const leaderboard = getLeaderboard();
 
-  const generateSingleInsight = async (key: string, type: Parameters<typeof generateInsight>[0], data: Record<string, unknown>, noCache = false) => {
-    setLoadingInsight(prev => ({ ...prev, [key]: true }));
-    const result = await generateInsight(type, data, noCache ? undefined : key);
-    setInsights(prev => ({ ...prev, [key]: result }));
-    setLoadingInsight(prev => ({ ...prev, [key]: false }));
+  // stateKey  = key used for insights/loadingInsight state (what the UI reads)
+  // cacheKey  = key used for Supabase cache (can be dynamic/match-specific)
+  const generateSingleInsight = async (
+    stateKey: string,
+    type: Parameters<typeof generateInsight>[0],
+    data: Record<string, unknown>,
+    noCache = false,
+    cacheKey?: string,
+  ) => {
+    setLoadingInsight(prev => ({ ...prev, [stateKey]: true }));
+    const result = await generateInsight(type, data, noCache ? undefined : (cacheKey ?? stateKey));
+    setInsights(prev => ({ ...prev, [stateKey]: result }));
+    setLoadingInsight(prev => ({ ...prev, [stateKey]: false }));
   };
 
   const handleSquadSelector = (forceRefresh = false) => {
@@ -121,10 +129,10 @@ export function AIInsights() {
         return b.last_15_matches_played - a.last_15_matches_played;
       });
 
-    // Cache key includes match date + poll response count so it auto-invalidates
-    // when members respond to the poll. Squad selection is never cached >2h.
+    // Supabase cache key includes match date + poll count so it auto-invalidates
+    // when members respond to the poll. State key stays 'squad' so the UI finds it.
     const squadCacheKey = `squad_${match?.date || 'next'}_p${Object.keys(pollByMemberId).length}`;
-    generateSingleInsight(squadCacheKey, 'squad_selector', {
+    generateSingleInsight('squad', 'squad_selector', {
       match: match ? {
         opponent: match.opponent,
         venue: match.venue,
@@ -135,7 +143,7 @@ export function AIInsights() {
       last_15_window: last15.length,
       has_poll_data: hasPollData,
       poll_responded_count: Object.keys(pollByMemberId).length,
-    }, forceRefresh);
+    }, forceRefresh, squadCacheKey);
   };
 
   const handleMatchPrediction = (forceRefresh = false) => {
@@ -184,9 +192,9 @@ export function AIInsights() {
       .sort((a, b) => b.recent_of_15 - a.recent_of_15)
       .slice(0, 15); // top 15 likely available
 
-    // Cache key is match-specific so different matches don't share the same prediction
+    // Supabase cache key is match-specific. State key stays 'prediction' so the UI finds it.
     const predCacheKey = `prediction_${match?.date || 'next'}_${match?.opponent?.replace(/\s+/g, '') || 'tbd'}`;
-    generateSingleInsight(predCacheKey, 'match_prediction', {
+    generateSingleInsight('prediction', 'match_prediction', {
       match: match ? {
         opponent: match.opponent,
         venue: match.venue,
@@ -200,7 +208,7 @@ export function AIInsights() {
         wins: recentForm.filter(m => m.result === 'won').length,
         losses: recentForm.filter(m => m.result === 'lost').length,
       },
-    }, forceRefresh);
+    }, forceRefresh, predCacheKey);
   };
 
   const handleCricketDNA = async (memberId: string, forceRefresh = false) => {
