@@ -54,35 +54,30 @@ export function AIInsights() {
   const handleSquadSelector = (forceRefresh = false) => {
     const match = matches.find(m => m.id === selectedMatch) || upcomingMatches[0];
 
-    // Last 15 completed matches — the ONLY window that matters for availability/form
-    const last15 = matches
+    // Last 10 completed matches — the selection window
+    // match_players (who was actually picked each game) is the availability signal;
+    // we do NOT use in-app polls — squad is managed via WhatsApp and updated in the app.
+    const last10 = matches
       .filter(m => ['won', 'lost', 'draw'].includes(m.result))
       .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 15);
+      .slice(0, 10);
 
-    // Poll responses for the selected upcoming match (hard availability signal)
-    const pollByMemberId: Record<string, string> = {};
-    (match?.polls || []).forEach(p => {
-      pollByMemberId[p.member_id] = p.response;
-    });
-    const hasPollData = Object.keys(pollByMemberId).length > 0;
-
-    // Build rich player profiles combining recent form + poll + season stats
+    // Build rich player profiles: recent selection frequency + CricHeroes stats
     const players = members
       .filter(m => m.status === 'active')
       .map(m => {
         const s = stats.find(st => st.member_id === m.id);
 
-        // How many of the last 15 matches did this player participate in?
-        const recentMatchesPlayed = last15.filter(match =>
+        // Count how many of the last 10 matches this player was actually selected
+        const recentSelected = last10.filter(match =>
           match.players?.some(p => p.member_id === m.id)
         ).length;
 
-        // Recent match results when they played (newest first, max 5)
-        const recentResultsWhenPlayed = last15
+        // Team W/L when they were in the squad (newest first, max 5)
+        const recentResults = last10
           .filter(match => match.players?.some(p => p.member_id === m.id))
           .slice(0, 5)
-          .map(match => match.result[0].toUpperCase()) // W / L / D
+          .map(match => match.result[0].toUpperCase())
           .join('');
 
         return {
@@ -90,48 +85,31 @@ export function AIInsights() {
           role: m.role || 'unknown',
           jersey: m.jersey_number,
 
-          // ── Availability signals (PRIMARY decision factors) ──
-          poll_response: pollByMemberId[m.id] || 'no_response',
-          // available = confirmed playing, unavailable = skip them, maybe/no_response = uncertain
-          last_15_matches_played: recentMatchesPlayed,
-          last_15_availability_pct: last15.length > 0
-            ? `${Math.round((recentMatchesPlayed / last15.length) * 100)}%`
+          // ── Selection frequency (PRIMARY — how often are they picked?) ──
+          last_10_selected: recentSelected,
+          last_10_pct: last10.length > 0
+            ? `${Math.round((recentSelected / last10.length) * 100)}%`
             : '0%',
-          recent_results: recentResultsWhenPlayed || '—',
-          // A player absent from last 8+ matches is likely unavailable / out of form
+          recent_form: recentResults || '—',
 
-          // ── Season stats (SECONDARY — quality assessment only) ──
-          season_runs: s?.batting_runs || 0,
-          season_avg: Number((s?.batting_average || 0).toFixed(1)),
-          season_sr: Number((s?.batting_strike_rate || 0).toFixed(0)),
-          season_hs: s?.batting_highest_score || 0,
-          season_wickets: s?.bowling_wickets || 0,
-          season_economy: Number((s?.bowling_economy || 0).toFixed(1)),
-          season_best_bowling: s?.bowling_best_figures || '—',
-          season_catches: s?.fielding_catches || 0,
+          // ── CricHeroes stats (SECONDARY — quality ranking within available pool) ──
+          ch_runs: s?.batting_runs ?? 0,
+          ch_avg: Number((s?.batting_average ?? 0).toFixed(1)),
+          ch_sr: Number((s?.batting_strike_rate ?? 0).toFixed(0)),
+          ch_hs: s?.batting_highest_score ?? 0,
+          ch_fifties: s?.batting_fifties ?? 0,
+          ch_wickets: s?.bowling_wickets ?? 0,
+          ch_economy: Number((s?.bowling_economy ?? 0).toFixed(1)),
+          ch_best: s?.bowling_best_figures || '—',
+          ch_catches: s?.fielding_catches ?? 0,
         };
       })
-      // Hard filter: exclude players with 0 recent matches AND no poll response
-      // (ghost-active: listed active but haven't shown up in any of the last 15 games)
-      // Exception: keep anyone who explicitly polled 'available' or 'maybe' — they signalled intent
-      .filter(p =>
-        p.poll_response === 'available' ||
-        p.poll_response === 'maybe' ||
-        p.last_15_matches_played > 0
-        // 'unavailable' are intentionally kept so the AI can name them in "Squad Concerns"
-      )
-      // Sort: poll=available first, then by recent participation
-      .sort((a, b) => {
-        const pollOrder = { available: 0, maybe: 1, no_response: 2, unavailable: 3 };
-        const po = (pollOrder[a.poll_response as keyof typeof pollOrder] ?? 2) -
-                   (pollOrder[b.poll_response as keyof typeof pollOrder] ?? 2);
-        if (po !== 0) return po;
-        return b.last_15_matches_played - a.last_15_matches_played;
-      });
+      // Only include players who have been selected at least once in the last 10 matches
+      .filter(p => p.last_10_selected > 0)
+      // Sort by recent selection frequency, then by runs as tiebreaker
+      .sort((a, b) => b.last_10_selected - a.last_10_selected || b.ch_runs - a.ch_runs);
 
-    // Supabase cache key includes match date + poll count so it auto-invalidates
-    // when members respond to the poll. State key stays 'squad' so the UI finds it.
-    const squadCacheKey = `squad_${match?.date || 'next'}_p${Object.keys(pollByMemberId).length}`;
+    const squadCacheKey = `squad_${match?.date || 'next'}_v2`;
     generateSingleInsight('squad', 'squad_selector', {
       match: match ? {
         opponent: match.opponent,
@@ -140,16 +118,15 @@ export function AIInsights() {
         match_type: match.match_type,
       } : null,
       players,
-      last_15_window: last15.length,
-      has_poll_data: hasPollData,
-      poll_responded_count: Object.keys(pollByMemberId).length,
+      last_10_window: last10.length,
+      total_in_pool: players.length,
     }, forceRefresh, squadCacheKey);
   };
 
   const handleMatchPrediction = (forceRefresh = false) => {
     const match = matches.find(m => m.id === selectedMatch) || upcomingMatches[0];
 
-    // Recent form: last 8 external matches with result + opponent + score
+    // Recent external form: last 8 matches
     const recentForm = matches
       .filter(m => ['won', 'lost', 'draw'].includes(m.result) && m.match_type === 'external')
       .sort((a, b) => b.date.localeCompare(a.date))
@@ -160,40 +137,36 @@ export function AIInsights() {
         result: m.result,
         our_score: m.our_score,
         opp_score: m.opponent_score,
-        venue: m.venue,
       }));
 
-    // Players likely available (poll said available, or played 5+ of last 15)
-    const last15 = matches
+    // Likely squad = players selected in at least 3 of last 10 matches + CricHeroes stats
+    const last10 = matches
       .filter(m => ['won', 'lost', 'draw'].includes(m.result))
       .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 15);
-    const pollByMemberId: Record<string, string> = {};
-    (match?.polls || []).forEach(p => { pollByMemberId[p.member_id] = p.response; });
+      .slice(0, 10);
 
     const likelySquad = members
       .filter(m => m.status === 'active')
       .map(m => {
         const s = stats.find(st => st.member_id === m.id);
-        const recentPlayed = last15.filter(match => match.players?.some(p => p.member_id === m.id)).length;
-        const poll = pollByMemberId[m.id] || 'no_response';
+        const recentSelected = last10.filter(match =>
+          match.players?.some(p => p.member_id === m.id)
+        ).length;
         return {
           name: m.name,
           role: m.role,
-          poll: poll,
-          recent_of_15: recentPlayed,
-          runs: s?.batting_runs || 0,
-          avg: Number((s?.batting_average || 0).toFixed(1)),
-          wickets: s?.bowling_wickets || 0,
-          economy: Number((s?.bowling_economy || 0).toFixed(1)),
+          last_10_selected: recentSelected,
+          ch_runs: s?.batting_runs ?? 0,
+          ch_avg: Number((s?.batting_average ?? 0).toFixed(1)),
+          ch_wickets: s?.bowling_wickets ?? 0,
+          ch_economy: Number((s?.bowling_economy ?? 0).toFixed(1)),
         };
       })
-      .filter(p => p.poll !== 'unavailable' && (p.poll === 'available' || p.recent_of_15 >= 3))
-      .sort((a, b) => b.recent_of_15 - a.recent_of_15)
-      .slice(0, 15); // top 15 likely available
+      .filter(p => p.last_10_selected >= 3)
+      .sort((a, b) => b.last_10_selected - a.last_10_selected)
+      .slice(0, 15);
 
-    // Supabase cache key is match-specific. State key stays 'prediction' so the UI finds it.
-    const predCacheKey = `prediction_${match?.date || 'next'}_${match?.opponent?.replace(/\s+/g, '') || 'tbd'}`;
+    const predCacheKey = `prediction_${match?.date || 'next'}_${match?.opponent?.replace(/\s+/g, '') || 'tbd'}_v2`;
     generateSingleInsight('prediction', 'match_prediction', {
       match: match ? {
         opponent: match.opponent,
@@ -548,29 +521,31 @@ export function AIInsights() {
 
       {/* Squad AI Tab */}
       {activeTab === 'squad' && (() => {
-        const activeMatch = matches.find(m => m.id === selectedMatch) || upcomingMatches[0];
-        const last15 = matches
+        // Compute last-10 participation for the preview tags
+        const last10Preview = matches
           .filter(m => ['won', 'lost', 'draw'].includes(m.result))
           .sort((a, b) => b.date.localeCompare(a.date))
-          .slice(0, 15);
-        const polls = activeMatch?.polls || [];
-        const pollMap: Record<string, string> = {};
-        polls.forEach(p => { pollMap[p.member_id] = p.response; });
+          .slice(0, 10);
 
-        const availCount = polls.filter(p => p.response === 'available').length;
-        const unavailCount = polls.filter(p => p.response === 'unavailable').length;
-        const maybeCount = polls.filter(p => p.response === 'maybe').length;
+        const participationList = members
+          .filter(m => m.status === 'active')
+          .map(m => ({
+            member: m,
+            count: last10Preview.filter(match => match.players?.some(p => p.member_id === m.id)).length,
+          }))
+          .filter(x => x.count > 0)
+          .sort((a, b) => b.count - a.count);
 
         return (
         <div className="space-y-4">
-          {/* Match selector */}
+          {/* Match selector + squad preview */}
           <Card className="p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
               <Users className="w-4 h-4 text-primary-500" />
               AI Smart Squad Selector
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Uses last {last15.length} matches + squad poll availability — not just career stats.
+              Based on last {last10Preview.length} matches (who was actually selected) + CricHeroes stats.
             </p>
 
             <select
@@ -584,81 +559,25 @@ export function AIInsights() {
               ))}
             </select>
 
-            {/* Poll availability summary */}
-            {polls.length > 0 ? (
-              <div className="mb-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-2">
-                  📋 Squad Poll — {polls.length} response{polls.length !== 1 ? 's' : ''}
-                </p>
-                <div className="flex gap-3 text-xs flex-wrap">
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                    <span className="font-bold text-emerald-700 dark:text-emerald-300">{availCount} Available</span>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
-                    <span className="font-bold text-red-700 dark:text-red-300">{unavailCount} Unavailable</span>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                    <span className="font-bold text-amber-700 dark:text-amber-300">{maybeCount} Maybe</span>
-                  </span>
-                </div>
-                {/* Individual poll responses */}
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {polls.map(p => {
-                    const member = members.find(m => m.id === p.member_id);
-                    if (!member) return null;
-                    return (
-                      <span key={p.member_id} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                        p.response === 'available' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-                        : p.response === 'unavailable' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 line-through'
-                        : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
-                      }`}>
-                        {member.name.split(' ')[0]}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
-                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                  ⚠️ No poll responses yet. AI will use last {last15.length} matches to estimate availability.
-                </p>
-                <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-1">
-                  Ask members to respond to the squad poll for a more accurate squad selection.
-                </p>
-              </div>
-            )}
-
-            {/* Recent participation preview (top 5 most active) */}
-            {last15.length > 0 && (
+            {/* Recent selection frequency — who's been playing */}
+            {participationList.length > 0 && (
               <div className="mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Recent participation (last {last15.length} matches)</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">
+                  Selected in last {last10Preview.length} matches
+                </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {members
-                    .filter(m => m.status === 'active')
-                    .map(m => ({
-                      member: m,
-                      count: last15.filter(match => match.players?.some(p => p.member_id === m.id)).length,
-                      poll: pollMap[m.id],
-                    }))
-                    .sort((a, b) => b.count - a.count)
-                    .slice(0, 15)
-                    .map(({ member, count, poll }) => (
-                      <span key={member.id} className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
-                        poll === 'unavailable' ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 line-through'
-                        : count >= 10 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-                        : count >= 5 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                      }`}>
-                        {member.name.split(' ')[0]}
-                        <span className="opacity-60">{count}/{last15.length}</span>
-                      </span>
-                    ))}
+                  {participationList.map(({ member, count }) => (
+                    <span key={member.id} className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
+                      count >= 8 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                      : count >= 5 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {member.name.split(' ')[0]}
+                      <span className="opacity-60">{count}/{last10Preview.length}</span>
+                    </span>
+                  ))}
                 </div>
-                <p className="text-[9px] text-gray-400 mt-1">Green = 10+ matches · Blue = 5–9 · Gray = &lt;5</p>
+                <p className="text-[9px] text-gray-400 mt-1">Green = 8–10 · Blue = 5–7 · Gray = 1–4 · Not shown = 0 (excluded)</p>
               </div>
             )}
 
@@ -681,12 +600,12 @@ export function AIInsights() {
 
           {/* Match Prediction */}
           <Card className="p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary-500" />
               Match Prediction & Insights
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              AI analyses recent form + likely squad + opponent history to predict the match.
+              AI analyses recent form + players selected in 3+ of last 10 matches + CricHeroes stats.
             </p>
             <Button onClick={() => handleMatchPrediction()} disabled={loadingInsight.prediction} variant="secondary" className="w-full">
               <Brain className="w-4 h-4 mr-2" />
