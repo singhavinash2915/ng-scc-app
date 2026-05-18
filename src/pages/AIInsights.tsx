@@ -121,7 +121,10 @@ export function AIInsights() {
         return b.last_15_matches_played - a.last_15_matches_played;
       });
 
-    generateSingleInsight('squad', 'squad_selector', {
+    // Cache key includes match date + poll response count so it auto-invalidates
+    // when members respond to the poll. Squad selection is never cached >2h.
+    const squadCacheKey = `squad_${match?.date || 'next'}_p${Object.keys(pollByMemberId).length}`;
+    generateSingleInsight(squadCacheKey, 'squad_selector', {
       match: match ? {
         opponent: match.opponent,
         venue: match.venue,
@@ -181,7 +184,9 @@ export function AIInsights() {
       .sort((a, b) => b.recent_of_15 - a.recent_of_15)
       .slice(0, 15); // top 15 likely available
 
-    generateSingleInsight('prediction', 'match_prediction', {
+    // Cache key is match-specific so different matches don't share the same prediction
+    const predCacheKey = `prediction_${match?.date || 'next'}_${match?.opponent?.replace(/\s+/g, '') || 'tbd'}`;
+    generateSingleInsight(predCacheKey, 'match_prediction', {
       match: match ? {
         opponent: match.opponent,
         venue: match.venue,

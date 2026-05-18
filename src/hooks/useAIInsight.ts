@@ -3,7 +3,13 @@ import { supabase } from '../lib/supabase';
 import type { AIInsightType } from '../types';
 
 const SUPABASE_URL = 'https://zrrmpaatydhlkntfpcmw.supabase.co';
-const CACHE_TTL_HOURS = 24;
+
+// Squad/prediction insights change when poll responses come in — short TTL
+// Other insights (DNA, match report) are stable — use full 24h TTL
+function cacheTTL(type: AIInsightType): number {
+  if (type === 'squad_selector' || type === 'match_prediction') return 2;
+  return 24;
+}
 
 export function useAIInsight() {
   const [loading, setLoading] = useState(false);
@@ -54,7 +60,7 @@ export function useAIInsight() {
       // Cache the result if cacheKey provided
       if (cacheKey && content) {
         const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + CACHE_TTL_HOURS);
+        expiresAt.setHours(expiresAt.getHours() + cacheTTL(type));
 
         await supabase.from('ai_insight_cache').upsert({
           cache_key: cacheKey,
