@@ -44,30 +44,149 @@ export function AIInsights() {
   };
 
   const handleSquadSelector = (forceRefresh = false) => {
-    const match = matches.find(m => m.id === selectedMatch);
-    const availableMembers = members.map(m => {
-      const s = stats.find(st => st.member_id === m.id);
-      return {
-        name: m.name,
-        matches_played: m.matches_played,
-        batting_avg: s?.batting_average || 0,
-        batting_runs: s?.batting_runs || 0,
-        bowling_wickets: s?.bowling_wickets || 0,
-        bowling_economy: s?.bowling_economy || 0,
-      };
+    const match = matches.find(m => m.id === selectedMatch) || upcomingMatches[0];
+
+    // Last 15 completed matches — the ONLY window that matters for availability/form
+    const last15 = matches
+      .filter(m => ['won', 'lost', 'draw'].includes(m.result))
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 15);
+
+    // Poll responses for the selected upcoming match (hard availability signal)
+    const pollByMemberId: Record<string, string> = {};
+    (match?.polls || []).forEach(p => {
+      pollByMemberId[p.member_id] = p.response;
     });
-    generateSingleInsight('squad', 'squad_selector', { match, players: availableMembers }, forceRefresh);
+    const hasPollData = Object.keys(pollByMemberId).length > 0;
+
+    // Build rich player profiles combining recent form + poll + season stats
+    const players = members
+      .filter(m => m.status === 'active')
+      .map(m => {
+        const s = stats.find(st => st.member_id === m.id);
+
+        // How many of the last 15 matches did this player participate in?
+        const recentMatchesPlayed = last15.filter(match =>
+          match.players?.some(p => p.member_id === m.id)
+        ).length;
+
+        // Recent match results when they played (newest first, max 5)
+        const recentResultsWhenPlayed = last15
+          .filter(match => match.players?.some(p => p.member_id === m.id))
+          .slice(0, 5)
+          .map(match => match.result[0].toUpperCase()) // W / L / D
+          .join('');
+
+        return {
+          name: m.name,
+          role: m.role || 'unknown',
+          jersey: m.jersey_number,
+
+          // ── Availability signals (PRIMARY decision factors) ──
+          poll_response: pollByMemberId[m.id] || 'no_response',
+          // available = confirmed playing, unavailable = skip them, maybe/no_response = uncertain
+          last_15_matches_played: recentMatchesPlayed,
+          last_15_availability_pct: last15.length > 0
+            ? `${Math.round((recentMatchesPlayed / last15.length) * 100)}%`
+            : '0%',
+          recent_results: recentResultsWhenPlayed || '—',
+          // A player absent from last 8+ matches is likely unavailable / out of form
+
+          // ── Season stats (SECONDARY — quality assessment only) ──
+          season_runs: s?.batting_runs || 0,
+          season_avg: Number((s?.batting_average || 0).toFixed(1)),
+          season_sr: Number((s?.batting_strike_rate || 0).toFixed(0)),
+          season_hs: s?.batting_highest_score || 0,
+          season_wickets: s?.bowling_wickets || 0,
+          season_economy: Number((s?.bowling_economy || 0).toFixed(1)),
+          season_best_bowling: s?.bowling_best_figures || '—',
+          season_catches: s?.fielding_catches || 0,
+        };
+      })
+      // Sort: poll=available first, then by recent participation
+      .sort((a, b) => {
+        const pollOrder = { available: 0, maybe: 1, no_response: 2, unavailable: 3 };
+        const po = (pollOrder[a.poll_response as keyof typeof pollOrder] ?? 2) -
+                   (pollOrder[b.poll_response as keyof typeof pollOrder] ?? 2);
+        if (po !== 0) return po;
+        return b.last_15_matches_played - a.last_15_matches_played;
+      });
+
+    generateSingleInsight('squad', 'squad_selector', {
+      match: match ? {
+        opponent: match.opponent,
+        venue: match.venue,
+        date: match.date,
+        match_type: match.match_type,
+      } : null,
+      players,
+      last_15_window: last15.length,
+      has_poll_data: hasPollData,
+      poll_responded_count: Object.keys(pollByMemberId).length,
+    }, forceRefresh);
   };
 
   const handleMatchPrediction = (forceRefresh = false) => {
-    const match = matches.find(m => m.id === selectedMatch);
-    const squadStats = stats.slice(0, 15).map(s => ({
-      name: s.member?.name,
-      batting_avg: s.batting_average,
-      bowling_wickets: s.bowling_wickets,
-    }));
-    const recentForm = recentMatches.slice(0, 5).map(m => ({ result: m.result, opponent: m.opponent, venue: m.venue }));
-    generateSingleInsight('prediction', 'match_prediction', { match, squadStats, recentForm }, forceRefresh);
+    const match = matches.find(m => m.id === selectedMatch) || upcomingMatches[0];
+
+    // Recent form: last 8 external matches with result + opponent + score
+    const recentForm = matches
+      .filter(m => ['won', 'lost', 'draw'].includes(m.result) && m.match_type === 'external')
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 8)
+      .map(m => ({
+        date: m.date,
+        opponent: m.opponent,
+        result: m.result,
+        our_score: m.our_score,
+        opp_score: m.opponent_score,
+        venue: m.venue,
+      }));
+
+    // Players likely available (poll said available, or played 5+ of last 15)
+    const last15 = matches
+      .filter(m => ['won', 'lost', 'draw'].includes(m.result))
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 15);
+    const pollByMemberId: Record<string, string> = {};
+    (match?.polls || []).forEach(p => { pollByMemberId[p.member_id] = p.response; });
+
+    const likelySquad = members
+      .filter(m => m.status === 'active')
+      .map(m => {
+        const s = stats.find(st => st.member_id === m.id);
+        const recentPlayed = last15.filter(match => match.players?.some(p => p.member_id === m.id)).length;
+        const poll = pollByMemberId[m.id] || 'no_response';
+        return {
+          name: m.name,
+          role: m.role,
+          poll: poll,
+          recent_of_15: recentPlayed,
+          runs: s?.batting_runs || 0,
+          avg: Number((s?.batting_average || 0).toFixed(1)),
+          wickets: s?.bowling_wickets || 0,
+          economy: Number((s?.bowling_economy || 0).toFixed(1)),
+        };
+      })
+      .filter(p => p.poll !== 'unavailable' && (p.poll === 'available' || p.recent_of_15 >= 3))
+      .sort((a, b) => b.recent_of_15 - a.recent_of_15)
+      .slice(0, 15); // top 15 likely available
+
+    generateSingleInsight('prediction', 'match_prediction', {
+      match: match ? {
+        opponent: match.opponent,
+        venue: match.venue,
+        date: match.date,
+        match_type: match.match_type,
+      } : null,
+      likelySquad,
+      recentForm,
+      winLoss: {
+        last8: recentForm.map(m => m.result[0].toUpperCase()).join(''),
+        wins: recentForm.filter(m => m.result === 'won').length,
+        losses: recentForm.filter(m => m.result === 'lost').length,
+      },
+    }, forceRefresh);
   };
 
   const handleCricketDNA = async (memberId: string, forceRefresh = false) => {
@@ -406,32 +525,129 @@ export function AIInsights() {
       )}
 
       {/* Squad AI Tab */}
-      {activeTab === 'squad' && (
+      {activeTab === 'squad' && (() => {
+        const activeMatch = matches.find(m => m.id === selectedMatch) || upcomingMatches[0];
+        const last15 = matches
+          .filter(m => ['won', 'lost', 'draw'].includes(m.result))
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 15);
+        const polls = activeMatch?.polls || [];
+        const pollMap: Record<string, string> = {};
+        polls.forEach(p => { pollMap[p.member_id] = p.response; });
+
+        const availCount = polls.filter(p => p.response === 'available').length;
+        const unavailCount = polls.filter(p => p.response === 'unavailable').length;
+        const maybeCount = polls.filter(p => p.response === 'maybe').length;
+
+        return (
         <div className="space-y-4">
+          {/* Match selector */}
           <Card className="p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Users className="w-4 h-4 text-primary-500" />
-              AI Squad Selector
+              AI Smart Squad Selector
             </h3>
-            <div className="space-y-3 mb-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">Select Match (optional)</label>
-                <select
-                  value={selectedMatch}
-                  onChange={e => setSelectedMatch(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
-                >
-                  <option value="">Any upcoming match</option>
-                  {upcomingMatches.map(m => (
-                    <option key={m.id} value={m.id}>{m.date} — {m.opponent || 'TBD'} at {m.venue}</option>
-                  ))}
-                </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Uses last {last15.length} matches + squad poll availability — not just career stats.
+            </p>
+
+            <select
+              value={selectedMatch}
+              onChange={e => setSelectedMatch(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm mb-3"
+            >
+              <option value="">{upcomingMatches[0] ? `Next match (${upcomingMatches[0].opponent || upcomingMatches[0].date})` : 'No upcoming matches'}</option>
+              {upcomingMatches.map(m => (
+                <option key={m.id} value={m.id}>{m.date} — {m.match_type === 'internal' ? 'Internal Match' : m.opponent || 'TBD'} at {m.venue}</option>
+              ))}
+            </select>
+
+            {/* Poll availability summary */}
+            {polls.length > 0 ? (
+              <div className="mb-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-2">
+                  📋 Squad Poll — {polls.length} response{polls.length !== 1 ? 's' : ''}
+                </p>
+                <div className="flex gap-3 text-xs flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                    <span className="font-bold text-emerald-700 dark:text-emerald-300">{availCount} Available</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                    <span className="font-bold text-red-700 dark:text-red-300">{unavailCount} Unavailable</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                    <span className="font-bold text-amber-700 dark:text-amber-300">{maybeCount} Maybe</span>
+                  </span>
+                </div>
+                {/* Individual poll responses */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {polls.map(p => {
+                    const member = members.find(m => m.id === p.member_id);
+                    if (!member) return null;
+                    return (
+                      <span key={p.member_id} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        p.response === 'available' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                        : p.response === 'unavailable' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 line-through'
+                        : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                      }`}>
+                        {member.name.split(' ')[0]}
+                      </span>
+                    );
+                  })}
+                </div>
               </div>
-              <Button onClick={() => handleSquadSelector()} disabled={loadingInsight.squad} className="w-full">
-                <Sparkles className="w-4 h-4 mr-2" />
-                {loadingInsight.squad ? 'AI is selecting...' : 'Generate Best XI'}
-              </Button>
-            </div>
+            ) : (
+              <div className="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                  ⚠️ No poll responses yet. AI will use last {last15.length} matches to estimate availability.
+                </p>
+                <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-1">
+                  Ask members to respond to the squad poll for a more accurate squad selection.
+                </p>
+              </div>
+            )}
+
+            {/* Recent participation preview (top 5 most active) */}
+            {last15.length > 0 && (
+              <div className="mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Recent participation (last {last15.length} matches)</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {members
+                    .filter(m => m.status === 'active')
+                    .map(m => ({
+                      member: m,
+                      count: last15.filter(match => match.players?.some(p => p.member_id === m.id)).length,
+                      poll: pollMap[m.id],
+                    }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 15)
+                    .map(({ member, count, poll }) => (
+                      <span key={member.id} className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
+                        poll === 'unavailable' ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 line-through'
+                        : count >= 10 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                        : count >= 5 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                      }`}>
+                        {member.name.split(' ')[0]}
+                        <span className="opacity-60">{count}/{last15.length}</span>
+                      </span>
+                    ))}
+                </div>
+                <p className="text-[9px] text-gray-400 mt-1">Green = 10+ matches · Blue = 5–9 · Gray = &lt;5</p>
+              </div>
+            )}
+
+            <Button onClick={() => handleSquadSelector()} disabled={loadingInsight.squad} className="w-full">
+              <Sparkles className="w-4 h-4 mr-2" />
+              {loadingInsight.squad ? 'AI is selecting best XI…' : 'Generate Smart Best XI'}
+            </Button>
+          </Card>
+
+          {/* AI Output */}
+          {(insights.squad || loadingInsight.squad) && (
             <AIInsightCard
               title="AI Squad Selection"
               insight={insights.squad || null}
@@ -439,33 +655,23 @@ export function AIInsights() {
               error={aiError}
               onRefresh={() => handleSquadSelector(true)}
             />
-          </Card>
+          )}
 
           {/* Match Prediction */}
           <Card className="p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary-500" />
-              Match Prediction
+              Match Prediction & Insights
             </h3>
-            <div className="space-y-3 mb-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">Select Upcoming Match</label>
-                <select
-                  value={selectedMatch}
-                  onChange={e => setSelectedMatch(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
-                >
-                  <option value="">Select a match...</option>
-                  {upcomingMatches.map(m => (
-                    <option key={m.id} value={m.id}>{m.date} — {m.opponent || 'TBD'} at {m.venue}</option>
-                  ))}
-                </select>
-              </div>
-              <Button onClick={() => handleMatchPrediction()} disabled={loadingInsight.prediction} variant="secondary" className="w-full">
-                <Brain className="w-4 h-4 mr-2" />
-                {loadingInsight.prediction ? 'Predicting...' : 'Predict Match Outcome'}
-              </Button>
-            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              AI analyses recent form + likely squad + opponent history to predict the match.
+            </p>
+            <Button onClick={() => handleMatchPrediction()} disabled={loadingInsight.prediction} variant="secondary" className="w-full">
+              <Brain className="w-4 h-4 mr-2" />
+              {loadingInsight.prediction ? 'Analysing…' : 'Predict Match Outcome'}
+            </Button>
+          </Card>
+          {(insights.prediction || loadingInsight.prediction) && (
             <AIInsightCard
               title="Match Prediction"
               insight={insights.prediction || null}
@@ -473,9 +679,10 @@ export function AIInsights() {
               error={aiError}
               onRefresh={() => handleMatchPrediction(true)}
             />
-          </Card>
+          )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Cricket DNA Tab */}
       {activeTab === 'identity' && (

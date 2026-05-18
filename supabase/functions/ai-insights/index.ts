@@ -27,28 +27,75 @@ Deno.serve(async (req) => {
 
     switch (type) {
       case 'squad_selector':
-        prompt = `Based on this match context and player availability/stats, suggest the best 11 players with roles and batting order:
+        prompt = `You are the SCC team selector. Pick the best XI for this match using AVAILABILITY as the PRIMARY filter, then quality.
 
-Match: ${data.match?.opponent || 'TBD'} at ${data.match?.venue || 'TBD'}
-Format: ${data.match?.format || 'T20'}
+═══ MATCH ═══
+${data.match ? `Opponent: ${data.match.opponent || 'Internal Match'}
+Venue: ${data.match.venue || 'TBD'}
+Date: ${data.match.date}
+Type: ${data.match.match_type}` : 'Match TBD'}
 
-Available players and their stats:
+═══ SELECTION RULES (CRITICAL — follow in order) ═══
+1. NEVER select players with poll_response = "unavailable". They are NOT available.
+2. STRONGLY PREFER poll_response = "available" (confirmed attending).
+3. For players with poll_response = "maybe" or "no_response", use last_15_matches_played as a proxy — higher = more likely to show up.
+4. Weight last_15_matches_played heavily: 10+ = core regular, 5–9 = semi-regular, <5 = fringe/likely absent.
+5. recent_results = their team's W/L record in matches they played (W = win, L = loss, newest first). Longer winning streaks = better form.
+6. Use season stats (runs, avg, wickets, economy) ONLY for quality ranking AFTER availability filtering.
+7. If a player has unavailable poll but great stats — still EXCLUDE them. No exceptions.
+
+═══ POLL DATA SUMMARY ═══
+Has poll data: ${data.has_poll_data}
+Responded: ${data.poll_responded_count} players
+Last N matches window: ${data.last_15_window}
+
+═══ PLAYER POOL (sorted by availability → recent participation) ═══
+Each entry: name, role, jersey, poll_response, last_15_matches_played, last_15_availability_pct, recent_results (W/L when they played), season stats
 ${JSON.stringify(data.players, null, 2)}
 
-Provide: (1) Best XI with roles, (2) batting order, (3) bowling lineup, (4) one-line reasoning. Be specific about players.`;
+═══ OUTPUT FORMAT ═══
+**Best XI** (number each player with their batting position and role):
+1. [Name] — [role] — [one reason: poll/form/stats]
+... (11 players)
+
+**Bowling Attack**: List the main bowlers and their likely overs
+
+**Squad Concerns**: Name any key players excluded (unavailable/poor form) and who fills in
+
+**Selector's Note**: One punchy line on the team's balance and key selection call.
+
+Keep total response under 350 words.`;
         break;
 
       case 'match_prediction':
-        prompt = `Predict the match outcome for SCC:
+        prompt = `Predict the outcome of SCC's next match using real form data and likely squad.
 
-Match: SCC vs ${data.match?.opponent || 'Opponent'} at ${data.match?.venue}
-Date: ${data.match?.date}
+═══ MATCH ═══
+${data.match ? `SCC vs ${data.match.opponent || 'Opponent'}
+Venue: ${data.match.venue || 'TBD'} | Date: ${data.match.date}
+Type: ${data.match.match_type}` : 'Match TBD'}
 
-SCC Recent Form: ${JSON.stringify(data.recentForm)}
-Squad Stats: ${JSON.stringify(data.squadStats)}
-Head-to-Head: ${JSON.stringify(data.h2h || 'No data')}
+═══ SCC RECENT FORM (last 8 external matches, newest first) ═══
+Form string: ${data.winLoss?.last8 || '—'} (W=win L=loss D=draw)
+Record: ${data.winLoss?.wins || 0}W ${data.winLoss?.losses || 0}L
+${JSON.stringify(data.recentForm, null, 2)}
 
-Give: (1) Win probability %, (2) Key match-ups to watch, (3) SCC's strengths/weaknesses, (4) Bold prediction with reasoning.`;
+═══ LIKELY SQUAD (poll=available OR played 3+ of last 15; excludes unavailable) ═══
+Fields: name, role, poll response, recent_of_15 (last 15 matches played), season runs/avg/wickets/economy
+${JSON.stringify(data.likelySquad, null, 2)}
+
+═══ OUTPUT FORMAT ═══
+**Win Probability**: SCC X% | Draw Y% | Loss Z%
+
+**Key Match-Ups**: 2-3 specific player battles to watch (batter vs bowler angles)
+
+**SCC Strengths**: 2 bullet points based on current form + squad
+
+**SCC Risks**: 2 bullet points (injury absences, weak links, conditions)
+
+**Bold Prediction**: One punchy sentence with your verdict and reasoning.
+
+Keep total response under 300 words. Be specific — use player names from the squad.`;
         break;
 
       case 'cricket_dna':
