@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { toPng } from 'html-to-image';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
@@ -24,6 +24,27 @@ interface Props {
 export function PlayerCardModal({ isOpen, onClose, member, stats, moms, matchesPlayed }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+
+  // Pre-fetch avatar as base64 data URL so html-to-image can embed it
+  // (cross-origin <img> tags are blocked by the browser's canvas taint rules)
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!member.avatar_url) { setAvatarDataUrl(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(member.avatar_url!, { mode: 'cors' });
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onload = () => { if (!cancelled) setAvatarDataUrl(reader.result as string); };
+        reader.readAsDataURL(blob);
+      } catch {
+        // Couldn't fetch — fall back to null (will show initial letter instead)
+        if (!cancelled) setAvatarDataUrl(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [member.avatar_url]);
 
   const theme = cardTheme(member.role);
   const radar = computeRadar(stats, moms, matchesPlayed);
@@ -107,12 +128,11 @@ export function PlayerCardModal({ isOpen, onClose, member, stats, moms, matchesP
               )}
             </div>
 
-            {/* Avatar section */}
+            {/* Avatar section — uses pre-fetched data URL to avoid canvas taint */}
             <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'center', marginTop: 12 }}>
-              {member.avatar_url ? (
+              {avatarDataUrl ? (
                 <img
-                  src={member.avatar_url}
-                  crossOrigin="anonymous"
+                  src={avatarDataUrl}
                   alt={member.name}
                   style={{
                     width: 144,
@@ -193,15 +213,21 @@ export function PlayerCardModal({ isOpen, onClose, member, stats, moms, matchesP
           </div>
         </div>
 
+        {/* Loading notice while avatar is being fetched */}
+        {member.avatar_url && !avatarDataUrl && (
+          <p className="text-xs text-gray-400 text-center -mt-2">Loading photo…</p>
+        )}
+
         {/* Action buttons */}
         <div className="flex gap-3 w-full">
           <Button
             variant="primary"
             onClick={handleDownload}
             loading={downloading}
+            disabled={!!(member.avatar_url && !avatarDataUrl)} // wait for avatar
             className="flex-1"
           >
-            {downloading ? 'Generating…' : 'Download Card'}
+            {downloading ? 'Generating…' : member.avatar_url && !avatarDataUrl ? 'Loading photo…' : 'Download Card'}
           </Button>
           <Button variant="secondary" onClick={onClose} className="flex-1">
             Close

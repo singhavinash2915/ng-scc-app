@@ -126,7 +126,7 @@ export function positionLabel(role: string | null): string {
     case 'batsman': return 'ATK';
     case 'bowler': return 'BWL';
     case 'all_rounder': return 'ALL';
-    case 'wicket_keeper': return 'GK';
+    case 'wicket_keeper': return 'WK';
     default: return 'PLY';
   }
 }
