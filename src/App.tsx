@@ -32,6 +32,7 @@ const Auction      = lazy(() => import('./pages/Auction').then(m => ({ default: 
 const Predictions  = lazy(() => import('./pages/Predictions').then(m => ({ default: m.Predictions })));
 const MemberProfile = lazy(() => import('./pages/MemberProfile').then(m => ({ default: m.MemberProfile })));
 const AnnualReport = lazy(() => import('./pages/AnnualReport').then(m => ({ default: m.AnnualReport })));
+const Compare = lazy(() => import('./pages/Compare').then(m => ({ default: m.Compare })));
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -99,6 +100,7 @@ const AppRoutes = () => (
         <Route path="/predictions"   element={<Suspense fallback={<PageLoader />}><Predictions /></Suspense>} />
         <Route path="/profile/:id"   element={<Suspense fallback={<PageLoader />}><MemberProfile /></Suspense>} />
         <Route path="/annual-report" element={<Suspense fallback={<PageLoader />}><AnnualReport /></Suspense>} />
+        <Route path="/compare"       element={<Suspense fallback={<PageLoader />}><Compare /></Suspense>} />
         <Route path="/payment"       element={<Suspense fallback={<PageLoader />}><Payment /></Suspense>} />
         <Route path="/analytics"     element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
         <Route path="/requests"      element={<Suspense fallback={<PageLoader />}><Requests /></Suspense>} />

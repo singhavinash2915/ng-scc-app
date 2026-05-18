@@ -21,6 +21,7 @@ import {
   FileText,
   Gavel,
   Sparkles,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -34,6 +35,7 @@ const publicNavItems = [
   { to: '/matches', icon: Calendar, label: 'Matches' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
+  { to: '/compare', icon: ArrowLeftRight, label: 'Compare' },
   { to: '/records', icon: Award, label: 'Hall of Fame' },
   { to: '/predictions', icon: Sparkles, label: 'Predictions' },
   { to: '/finance', icon: Wallet, label: 'Finance' },

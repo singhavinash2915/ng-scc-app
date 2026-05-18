@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Trophy, Crown, Star, ChevronLeft, Camera, Calendar as CalIcon,
   Cake, Award, TrendingUp, Zap, Sparkles, Lock,
-  CheckCircle2, Target, Wallet,
+  CheckCircle2, Target, Wallet, CreditCard, ArrowLeftRight,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
@@ -16,6 +16,9 @@ import { useAchievements, type Achievement } from '../hooks/useAchievements';
 import { useMatchMemories } from '../hooks/useMatchMemories';
 import { usePlayerScorecards } from '../hooks/usePlayerScorecards';
 import { useTransactions } from '../hooks/useTransactions';
+import { SkillRadarChart } from '../components/SkillRadarChart';
+import { PlayerCardModal } from '../components/PlayerCardModal';
+import { computeRadar, overallRating } from '../utils/playerRating';
 
 const ROLE_LABEL: Record<string, string> = {
   batsman: '🏏 Batsman',
@@ -124,6 +127,7 @@ export function MemberProfile() {
   const { formByMember } = useFormGuide();
   const { photos } = useMatchPhotos();
   const [tab, setTab] = useState<Tab>('overview');
+  const [showCard, setShowCard] = useState(false);
 
   const member = members.find(m => m.id === id);
   const memberStats = stats.find(s => s.member_id === id);
@@ -180,6 +184,8 @@ export function MemberProfile() {
 
   const dismissals = (memberStats?.fielding_catches || 0) + (memberStats?.fielding_stumpings || 0) + (memberStats?.fielding_run_outs || 0);
   const unlockedCount = achievements.filter(a => a.unlocked).length;
+  const radar = computeRadar(memberStats, moms, matchesPlayed.length);
+  const ovr = overallRating(radar, member.role);
 
   const tabs: Array<{ id: Tab; label: string; icon: React.ReactNode; count?: number }> = [
     { id: 'overview', label: 'Overview', icon: <Star className="w-3.5 h-3.5" /> },
@@ -267,6 +273,27 @@ export function MemberProfile() {
                 <Pill v={memberStats?.bowling_wickets || 0} label="Wickets" color="text-red-300" />
                 <Pill v={dismissals} label="Dismissals" color="text-emerald-300" />
                 <Pill v={`${winRate}%`} label="Win Rate" color="text-amber-300" />
+              </div>
+
+              {/* OVR badge + action buttons */}
+              <div className="flex items-center gap-2 mt-4 justify-center sm:justify-start flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-black">
+                  OVR {ovr}
+                </span>
+                <button
+                  onClick={() => setShowCard(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/15 text-gray-300 text-xs font-bold hover:bg-white/10 transition-colors"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  Player Card
+                </button>
+                <Link
+                  to={`/compare?a=${id}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/15 text-gray-300 text-xs font-bold hover:bg-white/10 transition-colors"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  Compare
+                </Link>
               </div>
 
               {form && form.length > 0 && (
@@ -425,6 +452,18 @@ export function MemberProfile() {
               </div>
             )}
 
+            {/* Skill Radar */}
+            <div className="relative overflow-hidden rounded-2xl p-5"
+                 style={{ background: 'linear-gradient(135deg, #061a14 0%, #0a1019 100%)' }}>
+              <div className="absolute inset-0 rounded-2xl pointer-events-none border border-emerald-500/15" />
+              <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[3px] mb-2 relative">
+                Skill Radar
+              </h3>
+              <div className="relative">
+                <SkillRadarChart radar={radar} color="#34d399" size={260} />
+              </div>
+            </div>
+
             {/* Latest unlocks */}
             {unlockedCount > 0 && (
               <div>
@@ -547,6 +586,15 @@ export function MemberProfile() {
           </div>
         )}
       </div>
+
+      <PlayerCardModal
+        isOpen={showCard}
+        onClose={() => setShowCard(false)}
+        member={member}
+        stats={memberStats}
+        moms={moms}
+        matchesPlayed={matchesPlayed.length}
+      />
     </div>
   );
 }
