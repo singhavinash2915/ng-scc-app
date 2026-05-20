@@ -19,6 +19,7 @@ import {
   Filter,
   CheckCheck,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
@@ -54,6 +55,7 @@ export function Bookings() {
     fetchBookings,
     updateBookingStatus,
     confirmBookingAndCreateMatch,
+    deleteBooking,
   } = useMatchBookings();
 
   const [statusFilter, setStatusFilter] = useState<MatchBookingStatus | 'all'>('all');
@@ -62,6 +64,7 @@ export function Bookings() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [showScreenshot, setShowScreenshot] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -105,6 +108,22 @@ export function Bookings() {
       setAdminNotes('');
     } else {
       setActionError(result.error ?? 'Failed to reject');
+    }
+  }
+
+  async function handleDelete() {
+    if (!selectedBooking) return;
+    setActionLoading(true);
+    setActionError(null);
+    const result = await deleteBooking(selectedBooking.id);
+    setActionLoading(false);
+    if (result.success) {
+      setSelectedBooking(null);
+      setAdminNotes('');
+      setShowDeleteConfirm(false);
+    } else {
+      setActionError(result.error ?? 'Failed to delete');
+      setShowDeleteConfirm(false);
     }
   }
 
@@ -314,7 +333,7 @@ export function Bookings() {
       {/* ── Review Modal ──────────────────────────────────────────────────── */}
       <Modal
         isOpen={!!selectedBooking}
-        onClose={() => { setSelectedBooking(null); setAdminNotes(''); setActionError(null); }}
+        onClose={() => { setSelectedBooking(null); setAdminNotes(''); setActionError(null); setShowDeleteConfirm(false); }}
         title="Review Booking"
         size="lg"
       >
@@ -476,6 +495,43 @@ export function Bookings() {
                 This booking has been {selectedBooking.status}. The slot has been released.
               </div>
             )}
+
+            {/* Delete (hard-delete — for admin testing / duplicates) */}
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400 transition"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete this booking permanently
+                </button>
+              ) : (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-3 space-y-2">
+                  <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                    Are you sure? This will permanently delete the booking and release the slot.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      disabled={actionLoading}
+                      className="flex-1 py-1.5 text-xs rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition disabled:opacity-60 flex items-center justify-center gap-1"
+                    >
+                      {actionLoading
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <Trash2 className="w-3 h-3" />
+                      }
+                      Yes, Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>

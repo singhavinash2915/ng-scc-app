@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { toPng } from 'html-to-image';
+import { supabase } from '../lib/supabase';
 import { useMatchBookings } from '../hooks/useMatchBookings';
 import type { MatchSlot } from '../types';
 import {
@@ -19,114 +21,221 @@ import {
   Shield,
   Info,
   AlertCircle,
+  Trophy,
+  Share2,
+  Download,
+  Star,
+  MapPin,
+  MessageCircle,
 } from 'lucide-react';
 
-// ─── UPI Config ───────────────────────────────────────────────────────────────
-const UPI_ID = 'scc.cricket@upi'; // Admin should update this in Settings
+// ─── Config ───────────────────────────────────────────────────────────────────
+const UPI_ID  = 'scc.cricket@upi'; // Admin: update in Settings
 const UPI_NAME = 'Sangria Cricket Club';
+const WA_NUMBER = '918888546860';   // WhatsApp number without +
+const BOOKING_PAGE_URL = typeof window !== 'undefined'
+  ? `${window.location.origin}/book-match`
+  : 'https://scc.app/book-match';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
 ];
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+function formatShortDate(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+}
+function getDayName(dateStr: string) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'short' });
 }
 
-function formatShortDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-}
-
-function getDayName(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-IN', { weekday: 'short' });
-}
+// ─── Input classes ────────────────────────────────────────────────────────────
+const inputCls = (err?: boolean) =>
+  `w-full bg-white border rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition text-sm ${err ? 'border-red-400' : 'border-gray-200 hover:border-gray-300'}`;
+const iconInputCls = (err?: boolean) =>
+  `w-full bg-white border rounded-xl pl-10 pr-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition text-sm ${err ? 'border-red-400' : 'border-gray-200 hover:border-gray-300'}`;
 
 type BookingStep = 'calendar' | 'form' | 'payment' | 'success';
 
-// ─── Shared input classes ─────────────────────────────────────────────────────
-const inputCls = (hasError?: boolean) =>
-  `w-full bg-white border rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition text-sm ${
-    hasError ? 'border-red-400' : 'border-gray-200 hover:border-gray-300'
-  }`;
-const inputWithIconCls = (hasError?: boolean) =>
-  `w-full bg-white border rounded-xl pl-10 pr-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition text-sm ${
-    hasError ? 'border-red-400' : 'border-gray-200 hover:border-gray-300'
-  }`;
+// ─── Testimonials (hardcoded, admin can update these in code) ─────────────────
+const TESTIMONIALS = [
+  { team: 'Thunder Strikers CC', text: 'Brilliant ground, great pitch and a very sporting SCC team. The booking process was seamless!', rating: 5 },
+  { team: 'Powai Panthers', text: 'Had an amazing match experience. Well-organised, punctual, and a fun group to play against.', rating: 5 },
+  { team: 'Andheri Avengers', text: 'Professional setup, fair umpiring and a competitive match. Will definitely book again!', rating: 5 },
+];
+
+// ─── Match Card (downloadable confirmation) ───────────────────────────────────
+function MatchCard({
+  cardRef, date, teamName, bookingId, amount, slotType,
+}: {
+  cardRef: React.RefObject<HTMLDivElement | null>;
+  date: string; teamName: string; bookingId: string; amount: number; slotType: string;
+}) {
+  return (
+    <div
+      ref={cardRef}
+      style={{
+        width: 320, background: 'linear-gradient(135deg,#064e3b,#065f46,#047857)',
+        borderRadius: 20, overflow: 'hidden', fontFamily: 'system-ui,sans-serif',
+        color: '#fff', padding: 24, position: 'relative',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
+        <div style={{ width:40, height:40, borderRadius:10, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:900 }}>
+          🏏
+        </div>
+        <div>
+          <div style={{ fontWeight:900, fontSize:15 }}>Match Booking Confirmed</div>
+          <div style={{ fontSize:11, opacity:0.7 }}>Sangria Cricket Club · Season 2026–27</div>
+        </div>
+      </div>
+
+      {/* Teams */}
+      <div style={{ background:'rgba(255,255,255,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
+        <div style={{ fontSize:11, opacity:0.6, marginBottom:6, textTransform:'uppercase', letterSpacing:1 }}>Match</div>
+        <div style={{ fontSize:18, fontWeight:900 }}>{teamName}</div>
+        <div style={{ fontSize:13, opacity:0.6, margin:'4px 0' }}>vs</div>
+        <div style={{ fontSize:18, fontWeight:900 }}>Sangria Cricket Club</div>
+      </div>
+
+      {/* Details */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+        {[
+          { label:'Date', value: formatShortDate(date) },
+          { label:'Slot', value: slotType === 'saturday' ? 'Saturday' : 'Weekday' },
+          { label:'Amount Paid', value:`₹${amount.toLocaleString('en-IN')}` },
+          { label:'Booking ID', value: bookingId.slice(0,8).toUpperCase() },
+        ].map(({ label, value }) => (
+          <div key={label} style={{ background:'rgba(255,255,255,0.08)', borderRadius:10, padding:'10px 12px' }}>
+            <div style={{ fontSize:9, opacity:0.5, textTransform:'uppercase', letterSpacing:1, marginBottom:3 }}>{label}</div>
+            <div style={{ fontSize:13, fontWeight:700 }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ textAlign:'center', fontSize:10, opacity:0.4 }}>
+        scc.app · Sangria Cricket Club
+      </div>
+    </div>
+  );
+}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function BookMatch() {
   const { slots, loading, fetchSlots, createBooking } = useMatchBookings();
 
+  // Trust-builder data
+  const [sccRecord, setSccRecord] = useState<{ wins:number; losses:number; draws:number } | null>(null);
+  const [matchPhotos, setMatchPhotos] = useState<string[]>([]);
+  const [, setLoadingTrust] = useState(true);
+
+  // Step state
   const [step, setStep] = useState<BookingStep>('calendar');
   const [selectedSlot, setSelectedSlot] = useState<MatchSlot | null>(null);
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
 
-  // Form state
-  const [teamName, setTeamName] = useState('');
+  // Form fields
+  const [teamName, setTeamName]       = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
-  const [chTeamId, setChTeamId] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'razorpay'>('upi');
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [bookingId, setBookingId] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [chTeamId, setChTeamId]       = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'upi'|'razorpay'>('upi');
+  const [screenshotFile, setScreenshotFile]   = useState<File|null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string|null>(null);
+  const [formErrors, setFormErrors]   = useState<Record<string,string>>({});
+  const [paymentError, setPaymentError] = useState<string|null>(null);
+  const [submitting, setSubmitting]   = useState(false);
+  const [bookingId, setBookingId]     = useState<string|null>(null);
+  const [submitError, setSubmitError] = useState<string|null>(null);
+  const [copied, setCopied]           = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cardRef      = useRef<HTMLDivElement>(null);
 
+  // Fetch slots
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
-  // ─── Group slots by month ─────────────────────────────────────────────────
+  // Fetch trust-builder data (SCC record + recent photos)
+  useEffect(() => {
+    (async () => {
+      setLoadingTrust(true);
+      try {
+        // Recent external match results
+        const { data: matches } = await supabase
+          .from('matches')
+          .select('result')
+          .eq('match_type', 'external')
+          .in('result', ['won','lost','draw'])
+          .order('date', { ascending: false })
+          .limit(20);
+
+        if (matches) {
+          setSccRecord({
+            wins:   matches.filter(m => m.result === 'won').length,
+            losses: matches.filter(m => m.result === 'lost').length,
+            draws:  matches.filter(m => m.result === 'draw').length,
+          });
+        }
+
+        // Recent match photos
+        const { data: photos } = await supabase
+          .from('match_photos')
+          .select('photo_url')
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (photos) setMatchPhotos(photos.map(p => p.photo_url));
+      } catch {
+        // Non-critical; swallow errors
+      } finally {
+        setLoadingTrust(false);
+      }
+    })();
+  }, []);
+
+  // ─── Slot grouping ────────────────────────────────────────────────────────
   const slotsByMonth = useMemo(() => {
     const map: Record<string, MatchSlot[]> = {};
-    slots.forEach(s => {
-      const key = s.date.slice(0, 7);
-      if (!map[key]) map[key] = [];
-      map[key].push(s);
-    });
+    slots.forEach(s => { const k = s.date.slice(0,7); if (!map[k]) map[k]=[]; map[k].push(s); });
     return map;
   }, [slots]);
-
-  const monthKeys = useMemo(() => Object.keys(slotsByMonth).sort(), [slotsByMonth]);
-  const currentMonthKey = monthKeys[currentMonthIndex] ?? '';
+  const monthKeys         = useMemo(() => Object.keys(slotsByMonth).sort(), [slotsByMonth]);
+  const currentMonthKey   = monthKeys[currentMonthIndex] ?? '';
   const currentMonthSlots = slotsByMonth[currentMonthKey] ?? [];
-
-  const monthLabel = currentMonthKey
-    ? `${MONTHS[parseInt(currentMonthKey.split('-')[1]) - 1]} ${currentMonthKey.split('-')[0]}`
+  const monthLabel        = currentMonthKey
+    ? `${MONTHS[parseInt(currentMonthKey.split('-')[1])-1]} ${currentMonthKey.split('-')[0]}`
     : '';
 
-  function slotStatus(slot: MatchSlot): 'available' | 'pending' | 'booked' | 'blocked' {
+  function slotStatus(slot: MatchSlot): 'available'|'pending'|'booked'|'blocked' {
     if (!slot.is_available) {
       if (slot.booking?.status === 'confirmed') return 'booked';
-      if (slot.booking?.status === 'pending') return 'pending';
+      if (slot.booking?.status === 'pending')   return 'pending';
       return 'blocked';
     }
     return 'available';
   }
 
-  // ─── Form validation ──────────────────────────────────────────────────────
-  function validateForm(): boolean {
-    const errs: Record<string, string> = {};
-    if (!teamName.trim()) errs.teamName = 'Team name is required';
+  // ─── Validation ───────────────────────────────────────────────────────────
+  function validateForm() {
+    const errs: Record<string,string> = {};
+    if (!teamName.trim())    errs.teamName    = 'Team name is required';
     if (!contactName.trim()) errs.contactName = 'Contact name is required';
     if (!contactPhone.trim()) errs.contactPhone = 'Phone number is required';
-    else if (!/^[6-9]\d{9}$/.test(contactPhone.replace(/\s/g, '')))
+    else if (!/^[6-9]\d{9}$/.test(contactPhone.replace(/\s/g,'')))
       errs.contactPhone = 'Enter a valid 10-digit Indian mobile number';
     if (!chTeamId.trim()) errs.chTeamId = 'CricHeroes Team ID is required to prevent duplicate bookings';
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   }
 
-  // ─── Payment validation ───────────────────────────────────────────────────
-  function validatePayment(): boolean {
+  function validatePayment() {
     if (paymentMethod === 'upi' && !screenshotFile) {
       setPaymentError('Please upload your UPI payment screenshot to proceed.');
       return false;
@@ -146,191 +255,225 @@ export function BookMatch() {
   }
 
   async function handleSubmit() {
-    if (!selectedSlot) return;
-    if (!validatePayment()) return;
-
+    if (!selectedSlot || !validatePayment()) return;
     setSubmitting(true);
     setSubmitError(null);
-
     const result = await createBooking({
-      slotId: selectedSlot.id,
-      slotDate: selectedSlot.date,
-      amount: selectedSlot.price,
-      teamName: teamName.trim(),
-      contactName: contactName.trim(),
-      contactPhone: contactPhone.trim(),
-      chTeamId: chTeamId.trim(),
-      paymentMethod,
-      screenshotFile: screenshotFile ?? undefined,
+      slotId: selectedSlot.id, slotDate: selectedSlot.date, amount: selectedSlot.price,
+      teamName: teamName.trim(), contactName: contactName.trim(),
+      contactPhone: contactPhone.trim(), chTeamId: chTeamId.trim(),
+      paymentMethod, screenshotFile: screenshotFile ?? undefined,
     });
-
     setSubmitting(false);
-
-    if (result.success) {
-      setBookingId(result.bookingId ?? null);
-      setStep('success');
-    } else {
-      setSubmitError(result.error ?? 'Booking failed. Please try again.');
-    }
+    if (result.success) { setBookingId(result.bookingId ?? null); setStep('success'); }
+    else setSubmitError(result.error ?? 'Booking failed. Please try again.');
   }
 
   function handleCopyUPI() {
-    navigator.clipboard.writeText(UPI_ID).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(UPI_ID).then(() => { setCopied(true); setTimeout(()=>setCopied(false),2000); });
+  }
+
+  async function handleDownloadCard() {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      const url = await toPng(cardRef.current, { pixelRatio: 2.5, cacheBust: true });
+      const a = document.createElement('a');
+      a.href = url; a.download = `scc-match-booking-${bookingId?.slice(0,8)}.png`; a.click();
+    } catch { /* ignore */ } finally { setDownloading(false); }
+  }
+
+  function handleWhatsAppShare() {
+    const dateStr = selectedSlot ? formatDate(selectedSlot.date) : '';
+    const msg = encodeURIComponent(
+      `🏏 Our match with Sangria Cricket Club is booked!\n\n📅 Date: ${dateStr}\n👥 ${teamName} vs SCC\n\nBook your match too: ${BOOKING_PAGE_URL}`
+    );
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
   }
 
   function handleReset() {
-    setStep('calendar');
-    setSelectedSlot(null);
+    setStep('calendar'); setSelectedSlot(null);
     setTeamName(''); setContactName(''); setContactPhone(''); setChTeamId('');
-    setPaymentMethod('upi');
-    setScreenshotFile(null); setScreenshotPreview(null);
+    setPaymentMethod('upi'); setScreenshotFile(null); setScreenshotPreview(null);
     setFormErrors({}); setPaymentError(null); setSubmitError(null); setBookingId(null);
   }
+
+  // ─── Record display ───────────────────────────────────────────────────────
+  const winRate = sccRecord && (sccRecord.wins + sccRecord.losses + sccRecord.draws) > 0
+    ? Math.round((sccRecord.wins / (sccRecord.wins + sccRecord.losses + sccRecord.draws)) * 100)
+    : null;
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Sticky header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <img src="/scc-logo.jpg" alt="SCC" className="w-10 h-10 rounded-xl object-cover shadow" />
-          <div>
-            <h1 className="font-bold text-gray-900 text-base leading-tight">Sangria Cricket Club</h1>
-            <p className="text-xs text-primary-600 font-medium">Book a Match · Season 2026–27</p>
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img src="/scc-logo.jpg" alt="SCC" className="w-10 h-10 rounded-xl object-cover shadow" />
+            <div>
+              <h1 className="font-bold text-gray-900 text-base leading-tight">Sangria Cricket Club</h1>
+              <p className="text-xs text-primary-600 font-medium">Book a Match · Season 2026–27</p>
+            </div>
           </div>
+          {sccRecord && winRate !== null && (
+            <div className="hidden sm:flex items-center gap-1.5 bg-primary-50 border border-primary-200 rounded-full px-3 py-1">
+              <Trophy className="w-3.5 h-3.5 text-primary-600" />
+              <span className="text-xs font-semibold text-primary-700">
+                {sccRecord.wins}W · {sccRecord.losses}L · {winRate}% win rate
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
 
-        {/* ── Hero (calendar step only) ─────────────────────────────────────── */}
+        {/* ══ CALENDAR PAGE TRUST SECTION ══════════════════════════════════ */}
         {step === 'calendar' && (
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Schedule a Match with SCC</h2>
-            <p className="text-gray-500 text-sm mb-5">
-              Pick an available date, provide your team details, and pay online to confirm.
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <div className="text-xs text-primary-600 font-semibold mb-1">Tue / Thu · Weekday</div>
-                <div className="text-2xl font-bold text-gray-900">₹3,000</div>
-                <div className="text-xs text-gray-400 mt-0.5">per match</div>
+          <>
+            {/* Hero */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Schedule a Match with SCC</h2>
+              <p className="text-gray-500 text-sm mb-5">
+                Pick a date, provide your team details, and pay to confirm.
+              </p>
+
+              {/* Pricing cards */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="text-xs text-primary-600 font-semibold mb-1">Tue / Thu · Weekday</div>
+                  <div className="text-2xl font-bold text-gray-900">₹3,000</div>
+                  <div className="text-xs text-gray-400 mt-0.5">per match</div>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="text-xs text-amber-600 font-semibold mb-1">Saturday · Oct–Feb</div>
+                  <div className="text-2xl font-bold text-gray-900">₹4,000</div>
+                  <div className="text-xs text-gray-400 mt-0.5">per match</div>
+                </div>
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <div className="text-xs text-amber-600 font-semibold mb-1">Saturday · Oct – Feb</div>
-                <div className="text-2xl font-bold text-gray-900">₹4,000</div>
-                <div className="text-xs text-gray-400 mt-0.5">per match</div>
-              </div>
+
+              {/* SCC record strip */}
+              {sccRecord && (
+                <div className="bg-white border border-gray-200 rounded-xl p-3 flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                    <Trophy className="w-4 h-4 text-primary-500" />
+                    SCC This Season:
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="text-green-600 font-bold">{sccRecord.wins} W</span>
+                    <span className="text-red-500 font-bold">{sccRecord.losses} L</span>
+                    {sccRecord.draws > 0 && <span className="text-gray-500 font-bold">{sccRecord.draws} D</span>}
+                    <span className="text-gray-400">·</span>
+                    <span className="text-gray-600">{winRate}% win rate</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-400 ml-auto">
+                    <MapPin className="w-3 h-3" /> Home · SCC Ground, Mumbai
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
-              <Info className="w-3.5 h-3.5 shrink-0" />
+
+            {/* Photo strip */}
+            {matchPhotos.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Match Day Photos</h3>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {matchPhotos.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`Match photo ${i+1}`}
+                      className="h-28 w-44 object-cover rounded-xl shrink-0 border border-gray-200"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Info note */}
+            <p className="text-xs text-gray-400 flex items-start gap-1 mb-6">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               One slot per team per month. Booking confirmed after SCC admin verifies payment.
             </p>
-          </div>
+          </>
         )}
 
         {/* ── Step indicator ────────────────────────────────────────────────── */}
         {step !== 'success' && (
           <div className="flex items-center gap-2 mb-6">
-            {(['calendar', 'form', 'payment'] as const).map((s, i) => {
-              const stepOrder = ['calendar', 'form', 'payment'];
-              const isDone = stepOrder.indexOf(step) > i;
-              const isActive = step === s;
+            {(['calendar','form','payment'] as const).map((s, i) => {
+              const order = ['calendar','form','payment'];
+              const done   = order.indexOf(step) > i;
+              const active = step === s;
               return (
                 <div key={s} className="flex items-center gap-2">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                    isActive ? 'bg-primary-500 border-primary-500 text-white' :
-                    isDone   ? 'bg-primary-100 border-primary-300 text-primary-600' :
-                               'bg-white border-gray-200 text-gray-400'
+                    active ? 'bg-primary-500 border-primary-500 text-white' :
+                    done   ? 'bg-primary-100 border-primary-300 text-primary-600' :
+                             'bg-white border-gray-200 text-gray-400'
                   }`}>
-                    {isDone ? <Check className="w-3.5 h-3.5" /> : i + 1}
+                    {done ? <Check className="w-3.5 h-3.5" /> : i+1}
                   </div>
-                  <span className={`text-xs font-medium hidden sm:block ${isActive ? 'text-gray-800' : 'text-gray-400'}`}>
-                    {s === 'calendar' ? 'Select Date' : s === 'form' ? 'Team Details' : 'Payment'}
+                  <span className={`text-xs font-medium hidden sm:block ${active ? 'text-gray-800' : 'text-gray-400'}`}>
+                    {s==='calendar' ? 'Select Date' : s==='form' ? 'Team Details' : 'Payment'}
                   </span>
-                  {i < 2 && <div className={`w-8 h-px ${isDone ? 'bg-primary-300' : 'bg-gray-200'}`} />}
+                  {i<2 && <div className={`w-8 h-px ${done ? 'bg-primary-300':'bg-gray-200'}`} />}
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* ══ STEP 1: Slot Calendar ══════════════════════════════════════════ */}
+        {/* ══ STEP 1: Slot Calendar ═════════════════════════════════════════ */}
         {step === 'calendar' && (
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm mb-8">
             {/* Month nav */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <button
-                onClick={() => setCurrentMonthIndex(i => Math.max(0, i - 1))}
-                disabled={currentMonthIndex === 0}
-                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition text-gray-600"
-              >
+              <button onClick={()=>setCurrentMonthIndex(i=>Math.max(0,i-1))} disabled={currentMonthIndex===0}
+                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition text-gray-600">
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <h3 className="font-semibold text-gray-900">{monthLabel}</h3>
-              <button
-                onClick={() => setCurrentMonthIndex(i => Math.min(monthKeys.length - 1, i + 1))}
-                disabled={currentMonthIndex === monthKeys.length - 1}
-                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition text-gray-600"
-              >
+              <button onClick={()=>setCurrentMonthIndex(i=>Math.min(monthKeys.length-1,i+1))} disabled={currentMonthIndex===monthKeys.length-1}
+                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition text-gray-600">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
 
             {/* Legend */}
             <div className="flex items-center gap-5 px-5 py-2.5 border-b border-gray-100 text-xs text-gray-500">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary-500" /> Available</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Pending</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300" /> Booked</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary-500"/>Available</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400"/>Pending</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300"/>Booked</span>
             </div>
 
-            {/* Slots grid */}
+            {/* Slots */}
             <div className="p-5">
               {loading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-                </div>
+                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500"/></div>
               ) : currentMonthSlots.length === 0 ? (
                 <p className="text-center text-gray-400 py-10 text-sm">No slots available this month.</p>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                   {currentMonthSlots.map(slot => {
                     const status = slotStatus(slot);
-                    const isAvailable = status === 'available';
+                    const avail  = status === 'available';
                     return (
-                      <button
-                        key={slot.id}
-                        disabled={!isAvailable}
-                        onClick={() => { setSelectedSlot(slot); setStep('form'); }}
+                      <button key={slot.id} disabled={!avail}
+                        onClick={()=>{ setSelectedSlot(slot); setStep('form'); }}
                         className={`rounded-xl p-3 text-left border transition-all ${
-                          isAvailable
-                            ? 'bg-primary-50 border-primary-200 hover:bg-primary-100 hover:border-primary-400 cursor-pointer'
-                            : status === 'pending'
-                            ? 'bg-amber-50 border-amber-200 cursor-not-allowed opacity-70'
-                            : 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-50'
-                        }`}
-                      >
-                        <div className={`text-xs font-semibold mb-0.5 ${
-                          isAvailable ? 'text-primary-600' :
-                          status === 'pending' ? 'text-amber-600' : 'text-gray-400'
+                          avail    ? 'bg-primary-50 border-primary-200 hover:bg-primary-100 hover:border-primary-400 cursor-pointer' :
+                          status==='pending' ? 'bg-amber-50 border-amber-200 cursor-not-allowed opacity-70' :
+                                               'bg-gray-50 border-gray-200 cursor-not-allowed opacity-50'
                         }`}>
+                        <div className={`text-xs font-semibold mb-0.5 ${avail?'text-primary-600':status==='pending'?'text-amber-600':'text-gray-400'}`}>
                           {getDayName(slot.date)}
                         </div>
-                        <div className={`font-bold text-sm ${isAvailable ? 'text-gray-900' : 'text-gray-400'}`}>
-                          {formatShortDate(slot.date)}
-                        </div>
-                        <div className={`text-xs mt-1 ${isAvailable ? 'text-gray-500' : 'text-gray-400'}`}>
-                          ₹{slot.price.toLocaleString('en-IN')}
-                        </div>
-                        {status === 'pending' && (
-                          <div className="text-xs text-amber-600 font-medium mt-0.5">Pending</div>
-                        )}
-                        {(status === 'booked' || status === 'blocked') && (
-                          <div className="text-xs text-gray-400 mt-0.5">Booked</div>
-                        )}
+                        <div className={`font-bold text-sm ${avail?'text-gray-900':'text-gray-400'}`}>{formatShortDate(slot.date)}</div>
+                        <div className={`text-xs mt-1 ${avail?'text-gray-500':'text-gray-400'}`}>₹{slot.price.toLocaleString('en-IN')}</div>
+                        {status==='pending' && <div className="text-xs text-amber-600 font-medium mt-0.5">Pending</div>}
+                        {(status==='booked'||status==='blocked') && <div className="text-xs text-gray-400 mt-0.5">Booked</div>}
                       </button>
                     );
                   })}
@@ -338,20 +481,16 @@ export function BookMatch() {
               )}
             </div>
 
-            {/* Month quick-nav pills */}
+            {/* Month pills */}
             <div className="flex gap-2 px-5 pb-5 flex-wrap border-t border-gray-100 pt-4">
-              {monthKeys.map((key, idx) => {
-                const label = `${MONTHS[parseInt(key.split('-')[1]) - 1].slice(0, 3)} '${key.split('-')[0].slice(2)}`;
+              {monthKeys.map((key,idx) => {
+                const label = `${MONTHS[parseInt(key.split('-')[1])-1].slice(0,3)} '${key.split('-')[0].slice(2)}`;
                 return (
-                  <button
-                    key={key}
-                    onClick={() => setCurrentMonthIndex(idx)}
+                  <button key={key} onClick={()=>setCurrentMonthIndex(idx)}
                     className={`text-xs px-3 py-1.5 rounded-full border transition font-medium ${
-                      idx === currentMonthIndex
-                        ? 'bg-primary-500 text-white border-primary-500'
+                      idx===currentMonthIndex ? 'bg-primary-500 text-white border-primary-500'
                         : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 bg-white'
-                    }`}
-                  >
+                    }`}>
                     {label}
                   </button>
                 );
@@ -360,117 +499,103 @@ export function BookMatch() {
           </div>
         )}
 
+        {/* ══ Testimonials (calendar step) ══════════════════════════════════ */}
+        {step === 'calendar' && (
+          <div className="mb-8">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">What teams say about us</h3>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {TESTIMONIALS.map((t, i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                  <div className="flex gap-0.5 mb-2">
+                    {Array.from({ length: t.rating }).map((_, j) => (
+                      <Star key={j} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed mb-3">"{t.text}"</p>
+                  <p className="text-xs font-semibold text-gray-800">— {t.team}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ══ STEP 2: Team Details ══════════════════════════════════════════ */}
         {step === 'form' && selectedSlot && (
           <div className="space-y-4">
-            {/* Selected slot chip */}
+            {/* Slot chip */}
             <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center gap-3">
               <CalendarDays className="w-5 h-5 text-primary-600 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900 text-sm">{formatDate(selectedSlot.date)}</p>
                 <p className="text-xs text-primary-600 mt-0.5">
-                  {selectedSlot.day_type === 'saturday' ? 'Saturday Slot' : 'Weekday Slot'} · ₹{selectedSlot.price.toLocaleString('en-IN')}
+                  {selectedSlot.day_type==='saturday'?'Saturday Slot':'Weekday Slot'} · ₹{selectedSlot.price.toLocaleString('en-IN')}
                 </p>
               </div>
-              <button
-                onClick={() => setStep('calendar')}
-                className="text-xs text-gray-500 hover:text-gray-800 border border-gray-200 bg-white rounded-lg px-3 py-1.5 transition shrink-0"
-              >
+              <button onClick={()=>setStep('calendar')}
+                className="text-xs text-gray-500 hover:text-gray-800 border border-gray-200 bg-white rounded-lg px-3 py-1.5 transition shrink-0">
                 Change
               </button>
             </div>
 
-            {/* Form card */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4 shadow-sm">
+            {/* Form */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 <Users className="w-4 h-4 text-primary-500" /> Team Details
               </h3>
 
-              {/* Team name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Team Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Mumbai Warriors CC"
-                  value={teamName}
-                  onChange={e => { setTeamName(e.target.value); setFormErrors(f => ({ ...f, teamName: '' })); }}
-                  className={inputCls(!!formErrors.teamName)}
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Team Name <span className="text-red-500">*</span></label>
+                <input type="text" placeholder="e.g. Mumbai Warriors CC" value={teamName}
+                  onChange={e=>{ setTeamName(e.target.value); setFormErrors(f=>({...f,teamName:''})); }}
+                  className={inputCls(!!formErrors.teamName)} />
                 {formErrors.teamName && <p className="text-red-500 text-xs mt-1">{formErrors.teamName}</p>}
               </div>
 
-              {/* Contact name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Contact Person Name <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Contact Person <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Your full name"
-                    value={contactName}
-                    onChange={e => { setContactName(e.target.value); setFormErrors(f => ({ ...f, contactName: '' })); }}
-                    className={inputWithIconCls(!!formErrors.contactName)}
-                  />
+                  <input type="text" placeholder="Your full name" value={contactName}
+                    onChange={e=>{ setContactName(e.target.value); setFormErrors(f=>({...f,contactName:''})); }}
+                    className={iconInputCls(!!formErrors.contactName)} />
                 </div>
                 {formErrors.contactName && <p className="text-red-500 text-xs mt-1">{formErrors.contactName}</p>}
               </div>
 
-              {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Contact Phone <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Contact Phone <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="tel"
-                    placeholder="10-digit mobile number"
-                    value={contactPhone}
-                    onChange={e => { setContactPhone(e.target.value); setFormErrors(f => ({ ...f, contactPhone: '' })); }}
-                    className={inputWithIconCls(!!formErrors.contactPhone)}
-                  />
+                  <input type="tel" placeholder="10-digit mobile number" value={contactPhone}
+                    onChange={e=>{ setContactPhone(e.target.value); setFormErrors(f=>({...f,contactPhone:''})); }}
+                    className={iconInputCls(!!formErrors.contactPhone)} />
                 </div>
                 {formErrors.contactPhone && <p className="text-red-500 text-xs mt-1">{formErrors.contactPhone}</p>}
               </div>
 
-              {/* CricHeroes Team ID — REQUIRED */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   CricHeroes Team Profile Link <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="https://cricheroes.in/team-profile/12345"
-                    value={chTeamId}
-                    onChange={e => { setChTeamId(e.target.value); setFormErrors(f => ({ ...f, chTeamId: '' })); }}
-                    className={inputWithIconCls(!!formErrors.chTeamId)}
-                  />
+                  <input type="text" placeholder="https://cricheroes.in/team-profile/12345" value={chTeamId}
+                    onChange={e=>{ setChTeamId(e.target.value); setFormErrors(f=>({...f,chTeamId:''})); }}
+                    className={iconInputCls(!!formErrors.chTeamId)} />
                 </div>
                 {formErrors.chTeamId ? (
                   <p className="text-red-500 text-xs mt-1">{formErrors.chTeamId}</p>
                 ) : (
                   <div className="mt-1.5 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-blue-700 flex gap-1.5">
                     <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    <span>
-                      Required to enforce the one-slot-per-team rule. Your CricHeroes team ID is unique to your team and doesn't change.
-                      <br />
-                      <strong>How to find it:</strong> Open CricHeroes app → Your team page → Share → Copy link.
-                    </span>
+                    <span>Required to enforce one-slot-per-team rule. Team ID stays the same regardless of who contacts us. <strong>How:</strong> CricHeroes app → Your team → Share → Copy link.</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <button
-              onClick={() => { if (validateForm()) setStep('payment'); }}
-              className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3.5 rounded-xl transition text-sm"
-            >
+            <button onClick={()=>{ if(validateForm()) setStep('payment'); }}
+              className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3.5 rounded-xl transition text-sm">
               Continue to Payment →
             </button>
           </div>
@@ -479,67 +604,44 @@ export function BookMatch() {
         {/* ══ STEP 3: Payment ═══════════════════════════════════════════════ */}
         {step === 'payment' && selectedSlot && (
           <div className="space-y-4">
-            {/* Summary card */}
+            {/* Summary */}
             <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Booking Summary</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Match Date</span>
-                  <span className="font-medium text-gray-900">{formatDate(selectedSlot.date)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Visiting Team</span>
-                  <span className="font-medium text-gray-900">{teamName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Contact</span>
-                  <span className="font-medium text-gray-900">{contactName}</span>
-                </div>
+                <div className="flex justify-between"><span className="text-gray-500">Match Date</span><span className="font-medium text-gray-900">{formatDate(selectedSlot.date)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Visiting Team</span><span className="font-medium text-gray-900">{teamName}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Contact</span><span className="font-medium text-gray-900">{contactName}</span></div>
                 <div className="border-t border-gray-100 pt-2 flex justify-between items-center">
                   <span className="font-semibold text-gray-900">Amount</span>
                   <span className="font-bold text-primary-600 text-lg flex items-center gap-0.5">
-                    <IndianRupee className="w-4 h-4" />{selectedSlot.price.toLocaleString('en-IN')}
+                    <IndianRupee className="w-4 h-4"/>₹{selectedSlot.price.toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Payment method tabs */}
+            {/* Method tabs */}
             <div className="flex gap-2 bg-gray-100 rounded-xl p-1">
-              <button
-                onClick={() => { setPaymentMethod('upi'); setPaymentError(null); }}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-                  paymentMethod === 'upi'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                UPI / QR Code
-              </button>
-              <button
-                onClick={() => { setPaymentMethod('razorpay'); setPaymentError(null); }}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-                  paymentMethod === 'razorpay'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Pay Online
-              </button>
+              {(['upi','razorpay'] as const).map(m => (
+                <button key={m} onClick={()=>{ setPaymentMethod(m); setPaymentError(null); }}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                    paymentMethod===m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  {m==='upi' ? 'UPI / QR Code' : 'Pay Online'}
+                </button>
+              ))}
             </div>
 
             {/* UPI panel */}
-            {paymentMethod === 'upi' && (
+            {paymentMethod==='upi' && (
               <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
-                  <QrCode className="w-4 h-4 text-primary-500" /> Pay via UPI
+                  <QrCode className="w-4 h-4 text-primary-500"/> Pay via UPI
                 </h3>
-
-                {/* QR + UPI ID */}
                 <div className="flex flex-col items-center gap-3">
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl">
                     <div className="w-40 h-40 bg-gray-100 rounded-xl flex flex-col items-center justify-center gap-2">
-                      <QrCode className="w-14 h-14 text-gray-300" />
+                      <QrCode className="w-14 h-14 text-gray-300"/>
                       <p className="text-xs text-gray-400 text-center">SCC UPI QR<br/>(Set by admin)</p>
                     </div>
                   </div>
@@ -548,48 +650,44 @@ export function BookMatch() {
                     <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
                       <span className="font-mono text-sm font-semibold text-gray-900">{UPI_ID}</span>
                       <button onClick={handleCopyUPI} className="text-primary-500 hover:text-primary-700 transition">
-                        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        {copied ? <Check className="w-4 h-4"/> : <Copy className="w-4 h-4"/>}
                       </button>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">Name: {UPI_NAME}</p>
                   </div>
                 </div>
 
-                {/* Screenshot upload — REQUIRED for UPI */}
+                {/* Screenshot — required */}
                 <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1.5">
+                  <p className="text-sm font-semibold text-gray-700 mb-1">
                     Upload Payment Screenshot <span className="text-red-500">*</span>
                   </p>
                   <p className="text-xs text-gray-400 mb-2">
-                    After paying via UPI, upload your payment screenshot here. Booking won't proceed without it.
+                    Pay via UPI first, then upload the screenshot. Booking won't proceed without it.
                   </p>
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
+                  <div onClick={()=>fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition ${
-                      screenshotPreview
-                        ? 'border-primary-300 bg-primary-50'
-                        : paymentError
-                        ? 'border-red-300 bg-red-50'
+                      screenshotPreview ? 'border-primary-300 bg-primary-50'
+                        : paymentError  ? 'border-red-300 bg-red-50'
                         : 'border-gray-200 hover:border-gray-300 bg-gray-50'
-                    }`}
-                  >
+                    }`}>
                     {screenshotPreview ? (
                       <div className="flex flex-col items-center gap-2">
-                        <img src={screenshotPreview} alt="screenshot" className="max-h-32 rounded-lg object-contain" />
+                        <img src={screenshotPreview} alt="ss" className="max-h-32 rounded-lg object-contain"/>
                         <p className="text-xs text-primary-600 font-medium">Screenshot uploaded · Tap to change</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-2 text-gray-400">
-                        <Upload className="w-6 h-6" />
+                        <Upload className="w-6 h-6"/>
                         <p className="text-sm font-medium text-gray-600">Tap to upload payment screenshot</p>
                         <p className="text-xs">JPG, PNG · Max 5MB</p>
                       </div>
                     )}
                   </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange}/>
                   {paymentError && (
                     <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {paymentError}
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0"/> {paymentError}
                     </p>
                   )}
                 </div>
@@ -597,94 +695,109 @@ export function BookMatch() {
             )}
 
             {/* Razorpay panel */}
-            {paymentMethod === 'razorpay' && (
+            {paymentMethod==='razorpay' && (
               <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3 text-center">
                 <div className="text-4xl">💳</div>
                 <p className="font-semibold text-gray-900">Pay Online</p>
                 <p className="text-sm text-gray-500">
-                  Submit your booking request now. SCC admin will send you a secure payment link on <strong>{contactPhone}</strong> within a few hours.
+                  Submit your booking. SCC admin will send a secure payment link to <strong>{contactPhone}</strong> within a few hours.
                 </p>
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 text-left flex gap-2">
-                  <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                  Slot is reserved for 24 hours after submission. Booking is confirmed only after payment is completed.
+                  <Info className="w-4 h-4 shrink-0 mt-0.5"/>
+                  Slot is reserved for 24 hours. Booking confirmed only after payment.
                 </div>
               </div>
             )}
 
-            {/* Info note */}
+            {/* Confirmation note */}
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2">
-              <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+              <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5"/>
               <p className="text-xs text-blue-700">
-                Booking is confirmed only after SCC admin verifies your payment. You'll receive a WhatsApp message on {contactPhone}.
+                Booking confirmed only after SCC admin verifies payment. WhatsApp confirmation sent to {contactPhone}.
               </p>
             </div>
 
             {submitError && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex gap-2">
-                <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5"/>
                 <p className="text-sm text-red-600">{submitError}</p>
               </div>
             )}
 
             <div className="flex gap-3">
-              <button
-                onClick={() => setStep('form')}
-                className="flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 bg-white font-medium transition text-sm"
-              >
+              <button onClick={()=>setStep('form')}
+                className="flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 bg-white font-medium transition text-sm">
                 ← Back
               </button>
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm"
-              >
-                {submitting
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</>
-                  : 'Confirm Booking'
-                }
+              <button onClick={handleSubmit} disabled={submitting}
+                className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm">
+                {submitting ? <><Loader2 className="w-4 h-4 animate-spin"/>Submitting…</> : 'Confirm Booking'}
               </button>
             </div>
           </div>
         )}
 
         {/* ══ STEP 4: Success ═══════════════════════════════════════════════ */}
-        {step === 'success' && selectedSlot && (
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-full bg-primary-100 border-2 border-primary-300 flex items-center justify-center">
-                <CheckCircle2 className="w-10 h-10 text-primary-500" />
+        {step === 'success' && selectedSlot && bookingId && (
+          <div className="space-y-5">
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <div className="w-20 h-20 rounded-full bg-primary-100 border-2 border-primary-300 flex items-center justify-center">
+                  <CheckCircle2 className="w-10 h-10 text-primary-500"/>
+                </div>
               </div>
-            </div>
-            <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Request Sent!</h2>
               <p className="text-gray-500 text-sm">
-                Your booking is under review. SCC admin will verify payment and confirm shortly.
+                SCC admin will verify your payment and confirm shortly.
               </p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 text-left shadow-sm space-y-3 text-sm">
+            {/* Confirmation card (downloadable) */}
+            <div className="flex justify-center">
+              <MatchCard
+                cardRef={cardRef}
+                date={selectedSlot.date}
+                teamName={teamName}
+                bookingId={bookingId}
+                amount={selectedSlot.price}
+                slotType={selectedSlot.day_type}
+              />
+            </div>
+
+            {/* Summary text (for screen) */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm text-sm space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-500">Booking ID</span>
                 <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
-                  {bookingId?.slice(0, 8).toUpperCase()}…
+                  {bookingId.slice(0,8).toUpperCase()}…
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Match Date</span>
                 <span className="font-medium text-gray-900">{formatDate(selectedSlot.date)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Team</span>
-                <span className="font-medium text-gray-900">{teamName}</span>
-              </div>
-              <div className="flex justify-between border-t border-gray-100 pt-3">
+              <div className="flex justify-between border-t border-gray-100 pt-2">
                 <span className="text-gray-500">Amount</span>
                 <span className="font-bold text-primary-600">₹{selectedSlot.price.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-left">
-              <Shield className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+            {/* Action buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={handleDownloadCard} disabled={downloading}
+                className="flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-sm transition disabled:opacity-60">
+                {downloading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Download className="w-4 h-4"/>}
+                Download Card
+              </button>
+              <button onClick={handleWhatsAppShare}
+                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium text-sm transition">
+                <Share2 className="w-4 h-4"/> Share on WhatsApp
+              </button>
+            </div>
+
+            {/* Next steps */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
+              <Shield className="w-5 h-5 text-blue-500 shrink-0 mt-0.5"/>
               <div>
                 <p className="text-sm font-semibold text-blue-800">What happens next?</p>
                 <ol className="text-xs text-blue-700 mt-1.5 space-y-1 list-decimal list-inside">
@@ -695,10 +808,8 @@ export function BookMatch() {
               </div>
             </div>
 
-            <button
-              onClick={handleReset}
-              className="w-full py-3.5 rounded-xl bg-primary-500 hover:bg-primary-600 font-semibold text-white transition text-sm"
-            >
+            <button onClick={handleReset}
+              className="w-full py-3.5 rounded-xl bg-primary-500 hover:bg-primary-600 font-semibold text-white transition text-sm">
               Book Another Match
             </button>
           </div>
@@ -707,7 +818,18 @@ export function BookMatch() {
         {/* Footer */}
         <div className="mt-12 text-center text-xs text-gray-400 space-y-1 pb-8">
           <p>Sangria Cricket Club · Powered by SCC App</p>
-          <p>Questions? WhatsApp us at <span className="text-primary-500">+91 XXXXX XXXXX</span></p>
+          <p>
+            Questions?{' '}
+            <a
+              href={`https://wa.me/${WA_NUMBER}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-500 hover:underline inline-flex items-center gap-1"
+            >
+              <MessageCircle className="w-3 h-3"/>
+              WhatsApp us at +91 88885 46860
+            </a>
+          </p>
         </div>
       </main>
     </div>

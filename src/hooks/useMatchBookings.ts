@@ -288,6 +288,36 @@ export function useMatchBookings() {
     }
   };
 
+  // ─── Admin: hard-delete a booking (for testing / duplicates) ──────────────
+  const deleteBooking = async (
+    bookingId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const booking = bookings.find(b => b.id === bookingId);
+
+      // Delete the booking row (cascade removes nothing, but we release the slot)
+      const { error: err } = await supabase
+        .from('match_bookings')
+        .delete()
+        .eq('id', bookingId);
+
+      if (err) throw err;
+
+      // Release the slot if it was pending/confirmed
+      if (booking?.slot_id && (booking.status === 'pending' || booking.status === 'confirmed')) {
+        await supabase
+          .from('match_slots')
+          .update({ is_available: true })
+          .eq('id', booking.slot_id);
+      }
+
+      await fetchBookings();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Delete failed' };
+    }
+  };
+
   // ─── Admin: toggle slot availability manually ──────────────────────────────
   const toggleSlotAvailability = async (slotId: string, available: boolean) => {
     await supabase.from('match_slots').update({ is_available: available }).eq('id', slotId);
@@ -304,6 +334,7 @@ export function useMatchBookings() {
     createBooking,
     updateBookingStatus,
     confirmBookingAndCreateMatch,
+    deleteBooking,
     toggleSlotAvailability,
   };
 }
