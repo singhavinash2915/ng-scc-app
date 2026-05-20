@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Shield,
   LogOut,
@@ -18,7 +18,12 @@ import {
   Brain,
   Edit2,
   X,
+  MapPin,
+  Star,
+  Plus,
+  Image as ImageIcon,
 } from 'lucide-react';
+import { useGroundSettings } from '../hooks/useGroundSettings';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -44,6 +49,119 @@ export function Settings() {
   const { tournaments } = useTournaments();
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
+
+  // ─── Ground & Testimonials ───────────────────────────────────────────────
+  const {
+    ground, testimonials, saving: groundSaving, error: groundError,
+    fetchSettings, saveGround, uploadGroundImage,
+    addTestimonial, updateTestimonial, deleteTestimonial,
+  } = useGroundSettings();
+
+  // Ground form
+  const [groundName, setGroundName]             = useState('');
+  const [groundAddress, setGroundAddress]       = useState('');
+  const [groundDirections, setGroundDirections] = useState('');
+  const [groundFacilities, setGroundFacilities] = useState('');
+  const [groundTiming, setGroundTiming]         = useState('');
+  const [groundNotes, setGroundNotes]           = useState('');
+  const [groundImageUploading, setGroundImageUploading] = useState(false);
+  const [groundMsg, setGroundMsg]               = useState('');
+  const [groundFormError, setGroundFormError]   = useState('');
+  const groundImageRef = useRef<HTMLInputElement>(null);
+
+  // Testimonials form
+  const [newTestTeam, setNewTestTeam]     = useState('');
+  const [newTestText, setNewTestText]     = useState('');
+  const [newTestRating, setNewTestRating] = useState(5);
+  const [showAddTestForm, setShowAddTestForm] = useState(false);
+  const [testMsg, setTestMsg]   = useState('');
+  const [testError, setTestError] = useState('');
+  const [testSaving, setTestSaving] = useState(false);
+
+  // Fetch ground settings on mount
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  // Sync ground form when data loads
+  useEffect(() => {
+    setGroundName(ground.name);
+    setGroundAddress(ground.address);
+    setGroundDirections(ground.directions_url);
+    setGroundFacilities(ground.facilities);
+    setGroundTiming(ground.timing);
+    setGroundNotes(ground.notes);
+  }, [ground]);
+
+  const handleSaveGround = async () => {
+    setGroundFormError('');
+    setGroundMsg('');
+    const ok = await saveGround({
+      name: groundName.trim(),
+      address: groundAddress.trim(),
+      directions_url: groundDirections.trim(),
+      facilities: groundFacilities.trim(),
+      timing: groundTiming.trim(),
+      notes: groundNotes.trim(),
+      image_url: ground.image_url,
+    });
+    if (ok) {
+      setGroundMsg('Ground details saved!');
+      setTimeout(() => setGroundMsg(''), 3000);
+    } else {
+      setGroundFormError(groundError || 'Failed to save');
+    }
+  };
+
+  const handleGroundImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setGroundFormError('Image must be under 5MB'); return; }
+    setGroundImageUploading(true);
+    setGroundFormError('');
+    const url = await uploadGroundImage(file);
+    if (url) {
+      await saveGround({
+        name: groundName.trim(), address: groundAddress.trim(),
+        directions_url: groundDirections.trim(), facilities: groundFacilities.trim(),
+        timing: groundTiming.trim(), notes: groundNotes.trim(), image_url: url,
+      });
+      setGroundMsg('Ground image updated!');
+      setTimeout(() => setGroundMsg(''), 3000);
+    } else {
+      setGroundFormError('Image upload failed');
+    }
+    setGroundImageUploading(false);
+    if (groundImageRef.current) groundImageRef.current.value = '';
+  };
+
+  const handleAddTestimonial = async () => {
+    if (!newTestTeam.trim() || !newTestText.trim()) {
+      setTestError('Team name and review text are required');
+      return;
+    }
+    setTestSaving(true);
+    setTestError('');
+    const ok = await addTestimonial({ team: newTestTeam.trim(), text: newTestText.trim(), rating: newTestRating, active: true });
+    if (ok) {
+      setTestMsg('Testimonial added!');
+      setNewTestTeam(''); setNewTestText(''); setNewTestRating(5);
+      setShowAddTestForm(false);
+      setTimeout(() => setTestMsg(''), 3000);
+    } else {
+      setTestError('Failed to add testimonial');
+    }
+    setTestSaving(false);
+  };
+
+  const handleDeleteTestimonial = async (id: string) => {
+    if (!confirm('Remove this testimonial?')) return;
+    const ok = await deleteTestimonial(id);
+    if (ok) { setTestMsg('Testimonial removed'); setTimeout(() => setTestMsg(''), 3000); }
+    else setTestError('Failed to remove');
+  };
+
+  const handleToggleTestimonial = async (id: string, active: boolean) => {
+    await updateTestimonial(id, { active: !active });
+  };
 
   const [statsSeason, setStatsSeason] = useState('2025-26');
   const { stats: cricketStats, upsertStats, deleteStats } = useCricketStats(statsSeason);
@@ -753,6 +871,243 @@ export function Settings() {
                       Cancel
                     </Button>
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Ground Details (Admin Only) */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary-500" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">Ground Details</h3>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Displayed to visiting teams on the Book a Match page.
+              </p>
+
+              {/* Ground image preview + upload */}
+              <div className="flex items-start gap-4">
+                <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 border border-gray-200 dark:border-gray-600">
+                  {ground.image_url ? (
+                    <img src={ground.image_url} alt="Ground" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                      <span className="text-xs text-gray-400">No image</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Ground Photo</p>
+                  <p className="text-xs text-gray-400">Shown on the booking page. Recommended: 1200×600px, under 5MB.</p>
+                  <input ref={groundImageRef} type="file" accept="image/*" onChange={handleGroundImageUpload} className="hidden" />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => groundImageRef.current?.click()}
+                    disabled={groundImageUploading}
+                  >
+                    <Upload className="w-3.5 h-3.5 mr-1.5" />
+                    {groundImageUploading ? 'Uploading...' : ground.image_url ? 'Change Image' : 'Upload Image'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Ground Name"
+                  placeholder="e.g., SCC Ground"
+                  value={groundName}
+                  onChange={e => setGroundName(e.target.value)}
+                />
+                <Input
+                  label="Timing"
+                  placeholder="e.g., 6:00 AM – 10:00 PM"
+                  value={groundTiming}
+                  onChange={e => setGroundTiming(e.target.value)}
+                />
+              </div>
+
+              <Input
+                label="Address"
+                placeholder="e.g., Andheri Sports Complex, Mumbai"
+                value={groundAddress}
+                onChange={e => setGroundAddress(e.target.value)}
+              />
+
+              <Input
+                label="Google Maps / Directions URL"
+                placeholder="https://maps.google.com/..."
+                type="url"
+                value={groundDirections}
+                onChange={e => setGroundDirections(e.target.value)}
+              />
+
+              <Input
+                label="Facilities"
+                placeholder="e.g., Parking, Changing rooms, Floodlights"
+                value={groundFacilities}
+                onChange={e => setGroundFacilities(e.target.value)}
+              />
+
+              <TextArea
+                label="Additional Notes"
+                placeholder="Any special instructions for visiting teams..."
+                value={groundNotes}
+                onChange={e => setGroundNotes(e.target.value)}
+                rows={3}
+              />
+
+              {groundFormError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  {groundFormError}
+                </div>
+              )}
+              {groundMsg && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                  {groundMsg}
+                </div>
+              )}
+
+              <Button onClick={handleSaveGround} disabled={groundSaving} className="w-full">
+                <Save className="w-4 h-4 mr-2" />
+                {groundSaving ? 'Saving...' : 'Save Ground Details'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Booking Testimonials (Admin Only) */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-primary-500" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Booking Testimonials ({testimonials.length})</h3>
+                </div>
+                {!showAddTestForm && (
+                  <Button size="sm" onClick={() => setShowAddTestForm(true)}>
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Add
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Reviews shown on the booking page. Toggle to show/hide each one.
+              </p>
+
+              {/* Existing testimonials */}
+              {testimonials.length === 0 && !showAddTestForm && (
+                <p className="text-center text-sm text-gray-400 py-4">No testimonials yet. Add your first one!</p>
+              )}
+
+              <div className="space-y-3">
+                {testimonials.map(t => (
+                  <div key={t.id} className={`p-3 rounded-xl border transition-opacity ${t.active ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' : 'border-dashed border-gray-300 dark:border-gray-600 opacity-60'}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{t.team}</p>
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            {[1,2,3,4,5].map(n => (
+                              <Star key={n} className={`w-3 h-3 ${n <= t.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{t.text}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => handleToggleTestimonial(t.id, t.active)}
+                          title={t.active ? 'Hide from booking page' : 'Show on booking page'}
+                          className={`p-1.5 rounded-lg transition-colors text-xs font-medium ${t.active ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                        >
+                          {t.active ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTestimonial(t.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add form */}
+              {showAddTestForm && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-800 space-y-3">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">New Testimonial</p>
+
+                  <Input
+                    label="Team Name *"
+                    placeholder="e.g., Mumbai Strikers"
+                    value={newTestTeam}
+                    onChange={e => { setNewTestTeam(e.target.value); setTestError(''); }}
+                  />
+
+                  <TextArea
+                    label="Review Text *"
+                    placeholder="What did they say about playing at SCC?"
+                    value={newTestText}
+                    onChange={e => { setNewTestText(e.target.value); setTestError(''); }}
+                    rows={3}
+                  />
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rating</label>
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setNewTestRating(n)}
+                          className="p-0.5 transition-transform hover:scale-110"
+                        >
+                          <Star className={`w-6 h-6 ${n <= newTestRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'}`} />
+                        </button>
+                      ))}
+                      <span className="ml-2 text-sm text-gray-500">{newTestRating}/5</span>
+                    </div>
+                  </div>
+
+                  {testError && (
+                    <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      {testError}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddTestimonial} disabled={testSaving} className="flex-1">
+                      <Plus className="w-4 h-4 mr-1" />
+                      {testSaving ? 'Adding...' : 'Add Testimonial'}
+                    </Button>
+                    <Button variant="secondary" onClick={() => { setShowAddTestForm(false); setNewTestTeam(''); setNewTestText(''); setNewTestRating(5); setTestError(''); }}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {testMsg && !showAddTestForm && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                  {testMsg}
                 </div>
               )}
             </CardContent>

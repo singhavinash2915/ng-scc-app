@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { toPng } from 'html-to-image';
 import { supabase } from '../lib/supabase';
 import { useMatchBookings } from '../hooks/useMatchBookings';
+import { useGroundSettings } from '../hooks/useGroundSettings';
 import type { MatchSlot } from '../types';
 import {
   CalendarDays,
@@ -63,13 +64,6 @@ const iconInputCls = (err?: boolean) =>
 
 type BookingStep = 'calendar' | 'form' | 'payment' | 'success';
 
-// ─── Testimonials (hardcoded, admin can update these in code) ─────────────────
-const TESTIMONIALS = [
-  { team: 'Thunder Strikers CC', text: 'Brilliant ground, great pitch and a very sporting SCC team. The booking process was seamless!', rating: 5 },
-  { team: 'Powai Panthers', text: 'Had an amazing match experience. Well-organised, punctual, and a fun group to play against.', rating: 5 },
-  { team: 'Andheri Avengers', text: 'Professional setup, fair umpiring and a competitive match. Will definitely book again!', rating: 5 },
-];
-
 // ─── Match Card (downloadable confirmation) ───────────────────────────────────
 function MatchCard({
   cardRef, date, teamName, bookingId, amount, slotType,
@@ -130,6 +124,7 @@ function MatchCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function BookMatch() {
   const { slots, loading, fetchSlots, createBooking } = useMatchBookings();
+  const { ground, testimonials, fetchSettings } = useGroundSettings();
 
   // Trust-builder data
   const [sccRecord, setSccRecord] = useState<{ wins:number; losses:number; draws:number } | null>(null);
@@ -159,8 +154,9 @@ export function BookMatch() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cardRef      = useRef<HTMLDivElement>(null);
 
-  // Fetch slots
+  // Fetch slots + ground settings
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
   // Fetch trust-builder data (SCC record + recent photos)
   useEffect(() => {
@@ -367,12 +363,67 @@ export function BookMatch() {
                     <span className="text-gray-400">·</span>
                     <span className="text-gray-600">{winRate}% win rate</span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-400 ml-auto">
-                    <MapPin className="w-3 h-3" /> Home · SCC Ground, Mumbai
-                  </div>
+                  {ground.address && (
+                    <div className="flex items-center gap-1 text-xs text-gray-400 ml-auto">
+                      <MapPin className="w-3 h-3" /> {ground.name}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Ground details card */}
+            {(ground.image_url || ground.address || ground.facilities) && (
+              <div className="mb-6 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                {ground.image_url && (
+                  <img
+                    src={ground.image_url}
+                    alt={ground.name}
+                    className="w-full h-40 object-cover"
+                  />
+                )}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-primary-500" />
+                        {ground.name || 'SCC Ground'}
+                      </h3>
+                      {ground.address && <p className="text-sm text-gray-500 mt-0.5">{ground.address}</p>}
+                    </div>
+                    {ground.directions_url && (
+                      <a
+                        href={ground.directions_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-xs font-medium text-primary-600 bg-primary-50 border border-primary-200 rounded-lg px-3 py-1.5 hover:bg-primary-100 transition flex items-center gap-1"
+                      >
+                        <MapPin className="w-3 h-3" /> Directions
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                    {ground.timing && (
+                      <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
+                        🕐 {ground.timing}
+                      </span>
+                    )}
+                    {ground.facilities && ground.facilities.split(',').map((f, i) => (
+                      <span key={i} className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
+                        ✓ {f.trim()}
+                      </span>
+                    ))}
+                  </div>
+
+                  {ground.notes && (
+                    <p className="text-xs text-gray-500 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                      📋 {ground.notes}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Photo strip */}
             {matchPhotos.length > 0 && (
@@ -500,12 +551,12 @@ export function BookMatch() {
         )}
 
         {/* ══ Testimonials (calendar step) ══════════════════════════════════ */}
-        {step === 'calendar' && (
+        {step === 'calendar' && testimonials.filter(t => t.active).length > 0 && (
           <div className="mb-8">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">What teams say about us</h3>
             <div className="grid gap-3 sm:grid-cols-3">
-              {TESTIMONIALS.map((t, i) => (
-                <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              {testimonials.filter(t => t.active).map((t) => (
+                <div key={t.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <div className="flex gap-0.5 mb-2">
                     {Array.from({ length: t.rating }).map((_, j) => (
                       <Star key={j} className="w-3 h-3 text-amber-400 fill-amber-400" />

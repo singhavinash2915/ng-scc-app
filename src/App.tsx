@@ -85,10 +85,7 @@ const AppRoutes = () => (
     <Routes>
       {/* Standalone pages — no sidebar/layout */}
       <Route path="/poll/:matchId" element={<MatchPoll />} />
-      {/* book-match: DEV only — hidden from production until fully tested */}
-      {import.meta.env.DEV && (
-        <Route path="/book-match" element={<Suspense fallback={<PageLoader />}><BookMatch /></Suspense>} />
-      )}
+      <Route path="/book-match" element={<Suspense fallback={<PageLoader />}><BookMatch /></Suspense>} />
 
       {/* All other pages — with full layout */}
       <Route element={<LayoutWrapper />}>
@@ -111,9 +108,7 @@ const AppRoutes = () => (
         <Route path="/compare"       element={<Suspense fallback={<PageLoader />}><Compare /></Suspense>} />
         <Route path="/payment"       element={<Suspense fallback={<PageLoader />}><Payment /></Suspense>} />
         <Route path="/analytics"     element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
-        {import.meta.env.DEV && (
-          <Route path="/bookings" element={<Suspense fallback={<PageLoader />}><Bookings /></Suspense>} />
-        )}
+        <Route path="/bookings" element={<Suspense fallback={<PageLoader />}><Bookings /></Suspense>} />
         <Route path="/requests"      element={<Suspense fallback={<PageLoader />}><Requests /></Suspense>} />
         <Route path="/settings"      element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
         <Route path="/feedback"      element={<Suspense fallback={<PageLoader />}><Feedback /></Suspense>} />

@@ -94,8 +94,8 @@ export function Sidebar() {
           </div>
         </Link>
 
-        {/* Book a match CTA — DEV only until the feature goes live */}
-        {import.meta.env.DEV && (
+        {/* Book a match CTA — admin only until the feature goes fully public */}
+        {isAdmin && (
           <a
             href="/book-match"
             target="_blank"
@@ -131,15 +131,13 @@ export function Sidebar() {
           {isAdmin && (
             <>
               <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-              {/* Match Bookings — DEV only */}
-              {import.meta.env.DEV && (
-                <NavLink to="/bookings" className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`
-                }>
-                  <BookOpen className="w-5 h-5" />
-                  <span className="font-medium">Match Bookings</span>
-                </NavLink>
-              )}
+              {/* Match Bookings */}
+              <NavLink to="/bookings" className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`
+              }>
+                <BookOpen className="w-5 h-5" />
+                <span className="font-medium">Match Bookings</span>
+              </NavLink>
               {adminNavItems.map((item) => (
                 <NavLink
                   key={item.to}

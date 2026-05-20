@@ -58,8 +58,8 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           </div>
 
           <div className="p-4 space-y-2">
-            {/* Book a match CTA — DEV only */}
-            {import.meta.env.DEV && (
+            {/* Book a match CTA — admin only until the feature goes fully public */}
+            {isAdmin && (
               <a
                 href="/book-match"
                 target="_blank"
@@ -124,22 +124,20 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   <span className="font-medium">Match Day Tools</span>
                 </NavLink>
 
-                {import.meta.env.DEV && (
-                  <NavLink
-                    to="/bookings"
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`
-                    }
-                  >
-                    <BookOpen className="w-5 h-5" />
-                    <span className="font-medium">Match Bookings</span>
-                  </NavLink>
-                )}
+                <NavLink
+                  to="/bookings"
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`
+                  }
+                >
+                  <BookOpen className="w-5 h-5" />
+                  <span className="font-medium">Match Bookings</span>
+                </NavLink>
 
                 <NavLink
                   to="/auction"
