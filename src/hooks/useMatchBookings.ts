@@ -26,8 +26,7 @@ export function useMatchBookings() {
 
       if (err) throw err;
 
-      // Each slot may have multiple bookings — pick the most-relevant one
-      // (pending/confirmed takes priority over rejected/cancelled)
+      // Each slot may have multiple bookings — pick the most-relevant active one
       const normalised: MatchSlot[] = (data || []).map((row: MatchSlot & { booking: MatchBooking[] | null }) => {
         const bookingArr = Array.isArray(row.booking) ? row.booking : [];
         const active = bookingArr.find(b => b.status === 'confirmed')
@@ -67,56 +66,54 @@ export function useMatchBookings() {
   }, []);
 
   // ─── Check one-booking-per-month rule ─────────────────────────────────────
+  // Uses CricHeroes Team ID as the primary stable team identifier.
+  // Phone is a secondary check. Filters by the slot's actual DATE month
+  // (not booking creation date) to correctly enforce the monthly limit.
   const checkMonthlyLimit = async (
     phone: string,
-    chTeamId: string | null,
+    chTeamId: string,    // Required — stable per team
     slotDate: string
   ): Promise<{ allowed: boolean; reason?: string }> => {
-    const monthStart = slotDate.slice(0, 7) + '-01';
-    const monthEnd = slotDate.slice(0, 7) + '-31';
+    const yearMonth = slotDate.slice(0, 7); // e.g. "2026-10"
 
-    const { data } = await supabase
+    // --- Primary check: CricHeroes Team ID ---
+    // This is the reliable team identifier that doesn't change when someone swaps phones
+    const { data: byChId } = await supabase
       .from('match_bookings')
-      .select('id, team_name, slot:match_slots(date)')
-      .in('status', ['pending', 'confirmed'])
-      .gte('created_at', monthStart)
-      .lte('created_at', monthEnd);
-
-    if (!data || data.length === 0) return { allowed: true };
-
-    // Check phone match
-    const { data: phoneMatch } = await supabase
-      .from('match_bookings')
-      .select('id, slot:match_slots(date)')
-      .eq('contact_phone', phone)
+      .select('id, cricheroes_team_id, slot:match_slots(date)')
+      .eq('cricheroes_team_id', chTeamId)
       .in('status', ['pending', 'confirmed']);
 
-    if (phoneMatch && phoneMatch.length > 0) {
-      const inSameMonth = (phoneMatch as Array<{ slot?: { date?: string } }>).some(b => {
+    if (byChId && byChId.length > 0) {
+      const inSameMonth = (byChId as Array<{ slot?: { date?: string } }>).some(b => {
         const d = b.slot?.date;
-        return d && d.startsWith(slotDate.slice(0, 7));
+        return d && d.startsWith(yearMonth);
       });
       if (inSameMonth) {
-        return { allowed: false, reason: 'Your team already has a booking this month. One slot per team per month.' };
+        return {
+          allowed: false,
+          reason: 'This CricHeroes team already has a match booked this month. One slot per team per month is allowed.',
+        };
       }
     }
 
-    // Check CricHeroes team ID match
-    if (chTeamId) {
-      const { data: chMatch } = await supabase
-        .from('match_bookings')
-        .select('id, slot:match_slots(date)')
-        .eq('cricheroes_team_id', chTeamId)
-        .in('status', ['pending', 'confirmed']);
+    // --- Secondary check: phone number (catches teams without CricHeroes or duplicates) ---
+    const { data: byPhone } = await supabase
+      .from('match_bookings')
+      .select('id, contact_phone, slot:match_slots(date)')
+      .eq('contact_phone', phone)
+      .in('status', ['pending', 'confirmed']);
 
-      if (chMatch && chMatch.length > 0) {
-        const inSameMonth = (chMatch as Array<{ slot?: { date?: string } }>).some(b => {
-          const d = b.slot?.date;
-          return d && d.startsWith(slotDate.slice(0, 7));
-        });
-        if (inSameMonth) {
-          return { allowed: false, reason: 'This CricHeroes team already has a booking this month.' };
-        }
+    if (byPhone && byPhone.length > 0) {
+      const inSameMonth = (byPhone as Array<{ slot?: { date?: string } }>).some(b => {
+        const d = b.slot?.date;
+        return d && d.startsWith(yearMonth);
+      });
+      if (inSameMonth) {
+        return {
+          allowed: false,
+          reason: 'This phone number is already associated with a booking this month. One slot per team per month is allowed.',
+        };
       }
     }
 
@@ -131,18 +128,18 @@ export function useMatchBookings() {
     teamName: string;
     contactName: string;
     contactPhone: string;
-    chTeamId?: string;
+    chTeamId: string;       // Required
     paymentMethod: 'upi' | 'razorpay';
-    screenshotFile?: File;
+    screenshotFile?: File;  // Required for UPI
   }): Promise<{ success: boolean; bookingId?: string; error?: string }> => {
     try {
-      // Monthly limit check
-      const limitCheck = await checkMonthlyLimit(params.contactPhone, params.chTeamId ?? null, params.slotDate);
+      // Monthly limit check (CricHeroes ID is now always provided)
+      const limitCheck = await checkMonthlyLimit(params.contactPhone, params.chTeamId, params.slotDate);
       if (!limitCheck.allowed) {
         return { success: false, error: limitCheck.reason };
       }
 
-      // Check slot is still available
+      // Verify slot is still available
       const { data: slot } = await supabase
         .from('match_slots')
         .select('id, is_available')
@@ -178,7 +175,7 @@ export function useMatchBookings() {
           team_name: params.teamName,
           contact_name: params.contactName,
           contact_phone: params.contactPhone,
-          cricheroes_team_id: params.chTeamId || null,
+          cricheroes_team_id: params.chTeamId,
           payment_method: params.paymentMethod,
           payment_screenshot_url: screenshotUrl,
           payment_status: screenshotUrl ? 'paid' : 'pending',
@@ -190,7 +187,7 @@ export function useMatchBookings() {
 
       if (bookErr) throw bookErr;
 
-      // Mark slot as reserved (not available)
+      // Mark slot as reserved
       await supabase
         .from('match_slots')
         .update({ is_available: false })
@@ -219,7 +216,7 @@ export function useMatchBookings() {
 
       if (err) throw err;
 
-      // If rejected or cancelled → release the slot
+      // Release slot if rejected or cancelled
       if (status === 'rejected' || status === 'cancelled') {
         const booking = bookings.find(b => b.id === bookingId);
         if (booking?.slot_id) {
@@ -262,7 +259,7 @@ export function useMatchBookings() {
           ground_cost: booking.amount,
           other_expenses: 0,
           deduct_from_balance: false,
-          notes: `Booked via SCC Match Booking. Contact: ${booking.contact_name} (${booking.contact_phone})`,
+          notes: `Booked via SCC Match Booking. Contact: ${booking.contact_name} (${booking.contact_phone})${booking.cricheroes_team_id ? ` · CricHeroes: ${booking.cricheroes_team_id}` : ''}`,
           polling_enabled: false,
         }])
         .select()
@@ -270,7 +267,7 @@ export function useMatchBookings() {
 
       if (matchErr) throw matchErr;
 
-      // Update booking with confirmed status + match_id
+      // Update booking to confirmed
       const { error: updErr } = await supabase
         .from('match_bookings')
         .update({
