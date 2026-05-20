@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Trophy, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Gavel, Sparkles, ArrowLeftRight, BookOpen, ExternalLink } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Gavel, Sparkles, ArrowLeftRight, BookOpen, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -58,18 +58,20 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           </div>
 
           <div className="p-4 space-y-2">
-            {/* Book a match CTA */}
-            <a
-              href="/book-match"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
-              onClick={onClose}
-            >
-              <BookOpen className="w-5 h-5" />
-              <span className="font-medium">Book a Match vs SCC</span>
-              <ExternalLink className="w-4 h-4 ml-auto opacity-60" />
-            </a>
+            {/* Book a match CTA — DEV only */}
+            {import.meta.env.DEV && (
+              <a
+                href="/book-match"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
+                onClick={onClose}
+              >
+                <BookOpen className="w-5 h-5" />
+                <span className="font-medium">Book a Match vs SCC</span>
+                <ExternalLink className="w-4 h-4 ml-auto opacity-60" />
+              </a>
+            )}
 
             {/* Public navigation items */}
             {[
@@ -84,7 +86,6 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/finance', icon: Wallet, label: 'Finance' },
               { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
               { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
-              { to: '/tournaments', icon: Trophy, label: 'Tournaments' },
               { to: '/about', icon: Info, label: 'About' },
             ].map((item) => (
               <NavLink
@@ -123,20 +124,22 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   <span className="font-medium">Match Day Tools</span>
                 </NavLink>
 
-                <NavLink
-                  to="/bookings"
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`
-                  }
-                >
-                  <BookOpen className="w-5 h-5" />
-                  <span className="font-medium">Match Bookings</span>
-                </NavLink>
+                {import.meta.env.DEV && (
+                  <NavLink
+                    to="/bookings"
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`
+                    }
+                  >
+                    <BookOpen className="w-5 h-5" />
+                    <span className="font-medium">Match Bookings</span>
+                  </NavLink>
+                )}
 
                 <NavLink
                   to="/auction"

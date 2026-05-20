@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
-  Trophy,
   Wallet,
   UserPlus,
   Settings,
@@ -43,13 +42,12 @@ const publicNavItems = [
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
   { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
-  { to: '/tournaments', icon: Trophy, label: 'Tournaments' },
   { to: '/about', icon: Info, label: 'About' },
 ];
 
 const adminNavItems = [
   { to: '/match-day-tools', icon: Megaphone, label: 'Match Day Tools' },
-  { to: '/bookings', icon: BookOpen, label: 'Match Bookings' },
+  // bookings nav shown in DEV only — handled separately below
   { to: '/auction', icon: Gavel, label: 'Auction' },
   { to: '/annual-report', icon: FileText, label: 'Annual Report' },
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
@@ -96,17 +94,19 @@ export function Sidebar() {
           </div>
         </Link>
 
-        {/* Book a match CTA */}
-        <a
-          href="/book-match"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
-        >
-          <BookOpen className="w-3.5 h-3.5" />
-          Book a Match vs SCC
-          <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
-        </a>
+        {/* Book a match CTA — DEV only until the feature goes live */}
+        {import.meta.env.DEV && (
+          <a
+            href="/book-match"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Book a Match vs SCC
+            <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
+          </a>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
@@ -131,6 +131,15 @@ export function Sidebar() {
           {isAdmin && (
             <>
               <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+              {/* Match Bookings — DEV only */}
+              {import.meta.env.DEV && (
+                <NavLink to="/bookings" className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`
+                }>
+                  <BookOpen className="w-5 h-5" />
+                  <span className="font-medium">Match Bookings</span>
+                </NavLink>
+              )}
               {adminNavItems.map((item) => (
                 <NavLink
                   key={item.to}
