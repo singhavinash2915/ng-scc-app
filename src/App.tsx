@@ -8,6 +8,7 @@ import { Layout } from './components/layout/Layout';
 
 // Critical pages — loaded immediately (small, no heavy deps)
 import { MatchPoll } from './pages/MatchPoll';
+import { BookMatch } from './pages/BookMatch';
 
 // All pages lazy loaded (Dashboard loads fast — recharts/photos deferred further)
 const Dashboard    = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -32,7 +33,8 @@ const Auction      = lazy(() => import('./pages/Auction').then(m => ({ default: 
 const Predictions  = lazy(() => import('./pages/Predictions').then(m => ({ default: m.Predictions })));
 const MemberProfile = lazy(() => import('./pages/MemberProfile').then(m => ({ default: m.MemberProfile })));
 const AnnualReport = lazy(() => import('./pages/AnnualReport').then(m => ({ default: m.AnnualReport })));
-const Compare = lazy(() => import('./pages/Compare').then(m => ({ default: m.Compare })));
+const Compare   = lazy(() => import('./pages/Compare').then(m => ({ default: m.Compare })));
+const Bookings  = lazy(() => import('./pages/Bookings').then(m => ({ default: m.Bookings })));
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -79,8 +81,9 @@ const AppRoutes = () => (
   <>
     <DeepLinkHandler />
     <Routes>
-      {/* Standalone poll page — no sidebar/layout */}
+      {/* Standalone pages — no sidebar/layout */}
       <Route path="/poll/:matchId" element={<MatchPoll />} />
+      <Route path="/book-match" element={<BookMatch />} />
 
       {/* All other pages — with full layout */}
       <Route element={<LayoutWrapper />}>
@@ -103,6 +106,7 @@ const AppRoutes = () => (
         <Route path="/compare"       element={<Suspense fallback={<PageLoader />}><Compare /></Suspense>} />
         <Route path="/payment"       element={<Suspense fallback={<PageLoader />}><Payment /></Suspense>} />
         <Route path="/analytics"     element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
+        <Route path="/bookings"       element={<Suspense fallback={<PageLoader />}><Bookings /></Suspense>} />
         <Route path="/requests"      element={<Suspense fallback={<PageLoader />}><Requests /></Suspense>} />
         <Route path="/settings"      element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
         <Route path="/feedback"      element={<Suspense fallback={<PageLoader />}><Feedback /></Suspense>} />

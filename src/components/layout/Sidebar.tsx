@@ -22,6 +22,8 @@ import {
   Gavel,
   Sparkles,
   ArrowLeftRight,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -47,6 +49,7 @@ const publicNavItems = [
 
 const adminNavItems = [
   { to: '/match-day-tools', icon: Megaphone, label: 'Match Day Tools' },
+  { to: '/bookings', icon: BookOpen, label: 'Match Bookings' },
   { to: '/auction', icon: Gavel, label: 'Auction' },
   { to: '/annual-report', icon: FileText, label: 'Annual Report' },
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
@@ -92,6 +95,18 @@ export function Sidebar() {
             <p className="text-xs text-gray-500 dark:text-gray-400">Cricket Club</p>
           </div>
         </Link>
+
+        {/* Book a match CTA */}
+        <a
+          href="/book-match"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          Book a Match vs SCC
+          <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
+        </a>
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">

@@ -312,6 +312,48 @@ export interface MemberCricketStats {
   member?: Member;
 }
 
+// ============================================================
+// Inter-Club Match Booking Types
+// ============================================================
+
+export type SlotDayType = 'weekday' | 'saturday';
+export type BookingPaymentMethod = 'upi' | 'razorpay';
+export type MatchBookingPaymentStatus = 'pending' | 'paid' | 'verified';
+export type MatchBookingStatus = 'pending' | 'confirmed' | 'rejected' | 'cancelled';
+
+export interface MatchSlot {
+  id: string;
+  date: string;         // DATE as ISO string
+  day_type: SlotDayType;
+  price: number;
+  is_available: boolean;
+  created_at: string;
+  booking?: MatchBooking; // joined when loading slots with active booking
+}
+
+export interface MatchBooking {
+  id: string;
+  slot_id: string;
+  team_name: string;
+  contact_name: string;
+  contact_phone: string;
+  cricheroes_team_id: string | null;
+  payment_method: BookingPaymentMethod;
+  payment_screenshot_url: string | null;
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  razorpay_signature: string | null;
+  payment_status: MatchBookingPaymentStatus;
+  status: MatchBookingStatus;
+  amount: number;
+  match_id: string | null;
+  admin_notes: string | null;
+  confirmed_at: string | null;
+  created_at: string;
+  slot?: MatchSlot;
+  match?: Match;
+}
+
 export type AIInsightType =
   | 'squad_selector'
   | 'match_prediction'
