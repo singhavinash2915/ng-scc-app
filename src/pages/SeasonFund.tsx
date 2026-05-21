@@ -84,12 +84,6 @@ const METHOD_LABELS: Record<FundPaymentMethod, string> = {
   other: 'Other',
 };
 
-const TIER_LABELS: Record<MemberTier, string> = {
-  regular: 'Regular',
-  occasional: 'Occasional',
-  other: 'Other',
-};
-
 type TabType = 'bookings' | 'overview' | 'members';
 
 const formatCurrency = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
@@ -144,11 +138,9 @@ export function SeasonFund() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
-  const [membersPage, setMembersPage] = useState(0);
   const [paymentsPage, setPaymentsPage] = useState(0);
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
 
-  const MEMBERS_PER_PAGE  = 10;
   const PAYMENTS_PER_PAGE = 10;
 
   // Season form
@@ -201,7 +193,6 @@ export function SeasonFund() {
   useEffect(() => {
     if (selectedSeasonId) {
       fetchPayments(selectedSeasonId);
-      setMembersPage(0);
       setPaymentsPage(0);
     }
   }, [selectedSeasonId, fetchPayments]);
@@ -247,6 +238,39 @@ export function SeasonFund() {
       }))
       .sort((a, b) => b.outstanding - a.outstanding);
   }, [selectedSeason, selectedSeasonId, getMemberFundStatus]);
+
+  // Sorted by paid desc for contribution wall (only members who paid > 0)
+  const contributionsSorted = useMemo(() =>
+    [...memberFundStatuses].sort((a, b) => b.paid - a.paid),
+  [memberFundStatuses]);
+
+  // Contribution tier helper
+  function getContributorTier(paid: number) {
+    if (paid >= 20000) return {
+      label: 'Champion', icon: '🏆',
+      card: 'border-amber-300 dark:border-amber-600 bg-gradient-to-b from-amber-50 to-white dark:from-amber-900/20 dark:to-gray-800',
+      badge: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+      amount: 'text-amber-600 dark:text-amber-400',
+    };
+    if (paid >= 10000) return {
+      label: 'Star', icon: '⭐',
+      card: 'border-blue-200 dark:border-blue-700 bg-gradient-to-b from-blue-50 to-white dark:from-blue-900/10 dark:to-gray-800',
+      badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+      amount: 'text-blue-600 dark:text-blue-400',
+    };
+    if (paid >= 5000) return {
+      label: 'Core', icon: '🎯',
+      card: 'border-green-200 dark:border-green-700 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-gray-800',
+      badge: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+      amount: 'text-green-600 dark:text-green-400',
+    };
+    return {
+      label: 'Supporter', icon: '🤝',
+      card: 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800',
+      badge: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+      amount: 'text-gray-700 dark:text-gray-300',
+    };
+  }
 
   // ─── Season Finance overview stats ────────────────────────────────────────
   const overviewStats = useMemo(() => {
@@ -1293,7 +1317,7 @@ export function SeasonFund() {
           {/* ===== MEMBERS TAB ===== */}
           {activeTab === 'members' && (
             <div className="space-y-4">
-              {/* Actions */}
+              {/* Admin Actions */}
               {isAdmin && (
                 <div className="flex gap-2">
                   <Button size="sm" onClick={() => { setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' }); setShowPaymentModal(true); }}>
@@ -1305,7 +1329,6 @@ export function SeasonFund() {
                 </div>
               )}
 
-              {/* Member Contributions Table */}
               {memberFundStatuses.length === 0 ? (
                 <Card>
                   <CardContent className="text-center py-8">
@@ -1315,141 +1338,182 @@ export function SeasonFund() {
                   </CardContent>
                 </Card>
               ) : (
-                <Card animate>
-                  <CardContent className="p-0">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                          <th className="text-left py-2.5 px-3 font-medium">Member</th>
-                          <th className="text-right py-2.5 px-2 font-medium">Target</th>
-                          <th className="text-right py-2.5 px-2 font-medium">Paid</th>
-                          <th className="text-right py-2.5 px-2 font-medium">Due</th>
-                          <th className="py-2.5 px-2 font-medium w-24">Progress</th>
-                          {isAdmin && <th className="text-center py-2.5 px-2 font-medium w-16"></th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {memberFundStatuses.slice(membersPage * MEMBERS_PER_PAGE, (membersPage + 1) * MEMBERS_PER_PAGE).map(m => {
-                          const pct = m.target > 0 ? Math.round((m.paid / m.target) * 100) : 0;
-                          const barColor = pct >= 100 ? 'bg-green-500' : pct > 50 ? 'bg-amber-500' : 'bg-red-500';
-                          const isExpanded = expandedMemberId === m.member_id;
-                          const colCount = isAdmin ? 6 : 5;
-
-                          return (
-                            <React.Fragment key={m.member_id}>
-                              <tr
-                                className={`border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer ${isExpanded ? 'bg-gray-50 dark:bg-gray-700/30' : ''}`}
-                                onClick={() => setExpandedMemberId(isExpanded ? null : m.member_id)}
-                              >
-                                <td className="py-2 px-3">
-                                  <div className="flex items-center gap-2">
-                                    {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
-                                    {m.member?.avatar_url ? (
-                                      <img src={m.member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                                    ) : (
-                                      <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                                        <span className="text-xs text-gray-500">{m.member?.name?.[0]}</span>
-                                      </div>
-                                    )}
-                                    <span className="text-gray-700 dark:text-gray-300">{m.member?.name}</span>
-                                    <Badge variant={m.tier === 'regular' ? 'success' : m.tier === 'occasional' ? 'warning' : 'info'} size="sm">
-                                      {TIER_LABELS[m.tier]}
-                                    </Badge>
-                                  </div>
-                                </td>
-                                <td className="text-right py-2 px-2 text-gray-600 dark:text-gray-400">{formatCurrency(m.target)}</td>
-                                <td className="text-right py-2 px-2 font-medium text-green-600">{formatCurrency(m.paid)}</td>
-                                <td className="text-right py-2 px-2 font-medium text-red-600">
-                                  {m.outstanding > 0 ? formatCurrency(m.outstanding) : <CheckCircle className="w-4 h-4 text-green-500 inline" />}
-                                </td>
-                                <td className="py-2 px-2">
-                                  <div className="flex items-center gap-1.5">
-                                    {renderProgressBar(m.paid, m.target, barColor)}
-                                    <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
-                                  </div>
-                                </td>
-                                {isAdmin && (
-                                  <td className="text-center py-2 px-2">
-                                    <div className="flex gap-0.5 justify-center" onClick={(e) => e.stopPropagation()}>
-                                      <button
-                                        onClick={() => {
-                                          setPaymentForm(prev => ({ ...prev, member_id: m.member_id }));
-                                          setShowPaymentModal(true);
-                                        }}
-                                        className="p-1 text-gray-400 hover:text-green-600"
-                                        title="Record payment"
-                                      >
-                                        <IndianRupee className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button onClick={() => setDeleteConfirm({ type: 'target', id: m.id, name: m.member?.name || '' })} className="p-1 text-gray-400 hover:text-red-500">
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  </td>
-                                )}
-                              </tr>
-                              {/* Monthly breakdown row */}
-                              {isExpanded && (() => {
-                                const monthly = getMemberMonthlyBreakdown(m.member_id);
-                                return (
-                                  <tr>
-                                    <td colSpan={colCount} className="px-3 py-2 bg-gray-50/50 dark:bg-gray-800/50">
-                                      {monthly.length === 0 ? (
-                                        <p className="text-xs text-gray-400 text-center py-2">No payments recorded yet</p>
-                                      ) : (
-                                        <div className="space-y-1.5 pl-8">
-                                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Monthly Breakdown</p>
-                                          {monthly.map(month => (
-                                            <div key={month.label} className="flex items-center justify-between text-xs">
-                                              <span className="text-gray-600 dark:text-gray-400">{month.label}</span>
-                                              <div className="flex items-center gap-3">
-                                                <span className="text-green-600 font-medium">{formatCurrency(month.total)}</span>
-                                                <span className="text-gray-400">
-                                                  {month.payments.length} payment{month.payments.length > 1 ? 's' : ''}
-                                                  {' · '}
-                                                  {month.payments.map(p => METHOD_LABELS[p.payment_method]).join(', ')}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          ))}
-                                          <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-200 dark:border-gray-700">
-                                            <span className="font-medium text-gray-700 dark:text-gray-300">Total</span>
-                                            <span className="font-bold text-green-600">{formatCurrency(m.paid)}</span>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })()}
-                            </React.Fragment>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                    {memberFundStatuses.length > MEMBERS_PER_PAGE && (
-                      <div className="flex items-center justify-between px-3 py-2.5 border-t border-gray-100 dark:border-gray-700">
-                        <button
-                          onClick={() => setMembersPage(p => Math.max(0, p - 1))}
-                          disabled={membersPage === 0}
-                          className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                        >
-                          <ChevronDown className="w-3.5 h-3.5 rotate-90" /> Prev
-                        </button>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {membersPage * MEMBERS_PER_PAGE + 1}–{Math.min((membersPage + 1) * MEMBERS_PER_PAGE, memberFundStatuses.length)} of {memberFundStatuses.length} members
-                        </span>
-                        <button
-                          onClick={() => setMembersPage(p => Math.min(Math.ceil(memberFundStatuses.length / MEMBERS_PER_PAGE) - 1, p + 1))}
-                          disabled={(membersPage + 1) * MEMBERS_PER_PAGE >= memberFundStatuses.length}
-                          className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                        >
-                          Next <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
-                        </button>
+                <>
+                  {/* ── Hero collection bar ─────────────────────────────── */}
+                  {overviewStats && (
+                    <div className="rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 p-5 text-white shadow-lg">
+                      <div className="flex items-end justify-between mb-3">
+                        <div>
+                          <p className="text-xs font-medium opacity-70 mb-1">Total Member Collection</p>
+                          <p className="text-3xl font-black tracking-tight">{formatCurrency(overviewStats.memberIncome)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs opacity-70 mb-1">Target</p>
+                          <p className="text-lg font-bold">{formatCurrency(overviewStats.memberTarget)}</p>
+                        </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      <div className="w-full bg-white/20 rounded-full h-3 mb-2">
+                        <div
+                          className="bg-white h-3 rounded-full transition-all duration-700 shadow"
+                          style={{ width: `${overviewStats.memberTarget > 0 ? Math.min((overviewStats.memberIncome / overviewStats.memberTarget) * 100, 100) : 100}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-xs opacity-80">
+                        <span>{overviewStats.membersPaidCount} of {overviewStats.totalMembersCount} members contributed</span>
+                        <span className="font-bold text-sm">
+                          {overviewStats.memberTarget > 0
+                            ? `${Math.round((overviewStats.memberIncome / overviewStats.memberTarget) * 100)}%`
+                            : '—'}
+                        </span>
+                      </div>
+                      {overviewStats.memberOutstanding > 0 && (
+                        <div className="mt-3 flex items-center gap-1.5 bg-white/10 rounded-xl px-3 py-2 text-xs">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{formatCurrency(overviewStats.memberOutstanding)} still outstanding</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Tier legend ─────────────────────────────────────── */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {[
+                      { icon: '🏆', label: 'Champion', sub: '₹20k+', cls: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300' },
+                      { icon: '⭐', label: 'Star',     sub: '₹10k+', cls: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300' },
+                      { icon: '🎯', label: 'Core',     sub: '₹5k+',  cls: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300' },
+                      { icon: '🤝', label: 'Supporter',sub: '< ₹5k', cls: 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300' },
+                    ].map(t => (
+                      <div key={t.label} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${t.cls}`}>
+                        <span>{t.icon}</span>{t.label} <span className="opacity-60">{t.sub}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ── Contribution Wall ───────────────────────────────── */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {contributionsSorted.map((m, idx) => {
+                      const tier  = getContributorTier(m.paid);
+                      const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
+                      const pct   = m.target > 0 ? Math.min((m.paid / m.target) * 100, 100) : 100;
+                      const monthly = getMemberMonthlyBreakdown(m.member_id);
+                      const paymentCount = payments.filter(p => p.member_id === m.member_id).length;
+                      const isExpanded = expandedMemberId === m.member_id;
+
+                      return (
+                        <div
+                          key={m.member_id}
+                          onClick={() => setExpandedMemberId(isExpanded ? null : m.member_id)}
+                          className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${tier.card} ${isExpanded ? 'ring-2 ring-primary-400 ring-offset-1' : ''} ${idx < 3 ? 'sm:p-5' : ''}`}
+                        >
+                          {/* Medal badge */}
+                          {medal && (
+                            <div className="absolute -top-3 -right-1 text-xl drop-shadow">{medal}</div>
+                          )}
+
+                          {/* Avatar */}
+                          <div className={`mx-auto mb-3 flex items-center justify-center rounded-full bg-white shadow ${idx < 3 ? 'w-14 h-14' : 'w-10 h-10'}`}>
+                            {m.member?.avatar_url ? (
+                              <img src={m.member.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              <span className={`font-bold text-primary-600 ${idx < 3 ? 'text-xl' : 'text-sm'}`}>
+                                {m.member?.name?.[0]?.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Name */}
+                          <p className="font-semibold text-gray-900 dark:text-white text-center text-sm leading-tight mb-1 truncate">
+                            {m.member?.name?.split(' ')[0]}
+                          </p>
+
+                          {/* Amount */}
+                          <p className={`text-center font-black mb-2 ${idx < 3 ? 'text-xl' : 'text-base'} ${tier.amount}`}>
+                            {formatCurrency(m.paid)}
+                          </p>
+
+                          {/* Tier badge */}
+                          <div className={`mx-auto w-fit text-xs font-semibold px-2.5 py-1 rounded-full mb-3 ${tier.badge}`}>
+                            {tier.icon} {tier.label}
+                          </div>
+
+                          {/* Mini progress bar */}
+                          {m.target > 0 && (
+                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mb-1">
+                              <div
+                                className={`h-1.5 rounded-full transition-all duration-700 ${pct >= 100 ? 'bg-green-500' : pct > 60 ? 'bg-amber-500' : 'bg-red-400'}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Status line */}
+                          <div className="flex items-center justify-between text-xs text-gray-400">
+                            {m.outstanding <= 0
+                              ? <span className="flex items-center gap-0.5 text-green-600 font-medium"><CheckCircle className="w-3 h-3" /> Fully paid</span>
+                              : <span className="text-red-500">{formatCurrency(m.outstanding)} due</span>
+                            }
+                            {paymentCount > 1 && (
+                              <span className="bg-gray-100 dark:bg-gray-700 rounded-full px-1.5 py-0.5 text-gray-500">{paymentCount}×</span>
+                            )}
+                          </div>
+
+                          {/* Expanded: monthly breakdown */}
+                          {isExpanded && monthly.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5">
+                              {monthly.map(mo => (
+                                <div key={mo.label} className="flex justify-between text-xs">
+                                  <span className="text-gray-500">{mo.label}</span>
+                                  <span className="font-semibold text-green-600">{formatCurrency(mo.total)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {isExpanded && monthly.length === 0 && (
+                            <p className="mt-2 text-xs text-center text-gray-400">No payments recorded</p>
+                          )}
+
+                          {/* Admin quick-add button */}
+                          {isAdmin && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setPaymentForm(p => ({ ...p, member_id: m.member_id })); setShowPaymentModal(true); }}
+                              className="mt-3 w-full flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-gray-400 hover:text-primary-500 hover:border-primary-400 transition"
+                            >
+                              <Plus className="w-3 h-3" /> Add payment
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* ── Members who haven't paid yet (admin only) ───────── */}
+                  {isAdmin && memberFundStatuses.filter(m => m.paid === 0).length > 0 && (
+                    <Card>
+                      <CardContent className="p-4">
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+                          Not Yet Contributed ({memberFundStatuses.filter(m => m.paid === 0).length})
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {memberFundStatuses.filter(m => m.paid === 0).map(m => (
+                            <button
+                              key={m.member_id}
+                              onClick={() => { setPaymentForm(p => ({ ...p, member_id: m.member_id })); setShowPaymentModal(true); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-xs text-gray-500 hover:border-primary-400 hover:text-primary-600 transition"
+                            >
+                              {m.member?.avatar_url
+                                ? <img src={m.member.avatar_url} className="w-4 h-4 rounded-full object-cover" alt="" />
+                                : <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs">{m.member?.name?.[0]}</div>
+                              }
+                              {m.member?.name?.split(' ')[0]}
+                              {m.target > 0 && <span className="text-gray-400">· {formatCurrency(m.target)}</span>}
+                              <Plus className="w-3 h-3 ml-0.5" />
+                            </button>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
               )}
 
               {/* Recent Payments */}
