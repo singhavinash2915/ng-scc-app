@@ -1720,10 +1720,10 @@ export function SeasonFund() {
             onChange={(e) => setPaymentForm(f => ({ ...f, member_id: e.target.value }))}
             options={[
               { value: '', label: 'Select member' },
-              ...(selectedSeason?.targets?.length
-                ? selectedSeason.targets.filter(t => t.member).map(t => ({ value: t.member_id, label: t.member!.name }))
-                : members.filter(m => m.status === 'active').map(m => ({ value: m.id, label: m.name }))
-              ),
+              ...members
+                .filter(m => m.status === 'active')
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(m => ({ value: m.id, label: m.name })),
             ]}
           />
           <div className="grid grid-cols-2 gap-4">
