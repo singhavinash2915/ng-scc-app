@@ -139,8 +139,12 @@ export function SeasonFund() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
-  const [showAllMembers, setShowAllMembers] = useState(false);
+  const [membersPage, setMembersPage] = useState(0);
+  const [paymentsPage, setPaymentsPage] = useState(0);
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
+
+  const MEMBERS_PER_PAGE  = 10;
+  const PAYMENTS_PER_PAGE = 10;
 
   // Season form
   const [selectedPreset, setSelectedPreset] = useState<PresetKey>('oct-may');
@@ -189,7 +193,11 @@ export function SeasonFund() {
   }, [seasons, selectedSeasonId]);
 
   useEffect(() => {
-    if (selectedSeasonId) fetchPayments(selectedSeasonId);
+    if (selectedSeasonId) {
+      fetchPayments(selectedSeasonId);
+      setMembersPage(0);
+      setPaymentsPage(0);
+    }
   }, [selectedSeasonId, fetchPayments]);
 
   const selectedSeason = useMemo(() => seasons.find(s => s.id === selectedSeasonId) || null, [seasons, selectedSeasonId]);
@@ -972,7 +980,7 @@ export function SeasonFund() {
                         </tr>
                       </thead>
                       <tbody>
-                        {(showAllMembers ? memberFundStatuses : memberFundStatuses.slice(0, 10)).map(m => {
+                        {memberFundStatuses.slice(membersPage * MEMBERS_PER_PAGE, (membersPage + 1) * MEMBERS_PER_PAGE).map(m => {
                           const pct = m.target > 0 ? Math.round((m.paid / m.target) * 100) : 0;
                           const barColor = pct >= 100 ? 'bg-green-500' : pct > 50 ? 'bg-amber-500' : 'bg-red-500';
                           const isExpanded = expandedMemberId === m.member_id;
@@ -1070,13 +1078,26 @@ export function SeasonFund() {
                         })}
                       </tbody>
                     </table>
-                    {memberFundStatuses.length > 10 && (
-                      <button
-                        onClick={() => setShowAllMembers(!showAllMembers)}
-                        className="w-full py-2 text-xs text-primary-500 hover:text-primary-600 font-medium"
-                      >
-                        {showAllMembers ? 'Show less' : `Show all ${memberFundStatuses.length} members`}
-                      </button>
+                    {memberFundStatuses.length > MEMBERS_PER_PAGE && (
+                      <div className="flex items-center justify-between px-3 py-2.5 border-t border-gray-100 dark:border-gray-700">
+                        <button
+                          onClick={() => setMembersPage(p => Math.max(0, p - 1))}
+                          disabled={membersPage === 0}
+                          className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5 rotate-90" /> Prev
+                        </button>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {membersPage * MEMBERS_PER_PAGE + 1}–{Math.min((membersPage + 1) * MEMBERS_PER_PAGE, memberFundStatuses.length)} of {memberFundStatuses.length} members
+                        </span>
+                        <button
+                          onClick={() => setMembersPage(p => Math.min(Math.ceil(memberFundStatuses.length / MEMBERS_PER_PAGE) - 1, p + 1))}
+                          disabled={(membersPage + 1) * MEMBERS_PER_PAGE >= memberFundStatuses.length}
+                          className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                          Next <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+                        </button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -1092,7 +1113,7 @@ export function SeasonFund() {
                   </h3>
                   <Card animate>
                     <CardContent className="p-0 divide-y divide-gray-100 dark:divide-gray-700">
-                      {payments.slice(0, 15).map(payment => (
+                      {payments.slice(paymentsPage * PAYMENTS_PER_PAGE, (paymentsPage + 1) * PAYMENTS_PER_PAGE).map(payment => (
                         <div key={payment.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/30">
                           <div className="flex items-center gap-2">
                             {payment.member?.avatar_url ? (
@@ -1121,6 +1142,27 @@ export function SeasonFund() {
                           </div>
                         </div>
                       ))}
+                      {payments.length > PAYMENTS_PER_PAGE && (
+                        <div className="flex items-center justify-between px-3 py-2.5">
+                          <button
+                            onClick={() => setPaymentsPage(p => Math.max(0, p - 1))}
+                            disabled={paymentsPage === 0}
+                            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5 rotate-90" /> Prev
+                          </button>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {paymentsPage * PAYMENTS_PER_PAGE + 1}–{Math.min((paymentsPage + 1) * PAYMENTS_PER_PAGE, payments.length)} of {payments.length}
+                          </span>
+                          <button
+                            onClick={() => setPaymentsPage(p => Math.min(Math.ceil(payments.length / PAYMENTS_PER_PAGE) - 1, p + 1))}
+                            disabled={(paymentsPage + 1) * PAYMENTS_PER_PAGE >= payments.length}
+                            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                          >
+                            Next <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+                          </button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
