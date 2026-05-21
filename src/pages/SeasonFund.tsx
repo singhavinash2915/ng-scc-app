@@ -12,11 +12,16 @@ import {
   Target,
   CreditCard,
   TrendingUp,
+  TrendingDown,
   ChevronDown,
   ChevronRight,
   Handshake,
   MapPin,
   Lock,
+  BarChart2,
+  Wallet,
+  Building2,
+  AlertCircle,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -85,7 +90,7 @@ const TIER_LABELS: Record<MemberTier, string> = {
   other: 'Other',
 };
 
-type TabType = 'bookings' | 'members';
+type TabType = 'bookings' | 'overview' | 'members';
 
 const formatCurrency = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 const formatDate = (date: string) => {
@@ -158,6 +163,7 @@ export function SeasonFund() {
     days: [2, 4, 6] as number[],
     weekday_cost: 5500,
     weekend_cost: 7500,
+    sponsor_income: 0,
   });
 
   // Payment form
@@ -242,15 +248,69 @@ export function SeasonFund() {
       .sort((a, b) => b.outstanding - a.outstanding);
   }, [selectedSeason, selectedSeasonId, getMemberFundStatus]);
 
+  // ─── Season Finance overview stats ────────────────────────────────────────
+  const overviewStats = useMemo(() => {
+    if (!selectedSeason) return null;
+
+    const bookings = selectedSeason.bookings?.filter(b => b.status !== 'cancelled') || [];
+
+    // Income
+    const memberIncome   = payments.reduce((s, p) => s + Number(p.amount), 0);
+    const opponentIncome = bookings.reduce((s, b) => s + Number(b.opponent_collection || 0), 0);
+    let sponsorIncome = 0;
+    try {
+      const parsed = selectedSeason.notes ? JSON.parse(selectedSeason.notes) : null;
+      if (parsed?.sponsor_income) sponsorIncome = Number(parsed.sponsor_income) || 0;
+    } catch { /* notes not JSON */ }
+    const totalIncome = memberIncome + opponentIncome + sponsorIncome;
+
+    // Expenses
+    const totalGroundCost   = bookings.reduce((s, b) => s + Number(b.cost), 0);
+    const paidToGround      = bookings.filter(b => b.payment_status === 'paid').reduce((s, b) => s + Number(b.cost), 0);
+    const pendingToGround   = totalGroundCost - paidToGround;
+
+    // Balance
+    const netBalance        = totalIncome - totalGroundCost;
+
+    // Session stats
+    const totalSessions     = bookings.length;
+    const paidSessions      = bookings.filter(b => b.payment_status === 'paid').length;
+    const matchesVsOpponent = bookings.filter(b => Number(b.opponent_collection) > 0).length;
+    const avgCost           = totalSessions > 0 ? totalGroundCost / totalSessions : 0;
+    const avgNetCost        = totalSessions > 0 ? (totalGroundCost - opponentIncome) / totalSessions : 0;
+
+    // Member stats
+    const memberTarget      = selectedSeason.targets?.reduce((s, t) => s + Number(t.target_amount), 0) || 0;
+    const membersPaidCount  = new Set(payments.map(p => p.member_id)).size;
+    const totalMembersCount = selectedSeason.targets?.length || 0;
+    const memberOutstanding = Math.max(0, memberTarget - memberIncome);
+
+    // Per-member net cost
+    const perMemberCost     = totalMembersCount > 0 ? (totalGroundCost - opponentIncome - sponsorIncome) / totalMembersCount : 0;
+
+    // Proportions
+    const memberPct   = totalIncome > 0 ? (memberIncome / totalIncome) * 100 : 0;
+    const opponentPct = totalIncome > 0 ? (opponentIncome / totalIncome) * 100 : 0;
+    const sponsorPct  = totalIncome > 0 ? (sponsorIncome / totalIncome) * 100 : 0;
+
+    return {
+      memberIncome, opponentIncome, sponsorIncome, totalIncome,
+      totalGroundCost, paidToGround, pendingToGround, netBalance,
+      totalSessions, paidSessions, matchesVsOpponent, avgCost, avgNetCost,
+      memberTarget, membersPaidCount, totalMembersCount, memberOutstanding,
+      perMemberCost, memberPct, opponentPct, sponsorPct,
+    };
+  }, [selectedSeason, payments]);
+
   // ---- Handlers ----
   const handleCreateSeason = async () => {
     setIsSubmitting(true);
     try {
-      // Store booking config as JSON in notes so generate can use it
       const configJson = JSON.stringify({
         days: seasonForm.days,
         weekday_cost: seasonForm.weekday_cost,
         weekend_cost: seasonForm.weekend_cost,
+        sponsor_income: seasonForm.sponsor_income || 0,
       });
       await addSeason({
         name: seasonForm.name,
@@ -270,13 +330,23 @@ export function SeasonFund() {
     if (!editingSeason) return;
     setIsSubmitting(true);
     try {
+      // Preserve existing config, update sponsor_income
+      let existingConfig: Record<string, unknown> = {};
+      try { existingConfig = editingSeason.notes ? JSON.parse(editingSeason.notes) : {}; } catch { /* */ }
+      const updatedNotes = JSON.stringify({
+        ...existingConfig,
+        days: seasonForm.days,
+        weekday_cost: seasonForm.weekday_cost,
+        weekend_cost: seasonForm.weekend_cost,
+        sponsor_income: seasonForm.sponsor_income || 0,
+      });
       await updateSeason(editingSeason.id, {
         name: seasonForm.name,
         start_date: seasonForm.start_date,
         end_date: seasonForm.end_date,
         total_budget: Number(seasonForm.total_budget) || 0,
         status: seasonForm.status,
-        notes: seasonForm.notes || null,
+        notes: updatedNotes,
       });
       setShowSeasonModal(false);
       setEditingSeason(null);
@@ -422,15 +492,16 @@ export function SeasonFund() {
 
   const openEditSeason = (season: Season) => {
     setEditingSeason(season);
-    // Try to parse config from notes
     let days = [2, 4, 6];
     let weekday_cost = 5500;
     let weekend_cost = 7500;
+    let sponsor_income = 0;
     try {
       const parsed = season.notes ? JSON.parse(season.notes) : null;
       if (parsed?.days) days = parsed.days;
       if (parsed?.weekday_cost) weekday_cost = parsed.weekday_cost;
       if (parsed?.weekend_cost) weekend_cost = parsed.weekend_cost;
+      if (parsed?.sponsor_income) sponsor_income = Number(parsed.sponsor_income) || 0;
     } catch { /* not JSON */ }
     setSeasonForm({
       name: season.name,
@@ -442,6 +513,7 @@ export function SeasonFund() {
       days,
       weekday_cost,
       weekend_cost,
+      sponsor_income,
     });
     setShowSeasonModal(true);
   };
@@ -547,7 +619,7 @@ export function SeasonFund() {
                   setEditingSeason(null);
                   const preset = SEASON_PRESETS['oct-may'];
                   setSelectedPreset('oct-may');
-                  setSeasonForm({ name: preset.name, start_date: preset.start_date, end_date: preset.end_date, total_budget: '', status: 'active', notes: '', days: [...preset.days], weekday_cost: preset.weekday_cost, weekend_cost: preset.weekend_cost });
+                  setSeasonForm({ name: preset.name, start_date: preset.start_date, end_date: preset.end_date, total_budget: '', status: 'active', notes: '', days: [...preset.days], weekday_cost: preset.weekday_cost, weekend_cost: preset.weekend_cost, sponsor_income: 0 });
                   setShowSeasonModal(true);
                 }}>
                   <Plus className="w-4 h-4 mr-2" />
@@ -653,7 +725,8 @@ export function SeasonFund() {
   ) : false;
   const tabs: { key: TabType; label: string; icon: typeof Calendar }[] = [
     { key: 'bookings', label: 'Ground Bookings', icon: Calendar },
-    ...(isSeasonCurrent ? [{ key: 'members' as TabType, label: 'Member Contributions', icon: Users }] : []),
+    { key: 'overview', label: 'Season Finance', icon: BarChart2 },
+    ...(isSeasonCurrent ? [{ key: 'members' as TabType, label: 'Contributions', icon: Users }] : []),
   ];
 
   return (
@@ -675,7 +748,7 @@ export function SeasonFund() {
             setEditingSeason(null);
             const preset = SEASON_PRESETS['oct-may'];
             setSelectedPreset('oct-may');
-            setSeasonForm({ name: preset.name, start_date: preset.start_date, end_date: preset.end_date, total_budget: '', status: 'active', notes: '', days: [...preset.days], weekday_cost: preset.weekday_cost, weekend_cost: preset.weekend_cost });
+            setSeasonForm({ name: preset.name, start_date: preset.start_date, end_date: preset.end_date, total_budget: '', status: 'active', notes: '', days: [...preset.days], weekday_cost: preset.weekday_cost, weekend_cost: preset.weekend_cost, sponsor_income: 0 });
             setShowSeasonModal(true);
           }}>
             <Plus className="w-3.5 h-3.5 mr-1" /> New Season
@@ -938,6 +1011,282 @@ export function SeasonFund() {
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ===== OVERVIEW / SEASON FINANCE TAB ===== */}
+          {activeTab === 'overview' && overviewStats && (
+            <div className="space-y-4">
+
+              {/* ── 1. Income Breakdown ─────────────────────────────────── */}
+              <Card animate>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Wallet className="w-4 h-4 text-green-500" />
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Income Breakdown</h3>
+                  </div>
+
+                  {/* Total income hero */}
+                  <div className="flex items-end gap-2 mb-5">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(overviewStats.totalIncome)}</span>
+                    <span className="text-sm text-gray-400 mb-1">total collected</span>
+                  </div>
+
+                  {/* Stacked bar */}
+                  {overviewStats.totalIncome > 0 && (
+                    <div className="flex h-3 rounded-full overflow-hidden mb-4 gap-0.5">
+                      {overviewStats.memberIncome > 0 && (
+                        <div className="bg-green-500 rounded-l-full transition-all" style={{ width: `${overviewStats.memberPct}%` }} title={`Members ${Math.round(overviewStats.memberPct)}%`} />
+                      )}
+                      {overviewStats.opponentIncome > 0 && (
+                        <div className="bg-blue-500 transition-all" style={{ width: `${overviewStats.opponentPct}%` }} title={`Opponents ${Math.round(overviewStats.opponentPct)}%`} />
+                      )}
+                      {overviewStats.sponsorIncome > 0 && (
+                        <div className="bg-purple-500 rounded-r-full transition-all" style={{ width: `${overviewStats.sponsorPct}%` }} title={`Sponsors ${Math.round(overviewStats.sponsorPct)}%`} />
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {/* Member contributions */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Member Contributions</span>
+                            {overviewStats.totalMembersCount > 0 && (
+                              <span className="ml-2 text-xs text-gray-400">
+                                {overviewStats.membersPaidCount}/{overviewStats.totalMembersCount} members paid
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm font-bold text-green-600 ml-2">{formatCurrency(overviewStats.memberIncome)}</span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${overviewStats.memberTarget > 0 ? Math.min((overviewStats.memberIncome / overviewStats.memberTarget) * 100, 100) : 100}%` }} />
+                        </div>
+                        {overviewStats.memberTarget > 0 && (
+                          <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
+                            <span>Target: {formatCurrency(overviewStats.memberTarget)}</span>
+                            <span>{Math.round((overviewStats.memberIncome / overviewStats.memberTarget) * 100)}% collected</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Opponent collection */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Opponent Fees</span>
+                            <span className="ml-2 text-xs text-gray-400">{overviewStats.matchesVsOpponent} match{overviewStats.matchesVsOpponent !== 1 ? 'es' : ''} collected</span>
+                          </div>
+                          <span className="text-sm font-bold text-blue-600 ml-2">{formatCurrency(overviewStats.opponentIncome)}</span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                          <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${overviewStats.totalIncome > 0 ? overviewStats.opponentPct : 0}%` }} />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">Saves ≈ {formatCurrency(Math.round(overviewStats.opponentIncome / Math.max(overviewStats.totalMembersCount, 1)))} per member</p>
+                      </div>
+                    </div>
+
+                    {/* Sponsor income */}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${overviewStats.sponsorIncome > 0 ? 'bg-purple-500' : 'bg-gray-200 dark:bg-gray-600'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sponsor / Other</span>
+                            {overviewStats.sponsorIncome === 0 && isAdmin && (
+                              <span className="ml-2 text-xs text-primary-500 cursor-pointer hover:underline" onClick={() => openEditSeason(selectedSeason!)}>+ Add via Edit Season</span>
+                            )}
+                          </div>
+                          <span className={`text-sm font-bold ml-2 ${overviewStats.sponsorIncome > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
+                            {formatCurrency(overviewStats.sponsorIncome)}
+                          </span>
+                        </div>
+                        {overviewStats.sponsorIncome > 0 && (
+                          <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                            <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${overviewStats.sponsorPct}%` }} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {overviewStats.memberOutstanding > 0 && (
+                    <div className="mt-4 flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                      <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                        <strong>{formatCurrency(overviewStats.memberOutstanding)}</strong> still outstanding from member contributions
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* ── 2. Expense Breakdown ────────────────────────────────── */}
+              <Card animate delay={1}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Landmark className="w-4 h-4 text-orange-500" />
+                      <h3 className="font-semibold text-gray-900 dark:text-white">Ground Expenses</h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">Paid to owner</p>
+                      <p className="text-sm font-bold text-orange-500">{formatCurrency(overviewStats.paidToGround)} / {formatCurrency(overviewStats.totalGroundCost)}</p>
+                    </div>
+                  </div>
+
+                  {/* Overall paid progress */}
+                  <div className="mb-1">{renderProgressBar(overviewStats.paidToGround, overviewStats.totalGroundCost, 'bg-orange-500')}</div>
+                  <div className="flex justify-between text-xs text-gray-400 mb-5">
+                    <span>{overviewStats.paidSessions}/{overviewStats.totalSessions} sessions paid</span>
+                    {overviewStats.pendingToGround > 0 && (
+                      <span className="text-amber-500">{formatCurrency(overviewStats.pendingToGround)} pending</span>
+                    )}
+                  </div>
+
+                  {/* Month-wise breakdown */}
+                  <div className="space-y-2.5">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Monthly Breakdown</p>
+                    {bookingsByMonth.map(group => {
+                      const allPaid = group.paidCount === group.bookings.length;
+                      const nonePaid = group.paidCount === 0;
+                      const netCost = group.totalCost - group.totalOpponent;
+                      return (
+                        <div key={group.key} className="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-gray-700/50 last:border-0">
+                          <div className="w-10 flex-shrink-0">
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{group.label.split(' ')[0]}</p>
+                            <p className="text-xs text-gray-400">{group.label.split(' ')[1]}</p>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-xs text-gray-500">{group.bookings.length} sessions</span>
+                              {allPaid ? (
+                                <span className="flex items-center gap-0.5 text-xs text-green-600 font-medium"><CheckCircle className="w-3 h-3" /> All paid</span>
+                              ) : nonePaid ? (
+                                <span className="text-xs text-gray-400">Not yet paid</span>
+                              ) : (
+                                <span className="text-xs text-amber-500">{group.paidCount}/{group.bookings.length} paid</span>
+                              )}
+                            </div>
+                            {renderProgressBar(group.paidCount, group.bookings.length, allPaid ? 'bg-green-500' : 'bg-orange-400')}
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(group.totalCost)}</p>
+                            {group.totalOpponent > 0 && (
+                              <p className="text-xs text-blue-500">Net: {formatCurrency(netCost)}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ── 3. Season Balance ───────────────────────────────────── */}
+              <Card animate delay={2}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    {overviewStats.netBalance >= 0
+                      ? <TrendingUp className="w-4 h-4 text-green-500" />
+                      : <TrendingDown className="w-4 h-4 text-red-500" />
+                    }
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Season Balance</h3>
+                  </div>
+
+                  {/* Income vs Expense rows */}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-green-500" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Income</span>
+                      </div>
+                      <span className="text-base font-bold text-green-600">{formatCurrency(overviewStats.totalIncome)}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="w-4 h-4 text-red-500" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Ground Cost</span>
+                      </div>
+                      <span className="text-base font-bold text-red-600">{formatCurrency(overviewStats.totalGroundCost)}</span>
+                    </div>
+                  </div>
+
+                  {/* Net balance */}
+                  <div className={`flex items-center justify-between p-4 rounded-xl border-2 ${
+                    overviewStats.netBalance >= 0
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                  }`}>
+                    <div>
+                      <p className={`text-sm font-semibold ${overviewStats.netBalance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                        {overviewStats.netBalance >= 0 ? '🟢 Surplus' : '🔴 Deficit'}
+                      </p>
+                      {overviewStats.netBalance < 0 && overviewStats.totalMembersCount > 0 && (
+                        <p className="text-xs text-red-500 mt-0.5">
+                          ≈ {formatCurrency(Math.ceil(Math.abs(overviewStats.netBalance) / overviewStats.totalMembersCount))} per member still needed
+                        </p>
+                      )}
+                      {overviewStats.netBalance >= 0 && (
+                        <p className="text-xs text-green-600 mt-0.5">Season is fully funded ✓</p>
+                      )}
+                    </div>
+                    <span className={`text-2xl font-black ${overviewStats.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {overviewStats.netBalance >= 0 ? '+' : ''}{formatCurrency(overviewStats.netBalance)}
+                    </span>
+                  </div>
+
+                  {/* Quick stats strip */}
+                  <div className="grid grid-cols-3 gap-2 mt-4">
+                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <p className="text-xs text-gray-400 mb-0.5">Avg/Session</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(Math.round(overviewStats.avgCost))}</p>
+                    </div>
+                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <p className="text-xs text-gray-400 mb-0.5">Net/Session</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(Math.round(overviewStats.avgNetCost))}</p>
+                      <p className="text-xs text-blue-500">after opponents</p>
+                    </div>
+                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <p className="text-xs text-gray-400 mb-0.5">Per Member</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(Math.round(overviewStats.perMemberCost))}</p>
+                      <p className="text-xs text-gray-400">net season cost</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ── 4. Session Stats ────────────────────────────────────── */}
+              <Card animate delay={3}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Building2 className="w-4 h-4 text-primary-500" />
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Session Summary</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Total Sessions', value: overviewStats.totalSessions, sub: `${selectedSeason?.name}`, color: 'text-gray-900 dark:text-white' },
+                      { label: 'Ground Paid', value: `${overviewStats.paidSessions}/${overviewStats.totalSessions}`, sub: `${overviewStats.totalSessions - overviewStats.paidSessions} pending`, color: overviewStats.paidSessions === overviewStats.totalSessions ? 'text-green-600' : 'text-amber-600' },
+                      { label: 'Opponent Matches', value: overviewStats.matchesVsOpponent, sub: `${formatCurrency(overviewStats.opponentIncome)} saved`, color: 'text-blue-600' },
+                      { label: 'Members Enrolled', value: `${overviewStats.membersPaidCount}/${overviewStats.totalMembersCount}`, sub: 'at least 1 payment', color: 'text-primary-600' },
+                    ].map(item => (
+                      <div key={item.label} className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                        <p className="text-xs text-gray-400 mb-1">{item.label}</p>
+                        <p className={`text-xl font-bold ${item.color}`}>{item.value}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{item.sub}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
             </div>
           )}
 
@@ -1254,7 +1603,10 @@ export function SeasonFund() {
             <Input type="number" label="Weekend Cost (₹)" value={String(seasonForm.weekend_cost)} onChange={(e) => setSeasonForm(f => ({ ...f, weekend_cost: Number(e.target.value) || 0 }))} />
           </div>
 
-          <Input type="number" label="Estimated Budget (₹)" placeholder="Optional" value={seasonForm.total_budget} onChange={(e) => setSeasonForm(f => ({ ...f, total_budget: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input type="number" label="Estimated Budget (₹)" placeholder="Optional" value={seasonForm.total_budget} onChange={(e) => setSeasonForm(f => ({ ...f, total_budget: e.target.value }))} />
+            <Input type="number" label="Sponsor / Other Income (₹)" placeholder="0" value={seasonForm.sponsor_income ? String(seasonForm.sponsor_income) : ''} onChange={(e) => setSeasonForm(f => ({ ...f, sponsor_income: Number(e.target.value) || 0 }))} />
+          </div>
           {editingSeason && (
             <Select label="Status" value={seasonForm.status} onChange={(e) => setSeasonForm(f => ({ ...f, status: e.target.value as Season['status'] }))} options={[{ value: 'upcoming', label: 'Upcoming' }, { value: 'active', label: 'Active' }, { value: 'completed', label: 'Completed' }]} />
           )}
