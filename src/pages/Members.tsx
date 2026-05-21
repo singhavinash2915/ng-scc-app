@@ -1,6 +1,6 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X, MessageCircle, History, ArrowUpRight, ArrowDownRight, RotateCcw, Settings2, Lock } from 'lucide-react';
+import { Search, Plus, User, Phone, Mail, IndianRupee, MoreVertical, Edit, Trash2, Camera, X, MessageCircle, History, ArrowUpRight, ArrowDownRight, RotateCcw, Settings2, Lock, Landmark } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -14,6 +14,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
 import { useMemberActivity } from '../hooks/useMemberActivity';
+import { useSeasonFund } from '../hooks/useSeasonFund';
 import { useAuth } from '../context/AuthContext';
 import type { Member } from '../types';
 
@@ -39,6 +40,7 @@ export function Members() {
   const { matches } = useMatches();
   const { transactions } = useTransactions();
   const { isActive } = useMemberActivity(members, matches);
+  const { seasons, payments, fetchPayments } = useSeasonFund();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
 
@@ -139,6 +141,25 @@ export function Members() {
   const lowBalanceMembers = useMemo(() => {
     return members.filter(m => isActive(m.id) && m.balance < 1000);
   }, [members, isActive]);
+
+  // ── Season fund advance contributions ──────────────────────────────────────
+  const activeSeason = useMemo(
+    () => seasons.find(s => s.status === 'active') ?? seasons[0] ?? null,
+    [seasons]
+  );
+
+  useEffect(() => {
+    if (activeSeason?.id) fetchPayments(activeSeason.id);
+  }, [activeSeason?.id, fetchPayments]);
+
+  // member_id → total advance paid this season
+  const memberContributions = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of payments) {
+      map.set(p.member_id, (map.get(p.member_id) ?? 0) + Number(p.amount));
+    }
+    return map;
+  }, [payments]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -633,6 +654,15 @@ export function Members() {
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{member.matches_played}</p>
                   </div>
                 </div>
+                {/* Ground advance contribution badge */}
+                {(memberContributions.get(member.id) ?? 0) > 0 && (
+                  <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                    <Landmark className="w-3 h-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                      Ground advance: ₹{(memberContributions.get(member.id) ?? 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

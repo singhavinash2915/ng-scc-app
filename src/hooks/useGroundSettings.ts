@@ -8,7 +8,8 @@ export interface GroundDetails {
   facilities: string;
   timing: string;
   notes: string;
-  image_url: string;
+  image_url: string;       // legacy single photo (kept for backward compat)
+  image_urls: string[];    // multi-photo gallery
 }
 
 export interface BookingTestimonial {
@@ -30,6 +31,7 @@ const defaultGround: GroundDetails = {
   timing: '6:00 AM – 10:00 PM',
   notes: '',
   image_url: '',
+  image_urls: [],
 };
 
 export function useGroundSettings() {
@@ -53,7 +55,13 @@ export function useGroundSettings() {
 
       for (const row of data || []) {
         if (row.key === GROUND_KEY) {
-          setGround({ ...defaultGround, ...(row.value as Partial<GroundDetails>) });
+          const saved = row.value as Partial<GroundDetails>;
+          // Backward compat: if image_urls is missing but image_url exists, seed it
+          const image_urls: string[] =
+            Array.isArray(saved.image_urls) && saved.image_urls.length > 0
+              ? saved.image_urls
+              : saved.image_url ? [saved.image_url] : [];
+          setGround({ ...defaultGround, ...saved, image_urls });
         }
         if (row.key === TESTIMONIALS_KEY) {
           setTestimonials((row.value as BookingTestimonial[]) || []);
@@ -84,14 +92,14 @@ export function useGroundSettings() {
     }
   };
 
-  // ─── Upload ground image ──────────────────────────────────────────────────
+  // ─── Upload ground image (unique filename so multiple photos can coexist) ──
   const uploadGroundImage = async (file: File): Promise<string | null> => {
     try {
       const ext = file.name.split('.').pop() || 'jpg';
-      const path = `ground/scc-ground.${ext}`;
+      const path = `ground/scc-ground-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('sponsors')          // reuse public sponsors bucket
-        .upload(path, file, { upsert: true });
+        .upload(path, file, { upsert: false });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from('sponsors').getPublicUrl(path);
       return publicUrl;
@@ -99,6 +107,16 @@ export function useGroundSettings() {
       setError(err instanceof Error ? err.message : 'Image upload failed');
       return null;
     }
+  };
+
+  // ─── Remove one photo from the gallery and persist ───────────────────────
+  const removeGroundImage = async (url: string): Promise<boolean> => {
+    const updated: GroundDetails = {
+      ...ground,
+      image_urls: ground.image_urls.filter(u => u !== url),
+      image_url: ground.image_url === url ? '' : ground.image_url,
+    };
+    return saveGround(updated);
   };
 
   // ─── Save testimonials ────────────────────────────────────────────────────
@@ -138,7 +156,7 @@ export function useGroundSettings() {
   return {
     ground, testimonials, loading, saving, error,
     fetchSettings,
-    saveGround, uploadGroundImage,
+    saveGround, uploadGroundImage, removeGroundImage,
     saveTestimonials, addTestimonial, updateTestimonial, deleteTestimonial,
   };
 }

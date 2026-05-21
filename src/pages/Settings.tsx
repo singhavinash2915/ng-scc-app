@@ -53,7 +53,7 @@ export function Settings() {
   // ─── Ground & Testimonials ───────────────────────────────────────────────
   const {
     ground, testimonials, saving: groundSaving, error: groundError,
-    fetchSettings, saveGround, uploadGroundImage,
+    fetchSettings, saveGround, uploadGroundImage, removeGroundImage,
     addTestimonial, updateTestimonial, deleteTestimonial,
   } = useGroundSettings();
 
@@ -102,6 +102,7 @@ export function Settings() {
       timing: groundTiming.trim(),
       notes: groundNotes.trim(),
       image_url: ground.image_url,
+      image_urls: ground.image_urls,
     });
     if (ok) {
       setGroundMsg('Ground details saved!');
@@ -119,18 +120,30 @@ export function Settings() {
     setGroundFormError('');
     const url = await uploadGroundImage(file);
     if (url) {
+      // Append new URL to existing gallery
+      const updatedUrls = [...ground.image_urls.filter(u => u !== url), url];
       await saveGround({
         name: groundName.trim(), address: groundAddress.trim(),
         directions_url: groundDirections.trim(), facilities: groundFacilities.trim(),
-        timing: groundTiming.trim(), notes: groundNotes.trim(), image_url: url,
+        timing: groundTiming.trim(), notes: groundNotes.trim(),
+        image_url: ground.image_url || url,   // keep first as legacy
+        image_urls: updatedUrls,
       });
-      setGroundMsg('Ground image updated!');
+      setGroundMsg('Ground photo added!');
       setTimeout(() => setGroundMsg(''), 3000);
     } else {
       setGroundFormError('Image upload failed');
     }
     setGroundImageUploading(false);
     if (groundImageRef.current) groundImageRef.current.value = '';
+  };
+
+  const handleRemoveGroundImage = async (url: string) => {
+    if (!confirm('Remove this ground photo?')) return;
+    setGroundFormError('');
+    const ok = await removeGroundImage(url);
+    if (ok) { setGroundMsg('Photo removed'); setTimeout(() => setGroundMsg(''), 3000); }
+    else setGroundFormError('Failed to remove photo');
   };
 
   const handleAddTestimonial = async () => {
@@ -891,32 +904,47 @@ export function Settings() {
                 Displayed to visiting teams on the Book a Match page.
               </p>
 
-              {/* Ground image preview + upload */}
-              <div className="flex items-start gap-4">
-                <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 border border-gray-200 dark:border-gray-600">
-                  {ground.image_url ? (
-                    <img src={ground.image_url} alt="Ground" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
-                      <span className="text-xs text-gray-400">No image</span>
+              {/* Ground photo gallery */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Ground Photos ({ground.image_urls.length}/6)</p>
+                  <p className="text-xs text-gray-400">Shown as gallery on the booking page. Max 5MB each.</p>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {ground.image_urls.map((url, i) => (
+                    <div key={url} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
+                      <img src={url} alt={`Ground photo ${i + 1}`} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                          onClick={() => handleRemoveGroundImage(url)}
+                          className="p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                          title="Remove photo"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {i === 0 && (
+                        <div className="absolute bottom-1 left-1 text-[9px] font-bold bg-primary-500 text-white rounded px-1">MAIN</div>
+                      )}
+                    </div>
+                  ))}
+                  {ground.image_urls.length < 6 && (
+                    <div
+                      onClick={() => groundImageRef.current?.click()}
+                      className={`w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition ${groundImageUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      {groundImageUploading ? (
+                        <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Plus className="w-5 h-5 text-gray-400" />
+                          <span className="text-xs text-gray-400">Add photo</span>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
-                <div className="flex-1 space-y-2">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Ground Photo</p>
-                  <p className="text-xs text-gray-400">Shown on the booking page. Recommended: 1200×600px, under 5MB.</p>
-                  <input ref={groundImageRef} type="file" accept="image/*" onChange={handleGroundImageUpload} className="hidden" />
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => groundImageRef.current?.click()}
-                    disabled={groundImageUploading}
-                  >
-                    <Upload className="w-3.5 h-3.5 mr-1.5" />
-                    {groundImageUploading ? 'Uploading...' : ground.image_url ? 'Change Image' : 'Upload Image'}
-                  </Button>
-                </div>
+                <input ref={groundImageRef} type="file" accept="image/*" onChange={handleGroundImageUpload} className="hidden" />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

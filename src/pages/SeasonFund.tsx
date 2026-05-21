@@ -32,7 +32,7 @@ import { Badge } from '../components/ui/Badge';
 import { useSeasonFund } from '../hooks/useSeasonFund';
 import { useMembers } from '../hooks/useMembers';
 import { useAuth } from '../context/AuthContext';
-import type { Season, GroundBooking, MemberTier, FundPaymentMethod } from '../types';
+import type { Season, GroundBooking, FundPaymentMethod } from '../types';
 
 // Member access PIN
 const MEMBER_PIN = 'scc';
@@ -98,7 +98,6 @@ export function SeasonFund() {
     addSeason, updateSeason, deleteSeason,
     updateBooking, deleteBooking,
     generateSeasonBookings, addBulkBookings,
-    setMemberTargets, removeMemberTarget,
     fetchPayments, addPayment, deletePayment,
     getSeasonStats, getMemberFundStatus,
   } = useSeasonFund();
@@ -130,7 +129,6 @@ export function SeasonFund() {
   const [selectedSeasonId, setSelectedSeasonId] = useState('');
   const [showSeasonModal, setShowSeasonModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showTargetModal, setShowTargetModal] = useState(false);
   const [showEditBookingModal, setShowEditBookingModal] = useState(false);
   const [editingSeason, setEditingSeason] = useState<Season | null>(null);
   const [editingBooking, setEditingBooking] = useState<GroundBooking | null>(null);
@@ -166,11 +164,6 @@ export function SeasonFund() {
     payment_method: 'cash' as FundPaymentMethod,
     description: '',
   });
-
-  // Target form
-  const [targetTier, setTargetTier] = useState<MemberTier>('regular');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
   // Booking edit form
   const [bookingEditForm, setBookingEditForm] = useState({
@@ -228,21 +221,22 @@ export function SeasonFund() {
     });
   }, [selectedSeason]);
 
-  // Member fund statuses
-  const memberFundStatuses = useMemo(() => {
-    if (!selectedSeason?.targets) return [];
-    return selectedSeason.targets
-      .map(t => ({
-        ...t,
-        ...getMemberFundStatus(selectedSeasonId, t.member_id),
-      }))
-      .sort((a, b) => b.outstanding - a.outstanding);
-  }, [selectedSeason, selectedSeasonId, getMemberFundStatus]);
-
-  // Sorted by paid desc for contribution wall (only members who paid > 0)
-  const contributionsSorted = useMemo(() =>
-    [...memberFundStatuses].sort((a, b) => b.paid - a.paid),
-  [memberFundStatuses]);
+  // Contributors derived directly from payments (no target required)
+  const allContributors = useMemo(() => {
+    const map = new Map<string, { member_id: string; paid: number; member?: { id?: string; name?: string; avatar_url?: string } }>();
+    for (const p of payments) {
+      const entry = map.get(p.member_id) ?? {
+        member_id: p.member_id,
+        paid: 0,
+        member: (p.member as { id?: string; name?: string; avatar_url?: string } | undefined)
+          ?? members.find(m => m.id === p.member_id),
+      };
+      entry.paid += Number(p.amount);
+      if (!entry.member) entry.member = members.find(m => m.id === p.member_id);
+      map.set(p.member_id, entry);
+    }
+    return Array.from(map.values()).sort((a, b) => b.paid - a.paid);
+  }, [payments, members]);
 
   // Contribution tier helper
   function getContributorTier(paid: number) {
@@ -461,26 +455,6 @@ export function SeasonFund() {
     }
   };
 
-  const handleSetTargets = async () => {
-    if (!selectedSeasonId || selectedMemberIds.length === 0) return;
-    setIsSubmitting(true);
-    try {
-      await setMemberTargets(
-        selectedSeasonId,
-        selectedMemberIds.map(id => ({
-          member_id: id,
-          target_amount: Number(targetAmount) || 0,
-          tier: targetTier,
-        }))
-      );
-      setShowTargetModal(false);
-      setSelectedMemberIds([]);
-      setTargetAmount('');
-    } catch { /* ignore */ } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDelete = async () => {
     if (!deleteConfirm) return;
     setIsDeleting(true);
@@ -490,8 +464,6 @@ export function SeasonFund() {
         setSelectedSeasonId('');
       } else if (deleteConfirm.type === 'booking') {
         await deleteBooking(deleteConfirm.id);
-      } else if (deleteConfirm.type === 'target') {
-        await removeMemberTarget(deleteConfirm.id);
       } else if (deleteConfirm.type === 'payment') {
         await deletePayment(deleteConfirm.id, selectedSeasonId);
       }
@@ -809,42 +781,16 @@ export function SeasonFund() {
                 </p>
               </div>
 
-              {/* Health indicator */}
-              {stats && stats.totalTarget > 0 && (
-                <div className="flex items-center gap-3">
-                  <div className="relative w-16 h-16 sm:w-20 sm:h-20">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
-                      <circle
-                        cx="18" cy="18" r="15" fill="none" stroke="white" strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeDasharray={`${Math.min((stats.totalCollected / stats.totalTarget) * 94.25, 94.25)} 94.25`}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-white font-black text-sm sm:text-base">
-                        {Math.round((stats.totalCollected / stats.totalTarget) * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-white">
-                    <p className="text-[10px] uppercase tracking-wider opacity-70 font-semibold">Collected</p>
-                    <p className="text-lg sm:text-xl font-black">{formatCurrency(stats.totalCollected)}</p>
-                    <p className="text-[10px] opacity-70">of {formatCurrency(stats.totalTarget)} target</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
           {/* ═════ PREMIUM STATS CARDS ════════════════════════════════════════ */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
             {[
               { icon: Landmark,    label: 'Ground Cost',  value: stats?.totalSpent || 0,              accent: 'orange', text: 'text-orange-600 dark:text-orange-400',  bgIcon: 'bg-orange-100 dark:bg-orange-900/30',  iconColor: 'text-orange-500' },
               { icon: Handshake,   label: 'Opponent',     value: stats?.totalOpponentCollection || 0, accent: 'blue',   text: 'text-blue-600 dark:text-blue-400',      bgIcon: 'bg-blue-100 dark:bg-blue-900/30',      iconColor: 'text-blue-500' },
               { icon: Target,      label: 'Net Cost',     value: stats?.netCost || 0,                 accent: 'purple', text: 'text-purple-600 dark:text-purple-400',  bgIcon: 'bg-purple-100 dark:bg-purple-900/30',  iconColor: 'text-purple-500' },
               { icon: TrendingUp,  label: 'Collected',    value: stats?.totalCollected || 0,          accent: 'green',  text: 'text-green-600 dark:text-green-400',    bgIcon: 'bg-green-100 dark:bg-green-900/30',    iconColor: 'text-green-500' },
-              { icon: IndianRupee, label: 'Outstanding',  value: Math.max(0, stats?.outstanding || 0),accent: 'red',    text: 'text-red-600 dark:text-red-400',        bgIcon: 'bg-red-100 dark:bg-red-900/30',        iconColor: 'text-red-500' },
             ].map((s, idx) => {
               const Icon = s.icon;
               return (
@@ -870,25 +816,7 @@ export function SeasonFund() {
           </div>
 
           {/* ═════ PROGRESS BARS ══════════════════════════════════════════════ */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {stats && stats.totalTarget > 0 && (
-              <div className="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 animate-fade-in" style={{ animationDelay: '320ms' }}>
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Member Collection</p>
-                  </div>
-                  <p className="text-xs font-bold text-green-600 dark:text-green-400">{Math.round((stats.totalCollected / stats.totalTarget) * 100)}%</p>
-                </div>
-                <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-green-500 to-emerald-400 h-2.5 rounded-full transition-all duration-700 shadow-sm"
-                    style={{ width: `${Math.min((stats.totalCollected / stats.totalTarget) * 100, 100)}%` }}
-                  />
-                </div>
-                <p className="text-[11px] text-gray-500 mt-1.5">{formatCurrency(stats.totalCollected)} of {formatCurrency(stats.totalTarget)}</p>
-              </div>
-            )}
+          <div className="grid grid-cols-1 gap-3">
             {stats && stats.bookingCount > 0 && (
               <div className="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 animate-fade-in" style={{ animationDelay: '380ms' }}>
                 <div className="flex justify-between items-center mb-2">
@@ -1130,23 +1058,17 @@ export function SeasonFund() {
                         <div className="flex items-center justify-between mb-1">
                           <div>
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Member Contributions</span>
-                            {overviewStats.totalMembersCount > 0 && (
+                            {overviewStats.membersPaidCount > 0 && (
                               <span className="ml-2 text-xs text-gray-400">
-                                {overviewStats.membersPaidCount}/{overviewStats.totalMembersCount} members paid
+                                {overviewStats.membersPaidCount} members paid
                               </span>
                             )}
                           </div>
                           <span className="text-sm font-bold text-green-600 ml-2">{formatCurrency(overviewStats.memberIncome)}</span>
                         </div>
                         <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
-                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${overviewStats.memberTarget > 0 ? Math.min((overviewStats.memberIncome / overviewStats.memberTarget) * 100, 100) : 100}%` }} />
+                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: '100%' }} />
                         </div>
-                        {overviewStats.memberTarget > 0 && (
-                          <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
-                            <span>Target: {formatCurrency(overviewStats.memberTarget)}</span>
-                            <span>{Math.round((overviewStats.memberIncome / overviewStats.memberTarget) * 100)}% collected</span>
-                          </div>
-                        )}
                       </div>
                     </div>
 
@@ -1192,14 +1114,6 @@ export function SeasonFund() {
                     </div>
                   </div>
 
-                  {overviewStats.memberOutstanding > 0 && (
-                    <div className="mt-4 flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
-                      <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                      <p className="text-xs text-amber-700 dark:text-amber-400">
-                        <strong>{formatCurrency(overviewStats.memberOutstanding)}</strong> still outstanding from member contributions
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
@@ -1304,11 +1218,6 @@ export function SeasonFund() {
                       <p className={`text-sm font-semibold ${overviewStats.netBalance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                         {overviewStats.netBalance >= 0 ? '🟢 Surplus' : '🔴 Deficit'}
                       </p>
-                      {overviewStats.netBalance < 0 && overviewStats.totalMembersCount > 0 && (
-                        <p className="text-xs text-red-500 mt-0.5">
-                          ≈ {formatCurrency(Math.ceil(Math.abs(overviewStats.netBalance) / overviewStats.totalMembersCount))} per member still needed
-                        </p>
-                      )}
                       {overviewStats.netBalance >= 0 && (
                         <p className="text-xs text-green-600 mt-0.5">Season is fully funded ✓</p>
                       )}
@@ -1350,7 +1259,7 @@ export function SeasonFund() {
                       { label: 'Total Sessions', value: overviewStats.totalSessions, sub: `${selectedSeason?.name}`, color: 'text-gray-900 dark:text-white' },
                       { label: 'Ground Paid', value: `${overviewStats.paidSessions}/${overviewStats.totalSessions}`, sub: `${overviewStats.totalSessions - overviewStats.paidSessions} pending`, color: overviewStats.paidSessions === overviewStats.totalSessions ? 'text-green-600' : 'text-amber-600' },
                       { label: 'Opponent Matches', value: overviewStats.matchesVsOpponent, sub: `${formatCurrency(overviewStats.opponentIncome)} saved`, color: 'text-blue-600' },
-                      { label: 'Members Enrolled', value: `${overviewStats.membersPaidCount}/${overviewStats.totalMembersCount}`, sub: 'at least 1 payment', color: 'text-primary-600' },
+                      { label: 'Members Paid', value: overviewStats.membersPaidCount, sub: 'at least 1 payment', color: 'text-primary-600' },
                     ].map(item => (
                       <div key={item.label} className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                         <p className="text-xs text-gray-400 mb-1">{item.label}</p>
@@ -1374,55 +1283,25 @@ export function SeasonFund() {
                   <Button size="sm" onClick={() => { setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' }); setShowPaymentModal(true); }}>
                     <Plus className="w-3.5 h-3.5 mr-1" /> Record Payment
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={() => { setSelectedMemberIds([]); setTargetAmount(''); setShowTargetModal(true); }}>
-                    <Target className="w-3.5 h-3.5 mr-1" /> Set Targets
-                  </Button>
                 </div>
               )}
 
-              {memberFundStatuses.length === 0 ? (
+              {allContributors.length === 0 ? (
                 <Card>
                   <CardContent className="text-center py-8">
                     <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-500 dark:text-gray-400">No member targets set</p>
-                    {isAdmin && <p className="text-xs text-gray-400 mt-1">Click "Set Targets" to assign advance payment amounts</p>}
+                    <p className="text-gray-500 dark:text-gray-400">No contributions recorded yet</p>
+                    {isAdmin && <p className="text-xs text-gray-400 mt-1">Click "Record Payment" to add a member's advance contribution</p>}
                   </CardContent>
                 </Card>
               ) : (
                 <>
-                  {/* ── Hero collection bar ─────────────────────────────── */}
-                  {overviewStats && (
+                  {/* ── Simple collection summary ─────────────────────────── */}
+                  {overviewStats && overviewStats.memberIncome > 0 && (
                     <div className="rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 p-5 text-white shadow-lg">
-                      <div className="flex items-end justify-between mb-3">
-                        <div>
-                          <p className="text-xs font-medium opacity-70 mb-1">Total Member Collection</p>
-                          <p className="text-3xl font-black tracking-tight">{formatCurrency(overviewStats.memberIncome)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs opacity-70 mb-1">Target</p>
-                          <p className="text-lg font-bold">{formatCurrency(overviewStats.memberTarget)}</p>
-                        </div>
-                      </div>
-                      <div className="w-full bg-white/20 rounded-full h-3 mb-2">
-                        <div
-                          className="bg-white h-3 rounded-full transition-all duration-700 shadow"
-                          style={{ width: `${overviewStats.memberTarget > 0 ? Math.min((overviewStats.memberIncome / overviewStats.memberTarget) * 100, 100) : 100}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-xs opacity-80">
-                        <span>{overviewStats.membersPaidCount} of {overviewStats.totalMembersCount} members contributed</span>
-                        <span className="font-bold text-sm">
-                          {overviewStats.memberTarget > 0
-                            ? `${Math.round((overviewStats.memberIncome / overviewStats.memberTarget) * 100)}%`
-                            : '—'}
-                        </span>
-                      </div>
-                      {overviewStats.memberOutstanding > 0 && (
-                        <div className="mt-3 flex items-center gap-1.5 bg-white/10 rounded-xl px-3 py-2 text-xs">
-                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span>{formatCurrency(overviewStats.memberOutstanding)} still outstanding</span>
-                        </div>
-                      )}
+                      <p className="text-xs font-medium opacity-70 mb-1">Total Advance Collected</p>
+                      <p className="text-3xl font-black tracking-tight">{formatCurrency(overviewStats.memberIncome)}</p>
+                      <p className="text-xs opacity-70 mt-2">{allContributors.length} member{allContributors.length !== 1 ? 's' : ''} contributed</p>
                     </div>
                   )}
 
@@ -1442,10 +1321,9 @@ export function SeasonFund() {
 
                   {/* ── Contribution Wall ───────────────────────────────── */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {contributionsSorted.map((m, idx) => {
+                    {allContributors.map((m, idx) => {
                       const tier  = getContributorTier(m.paid);
                       const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
-                      const pct   = m.target > 0 ? Math.min((m.paid / m.target) * 100, 100) : 100;
                       const monthly = getMemberMonthlyBreakdown(m.member_id);
                       const paymentCount = payments.filter(p => p.member_id === m.member_id).length;
                       const isExpanded = expandedMemberId === m.member_id;
@@ -1487,26 +1365,12 @@ export function SeasonFund() {
                             {tier.icon} {tier.label}
                           </div>
 
-                          {/* Mini progress bar */}
-                          {m.target > 0 && (
-                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mb-1">
-                              <div
-                                className={`h-1.5 rounded-full transition-all duration-700 ${pct >= 100 ? 'bg-green-500' : pct > 60 ? 'bg-amber-500' : 'bg-red-400'}`}
-                                style={{ width: `${pct}%` }}
-                              />
+                          {/* Payment count */}
+                          {paymentCount > 0 && (
+                            <div className="flex justify-center text-xs text-gray-400">
+                              <span className="bg-gray-100 dark:bg-gray-700 rounded-full px-1.5 py-0.5 text-gray-500">{paymentCount} payment{paymentCount !== 1 ? 's' : ''}</span>
                             </div>
                           )}
-
-                          {/* Status line */}
-                          <div className="flex items-center justify-between text-xs text-gray-400">
-                            {m.outstanding <= 0
-                              ? <span className="flex items-center gap-0.5 text-green-600 font-medium"><CheckCircle className="w-3 h-3" /> Fully paid</span>
-                              : <span className="text-red-500">{formatCurrency(m.outstanding)} due</span>
-                            }
-                            {paymentCount > 1 && (
-                              <span className="bg-gray-100 dark:bg-gray-700 rounded-full px-1.5 py-0.5 text-gray-500">{paymentCount}×</span>
-                            )}
-                          </div>
 
                           {/* Expanded: monthly breakdown */}
                           {isExpanded && monthly.length > 0 && (
@@ -1537,33 +1401,6 @@ export function SeasonFund() {
                     })}
                   </div>
 
-                  {/* ── Members who haven't paid yet (admin only) ───────── */}
-                  {isAdmin && memberFundStatuses.filter(m => m.paid === 0).length > 0 && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                          Not Yet Contributed ({memberFundStatuses.filter(m => m.paid === 0).length})
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {memberFundStatuses.filter(m => m.paid === 0).map(m => (
-                            <button
-                              key={m.member_id}
-                              onClick={() => { setPaymentForm(p => ({ ...p, member_id: m.member_id })); setShowPaymentModal(true); }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-xs text-gray-500 hover:border-primary-400 hover:text-primary-600 transition"
-                            >
-                              {m.member?.avatar_url
-                                ? <img src={m.member.avatar_url} className="w-4 h-4 rounded-full object-cover" alt="" />
-                                : <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs">{m.member?.name?.[0]}</div>
-                              }
-                              {m.member?.name?.split(' ')[0]}
-                              {m.target > 0 && <span className="text-gray-400">· {formatCurrency(m.target)}</span>}
-                              <Plus className="w-3 h-3 ml-0.5" />
-                            </button>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
                 </>
               )}
 
@@ -1784,82 +1621,10 @@ export function SeasonFund() {
           <Select label="Payment Method" value={paymentForm.payment_method} onChange={(e) => setPaymentForm(f => ({ ...f, payment_method: e.target.value as FundPaymentMethod }))} options={[{ value: 'cash', label: 'Cash' }, { value: 'online', label: 'Online' }, { value: 'bank_transfer', label: 'Bank Transfer' }, { value: 'other', label: 'Other' }]} />
           <Input label="Description" placeholder="e.g. Oct-Nov advance" value={paymentForm.description} onChange={(e) => setPaymentForm(f => ({ ...f, description: e.target.value }))} />
 
-          {/* Show member status */}
-          {paymentForm.member_id && selectedSeasonId && (() => {
-            const status = getMemberFundStatus(selectedSeasonId, paymentForm.member_id);
-            if (status.target > 0) {
-              return (
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-500">Target: {formatCurrency(status.target)}</span>
-                    <span className="text-green-600">Paid: {formatCurrency(status.paid)}</span>
-                    <span className="text-red-600">Due: {formatCurrency(Math.max(0, status.outstanding))}</span>
-                  </div>
-                  {renderProgressBar(status.paid, status.target, status.paid >= status.target ? 'bg-green-500' : 'bg-amber-500')}
-                </div>
-              );
-            }
-            return null;
-          })()}
-
           <div className="flex gap-3">
             <Button variant="secondary" onClick={() => setShowPaymentModal(false)} className="flex-1" disabled={isSubmitting}>Cancel</Button>
             <Button onClick={handleAddPayment} className="flex-1" disabled={isSubmitting || !paymentForm.member_id || !paymentForm.amount || Number(paymentForm.amount) <= 0}>
               {isSubmitting ? 'Saving...' : 'Record Payment'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Set Targets Modal */}
-      <Modal isOpen={showTargetModal} onClose={() => setShowTargetModal(false)} title="Set Member Targets" size="lg">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Select label="Tier" value={targetTier} onChange={(e) => setTargetTier(e.target.value as MemberTier)} options={[{ value: 'regular', label: 'Regular' }, { value: 'occasional', label: 'Occasional' }, { value: 'other', label: 'Other' }]} />
-            <Input type="number" label="Target Amount (₹)" placeholder="0" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Members</label>
-              <div className="flex gap-2">
-                <button type="button" className="text-xs text-primary-500 hover:text-primary-600" onClick={() => {
-                  const existingIds = new Set(selectedSeason?.targets?.map(t => t.member_id) || []);
-                  setSelectedMemberIds(members.filter(m => m.status === 'active' && !existingIds.has(m.id)).map(m => m.id));
-                }}>Select All New</button>
-                <button type="button" className="text-xs text-gray-400 hover:text-gray-500" onClick={() => setSelectedMemberIds([])}>Clear</button>
-              </div>
-            </div>
-            <div className="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-2 space-y-1">
-              {members.filter(m => m.status === 'active').map(member => {
-                const hasTarget = selectedSeason?.targets?.some(t => t.member_id === member.id);
-                const isSelected = selectedMemberIds.includes(member.id);
-                return (
-                  <label key={member.id} className={`flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
-                    <input type="checkbox" checked={isSelected} onChange={(e) => {
-                      if (e.target.checked) setSelectedMemberIds(prev => [...prev, member.id]);
-                      else setSelectedMemberIds(prev => prev.filter(id => id !== member.id));
-                    }} className="rounded border-gray-300" />
-                    <div className="flex items-center gap-2 flex-1">
-                      {member.avatar_url ? (
-                        <img src={member.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                          <span className="text-xs">{member.name[0]}</span>
-                        </div>
-                      )}
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{member.name}</span>
-                    </div>
-                    {hasTarget && <Badge variant="info" size="sm">Has target</Badge>}
-                  </label>
-                );
-              })}
-            </div>
-            <p className="text-xs text-gray-400 mt-1">{selectedMemberIds.length} selected</p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => setShowTargetModal(false)} className="flex-1" disabled={isSubmitting}>Cancel</Button>
-            <Button onClick={handleSetTargets} className="flex-1" disabled={isSubmitting || selectedMemberIds.length === 0 || !targetAmount}>
-              {isSubmitting ? 'Saving...' : `Set for ${selectedMemberIds.length} Members`}
             </Button>
           </div>
         </div>

@@ -169,8 +169,7 @@ export function BookMatch() {
           .select('result')
           .eq('match_type', 'external')
           .in('result', ['won','lost','draw'])
-          .order('date', { ascending: false })
-          .limit(20);
+          .order('date', { ascending: false });
 
         if (matches) {
           setSccRecord({
@@ -406,28 +405,50 @@ export function BookMatch() {
             </div>
 
             {/* ── Premium Ground details card ──────────────────────────── */}
-            {(ground.image_url || ground.address || ground.facilities) && (
+            {((ground.image_urls?.length || ground.image_url) || ground.address || ground.facilities) && (
               <div className="mb-6 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                {ground.image_url && (
-                  <div className="relative">
-                    <img
-                      src={ground.image_url}
-                      alt={ground.name}
-                      className="w-full h-44 sm:h-52 object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
-                    <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
-                      <MapPin className="w-3 h-3 text-primary-600" />
-                      <span className="text-[11px] font-bold text-gray-900">Home Ground</span>
+                {/* Photo gallery — up to 6 photos in a horizontal scroll strip */}
+                {(ground.image_urls?.length > 0 || ground.image_url) && (() => {
+                  const photos = ground.image_urls?.length > 0 ? ground.image_urls : [ground.image_url];
+                  const main = photos[0];
+                  return (
+                    <div>
+                      {/* Main hero photo */}
+                      <div className="relative">
+                        <img src={main} alt={ground.name} className="w-full h-44 sm:h-52 object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+                        <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
+                          <MapPin className="w-3 h-3 text-primary-600" />
+                          <span className="text-[11px] font-bold text-gray-900">Home Ground</span>
+                        </div>
+                        <div className="absolute bottom-3 left-4 right-4">
+                          <h3 className="text-white font-bold text-lg drop-shadow-md">{ground.name || 'SCC Ground'}</h3>
+                          {ground.address && <p className="text-white/90 text-xs mt-0.5 drop-shadow-md line-clamp-1">{ground.address}</p>}
+                        </div>
+                        {photos.length > 1 && (
+                          <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] font-semibold text-white">
+                            1 / {photos.length}
+                          </div>
+                        )}
+                      </div>
+                      {/* Thumbnail strip for additional photos */}
+                      {photos.length > 1 && (
+                        <div className="flex gap-1.5 px-3 py-2 bg-gray-50 border-b border-gray-100 overflow-x-auto scrollbar-hide">
+                          {photos.slice(1).map((url, i) => (
+                            <img
+                              key={i}
+                              src={url}
+                              alt={`Ground ${i + 2}`}
+                              className="h-14 w-20 object-cover rounded-lg flex-shrink-0 border border-gray-200"
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="absolute bottom-3 left-4 right-4">
-                      <h3 className="text-white font-bold text-lg drop-shadow-md">{ground.name || 'SCC Ground'}</h3>
-                      {ground.address && <p className="text-white/90 text-xs mt-0.5 drop-shadow-md line-clamp-1">{ground.address}</p>}
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
                 <div className="p-4 sm:p-5 space-y-3">
-                  {!ground.image_url && (
+                  {!ground.image_urls?.length && !ground.image_url && (
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="font-semibold text-gray-900 flex items-center gap-1.5">
