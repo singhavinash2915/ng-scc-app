@@ -758,120 +758,171 @@ export function SeasonFund() {
       <Header title="Ground Booking" subtitle={`${GROUND_NAME} — ${TIME_SLOT}`} />
 
       {/* Season Selector + Add New */}
-      <div className="flex items-center gap-3 mb-4">
-        {seasons.length > 1 && (
-          <Select
-            value={selectedSeasonId}
-            onChange={(e) => { setSelectedSeasonId(e.target.value); setActiveTab('bookings'); }}
-            className="!w-auto min-w-[200px]"
-            options={seasons.map(s => ({ value: s.id, label: `${s.name}${s.status === 'active' ? ' (Active)' : ''}` }))}
-          />
-        )}
-        {isAdmin && (
-          <Button size="sm" variant="secondary" onClick={() => {
-            setEditingSeason(null);
-            const preset = SEASON_PRESETS['oct-may'];
-            setSelectedPreset('oct-may');
-            setSeasonForm({ name: preset.name, start_date: preset.start_date, end_date: preset.end_date, total_budget: '', status: 'active', notes: '', days: [...preset.days], weekday_cost: preset.weekday_cost, weekend_cost: preset.weekend_cost, sponsor_income: 0 });
-            setShowSeasonModal(true);
-          }}>
-            <Plus className="w-3.5 h-3.5 mr-1" /> New Season
-          </Button>
-        )}
-      </div>
+      {(seasons.length > 1 || isAdmin) && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {seasons.length > 1 && (
+            <Select
+              value={selectedSeasonId}
+              onChange={(e) => { setSelectedSeasonId(e.target.value); setActiveTab('bookings'); }}
+              className="!w-auto min-w-[200px]"
+              options={seasons.map(s => ({ value: s.id, label: `${s.name}${s.status === 'active' ? ' (Active)' : ''}` }))}
+            />
+          )}
+          {isAdmin && (
+            <Button size="sm" variant="secondary" onClick={() => {
+              setEditingSeason(null);
+              const preset = SEASON_PRESETS['oct-may'];
+              setSelectedPreset('oct-may');
+              setSeasonForm({ name: preset.name, start_date: preset.start_date, end_date: preset.end_date, total_budget: '', status: 'active', notes: '', days: [...preset.days], weekday_cost: preset.weekday_cost, weekend_cost: preset.weekend_cost, sponsor_income: 0 });
+              setShowSeasonModal(true);
+            }}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> New Season
+            </Button>
+          )}
+        </div>
+      )}
 
       {selectedSeason && (
-        <div className="space-y-6">
+        <div className="space-y-5">
 
-          {/* ===== STATS CARDS ===== */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <Card animate delay={0}>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Landmark className="w-3.5 h-3.5 text-orange-500" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Ground Cost</p>
+          {/* ═════ PREMIUM SEASON HERO BANNER ═════════════════════════════════ */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 p-5 sm:p-6 shadow-xl">
+            {/* Decorative blurs */}
+            <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-emerald-400/20 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-teal-300/10 blur-3xl pointer-events-none" />
+            <div className="absolute top-3 right-3 text-6xl opacity-[0.06] select-none pointer-events-none">🏏</div>
+
+            <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-2.5 py-1 mb-2.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${selectedSeason.status === 'active' ? 'bg-emerald-300 animate-pulse' : 'bg-amber-300'}`} />
+                  <span className="text-[10px] font-bold text-white tracking-wider uppercase">
+                    {selectedSeason.status === 'active' ? 'Active Season' : selectedSeason.status === 'upcoming' ? 'Upcoming' : 'Completed'}
+                  </span>
                 </div>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(stats?.totalSpent || 0)}</p>
-              </CardContent>
-            </Card>
-            <Card animate delay={1}>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Handshake className="w-3.5 h-3.5 text-blue-500" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Opponent</p>
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">{selectedSeason.name}</h2>
+                <p className="text-emerald-50/85 text-xs sm:text-sm mt-1 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {new Date(selectedSeason.start_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  <span className="opacity-60">→</span>
+                  {new Date(selectedSeason.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              </div>
+
+              {/* Health indicator */}
+              {stats && stats.totalTarget > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
+                      <circle
+                        cx="18" cy="18" r="15" fill="none" stroke="white" strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeDasharray={`${Math.min((stats.totalCollected / stats.totalTarget) * 94.25, 94.25)} 94.25`}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-white font-black text-sm sm:text-base">
+                        {Math.round((stats.totalCollected / stats.totalTarget) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-white">
+                    <p className="text-[10px] uppercase tracking-wider opacity-70 font-semibold">Collected</p>
+                    <p className="text-lg sm:text-xl font-black">{formatCurrency(stats.totalCollected)}</p>
+                    <p className="text-[10px] opacity-70">of {formatCurrency(stats.totalTarget)} target</p>
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCurrency(stats?.totalOpponentCollection || 0)}</p>
-              </CardContent>
-            </Card>
-            <Card animate delay={2}>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Target className="w-3.5 h-3.5 text-purple-500" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Net Cost</p>
-                </div>
-                <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{formatCurrency(stats?.netCost || 0)}</p>
-              </CardContent>
-            </Card>
-            <Card animate delay={3}>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-green-500" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Collected</p>
-                </div>
-                <p className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(stats?.totalCollected || 0)}</p>
-              </CardContent>
-            </Card>
-            <Card animate delay={4}>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <IndianRupee className="w-3.5 h-3.5 text-red-500" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Outstanding</p>
-                </div>
-                <p className="text-lg font-bold text-red-600 dark:text-red-400">{formatCurrency(Math.max(0, stats?.outstanding || 0))}</p>
-              </CardContent>
-            </Card>
+              )}
+            </div>
           </div>
 
-          {/* Progress bars */}
+          {/* ═════ PREMIUM STATS CARDS ════════════════════════════════════════ */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3">
+            {[
+              { icon: Landmark,    label: 'Ground Cost',  value: stats?.totalSpent || 0,              accent: 'orange', text: 'text-orange-600 dark:text-orange-400',  bgIcon: 'bg-orange-100 dark:bg-orange-900/30',  iconColor: 'text-orange-500' },
+              { icon: Handshake,   label: 'Opponent',     value: stats?.totalOpponentCollection || 0, accent: 'blue',   text: 'text-blue-600 dark:text-blue-400',      bgIcon: 'bg-blue-100 dark:bg-blue-900/30',      iconColor: 'text-blue-500' },
+              { icon: Target,      label: 'Net Cost',     value: stats?.netCost || 0,                 accent: 'purple', text: 'text-purple-600 dark:text-purple-400',  bgIcon: 'bg-purple-100 dark:bg-purple-900/30',  iconColor: 'text-purple-500' },
+              { icon: TrendingUp,  label: 'Collected',    value: stats?.totalCollected || 0,          accent: 'green',  text: 'text-green-600 dark:text-green-400',    bgIcon: 'bg-green-100 dark:bg-green-900/30',    iconColor: 'text-green-500' },
+              { icon: IndianRupee, label: 'Outstanding',  value: Math.max(0, stats?.outstanding || 0),accent: 'red',    text: 'text-red-600 dark:text-red-400',        bgIcon: 'bg-red-100 dark:bg-red-900/30',        iconColor: 'text-red-500' },
+            ].map((s, idx) => {
+              const Icon = s.icon;
+              return (
+                <div
+                  key={s.label}
+                  className="group relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-3 sm:p-4 hover:shadow-md hover:-translate-y-0.5 transition-all animate-fade-in"
+                  style={{ animationDelay: `${idx * 60}ms` }}
+                >
+                  {/* Corner gradient */}
+                  <div className={`absolute top-0 right-0 w-16 h-16 rounded-full -translate-y-6 translate-x-6 opacity-30 ${s.bgIcon} blur-xl`} />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center ${s.bgIcon}`}>
+                        <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${s.iconColor}`} />
+                      </div>
+                    </div>
+                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">{s.label}</p>
+                    <p className={`text-base sm:text-lg font-black mt-0.5 ${s.text}`}>{formatCurrency(s.value)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ═════ PROGRESS BARS ══════════════════════════════════════════════ */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {stats && stats.totalTarget > 0 && (
-              <Card animate delay={5}>
-                <CardContent className="p-3">
-                  <div className="flex justify-between items-center mb-1.5">
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Member Collection</p>
-                    <p className="text-xs text-gray-500">{formatCurrency(stats.totalCollected)} / {formatCurrency(stats.totalTarget)} ({Math.round((stats.totalCollected / stats.totalTarget) * 100)}%)</p>
+              <div className="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 animate-fade-in" style={{ animationDelay: '320ms' }}>
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Member Collection</p>
                   </div>
-                  {renderProgressBar(stats.totalCollected, stats.totalTarget, 'bg-green-500')}
-                </CardContent>
-              </Card>
+                  <p className="text-xs font-bold text-green-600 dark:text-green-400">{Math.round((stats.totalCollected / stats.totalTarget) * 100)}%</p>
+                </div>
+                <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-green-500 to-emerald-400 h-2.5 rounded-full transition-all duration-700 shadow-sm"
+                    style={{ width: `${Math.min((stats.totalCollected / stats.totalTarget) * 100, 100)}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-gray-500 mt-1.5">{formatCurrency(stats.totalCollected)} of {formatCurrency(stats.totalTarget)}</p>
+              </div>
             )}
             {stats && stats.bookingCount > 0 && (
-              <Card animate delay={6}>
-                <CardContent className="p-3">
-                  <div className="flex justify-between items-center mb-1.5">
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Ground Owner Paid</p>
-                    <p className="text-xs text-gray-500">{formatCurrency(stats.groundOwnerPaid)} / {formatCurrency(stats.totalSpent)} ({stats.paidBookingCount}/{stats.bookingCount})</p>
+              <div className="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 animate-fade-in" style={{ animationDelay: '380ms' }}>
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-orange-500" />
+                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Ground Owner Paid</p>
                   </div>
-                  {renderProgressBar(stats.groundOwnerPaid, stats.totalSpent, 'bg-orange-500')}
-                </CardContent>
-              </Card>
+                  <p className="text-xs font-bold text-orange-600 dark:text-orange-400">{stats.paidBookingCount}/{stats.bookingCount}</p>
+                </div>
+                <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-orange-500 to-amber-400 h-2.5 rounded-full transition-all duration-700 shadow-sm"
+                    style={{ width: `${stats.totalSpent > 0 ? Math.min((stats.groundOwnerPaid / stats.totalSpent) * 100, 100) : 0}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-gray-500 mt-1.5">{formatCurrency(stats.groundOwnerPaid)} of {formatCurrency(stats.totalSpent)}</p>
+              </div>
             )}
           </div>
 
-          {/* ===== TABS ===== */}
-          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          {/* ═════ PREMIUM TABS ═══════════════════════════════════════════════ */}
+          <div className="flex gap-1 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/70 rounded-2xl p-1 border border-gray-200 dark:border-gray-700">
             {tabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 flex-1 justify-center px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 flex-1 justify-center px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   activeTab === tab.key
-                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                    ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-md'
                     : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
+                <tab.icon className={`w-4 h-4 ${activeTab === tab.key ? 'text-primary-500' : ''}`} />
+                <span className="truncate">{tab.label}</span>
               </button>
             ))}
           </div>

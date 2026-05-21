@@ -301,19 +301,19 @@ export function BookMatch() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50/30">
       {/* Sticky header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+      <header className="bg-white/95 backdrop-blur-md border-b border-gray-200/70 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <img src="/scc-logo.jpg" alt="SCC" className="w-10 h-10 rounded-xl object-cover shadow" />
+            <img src="/scc-logo.jpg" alt="SCC" className="w-10 h-10 rounded-xl object-cover shadow ring-2 ring-primary-100" />
             <div>
               <h1 className="font-bold text-gray-900 text-base leading-tight">Sangria Cricket Club</h1>
               <p className="text-xs text-primary-600 font-medium">Book a Match · Season 2026–27</p>
             </div>
           </div>
           {sccRecord && winRate !== null && (
-            <div className="hidden sm:flex items-center gap-1.5 bg-primary-50 border border-primary-200 rounded-full px-3 py-1">
+            <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-primary-50 to-emerald-50 border border-primary-200 rounded-full px-3 py-1 shadow-sm">
               <Trophy className="w-3.5 h-3.5 text-primary-600" />
               <span className="text-xs font-semibold text-primary-700">
                 {sccRecord.wins}W · {sccRecord.losses}L · {winRate}% win rate
@@ -323,129 +323,205 @@ export function BookMatch() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
 
         {/* ══ CALENDAR PAGE TRUST SECTION ══════════════════════════════════ */}
         {step === 'calendar' && (
           <>
-            {/* Hero */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">Schedule a Match with SCC</h2>
-              <p className="text-gray-500 text-sm mb-5">
-                Pick a date, provide your team details, and pay to confirm.
-              </p>
+            {/* ── Premium Hero Card ─────────────────────────────────────── */}
+            <div className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 p-6 sm:p-8 shadow-xl">
+              {/* Decorative blurs */}
+              <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-emerald-400/20 blur-3xl" />
+              <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-teal-300/10 blur-3xl" />
+              {/* Cricket ball pattern */}
+              <div className="absolute top-4 right-4 text-7xl opacity-[0.06] select-none">🏏</div>
 
-              {/* Pricing cards */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <div className="text-xs text-primary-600 font-semibold mb-1">Tue / Thu · Weekday</div>
-                  <div className="text-2xl font-bold text-gray-900">₹3,000</div>
-                  <div className="text-xs text-gray-400 mt-0.5">per match</div>
+              <div className="relative">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1 mb-4">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                  <span className="text-[11px] font-semibold text-white tracking-wide uppercase">Now booking · Season 2026–27</span>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <div className="text-xs text-amber-600 font-semibold mb-1">Saturday · Oct–Feb</div>
-                  <div className="text-2xl font-bold text-gray-900">₹4,000</div>
-                  <div className="text-xs text-gray-400 mt-0.5">per match</div>
-                </div>
-              </div>
 
-              {/* SCC record strip */}
-              {sccRecord && (
-                <div className="bg-white border border-gray-200 rounded-xl p-3 flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-                    <Trophy className="w-4 h-4 text-primary-500" />
-                    SCC This Season:
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="text-green-600 font-bold">{sccRecord.wins} W</span>
-                    <span className="text-red-500 font-bold">{sccRecord.losses} L</span>
-                    {sccRecord.draws > 0 && <span className="text-gray-500 font-bold">{sccRecord.draws} D</span>}
-                    <span className="text-gray-400">·</span>
-                    <span className="text-gray-600">{winRate}% win rate</span>
-                  </div>
-                  {ground.address && (
-                    <div className="flex items-center gap-1 text-xs text-gray-400 ml-auto">
-                      <MapPin className="w-3 h-3" /> {ground.name}
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-1.5 leading-tight">
+                  Play a Match Against SCC
+                </h2>
+                <p className="text-emerald-50/90 text-sm sm:text-[15px] leading-relaxed max-w-md">
+                  Pick a date, share your team details, pay to confirm. Verified by admin within hours.
+                </p>
+
+                {/* Mini stats row */}
+                {sccRecord && (
+                  <div className="flex items-center gap-2 mt-5 flex-wrap">
+                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-1.5">
+                      <Trophy className="w-3.5 h-3.5 text-amber-300" />
+                      <span className="text-xs font-bold text-white">{winRate}% Win Rate</span>
                     </div>
-                  )}
-                </div>
-              )}
+                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-1.5">
+                      <span className="text-xs text-emerald-100">
+                        <span className="font-bold text-white">{sccRecord.wins}W</span> · <span className="font-bold text-white">{sccRecord.losses}L</span>
+                        {sccRecord.draws > 0 && <> · <span className="font-bold text-white">{sccRecord.draws}D</span></>}
+                      </span>
+                    </div>
+                    {ground.name && (
+                      <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-1.5">
+                        <MapPin className="w-3 h-3 text-emerald-200" />
+                        <span className="text-xs text-white font-medium truncate max-w-[140px]">{ground.name}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Ground details card */}
+            {/* ── Premium Pricing cards ────────────────────────────────── */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary-100 to-transparent rounded-full -translate-y-8 translate-x-8" />
+                <div className="relative">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+                    <div className="text-[10px] sm:text-xs text-primary-600 font-bold tracking-wide uppercase">Tue · Thu</div>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl sm:text-3xl font-black text-gray-900">₹3,000</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Weekday match · per slot</div>
+                </div>
+              </div>
+              <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-white border border-amber-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-200/60 to-transparent rounded-full -translate-y-8 translate-x-8" />
+                <div className="absolute top-2 right-2 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5">PEAK</div>
+                <div className="relative">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <div className="text-[10px] sm:text-xs text-amber-700 font-bold tracking-wide uppercase">Saturday</div>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl sm:text-3xl font-black text-gray-900">₹4,000</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Oct–Feb · per slot</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Premium Ground details card ──────────────────────────── */}
             {(ground.image_url || ground.address || ground.facilities) && (
-              <div className="mb-6 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+              <div className="mb-6 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 {ground.image_url && (
-                  <img
-                    src={ground.image_url}
-                    alt={ground.name}
-                    className="w-full h-40 object-cover"
-                  />
+                  <div className="relative">
+                    <img
+                      src={ground.image_url}
+                      alt={ground.name}
+                      className="w-full h-44 sm:h-52 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+                    <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
+                      <MapPin className="w-3 h-3 text-primary-600" />
+                      <span className="text-[11px] font-bold text-gray-900">Home Ground</span>
+                    </div>
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="text-white font-bold text-lg drop-shadow-md">{ground.name || 'SCC Ground'}</h3>
+                      {ground.address && <p className="text-white/90 text-xs mt-0.5 drop-shadow-md line-clamp-1">{ground.address}</p>}
+                    </div>
+                  </div>
                 )}
-                <div className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4 text-primary-500" />
-                        {ground.name || 'SCC Ground'}
-                      </h3>
-                      {ground.address && <p className="text-sm text-gray-500 mt-0.5">{ground.address}</p>}
+                <div className="p-4 sm:p-5 space-y-3">
+                  {!ground.image_url && (
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-1.5">
+                          <MapPin className="w-4 h-4 text-primary-500" />
+                          {ground.name || 'SCC Ground'}
+                        </h3>
+                        {ground.address && <p className="text-sm text-gray-500 mt-0.5">{ground.address}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                      {ground.timing && (
+                        <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium">
+                          🕐 {ground.timing}
+                        </span>
+                      )}
+                      {ground.facilities && ground.facilities.split(',').slice(0, 4).map((f, i) => (
+                        <span key={i} className="flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg px-2.5 py-1.5 font-medium">
+                          <Check className="w-3 h-3" /> {f.trim()}
+                        </span>
+                      ))}
                     </div>
                     {ground.directions_url && (
                       <a
                         href={ground.directions_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 text-xs font-medium text-primary-600 bg-primary-50 border border-primary-200 rounded-lg px-3 py-1.5 hover:bg-primary-100 transition flex items-center gap-1"
+                        className="shrink-0 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-xl px-3 py-2 transition flex items-center gap-1 shadow-sm"
                       >
-                        <MapPin className="w-3 h-3" /> Directions
+                        <MapPin className="w-3.5 h-3.5" /> Get Directions
                       </a>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-3 text-xs text-gray-600">
-                    {ground.timing && (
-                      <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
-                        🕐 {ground.timing}
-                      </span>
-                    )}
-                    {ground.facilities && ground.facilities.split(',').map((f, i) => (
-                      <span key={i} className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
-                        ✓ {f.trim()}
-                      </span>
-                    ))}
-                  </div>
-
                   {ground.notes && (
-                    <p className="text-xs text-gray-500 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                      📋 {ground.notes}
+                    <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-start gap-1.5">
+                      <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
+                      <span>{ground.notes}</span>
                     </p>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Photo strip */}
+            {/* ── Photo strip ──────────────────────────────────────────── */}
             {matchPhotos.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Match Day Photos</h3>
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                    <span className="w-1 h-4 bg-primary-500 rounded-full" />
+                    Match Day Highlights
+                  </h3>
+                  <span className="text-xs text-gray-400">{matchPhotos.length} photos</span>
+                </div>
+                <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
                   {matchPhotos.map((url, i) => (
-                    <img
-                      key={i}
-                      src={url}
-                      alt={`Match photo ${i+1}`}
-                      className="h-28 w-44 object-cover rounded-xl shrink-0 border border-gray-200"
-                    />
+                    <div key={i} className="relative shrink-0 group">
+                      <img
+                        src={url}
+                        alt={`Match photo ${i+1}`}
+                        className="h-28 w-44 object-cover rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-md transition-shadow"
+                      />
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
+            {/* ── Trust badges row ─────────────────────────────────────── */}
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+                <div className="text-lg mb-0.5">⚡</div>
+                <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Instant Reply</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">Within hours</div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+                <div className="text-lg mb-0.5">🔒</div>
+                <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Secure Payment</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">UPI verified</div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+                <div className="text-lg mb-0.5">🏆</div>
+                <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Trusted Team</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">{(sccRecord?.wins ?? 0) + (sccRecord?.losses ?? 0) + (sccRecord?.draws ?? 0)}+ matches</div>
+              </div>
+            </div>
+
             {/* Info note */}
-            <p className="text-xs text-gray-400 flex items-start gap-1 mb-6">
-              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              One slot per team per month. Booking confirmed after SCC admin verifies payment.
+            <p className="text-xs text-gray-500 flex items-start gap-1.5 mb-6 bg-blue-50/50 border border-blue-100 rounded-xl px-3 py-2.5">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-500" />
+              <span>One slot per team per month. Booking confirmed after SCC admin verifies payment.</span>
             </p>
           </>
         )}
@@ -476,55 +552,74 @@ export function BookMatch() {
           </div>
         )}
 
-        {/* ══ STEP 1: Slot Calendar ═════════════════════════════════════════ */}
+        {/* ══ STEP 1: Premium Slot Calendar ═════════════════════════════════ */}
         {step === 'calendar' && (
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm mb-8">
-            {/* Month nav */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-md mb-8">
+            {/* Gradient month nav */}
+            <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-emerald-500 px-5 py-4 flex items-center justify-between">
               <button onClick={()=>setCurrentMonthIndex(i=>Math.max(0,i-1))} disabled={currentMonthIndex===0}
-                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition text-gray-600">
+                className="p-2 rounded-xl bg-white/15 hover:bg-white/25 disabled:opacity-30 transition text-white backdrop-blur-sm">
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h3 className="font-semibold text-gray-900">{monthLabel}</h3>
+              <div className="text-center">
+                <p className="text-[10px] uppercase tracking-widest text-emerald-100/90 font-bold mb-0.5">Select your match date</p>
+                <h3 className="font-black text-white text-lg">{monthLabel || '—'}</h3>
+              </div>
               <button onClick={()=>setCurrentMonthIndex(i=>Math.min(monthKeys.length-1,i+1))} disabled={currentMonthIndex===monthKeys.length-1}
-                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition text-gray-600">
+                className="p-2 rounded-xl bg-white/15 hover:bg-white/25 disabled:opacity-30 transition text-white backdrop-blur-sm">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-5 px-5 py-2.5 border-b border-gray-100 text-xs text-gray-500">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary-500"/>Available</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400"/>Pending</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300"/>Booked</span>
+            <div className="flex items-center gap-5 px-5 py-3 border-b border-gray-100 text-xs text-gray-600 bg-gray-50/50">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary-500 ring-2 ring-primary-100"/>Available</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100"/>Pending</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300 ring-2 ring-gray-100"/>Booked</span>
             </div>
 
             {/* Slots */}
-            <div className="p-5">
+            <div className="p-4 sm:p-5">
               {loading ? (
                 <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-500"/></div>
               ) : currentMonthSlots.length === 0 ? (
-                <p className="text-center text-gray-400 py-10 text-sm">No slots available this month.</p>
+                <div className="text-center py-10">
+                  <div className="text-3xl mb-2 opacity-30">📅</div>
+                  <p className="text-gray-400 text-sm">No slots available this month.</p>
+                </div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                   {currentMonthSlots.map(slot => {
                     const status = slotStatus(slot);
                     const avail  = status === 'available';
+                    const isSat  = slot.day_type === 'saturday';
                     return (
                       <button key={slot.id} disabled={!avail}
                         onClick={()=>{ setSelectedSlot(slot); setStep('form'); }}
-                        className={`rounded-xl p-3 text-left border transition-all ${
-                          avail    ? 'bg-primary-50 border-primary-200 hover:bg-primary-100 hover:border-primary-400 cursor-pointer' :
-                          status==='pending' ? 'bg-amber-50 border-amber-200 cursor-not-allowed opacity-70' :
-                                               'bg-gray-50 border-gray-200 cursor-not-allowed opacity-50'
+                        className={`relative rounded-2xl p-3 text-left border-2 transition-all ${
+                          avail
+                            ? isSat
+                              ? 'bg-gradient-to-br from-amber-50 to-white border-amber-200 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
+                              : 'bg-gradient-to-br from-primary-50 to-white border-primary-200 hover:border-primary-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
+                            : status==='pending' ? 'bg-amber-50/60 border-amber-200 cursor-not-allowed opacity-70' :
+                                                   'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
                         }`}>
-                        <div className={`text-xs font-semibold mb-0.5 ${avail?'text-primary-600':status==='pending'?'text-amber-600':'text-gray-400'}`}>
+                        {avail && isSat && (
+                          <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-amber-700 bg-amber-300 rounded-full px-1.5 py-0.5 shadow-sm">SAT</div>
+                        )}
+                        <div className={`text-[10px] font-bold mb-0.5 tracking-wide uppercase ${
+                          avail
+                            ? isSat ? 'text-amber-600' : 'text-primary-600'
+                            : status==='pending' ? 'text-amber-600' : 'text-gray-400'
+                        }`}>
                           {getDayName(slot.date)}
                         </div>
-                        <div className={`font-bold text-sm ${avail?'text-gray-900':'text-gray-400'}`}>{formatShortDate(slot.date)}</div>
-                        <div className={`text-xs mt-1 ${avail?'text-gray-500':'text-gray-400'}`}>₹{slot.price.toLocaleString('en-IN')}</div>
-                        {status==='pending' && <div className="text-xs text-amber-600 font-medium mt-0.5">Pending</div>}
-                        {(status==='booked'||status==='blocked') && <div className="text-xs text-gray-400 mt-0.5">Booked</div>}
+                        <div className={`font-black text-base ${avail?'text-gray-900':'text-gray-400'}`}>{formatShortDate(slot.date)}</div>
+                        <div className={`text-xs mt-1 font-semibold ${avail?(isSat?'text-amber-700':'text-primary-700'):'text-gray-400'}`}>
+                          ₹{slot.price.toLocaleString('en-IN')}
+                        </div>
+                        {status==='pending' && <div className="text-[10px] text-amber-600 font-bold mt-0.5">Pending</div>}
+                        {(status==='booked'||status==='blocked') && <div className="text-[10px] text-gray-400 font-bold mt-0.5">Booked</div>}
                       </button>
                     );
                   })}
@@ -533,13 +628,14 @@ export function BookMatch() {
             </div>
 
             {/* Month pills */}
-            <div className="flex gap-2 px-5 pb-5 flex-wrap border-t border-gray-100 pt-4">
+            <div className="flex gap-1.5 px-4 pb-4 sm:px-5 sm:pb-5 flex-wrap border-t border-gray-100 pt-3.5">
               {monthKeys.map((key,idx) => {
                 const label = `${MONTHS[parseInt(key.split('-')[1])-1].slice(0,3)} '${key.split('-')[0].slice(2)}`;
                 return (
                   <button key={key} onClick={()=>setCurrentMonthIndex(idx)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition font-medium ${
-                      idx===currentMonthIndex ? 'bg-primary-500 text-white border-primary-500'
+                    className={`text-xs px-3 py-1.5 rounded-full border transition font-semibold ${
+                      idx===currentMonthIndex
+                        ? 'bg-gradient-to-r from-primary-500 to-emerald-500 text-white border-primary-500 shadow-sm'
                         : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 bg-white'
                     }`}>
                     {label}
@@ -550,20 +646,38 @@ export function BookMatch() {
           </div>
         )}
 
-        {/* ══ Testimonials (calendar step) ══════════════════════════════════ */}
+        {/* ══ Premium Testimonials (calendar step) ══════════════════════════ */}
         {step === 'calendar' && testimonials.filter(t => t.active).length > 0 && (
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">What teams say about us</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                <span className="w-1 h-4 bg-amber-400 rounded-full" />
+                Loved by Visiting Teams
+              </h3>
+              <div className="flex items-center gap-0.5 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <Star key={j} className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
+                ))}
+              </div>
+            </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {testimonials.filter(t => t.active).map((t) => (
-                <div key={t.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                  <div className="flex gap-0.5 mb-2">
-                    {Array.from({ length: t.rating }).map((_, j) => (
-                      <Star key={j} className="w-3 h-3 text-amber-400 fill-amber-400" />
-                    ))}
+                <div key={t.id} className="relative bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div className="absolute top-2 left-3 text-4xl text-primary-100 font-serif leading-none select-none pointer-events-none">"</div>
+                  <div className="relative">
+                    <div className="flex gap-0.5 mb-2.5">
+                      {Array.from({ length: t.rating }).map((_, j) => (
+                        <Star key={j} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed mb-3 italic">{t.text}</p>
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">
+                        {t.team.slice(0,2).toUpperCase()}
+                      </div>
+                      <p className="text-xs font-bold text-gray-800">{t.team}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed mb-3">"{t.text}"</p>
-                  <p className="text-xs font-semibold text-gray-800">— {t.team}</p>
                 </div>
               ))}
             </div>
