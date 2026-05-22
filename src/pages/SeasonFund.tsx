@@ -5,7 +5,6 @@ import {
   Trash2,
   Edit3,
   Calendar,
-  IndianRupee,
   CheckCircle,
   XCircle,
   Users,
@@ -21,7 +20,6 @@ import {
   BarChart2,
   Wallet,
   Building2,
-  AlertCircle,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -99,7 +97,7 @@ export function SeasonFund() {
     updateBooking, deleteBooking,
     generateSeasonBookings, addBulkBookings,
     fetchPayments, addPayment, deletePayment,
-    getSeasonStats, getMemberFundStatus,
+    getSeasonStats,
   } = useSeasonFund();
   const { members } = useMembers();
   const { isAdmin } = useAuth();
@@ -223,12 +221,12 @@ export function SeasonFund() {
 
   // Contributors derived directly from payments (no target required)
   const allContributors = useMemo(() => {
-    const map = new Map<string, { member_id: string; paid: number; member?: { id?: string; name?: string; avatar_url?: string } }>();
+    const map = new Map<string, { member_id: string; paid: number; member?: { id?: string; name?: string; avatar_url?: string | null } }>();
     for (const p of payments) {
       const entry = map.get(p.member_id) ?? {
         member_id: p.member_id,
         paid: 0,
-        member: (p.member as { id?: string; name?: string; avatar_url?: string } | undefined)
+        member: (p.member as { id?: string; name?: string; avatar_url?: string | null } | undefined)
           ?? members.find(m => m.id === p.member_id),
       };
       entry.paid += Number(p.amount);

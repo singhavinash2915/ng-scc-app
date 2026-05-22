@@ -21,7 +21,6 @@ import {
   MapPin,
   Star,
   Plus,
-  Image as ImageIcon,
 } from 'lucide-react';
 import { useGroundSettings } from '../hooks/useGroundSettings';
 import { Header } from '../components/layout/Header';
