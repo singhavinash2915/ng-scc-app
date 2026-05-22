@@ -18,7 +18,6 @@ import {
   ListOrdered,
   Award,
   FileText,
-  Gavel,
   Sparkles,
   ArrowLeftRight,
   BookOpen,
