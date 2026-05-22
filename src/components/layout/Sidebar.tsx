@@ -48,7 +48,7 @@ const publicNavItems = [
 const adminNavItems = [
   { to: '/match-day-tools', icon: Megaphone, label: 'Match Day Tools' },
   // bookings nav shown in DEV only — handled separately below
-  { to: '/auction', icon: Gavel, label: 'Auction' },
+  // Auction hidden from nav (accessible via direct URL /auction)
   { to: '/annual-report', icon: FileText, label: 'Annual Report' },
   { to: '/requests', icon: UserPlus, label: 'Requests', showBadge: true },
   { to: '/settings', icon: Settings, label: 'Settings' },

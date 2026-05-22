@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Gavel, Sparkles, ArrowLeftRight, BookOpen, ExternalLink } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, ArrowLeftRight, BookOpen, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -43,8 +43,8 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     <>
       <div className="fixed inset-0 z-50 lg:hidden">
         <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-        <div className="fixed right-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-800 shadow-xl animate-slideIn">
-          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="fixed right-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-800 shadow-xl animate-slideIn flex flex-col">
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <h2 className="font-semibold text-gray-900 dark:text-white">Menu</h2>
             <div className="flex items-center gap-2">
               <ThemeToggle />
@@ -57,7 +57,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </div>
           </div>
 
-          <div className="p-4 space-y-2">
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {/* Book a match CTA — admin only until the feature goes fully public */}
             {isAdmin && (
               <a
@@ -140,21 +140,6 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 </NavLink>
 
                 <NavLink
-                  to="/auction"
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`
-                  }
-                >
-                  <Gavel className="w-5 h-5" />
-                  <span className="font-medium">Auction</span>
-                </NavLink>
-
-                <NavLink
                   to="/annual-report"
                   onClick={onClose}
                   className={({ isActive }) =>
@@ -208,7 +193,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           </div>
 
           {/* Admin Login/Logout */}
-          <div className="absolute bottom-20 left-0 right-0 px-4">
+          <div className="flex-shrink-0 px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             {isAdmin ? (
               <button
                 onClick={handleLogout}
