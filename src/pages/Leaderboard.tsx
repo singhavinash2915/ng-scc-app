@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Trophy,
   Target,
@@ -121,6 +121,21 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
+// Shows a small arrow + number for rank movement (positive = moved up)
+function RankChangeBadge({ change }: { change: number }) {
+  if (!change) return null;
+  const up = change > 0;
+  return (
+    <span
+      title={up ? `Moved up ${change} place${change > 1 ? 's' : ''}` : `Moved down ${Math.abs(change)} place${Math.abs(change) > 1 ? 's' : ''}`}
+      className={`inline-flex items-center gap-0 text-[10px] font-black leading-none ${up ? 'text-emerald-500' : 'text-red-400'}`}
+    >
+      {up ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      {Math.abs(change)}
+    </span>
+  );
+}
+
 function StatCell({ value, highlight, isTop }: { value: string | number; highlight?: boolean; isTop?: boolean }) {
   const text = String(value);
   if (highlight && isTop) {
@@ -211,6 +226,30 @@ export function Leaderboard() {
   ];
 
   const activeStats = tab === 'overall' ? overallSorted : sorted;
+
+  // ── Rank-change tracking (session-based: compare to previous visit) ────────
+  const [prevRanks, setPrevRanks] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (activeStats.length === 0) return;
+    const lsKey = `scc-lb-ranks-${tab}-2025-26`;
+    const ssKey = `scc-lb-session-${tab}-2025-26`;
+
+    const isNewSession = !sessionStorage.getItem(ssKey);
+    if (isNewSession) {
+      // Load last session's ranks for comparison
+      try {
+        const stored = localStorage.getItem(lsKey);
+        setPrevRanks(stored ? (JSON.parse(stored) as Record<string, number>) : {});
+      } catch { setPrevRanks({}); }
+
+      // Persist current ranks so next session can diff against them
+      const current: Record<string, number> = {};
+      activeStats.forEach((s, i) => { current[s.member_id] = i + 1; });
+      localStorage.setItem(lsKey, JSON.stringify(current));
+      sessionStorage.setItem(ssKey, '1');
+    }
+  }, [activeStats, tab]);
 
   return (
     <div className="space-y-6">
@@ -337,7 +376,7 @@ export function Leaderboard() {
               <p className="text-sm text-gray-400 mt-1">Run the CricHeroes sync script to populate data</p>
             </div>
           ) : tab === 'overall' ? (
-            <OverallTable players={overallSorted} momCounts={momCounts} formByMember={formByMember} />
+            <OverallTable players={overallSorted} momCounts={momCounts} formByMember={formByMember} prevRanks={prevRanks} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -374,7 +413,10 @@ export function Leaderboard() {
                         }`}
                       >
                         <td className="sticky left-0 z-10 bg-white dark:bg-gray-800 px-4 py-3">
-                          <RankBadge rank={idx + 1} />
+                          <div className="flex flex-col items-center gap-0.5">
+                            <RankBadge rank={idx + 1} />
+                            <RankChangeBadge change={(prevRanks[player.member_id] ?? 0) - (idx + 1)} />
+                          </div>
                         </td>
                         <td className="sticky left-10 z-10 bg-white dark:bg-gray-800 px-3 py-3">
                           <div className="flex items-center gap-2">
@@ -428,7 +470,7 @@ export function Leaderboard() {
   );
 }
 
-function OverallTable({ players, momCounts, formByMember }: { players: MemberCricketStats[]; momCounts: Record<string, number>; formByMember: Record<string, FormResult[]> }) {
+function OverallTable({ players, momCounts, formByMember, prevRanks = {} }: { players: MemberCricketStats[]; momCounts: Record<string, number>; formByMember: Record<string, FormResult[]>; prevRanks?: Record<string, number> }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -463,7 +505,12 @@ function OverallTable({ players, momCounts, formByMember }: { players: MemberCri
                   idx === 0 ? 'bg-yellow-50/50 dark:bg-yellow-900/10' : ''
                 }`}
               >
-                <td className="px-4 py-3"><RankBadge rank={idx + 1} /></td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <RankBadge rank={idx + 1} />
+                    <RankChangeBadge change={(prevRanks[player.member_id] ?? 0) - (idx + 1)} />
+                  </div>
+                </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
                     {avatarUrl ? (

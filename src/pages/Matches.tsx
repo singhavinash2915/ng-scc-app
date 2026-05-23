@@ -21,6 +21,9 @@ import {
   Send,
   ClipboardList,
   ImageDown,
+  MessageCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -41,7 +44,153 @@ import { MatchPosterModal } from '../components/MatchPosterModal';
 import { PreMatchPosterModal } from '../components/PreMatchPosterModal';
 import { SquadSelectorModal } from '../components/SquadSelectorModal';
 import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
+import { useReactions, type ReactionEmoji } from '../hooks/useReactions';
+import { useMatchComments } from '../hooks/useMatchComments';
 import type { Match, MatchType, InternalTeam } from '../types';
+
+// ── Emoji reaction bar — one instance per match card ─────────────────────────
+function MatchReactions({ matchId, myMemberId }: { matchId: string; myMemberId: string | null }) {
+  const { counts, fetch, toggle } = useReactions('match', matchId, myMemberId);
+  useEffect(() => { fetch(); }, [fetch]);
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      {counts.map(r => (
+        <button
+          key={r.emoji}
+          onClick={() => myMemberId && toggle(r.emoji as ReactionEmoji)}
+          disabled={!myMemberId}
+          title={myMemberId ? (r.reacted ? 'Remove reaction' : 'React') : 'Set your profile to react'}
+          className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm transition-all border
+            ${r.reacted
+              ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-600 scale-105'
+              : 'bg-gray-100 dark:bg-gray-700 border-transparent hover:border-gray-300 dark:hover:border-gray-500'
+            }
+            ${!myMemberId ? 'opacity-50 cursor-default' : 'cursor-pointer hover:scale-105'}
+          `}
+        >
+          <span>{r.emoji}</span>
+          {r.count > 0 && (
+            <span className={`text-[11px] font-bold tabular-nums ${r.reacted ? 'text-amber-700 dark:text-amber-300' : 'text-gray-500 dark:text-gray-400'}`}>
+              {r.count}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Inline comments panel — lazy-loads when opened ───────────────────────────
+function MatchComments({ matchId, myMemberId, myMemberName }: {
+  matchId: string;
+  myMemberId: string | null;
+  myMemberName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const { comments, loading, posting, fetch, post, remove } = useMatchComments();
+  const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    if (open) fetch(matchId);
+  }, [open, matchId, fetch]);
+
+  const handlePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!draft.trim() || !myMemberId) return;
+    await post(matchId, draft, myMemberId);
+    setDraft('');
+  };
+
+  const totalCount = open ? comments.length : 0; // only show count when loaded
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium"
+      >
+        <MessageCircle className="w-3.5 h-3.5" />
+        {open ? (
+          <span className="flex items-center gap-1">
+            Comments {totalCount > 0 && <span className="font-bold text-primary-600 dark:text-primary-400">({totalCount})</span>}
+            <ChevronUp className="w-3 h-3" />
+          </span>
+        ) : (
+          <span className="flex items-center gap-1">
+            Comments <ChevronDown className="w-3 h-3" />
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          {loading ? (
+            <p className="text-xs text-gray-400 animate-pulse pl-1">Loading comments…</p>
+          ) : comments.length === 0 ? (
+            <p className="text-xs text-gray-400 pl-1">No comments yet. Be the first!</p>
+          ) : (
+            <div className="space-y-2">
+              {comments.map(c => (
+                <div key={c.id} className="flex items-start gap-2 group">
+                  {c.member?.avatar_url ? (
+                    <img src={c.member.avatar_url} alt={c.member.name}
+                      className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[11px] font-bold text-primary-600 dark:text-primary-400">
+                        {(c.member?.name || 'A')[0]}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{c.member?.name || 'Member'}</span>
+                      <span className="text-[10px] text-gray-400">
+                        {new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </span>
+                      {c.member_id === myMemberId && (
+                        <button
+                          onClick={() => remove(c.id, myMemberId!)}
+                          className="opacity-0 group-hover:opacity-100 ml-auto text-[10px] text-red-400 hover:text-red-600 transition-all font-medium"
+                        >
+                          delete
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 break-words">{c.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Post box */}
+          {myMemberId ? (
+            <form onSubmit={handlePost} className="flex gap-2">
+              <input
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                placeholder={`Comment as ${myMemberName || 'you'}…`}
+                maxLength={280}
+                className="flex-1 min-w-0 text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <button
+                type="submit"
+                disabled={!draft.trim() || posting}
+                className="px-3 py-1.5 rounded-lg bg-primary-500 text-white text-xs font-bold disabled:opacity-40 hover:bg-primary-600 transition-colors flex items-center gap-1"
+              >
+                <Send className="w-3 h-3" />
+                {posting ? '…' : 'Post'}
+              </button>
+            </form>
+          ) : (
+            <p className="text-xs text-gray-400 italic">Set your profile (tap ⚡ in dashboard) to comment.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Internal team names
 const TEAM_NAMES: Record<InternalTeam, string> = {
@@ -57,6 +206,16 @@ export function Matches() {
   const { uploadPhoto, deletePhoto, getPhotosByMatch } = useMatchPhotos();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
+
+  // My member identity (for reactions + comments)
+  const myMemberId = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('scc-my-profile-id');
+  }, []);
+  const myMemberName = useMemo(() => {
+    if (!myMemberId) return '';
+    return members.find(m => m.id === myMemberId)?.name ?? '';
+  }, [myMemberId, members]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [matchTypeFilter, setMatchTypeFilter] = useState<'all' | 'external' | 'internal'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -701,6 +860,12 @@ export function Matches() {
                         )}
                       </div>
                     )}
+
+                    {/* ── Reactions + Comments ──────────────────────── */}
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60 flex flex-col gap-2">
+                      <MatchReactions matchId={match.id} myMemberId={myMemberId} />
+                      <MatchComments matchId={match.id} myMemberId={myMemberId} myMemberName={myMemberName} />
+                    </div>
                   </div>
 
                   {/* Public "Share Poster" button — visible to ALL users */}

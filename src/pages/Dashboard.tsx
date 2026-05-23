@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Users, Calendar, TrendingUp, Trophy, AlertCircle, ChevronRight,
   IndianRupee, UserPlus, Swords,
-  MessageCircle, Flame, MapPin, Activity, Crown, Zap, Radio,
+  MessageCircle, Flame, MapPin, Activity, Crown, Zap, Radio, Target,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -194,6 +194,25 @@ export function Dashboard() {
   const animatedDhurandarsWins = useAnimatedValue(internalMatchStats.dhurandarsWins, 800);
   const animatedBazigarsWins = useAnimatedValue(internalMatchStats.bazigarsWins, 800);
 
+  // ── Personalisation: identify the "me" member ────────────────────────────
+  const myMemberId = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('scc-my-profile-id');
+  }, []);
+  const myMember = useMemo(() => members.find(m => m.id === myMemberId) ?? null, [members, myMemberId]);
+  const myStats  = useMemo(() => cricketStats.find(s => s.member_id === myMemberId) ?? null, [cricketStats, myMemberId]);
+  const myMoms   = myMemberId ? (momCounts[myMemberId] || 0) : 0;
+
+  // Next milestone hint (career runs steps)
+  const myNextMilestone = useMemo(() => {
+    if (!myStats) return null;
+    const runs = myStats.batting_runs;
+    const steps = [100, 250, 500, 1000, 2000, 5000];
+    const next = steps.find(s => runs < s);
+    if (!next) return null;
+    return { away: next - runs, label: `${next} career runs` };
+  }, [myStats]);
+
   const loading = membersLoading || matchesLoading;
 
   if (loading) {
@@ -221,6 +240,54 @@ export function Dashboard() {
 
         {/* ── RENEWAL REMINDER (only when memberships are expiring) ──── */}
         <RenewalReminderBanner members={members} />
+
+        {/* ── PERSONALIZED BANNER (only when profile is set) ──────────── */}
+        {myMember && (
+          <div className="relative overflow-hidden rounded-2xl px-4 py-3.5"
+               style={{ background: 'linear-gradient(135deg, #0d4f2e 0%, #0c1e38 100%)' }}>
+            <div className="absolute inset-0 rounded-2xl border border-emerald-500/20 pointer-events-none" />
+            {/* subtle shimmer */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite] pointer-events-none" />
+            <div className="flex items-center gap-3 relative">
+              {/* Avatar */}
+              {myMember.avatar_url ? (
+                <img
+                  src={myMember.avatar_url}
+                  alt={myMember.name}
+                  className="w-11 h-11 rounded-full object-cover border-2 border-emerald-400/40 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-emerald-900/60 border-2 border-emerald-400/40 flex items-center justify-center flex-shrink-0">
+                  <span className="text-emerald-300 font-black text-lg">{myMember.name[0]}</span>
+                </div>
+              )}
+              {/* Greeting + stats */}
+              <div className="flex-1 min-w-0">
+                <p className="text-emerald-100 text-sm font-bold leading-tight">
+                  Hey, {myMember.name.split(' ')[0]}! 🏏
+                </p>
+                <p className="text-emerald-400/80 text-[11px] mt-0.5 font-medium">
+                  {myStats?.batting_runs ?? 0} runs · {myStats?.bowling_wickets ?? 0} wkts
+                  {myMoms > 0 && ` · ${myMoms} MOM`}
+                  {' '}<span className="text-gray-500">this season</span>
+                </p>
+                {myNextMilestone && (
+                  <p className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1">
+                    <Target className="w-3 h-3 flex-shrink-0 text-purple-400" />
+                    <span className="text-purple-300 font-semibold">{myNextMilestone.away} more</span>
+                    <span className="text-gray-500">to {myNextMilestone.label}</span>
+                  </p>
+                )}
+              </div>
+              <Link
+                to={`/members/${myMember.id}`}
+                className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold hover:bg-emerald-600/45 transition-colors whitespace-nowrap"
+              >
+                My Profile →
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* ── MATCH LIVE TODAY ─────────────────────── */}
         {liveMatchToday && liveMatchToday.ch_match_id && (
