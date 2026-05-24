@@ -834,6 +834,57 @@ export function Matches() {
                         </span>
                       </div>
                     )}
+
+                    {/* Internal match team lineup split */}
+                    {match.match_type === 'internal' && match.players && match.players.length > 0 && (() => {
+                      const dPlayers = match.players.filter(p => p.team === 'dhurandars');
+                      const bPlayers = match.players.filter(p => p.team === 'bazigars');
+                      const noTeam   = match.players.filter(p => !p.team);
+                      if (dPlayers.length === 0 && bPlayers.length === 0) return null;
+                      return (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          {/* Dhurandars */}
+                          <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-2">
+                            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1.5">
+                              🦁 Dhurandars <span className="font-normal opacity-60">({dPlayers.length})</span>
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {dPlayers.map(p => {
+                                const m = members.find(mb => mb.id === p.member_id);
+                                return m ? (
+                                  <span key={p.member_id} className="text-[11px] text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded-full">
+                                    {m.name.split(' ')[0]}
+                                  </span>
+                                ) : null;
+                              })}
+                            </div>
+                          </div>
+                          {/* Bazigars */}
+                          <div className="rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/50 p-2">
+                            <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">
+                              🐅 Bazigars <span className="font-normal opacity-60">({bPlayers.length})</span>
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {bPlayers.map(p => {
+                                const m = members.find(mb => mb.id === p.member_id);
+                                return m ? (
+                                  <span key={p.member_id} className="text-[11px] text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-1.5 py-0.5 rounded-full">
+                                    {m.name.split(' ')[0]}
+                                  </span>
+                                ) : null;
+                              })}
+                            </div>
+                          </div>
+                          {noTeam.length > 0 && (
+                            <div className="col-span-2">
+                              <p className="text-[10px] text-gray-400">
+                                Unassigned: {noTeam.map(p => members.find(mb => mb.id === p.member_id)?.name?.split(' ')[0]).filter(Boolean).join(', ')}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {/* Poll Summary for upcoming matches with polling enabled */}
                     {match.result === 'upcoming' && match.polling_enabled && (
                       <div className="mt-2 flex items-center gap-2 flex-wrap">

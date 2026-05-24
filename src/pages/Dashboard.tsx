@@ -128,12 +128,29 @@ export function Dashboard() {
   const internalMatchStats = useMemo(() => {
     const int = matches.filter(m => m.match_type === 'internal');
     const completed = int.filter(m => ['won', 'lost', 'draw'].includes(m.result));
-    return {
-      total: completed.length,
-      dhurandarsWins: completed.filter(m => m.winning_team === 'dhurandars').length,
-      bazigarsWins: completed.filter(m => m.winning_team === 'bazigars').length,
-      draws: completed.filter(m => m.result === 'draw').length,
-    };
+    const dhurandarsWins = completed.filter(m => m.winning_team === 'dhurandars').length;
+    const bazigarsWins   = completed.filter(m => m.winning_team === 'bazigars').length;
+    const draws          = completed.filter(m => m.result === 'draw').length;
+
+    // Current streak: count consecutive wins for the same team (newest-first)
+    let streakTeam: string | null = null;
+    let streakCount = 0;
+    for (const m of completed) {
+      if (m.result === 'draw') break;
+      if (!streakTeam) { streakTeam = m.winning_team ?? null; streakCount = 1; }
+      else if (m.winning_team === streakTeam) streakCount++;
+      else break;
+    }
+
+    // Last completed internal match
+    const lastMatch = completed[0] ?? null;
+
+    // Next upcoming internal match
+    const nextInternal = int
+      .filter(m => m.result === 'upcoming')
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] ?? null;
+
+    return { total: completed.length, dhurandarsWins, bazigarsWins, draws, streakTeam, streakCount, lastMatch, nextInternal };
   }, [matches]);
 
   const avgBalance = useMemo(() => {
@@ -739,18 +756,34 @@ export function Dashboard() {
             }} />
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-white/5" />
             <div className="relative p-5 lg:p-6">
-              <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-5 flex items-center gap-1.5">
-                <Swords className="w-3.5 h-3.5" /> Internal Battle · {internalMatchStats.total} matches played
-              </p>
+
+              {/* Header row */}
+              <div className="flex items-center justify-between mb-5">
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+                  <Swords className="w-3.5 h-3.5" /> Internal Rivalry · {internalMatchStats.total} played
+                </p>
+                {/* Streak badge */}
+                {internalMatchStats.streakCount >= 2 && internalMatchStats.streakTeam && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${
+                    internalMatchStats.streakTeam === 'dhurandars'
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                  }`}>
+                    🔥 {internalMatchStats.streakCount}-match streak
+                  </span>
+                )}
+              </div>
+
+              {/* Score row */}
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/40 mb-3">
+                  <div className={`inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/40 mb-3 transition-transform ${internalMatchStats.dhurandarsWins > internalMatchStats.bazigarsWins ? 'scale-110' : ''}`}>
                     <span className="text-3xl lg:text-4xl font-black text-white tabular-nums">{animatedDhurandarsWins}</span>
                   </div>
-                  <h4 className="font-bold text-white text-sm">Dhurandars</h4>
+                  <h4 className="font-bold text-white text-sm">🦁 Dhurandars</h4>
                   <p className="text-blue-300/50 text-xs">wins</p>
                   {internalMatchStats.dhurandarsWins > internalMatchStats.bazigarsWins && (
-                    <p className="text-yellow-400 text-xs mt-1">👑 Leading</p>
+                    <p className="text-yellow-400 text-xs mt-1 font-black">👑 Leading</p>
                   )}
                 </div>
                 <div className="text-center flex-shrink-0 px-2">
@@ -760,18 +793,23 @@ export function Dashboard() {
                   {internalMatchStats.draws > 0 && (
                     <p className="text-amber-400/70 text-[10px] mt-1">{internalMatchStats.draws} draw{internalMatchStats.draws > 1 ? 's' : ''}</p>
                   )}
+                  {internalMatchStats.dhurandarsWins === internalMatchStats.bazigarsWins && (
+                    <p className="text-white/40 text-[10px] mt-1">Tied!</p>
+                  )}
                 </div>
                 <div className="flex-1 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 shadow-lg shadow-purple-500/40 mb-3">
+                  <div className={`inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 shadow-lg shadow-purple-500/40 mb-3 transition-transform ${internalMatchStats.bazigarsWins > internalMatchStats.dhurandarsWins ? 'scale-110' : ''}`}>
                     <span className="text-3xl lg:text-4xl font-black text-white tabular-nums">{animatedBazigarsWins}</span>
                   </div>
-                  <h4 className="font-bold text-white text-sm">Bazigars</h4>
+                  <h4 className="font-bold text-white text-sm">🐅 Bazigars</h4>
                   <p className="text-purple-300/50 text-xs">wins</p>
                   {internalMatchStats.bazigarsWins > internalMatchStats.dhurandarsWins && (
-                    <p className="text-yellow-400 text-xs mt-1">👑 Leading</p>
+                    <p className="text-yellow-400 text-xs mt-1 font-black">👑 Leading</p>
                   )}
                 </div>
               </div>
+
+              {/* Progress bar */}
               <div className="mt-5 h-2 bg-white/10 rounded-full overflow-hidden flex">
                 {internalMatchStats.dhurandarsWins > 0 && (
                   <div className="h-full bg-gradient-to-r from-blue-400 to-blue-500 transition-all duration-1000 rounded-l-full"
@@ -787,8 +825,50 @@ export function Dashboard() {
                 )}
               </div>
               <div className="flex justify-between mt-1.5">
-                <span className="text-blue-400/60 text-[10px] font-medium">Dhurandars</span>
-                <span className="text-purple-400/60 text-[10px] font-medium">Bazigars</span>
+                <span className="text-blue-400/60 text-[10px] font-medium">🦁 Dhurandars</span>
+                {internalMatchStats.draws > 0 && <span className="text-amber-400/60 text-[10px] font-medium">Draws</span>}
+                <span className="text-purple-400/60 text-[10px] font-medium">Bazigars 🐅</span>
+              </div>
+
+              {/* Last match + next match footer */}
+              <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3 flex-wrap">
+                {internalMatchStats.lastMatch && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-white/30 text-[10px] uppercase tracking-wider font-bold">Last:</span>
+                    <span className={`text-[11px] font-bold ${
+                      internalMatchStats.lastMatch.winning_team === 'dhurandars' ? 'text-blue-300' :
+                      internalMatchStats.lastMatch.winning_team === 'bazigars'   ? 'text-purple-300' :
+                      'text-amber-300'
+                    }`}>
+                      {internalMatchStats.lastMatch.winning_team === 'dhurandars' ? '🦁 Dhurandars won' :
+                       internalMatchStats.lastMatch.winning_team === 'bazigars'   ? '🐅 Bazigars won' : 'Draw'}
+                    </span>
+                    {internalMatchStats.lastMatch.our_score && (
+                      <span className="text-white/30 text-[10px]">
+                        · {internalMatchStats.lastMatch.our_score}
+                        {internalMatchStats.lastMatch.opponent_score && ` vs ${internalMatchStats.lastMatch.opponent_score}`}
+                      </span>
+                    )}
+                    <span className="text-white/25 text-[10px]">
+                      {new Date(internalMatchStats.lastMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                )}
+                {internalMatchStats.nextInternal && (
+                  <Link
+                    to="/matches"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-white/70 text-[10px] font-bold hover:bg-white/20 transition-colors"
+                  >
+                    <Calendar className="w-3 h-3" />
+                    Next: {new Date(internalMatchStats.nextInternal.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  </Link>
+                )}
+                <Link
+                  to="/matches"
+                  className="flex items-center gap-1 text-white/30 hover:text-white/60 transition-colors text-[10px] font-bold"
+                >
+                  View all →
+                </Link>
               </div>
             </div>
           </div>

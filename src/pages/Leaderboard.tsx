@@ -415,7 +415,7 @@ export function Leaderboard() {
                         <td className="sticky left-0 z-10 bg-white dark:bg-gray-800 px-4 py-3">
                           <div className="flex flex-col items-center gap-0.5">
                             <RankBadge rank={idx + 1} />
-                            <RankChangeBadge change={(prevRanks[player.member_id] ?? 0) - (idx + 1)} />
+                            <RankChangeBadge change={prevRanks[player.member_id] !== undefined ? prevRanks[player.member_id] - (idx + 1) : 0} />
                           </div>
                         </td>
                         <td className="sticky left-10 z-10 bg-white dark:bg-gray-800 px-3 py-3">
@@ -508,7 +508,7 @@ function OverallTable({ players, momCounts, formByMember, prevRanks = {} }: { pl
                 <td className="px-4 py-3">
                   <div className="flex flex-col items-center gap-0.5">
                     <RankBadge rank={idx + 1} />
-                    <RankChangeBadge change={(prevRanks[player.member_id] ?? 0) - (idx + 1)} />
+                    <RankChangeBadge change={prevRanks[player.member_id] !== undefined ? prevRanks[player.member_id] - (idx + 1) : 0} />
                   </div>
                 </td>
                 <td className="px-3 py-3">
