@@ -280,7 +280,7 @@ export function Dashboard() {
                 )}
               </div>
               <Link
-                to={`/members/${myMember.id}`}
+                to={`/profile/${myMember.id}`}
                 className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold hover:bg-emerald-600/45 transition-colors whitespace-nowrap"
               >
                 My Profile →
