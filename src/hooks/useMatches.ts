@@ -24,7 +24,9 @@ export function useMatches() {
           ),
           man_of_match:members!matches_man_of_match_id_fkey(id, name, avatar_url),
           captain:members!matches_captain_id_fkey(id, name, avatar_url),
-          vice_captain:members!matches_vice_captain_id_fkey(id, name, avatar_url)
+          vice_captain:members!matches_vice_captain_id_fkey(id, name, avatar_url),
+          dhurandars_captain:members!matches_dhurandars_captain_id_fkey(id, name, avatar_url),
+          bazigars_captain:members!matches_bazigars_captain_id_fkey(id, name, avatar_url)
         `)
         .order('date', { ascending: false });
 

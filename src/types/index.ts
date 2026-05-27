@@ -71,11 +71,15 @@ export interface Match {
   ch_match_id?: string | null; // CricHeroes match ID for auto-sync
   captain_id: string | null;
   vice_captain_id: string | null;
+  dhurandars_captain_id?: string | null;
+  bazigars_captain_id?: string | null;
   created_at: string;
   players?: MatchPlayer[];
   man_of_match?: Member;
   captain?: Member;
   vice_captain?: Member;
+  dhurandars_captain?: { id: string; name: string; avatar_url?: string | null } | null;
+  bazigars_captain?: { id: string; name: string; avatar_url?: string | null } | null;
   polls?: MatchPoll[];
 }
 

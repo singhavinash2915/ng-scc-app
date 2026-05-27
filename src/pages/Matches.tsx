@@ -267,6 +267,8 @@ export function Matches() {
     // Leadership
     captain_id: '' as string,
     vice_captain_id: '' as string,
+    dhurandars_captain_id: '' as string,
+    bazigars_captain_id: '' as string,
     // CricHeroes
     ch_match_id: '' as string,
   });
@@ -361,6 +363,8 @@ export function Matches() {
             : null,
           captain_id: formData.captain_id || null,
           vice_captain_id: formData.vice_captain_id || null,
+          dhurandars_captain_id: formData.match_type === 'internal' ? (formData.dhurandars_captain_id || null) : null,
+          bazigars_captain_id: formData.match_type === 'internal' ? (formData.bazigars_captain_id || null) : null,
         },
         selectedPlayers,
         formData.match_type === 'internal' ? playerTeams : undefined
@@ -394,6 +398,8 @@ export function Matches() {
           ch_match_id: formData.ch_match_id.trim() || null,
           captain_id: formData.captain_id || null,
           vice_captain_id: formData.vice_captain_id || null,
+          dhurandars_captain_id: formData.match_type === 'internal' ? (formData.dhurandars_captain_id || null) : null,
+          bazigars_captain_id: formData.match_type === 'internal' ? (formData.bazigars_captain_id || null) : null,
         },
         selectedPlayers
       );
@@ -468,6 +474,8 @@ export function Matches() {
       polling_deadline: '',
       captain_id: '',
       vice_captain_id: '',
+      dhurandars_captain_id: '',
+      bazigars_captain_id: '',
       ch_match_id: '',
     });
     setSelectedPlayers([]);
@@ -569,6 +577,8 @@ export function Matches() {
         : '',
       captain_id: match.captain_id || '',
       vice_captain_id: match.vice_captain_id || '',
+      dhurandars_captain_id: match.dhurandars_captain_id || '',
+      bazigars_captain_id: match.bazigars_captain_id || '',
       ch_match_id: match.ch_match_id || '',
     });
     setSelectedPlayers(match.players?.map(p => p.member_id) || []);
@@ -813,22 +823,38 @@ export function Matches() {
                         <span>₹{match.match_fee}/player</span>
                       </div>
                     </div>
-                    {(match.captain || match.vice_captain) && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {match.captain && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-                            <span className="font-black">🅒</span>
-                            {match.captain.name}
-                          </span>
-                        )}
-                        {match.vice_captain && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                            <span className="font-black">🅥🅒</span>
-                            {match.vice_captain.name}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    {match.match_type === 'internal'
+                      ? (match.dhurandars_captain || match.bazigars_captain) && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {match.dhurandars_captain && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                                🦁 🅒 {match.dhurandars_captain.name}
+                              </span>
+                            )}
+                            {match.bazigars_captain && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                                🐅 🅒 {match.bazigars_captain.name}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      : (match.captain || match.vice_captain) && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {match.captain && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                                <span className="font-black">🅒</span>
+                                {match.captain.name}
+                              </span>
+                            )}
+                            {match.vice_captain && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                                <span className="font-black">🅥🅒</span>
+                                {match.vice_captain.name}
+                              </span>
+                            )}
+                          </div>
+                        )
+                    }
                     {match.our_score && (
                       <div className="mt-2 flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-yellow-500" />
@@ -858,9 +884,10 @@ export function Matches() {
                             <div className="flex flex-wrap gap-1">
                               {dPlayers.map(p => {
                                 const m = members.find(mb => mb.id === p.member_id);
+                                const isCaptain = p.member_id === match.dhurandars_captain_id;
                                 return m ? (
-                                  <span key={p.member_id} className="text-[11px] text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded-full">
-                                    {m.name.split(' ')[0]}
+                                  <span key={p.member_id} className={`text-[11px] px-1.5 py-0.5 rounded-full ${isCaptain ? 'bg-blue-600 text-white font-bold' : 'text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40'}`}>
+                                    {m.name.split(' ')[0]}{isCaptain ? ' 🅒' : ''}
                                   </span>
                                 ) : null;
                               })}
@@ -874,9 +901,10 @@ export function Matches() {
                             <div className="flex flex-wrap gap-1">
                               {bPlayers.map(p => {
                                 const m = members.find(mb => mb.id === p.member_id);
+                                const isCaptain = p.member_id === match.bazigars_captain_id;
                                 return m ? (
-                                  <span key={p.member_id} className="text-[11px] text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-1.5 py-0.5 rounded-full">
-                                    {m.name.split(' ')[0]}
+                                  <span key={p.member_id} className={`text-[11px] px-1.5 py-0.5 rounded-full ${isCaptain ? 'bg-purple-600 text-white font-bold' : 'text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40'}`}>
+                                    {m.name.split(' ')[0]}{isCaptain ? ' 🅒' : ''}
                                   </span>
                                 ) : null;
                               })}
@@ -1415,39 +1443,87 @@ export function Matches() {
             onChange={(e) => setFormData({ ...formData, ch_match_id: e.target.value.trim() })}
           />
 
-          {/* Captain & Vice-captain */}
-          <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
-            <Select
-              label="🅒 Captain"
-              value={formData.captain_id}
-              onChange={(e) => setFormData({ ...formData, captain_id: e.target.value })}
-              options={[
-                { value: '', label: '— Select —' },
-                ...(selectedPlayers.length > 0
-                  ? selectedPlayers.map(pid => {
-                      const m = members.find(mb => mb.id === pid);
-                      return { value: pid, label: m?.name || 'Unknown' };
-                    })
-                  : members.map(m => ({ value: m.id, label: m.name }))
-                ),
-              ]}
-            />
-            <Select
-              label="🅥🅒 Vice-captain"
-              value={formData.vice_captain_id}
-              onChange={(e) => setFormData({ ...formData, vice_captain_id: e.target.value })}
-              options={[
-                { value: '', label: '— Select —' },
-                ...(selectedPlayers.length > 0
-                  ? selectedPlayers.filter(pid => pid !== formData.captain_id).map(pid => {
-                      const m = members.find(mb => mb.id === pid);
-                      return { value: pid, label: m?.name || 'Unknown' };
-                    })
-                  : members.filter(m => m.id !== formData.captain_id).map(m => ({ value: m.id, label: m.name }))
-                ),
-              ]}
-            />
-          </div>
+          {/* Captain — internal matches: per-team; external: single captain/vc */}
+          {formData.match_type === 'internal' ? (
+            <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Team Captains</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Select
+                  label="🦁 Dhurandars Captain"
+                  value={formData.dhurandars_captain_id}
+                  onChange={(e) => setFormData({ ...formData, dhurandars_captain_id: e.target.value })}
+                  options={[
+                    { value: '', label: '— Select —' },
+                    ...(Object.entries(playerTeams)
+                      .filter(([, team]) => team === 'dhurandars')
+                      .map(([pid]) => {
+                        const m = members.find(mb => mb.id === pid);
+                        return { value: pid, label: m?.name || 'Unknown' };
+                      })
+                      .concat(
+                        Object.entries(playerTeams).filter(([, t]) => t === 'dhurandars').length === 0
+                          ? members.map(m => ({ value: m.id, label: m.name }))
+                          : []
+                      )
+                    ),
+                  ]}
+                />
+                <Select
+                  label="🐅 Bazigars Captain"
+                  value={formData.bazigars_captain_id}
+                  onChange={(e) => setFormData({ ...formData, bazigars_captain_id: e.target.value })}
+                  options={[
+                    { value: '', label: '— Select —' },
+                    ...(Object.entries(playerTeams)
+                      .filter(([, team]) => team === 'bazigars')
+                      .map(([pid]) => {
+                        const m = members.find(mb => mb.id === pid);
+                        return { value: pid, label: m?.name || 'Unknown' };
+                      })
+                      .concat(
+                        Object.entries(playerTeams).filter(([, t]) => t === 'bazigars').length === 0
+                          ? members.map(m => ({ value: m.id, label: m.name }))
+                          : []
+                      )
+                    ),
+                  ]}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
+              <Select
+                label="🅒 Captain"
+                value={formData.captain_id}
+                onChange={(e) => setFormData({ ...formData, captain_id: e.target.value })}
+                options={[
+                  { value: '', label: '— Select —' },
+                  ...(selectedPlayers.length > 0
+                    ? selectedPlayers.map(pid => {
+                        const m = members.find(mb => mb.id === pid);
+                        return { value: pid, label: m?.name || 'Unknown' };
+                      })
+                    : members.map(m => ({ value: m.id, label: m.name }))
+                  ),
+                ]}
+              />
+              <Select
+                label="🅥🅒 Vice-captain"
+                value={formData.vice_captain_id}
+                onChange={(e) => setFormData({ ...formData, vice_captain_id: e.target.value })}
+                options={[
+                  { value: '', label: '— Select —' },
+                  ...(selectedPlayers.length > 0
+                    ? selectedPlayers.filter(pid => pid !== formData.captain_id).map(pid => {
+                        const m = members.find(mb => mb.id === pid);
+                        return { value: pid, label: m?.name || 'Unknown' };
+                      })
+                    : members.filter(m => m.id !== formData.captain_id).map(m => ({ value: m.id, label: m.name }))
+                  ),
+                ]}
+              />
+            </div>
+          )}
 
           {/* Availability Poll - Only for future matches */}
           {!isCurrentOrPastDate && (
@@ -1793,39 +1869,87 @@ export function Matches() {
             onChange={(e) => setFormData({ ...formData, ch_match_id: e.target.value.trim() })}
           />
 
-          {/* Captain & Vice-captain (Edit) */}
-          <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
-            <Select
-              label="🅒 Captain"
-              value={formData.captain_id}
-              onChange={(e) => setFormData({ ...formData, captain_id: e.target.value })}
-              options={[
-                { value: '', label: '— Select —' },
-                ...(selectedPlayers.length > 0
-                  ? selectedPlayers.map(pid => {
-                      const m = members.find(mb => mb.id === pid);
-                      return { value: pid, label: m?.name || 'Unknown' };
-                    })
-                  : members.map(m => ({ value: m.id, label: m.name }))
-                ),
-              ]}
-            />
-            <Select
-              label="🅥🅒 Vice-captain"
-              value={formData.vice_captain_id}
-              onChange={(e) => setFormData({ ...formData, vice_captain_id: e.target.value })}
-              options={[
-                { value: '', label: '— Select —' },
-                ...(selectedPlayers.length > 0
-                  ? selectedPlayers.filter(pid => pid !== formData.captain_id).map(pid => {
-                      const m = members.find(mb => mb.id === pid);
-                      return { value: pid, label: m?.name || 'Unknown' };
-                    })
-                  : members.filter(m => m.id !== formData.captain_id).map(m => ({ value: m.id, label: m.name }))
-                ),
-              ]}
-            />
-          </div>
+          {/* Captain — internal matches: per-team; external: single captain/vc (Edit) */}
+          {formData.match_type === 'internal' ? (
+            <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Team Captains</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Select
+                  label="🦁 Dhurandars Captain"
+                  value={formData.dhurandars_captain_id}
+                  onChange={(e) => setFormData({ ...formData, dhurandars_captain_id: e.target.value })}
+                  options={[
+                    { value: '', label: '— Select —' },
+                    ...(Object.entries(playerTeams)
+                      .filter(([, team]) => team === 'dhurandars')
+                      .map(([pid]) => {
+                        const m = members.find(mb => mb.id === pid);
+                        return { value: pid, label: m?.name || 'Unknown' };
+                      })
+                      .concat(
+                        Object.entries(playerTeams).filter(([, t]) => t === 'dhurandars').length === 0
+                          ? members.map(m => ({ value: m.id, label: m.name }))
+                          : []
+                      )
+                    ),
+                  ]}
+                />
+                <Select
+                  label="🐅 Bazigars Captain"
+                  value={formData.bazigars_captain_id}
+                  onChange={(e) => setFormData({ ...formData, bazigars_captain_id: e.target.value })}
+                  options={[
+                    { value: '', label: '— Select —' },
+                    ...(Object.entries(playerTeams)
+                      .filter(([, team]) => team === 'bazigars')
+                      .map(([pid]) => {
+                        const m = members.find(mb => mb.id === pid);
+                        return { value: pid, label: m?.name || 'Unknown' };
+                      })
+                      .concat(
+                        Object.entries(playerTeams).filter(([, t]) => t === 'bazigars').length === 0
+                          ? members.map(m => ({ value: m.id, label: m.name }))
+                          : []
+                      )
+                    ),
+                  ]}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
+              <Select
+                label="🅒 Captain"
+                value={formData.captain_id}
+                onChange={(e) => setFormData({ ...formData, captain_id: e.target.value })}
+                options={[
+                  { value: '', label: '— Select —' },
+                  ...(selectedPlayers.length > 0
+                    ? selectedPlayers.map(pid => {
+                        const m = members.find(mb => mb.id === pid);
+                        return { value: pid, label: m?.name || 'Unknown' };
+                      })
+                    : members.map(m => ({ value: m.id, label: m.name }))
+                  ),
+                ]}
+              />
+              <Select
+                label="🅥🅒 Vice-captain"
+                value={formData.vice_captain_id}
+                onChange={(e) => setFormData({ ...formData, vice_captain_id: e.target.value })}
+                options={[
+                  { value: '', label: '— Select —' },
+                  ...(selectedPlayers.length > 0
+                    ? selectedPlayers.filter(pid => pid !== formData.captain_id).map(pid => {
+                        const m = members.find(mb => mb.id === pid);
+                        return { value: pid, label: m?.name || 'Unknown' };
+                      })
+                    : members.filter(m => m.id !== formData.captain_id).map(m => ({ value: m.id, label: m.name }))
+                  ),
+                ]}
+              />
+            </div>
+          )}
 
           {/* Player Selection */}
           <div>
