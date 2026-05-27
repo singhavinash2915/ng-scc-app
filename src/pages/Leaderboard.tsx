@@ -58,39 +58,40 @@ type SortDir = 'asc' | 'desc';
 interface ColDef {
   key: keyof MemberCricketStats;
   label: string;
+  tooltip: string;          // full description shown on hover
   format?: (v: number | string) => string;
   highlight?: boolean;
 }
 
 const BATTING_COLS: ColDef[] = [
-  { key: 'batting_innings',      label: 'Inn' },
-  { key: 'batting_runs',         label: 'Runs',   highlight: true },
-  { key: 'batting_highest_score',label: 'HS' },
-  { key: 'batting_average',      label: 'Avg',    format: v => Number(v).toFixed(1), highlight: true },
-  { key: 'batting_strike_rate',  label: 'SR',     format: v => Number(v).toFixed(1) },
-  { key: 'batting_fifties',      label: '50s' },
-  { key: 'batting_hundreds',     label: '100s' },
-  { key: 'batting_fours',        label: '4s' },
-  { key: 'batting_sixes',        label: '6s' },
-  { key: 'batting_ducks',        label: '0s' },
+  { key: 'batting_innings',      label: 'Inn',   tooltip: 'Innings batted' },
+  { key: 'batting_runs',         label: 'Runs',  tooltip: 'Total runs scored', highlight: true },
+  { key: 'batting_highest_score',label: 'HS',    tooltip: 'Highest score in a single innings' },
+  { key: 'batting_average',      label: 'Avg',   tooltip: 'Batting average (runs per dismissal)', format: v => Number(v).toFixed(1), highlight: true },
+  { key: 'batting_strike_rate',  label: 'SR',    tooltip: 'Strike rate — runs per 100 balls', format: v => Number(v).toFixed(1) },
+  { key: 'batting_fifties',      label: '50s',   tooltip: 'Fifties scored (50–99 runs in an innings)' },
+  { key: 'batting_hundreds',     label: '100s',  tooltip: 'Centuries scored (100+ runs in an innings)' },
+  { key: 'batting_fours',        label: '4s',    tooltip: 'Fours hit' },
+  { key: 'batting_sixes',        label: '6s',    tooltip: 'Sixes hit' },
+  { key: 'batting_ducks',        label: 'Ducks', tooltip: 'Ducks — dismissed without scoring (0)' },
 ];
 
 const BOWLING_COLS: ColDef[] = [
-  { key: 'bowling_innings',       label: 'Inn' },
-  { key: 'bowling_overs',         label: 'Ov',     format: v => Number(v).toFixed(1) },
-  { key: 'bowling_wickets',       label: 'Wkts',   highlight: true },
-  { key: 'bowling_runs_conceded', label: 'Runs' },
-  { key: 'bowling_economy',       label: 'Econ',   format: v => Number(v).toFixed(2), highlight: true },
-  { key: 'bowling_average',       label: 'Avg',    format: v => Number(v).toFixed(1) },
-  { key: 'bowling_strike_rate',   label: 'SR',     format: v => Number(v).toFixed(1) },
-  { key: 'bowling_best_figures',  label: 'Best' },
-  { key: 'bowling_five_wickets',  label: '5W' },
+  { key: 'bowling_innings',       label: 'Inn',   tooltip: 'Innings bowled' },
+  { key: 'bowling_overs',         label: 'Overs', tooltip: 'Total overs bowled', format: v => Number(v).toFixed(1) },
+  { key: 'bowling_wickets',       label: 'Wkts',  tooltip: 'Total wickets taken', highlight: true },
+  { key: 'bowling_runs_conceded', label: 'Runs',  tooltip: 'Runs conceded while bowling' },
+  { key: 'bowling_economy',       label: 'Econ',  tooltip: 'Economy rate — runs conceded per over (lower is better)', format: v => Number(v).toFixed(2), highlight: true },
+  { key: 'bowling_average',       label: 'Avg',   tooltip: 'Bowling average — runs per wicket (lower is better)', format: v => Number(v).toFixed(1) },
+  { key: 'bowling_strike_rate',   label: 'SR',    tooltip: 'Bowling strike rate — balls per wicket (lower is better)', format: v => Number(v).toFixed(1) },
+  { key: 'bowling_best_figures',  label: 'Best',  tooltip: 'Best bowling figures in a single innings (e.g. 4/22)' },
+  { key: 'bowling_five_wickets',  label: '5-fors', tooltip: '5-wicket hauls in a single innings' },
 ];
 
 const FIELDING_COLS: ColDef[] = [
-  { key: 'fielding_catches',    label: 'Catches',   highlight: true },
-  { key: 'fielding_stumpings',  label: 'Stumpings' },
-  { key: 'fielding_run_outs',   label: 'Run Outs' },
+  { key: 'fielding_catches',    label: 'Catches',   tooltip: 'Catches taken', highlight: true },
+  { key: 'fielding_stumpings',  label: 'Stumpings', tooltip: 'Stumpings (wicket-keeper only)' },
+  { key: 'fielding_run_outs',   label: 'Run Outs',  tooltip: 'Run outs directly credited to this player' },
 ];
 
 function overallScore(s: MemberCricketStats) {
@@ -312,7 +313,7 @@ export function Leaderboard() {
               tab === 'batting' ? player.batting_runs :
               tab === 'bowling' ? player.bowling_wickets :
               player.fielding_catches + player.fielding_stumpings + player.fielding_run_outs;
-            const scoreLabel = tab === 'batting' ? 'runs' : tab === 'bowling' ? 'wkts' : 'dismissals';
+            const scoreLabel = tab === 'batting' ? 'runs' : tab === 'bowling' ? 'wkts' : tab === 'overall' ? 'pts' : 'dismissals';
             const avatarUrl = (player.member as { avatar_url?: string } | undefined)?.avatar_url;
             const name = (player.member as { name?: string } | undefined)?.name || 'Player';
 
@@ -388,9 +389,10 @@ export function Leaderboard() {
                       <th
                         key={col.key}
                         onClick={() => handleSort(col.key)}
+                        title={col.tooltip}
                         className="px-3 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
                       >
-                        <span className="flex items-center justify-center gap-1">
+                        <span className="flex items-center justify-center gap-1" title={col.tooltip}>
                           {col.label}
                           {sortKey === col.key ? (
                             sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />
@@ -478,16 +480,16 @@ function OverallTable({ players, momCounts, formByMember, prevRanks = {} }: { pl
           <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-10">#</th>
             <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Player</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Points</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-blue-500 uppercase tracking-wider">Inn</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-blue-500 uppercase tracking-wider">Runs</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-blue-500 uppercase tracking-wider">Avg</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-blue-500 uppercase tracking-wider">SR</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-purple-500 uppercase tracking-wider">Wkts</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-purple-500 uppercase tracking-wider">Econ</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-orange-500 uppercase tracking-wider">Ct</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-orange-500 uppercase tracking-wider">St</th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-orange-500 uppercase tracking-wider">RO</th>
+            <th title="Overall points: Runs + Wickets×20 + Dismissals×10" className="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-help">Pts 🏅</th>
+            <th title="Batting innings" className="px-3 py-3 text-center text-xs font-semibold text-blue-500 uppercase tracking-wider cursor-help">Inn 🏏</th>
+            <th title="Runs scored" className="px-3 py-3 text-center text-xs font-semibold text-blue-500 uppercase tracking-wider cursor-help">Runs</th>
+            <th title="Batting average (runs per dismissal)" className="px-3 py-3 text-center text-xs font-semibold text-blue-500 uppercase tracking-wider cursor-help">Avg</th>
+            <th title="Strike rate — runs per 100 balls" className="px-3 py-3 text-center text-xs font-semibold text-blue-500 uppercase tracking-wider cursor-help">SR</th>
+            <th title="Wickets taken" className="px-3 py-3 text-center text-xs font-semibold text-purple-500 uppercase tracking-wider cursor-help">Wkts ⚡</th>
+            <th title="Economy rate — runs conceded per over (lower is better)" className="px-3 py-3 text-center text-xs font-semibold text-purple-500 uppercase tracking-wider cursor-help">Econ</th>
+            <th title="Catches taken" className="px-3 py-3 text-center text-xs font-semibold text-orange-500 uppercase tracking-wider cursor-help">Catches 🧤</th>
+            <th title="Stumpings (wicket-keeper)" className="px-3 py-3 text-center text-xs font-semibold text-orange-500 uppercase tracking-wider cursor-help">Stump</th>
+            <th title="Run outs credited" className="px-3 py-3 text-center text-xs font-semibold text-orange-500 uppercase tracking-wider cursor-help">RO</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">

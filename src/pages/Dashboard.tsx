@@ -220,14 +220,14 @@ export function Dashboard() {
   const myStats  = useMemo(() => cricketStats.find(s => s.member_id === myMemberId) ?? null, [cricketStats, myMemberId]);
   const myMoms   = myMemberId ? (momCounts[myMemberId] || 0) : 0;
 
-  // Next milestone hint (career runs steps)
+  // Next milestone hint (SCC season runs)
   const myNextMilestone = useMemo(() => {
     if (!myStats) return null;
     const runs = myStats.batting_runs;
     const steps = [100, 250, 500, 1000, 2000, 5000];
     const next = steps.find(s => runs < s);
     if (!next) return null;
-    return { away: next - runs, label: `${next} career runs` };
+    return { away: next - runs, label: `${next} SCC runs` };
   }, [myStats]);
 
   const loading = membersLoading || matchesLoading;
