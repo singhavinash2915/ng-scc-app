@@ -228,29 +228,38 @@ export function Leaderboard() {
 
   const activeStats = tab === 'overall' ? overallSorted : sorted;
 
-  // ── Rank-change tracking (session-based: compare to previous visit) ────────
+  // ── Rank-change tracking (date-based: compare today vs yesterday) ──────────
   const [prevRanks, setPrevRanks] = useState<Record<string, number>>({});
 
+  // Effect 1: always load yesterday's snapshot from localStorage whenever the
+  // component mounts or the tab changes (fixes the "navigate away and back" bug
+  // where prevRanks was resetting to {} because sessionStorage was still set).
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`scc-lb-snapshot-${tab}-2025-26`);
+      setPrevRanks(stored ? (JSON.parse(stored) as Record<string, number>) : {});
+    } catch { setPrevRanks({}); }
+  }, [tab]);
+
+  // Effect 2: once per calendar day, save the current ranks as the new snapshot.
+  // This means tomorrow's first visit will see today's ranks as "previous".
+  // Within the same day the snapshot stays frozen so the arrows stay stable.
   useEffect(() => {
     if (activeStats.length === 0) return;
-    const lsKey = `scc-lb-ranks-${tab}-2025-26`;
-    const ssKey = `scc-lb-session-${tab}-2025-26`;
+    const snapshotKey = `scc-lb-snapshot-${tab}-2025-26`;
+    const dateKey     = `scc-lb-date-${tab}-2025-26`;
+    const today       = new Date().toDateString();
 
-    const isNewSession = !sessionStorage.getItem(ssKey);
-    if (isNewSession) {
-      // Load last session's ranks for comparison
-      try {
-        const stored = localStorage.getItem(lsKey);
-        setPrevRanks(stored ? (JSON.parse(stored) as Record<string, number>) : {});
-      } catch { setPrevRanks({}); }
-
-      // Persist current ranks so next session can diff against them
+    if (localStorage.getItem(dateKey) !== today) {
+      // New day: overwrite snapshot with today's ranks (prevRanks state already
+      // holds yesterday's snapshot from Effect 1, so the display stays correct).
       const current: Record<string, number> = {};
       activeStats.forEach((s, i) => { current[s.member_id] = i + 1; });
-      localStorage.setItem(lsKey, JSON.stringify(current));
-      sessionStorage.setItem(ssKey, '1');
+      localStorage.setItem(snapshotKey, JSON.stringify(current));
+      localStorage.setItem(dateKey, today);
     }
-  }, [activeStats, tab]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, stats.length]); // re-check when stats data actually arrives (not on every sort)
 
   return (
     <div className="space-y-6">
