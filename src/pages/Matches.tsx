@@ -271,6 +271,8 @@ export function Matches() {
     bazigars_captain_id: '' as string,
     // CricHeroes
     ch_match_id: '' as string,
+    // Live stream
+    stream_url: '' as string,
   });
 
   // For internal matches - track which team each player is on
@@ -354,6 +356,7 @@ export function Matches() {
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
           ch_match_id: formData.ch_match_id.trim() || null,
+          stream_url: formData.stream_url.trim() || null,
           man_of_match_id: isCurrentOrPastDate && formData.result === 'won' && formData.man_of_match_id ? formData.man_of_match_id : null,
           match_type: formData.match_type,
           winning_team: winningTeam,
@@ -396,6 +399,7 @@ export function Matches() {
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
           ch_match_id: formData.ch_match_id.trim() || null,
+          stream_url: formData.stream_url.trim() || null,
           captain_id: formData.captain_id || null,
           vice_captain_id: formData.vice_captain_id || null,
           dhurandars_captain_id: formData.match_type === 'internal' ? (formData.dhurandars_captain_id || null) : null,
@@ -477,6 +481,7 @@ export function Matches() {
       dhurandars_captain_id: '',
       bazigars_captain_id: '',
       ch_match_id: '',
+      stream_url: '',
     });
     setSelectedPlayers([]);
     setPlayerTeams({});
@@ -580,6 +585,7 @@ export function Matches() {
       dhurandars_captain_id: match.dhurandars_captain_id || '',
       bazigars_captain_id: match.bazigars_captain_id || '',
       ch_match_id: match.ch_match_id || '',
+      stream_url: match.stream_url || '',
     });
     setSelectedPlayers(match.players?.map(p => p.member_id) || []);
     // Restore player teams for internal matches
@@ -984,6 +990,31 @@ export function Matches() {
                         </Link>
                       </div>
                     )}
+
+                    {/* ── Live Stream Embed ─────────────────────────── */}
+                    {match.stream_url && (() => {
+                      const ytMatch = match.stream_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/);
+                      const videoId = ytMatch?.[1];
+                      if (!videoId) return null;
+                      return (
+                        <div className="mt-3 rounded-xl overflow-hidden border-2 border-red-400 dark:border-red-500 shadow-lg">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500 dark:bg-red-600">
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                            <span className="text-xs font-bold text-white tracking-wide">LIVE</span>
+                            <span className="text-xs text-red-100 ml-auto">SCC Match Stream</span>
+                          </div>
+                          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                            <iframe
+                              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`}
+                              className="absolute inset-0 w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              title="Live Match Stream"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* ── Reactions + Comments ──────────────────────── */}
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60 flex flex-col gap-2">
@@ -1454,6 +1485,13 @@ export function Matches() {
             onChange={(e) => setFormData({ ...formData, ch_match_id: e.target.value.trim() })}
           />
 
+          <Input
+            label="🔴 Live Stream URL (optional)"
+            placeholder="Paste YouTube Live URL when match is being streamed"
+            value={formData.stream_url}
+            onChange={(e) => setFormData({ ...formData, stream_url: e.target.value.trim() })}
+          />
+
           {/* Captain — internal matches: per-team; external: single captain/vc */}
           {formData.match_type === 'internal' ? (
             <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
@@ -1878,6 +1916,13 @@ export function Matches() {
             placeholder="e.g. 12345678  — find it in the CricHeroes match URL"
             value={formData.ch_match_id}
             onChange={(e) => setFormData({ ...formData, ch_match_id: e.target.value.trim() })}
+          />
+
+          <Input
+            label="🔴 Live Stream URL (optional)"
+            placeholder="Paste YouTube Live URL when match is being streamed"
+            value={formData.stream_url}
+            onChange={(e) => setFormData({ ...formData, stream_url: e.target.value.trim() })}
           />
 
           {/* Captain — internal matches: per-team; external: single captain/vc (Edit) */}
