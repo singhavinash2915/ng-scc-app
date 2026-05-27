@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   Calendar,
   Plus,
@@ -24,6 +24,7 @@ import {
   MessageCircle,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -266,6 +267,8 @@ export function Matches() {
     // Leadership
     captain_id: '' as string,
     vice_captain_id: '' as string,
+    // CricHeroes
+    ch_match_id: '' as string,
   });
 
   // For internal matches - track which team each player is on
@@ -348,6 +351,7 @@ export function Matches() {
           other_expenses: formData.other_expenses ? parseFloat(formData.other_expenses) : 0,
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
+          ch_match_id: formData.ch_match_id.trim() || null,
           man_of_match_id: isCurrentOrPastDate && formData.result === 'won' && formData.man_of_match_id ? formData.man_of_match_id : null,
           match_type: formData.match_type,
           winning_team: winningTeam,
@@ -387,6 +391,7 @@ export function Matches() {
           other_expenses: formData.other_expenses ? parseFloat(formData.other_expenses) : 0,
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
+          ch_match_id: formData.ch_match_id.trim() || null,
           captain_id: formData.captain_id || null,
           vice_captain_id: formData.vice_captain_id || null,
         },
@@ -463,6 +468,7 @@ export function Matches() {
       polling_deadline: '',
       captain_id: '',
       vice_captain_id: '',
+      ch_match_id: '',
     });
     setSelectedPlayers([]);
     setPlayerTeams({});
@@ -563,6 +569,7 @@ export function Matches() {
         : '',
       captain_id: match.captain_id || '',
       vice_captain_id: match.vice_captain_id || '',
+      ch_match_id: match.ch_match_id || '',
     });
     setSelectedPlayers(match.players?.map(p => p.member_id) || []);
     // Restore player teams for internal matches
@@ -909,6 +916,33 @@ export function Matches() {
                             Manage
                           </button>
                         )}
+                      </div>
+                    )}
+
+                    {/* CricHeroes live link */}
+                    {match.ch_match_id && (
+                      <div className="mt-2">
+                        <a
+                          href={`https://cricheroes.in/scorecard/${match.ch_match_id}/x/x/${match.result === 'upcoming' ? 'live' : 'scorecard'}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          {match.result === 'upcoming' ? 'Watch Live on CricHeroes' : 'Scorecard on CricHeroes'}
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Predict quick-link for upcoming matches */}
+                    {match.result === 'upcoming' && (
+                      <div className="mt-1.5">
+                        <Link
+                          to="/predictions"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 text-xs font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+                        >
+                          🎯 Predict the winner
+                        </Link>
                       </div>
                     )}
 
@@ -1374,6 +1408,13 @@ export function Matches() {
             rows={2}
           />
 
+          <Input
+            label="CricHeroes Match ID (optional)"
+            placeholder="e.g. 12345678  — find it in the CricHeroes match URL"
+            value={formData.ch_match_id}
+            onChange={(e) => setFormData({ ...formData, ch_match_id: e.target.value.trim() })}
+          />
+
           {/* Captain & Vice-captain */}
           <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
             <Select
@@ -1743,6 +1784,13 @@ export function Matches() {
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={2}
+          />
+
+          <Input
+            label="CricHeroes Match ID (optional)"
+            placeholder="e.g. 12345678  — find it in the CricHeroes match URL"
+            value={formData.ch_match_id}
+            onChange={(e) => setFormData({ ...formData, ch_match_id: e.target.value.trim() })}
           />
 
           {/* Captain & Vice-captain (Edit) */}
