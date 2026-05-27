@@ -69,7 +69,6 @@ export interface Match {
   polling_enabled: boolean;
   polling_deadline: string | null;
   ch_match_id?: string | null; // CricHeroes match ID for auto-sync
-  stream_url?: string | null;  // YouTube Live URL when match is being streamed
   captain_id: string | null;
   vice_captain_id: string | null;
   dhurandars_captain_id?: string | null;
