@@ -947,9 +947,9 @@ export function Matches() {
                       </div>
                     )}
 
-                    {/* CricHeroes live link */}
+                    {/* CricHeroes live link + Go Live streamer */}
                     {match.ch_match_id && (
-                      <div className="mt-2">
+                      <div className="mt-2 flex flex-wrap gap-1.5">
                         <a
                           href={`https://cricheroes.in/scorecard/${match.ch_match_id}/x/x/${match.result === 'upcoming' ? 'live' : 'scorecard'}`}
                           target="_blank"
@@ -957,8 +957,19 @@ export function Matches() {
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
                         >
                           <ExternalLink className="w-3 h-3" />
-                          {match.result === 'upcoming' ? 'Watch Live on CricHeroes' : 'Scorecard on CricHeroes'}
+                          {match.result === 'upcoming' ? 'Watch Live' : 'Scorecard'}
                         </a>
+                        {isAdmin && match.result === 'upcoming' && (
+                          <a
+                            href={`https://stream.sangriacricket.club?match=${encodeURIComponent(`https://cricheroes.com/scorecard/${match.ch_match_id}/x/x/live`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                          >
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            Go Live
+                          </a>
+                        )}
                       </div>
                     )}
 
