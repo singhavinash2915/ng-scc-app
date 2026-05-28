@@ -289,84 +289,87 @@ export function Dashboard() {
           <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-blue-500/6 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute inset-0 border border-white/8 rounded-2xl pointer-events-none" />
 
-          <div className="relative p-5 lg:p-6">
+          <div className="relative p-4 lg:p-6">
 
-            {/* ── Row 1: Logo + Club name + Actions ── */}
-            <div className="flex items-center gap-3.5 mb-4">
+            {/* ── Row 1: Logo + Club name (single line) + avatar ── */}
+            <div className="flex items-center gap-3 mb-2">
               <img src="/scc-logo.jpg" alt="SCC"
-                   className="w-12 h-12 rounded-xl object-cover border border-white/15 shadow-lg flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-white font-black text-[17px] lg:text-xl leading-tight tracking-tight">
-                  Sangria Cricket Club
-                </h1>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold rounded-full uppercase tracking-wide">
-                    Season 2025–26
-                  </span>
-                  <span className="text-gray-600 text-[11px]">{stats.matchesPlayed} matches · {stats.activeMembers} active</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {myMember && (
-                  <Link to={`/profile/${myMember.id}`}>
-                    {myMember.avatar_url ? (
-                      <img src={myMember.avatar_url} alt={myMember.name}
-                           className="w-10 h-10 rounded-full object-cover border-2 border-emerald-400/40 shadow-md" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-emerald-900/70 border-2 border-emerald-400/40 flex items-center justify-center">
-                        <span className="text-emerald-300 font-black text-base leading-none">{myMember.name[0]}</span>
-                      </div>
-                    )}
-                  </Link>
-                )}
-                <MyStatsButton />
+                   className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl object-cover border border-white/15 shadow-lg flex-shrink-0" />
+              <h1 className="text-white font-black text-base lg:text-xl leading-tight tracking-tight flex-1 min-w-0">
+                Sangria Cricket Club
+              </h1>
+              {/* Profile avatar — top-right, small */}
+              {myMember && (
+                <Link to={`/profile/${myMember.id}`} className="flex-shrink-0">
+                  {myMember.avatar_url ? (
+                    <img src={myMember.avatar_url} alt={myMember.name}
+                         className="w-9 h-9 rounded-full object-cover border-2 border-emerald-400/40 shadow-md" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-emerald-900/70 border-2 border-emerald-400/40 flex items-center justify-center">
+                      <span className="text-emerald-300 font-black text-sm leading-none">{myMember.name[0]}</span>
+                    </div>
+                  )}
+                </Link>
+              )}
+            </div>
+
+            {/* ── Row 2: Season badge + match count + MyStats ── */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold rounded-full uppercase tracking-wide flex-shrink-0">
+                Season 2025–26
+              </span>
+              <span className="text-gray-600 text-[11px] flex-1">{stats.matchesPlayed} matches · {stats.activeMembers} active</span>
+              <div className="flex-shrink-0">
+                <MyStatsButton compact />
               </div>
             </div>
 
-            {/* ── Row 2: Quick stat chips ── */}
-            <div className="grid grid-cols-4 gap-2 mb-0">
+            {/* ── Row 3: Stat chips ── */}
+            <div className="grid grid-cols-4 gap-1.5 lg:gap-2">
               {[
                 { label: 'Matches',  value: stats.matchesPlayed,   color: 'text-white' },
                 { label: 'Won',      value: animatedWon,           color: 'text-emerald-400' },
                 { label: 'Win %',    value: `${animatedWinRate}%`, color: 'text-amber-400' },
                 { label: 'Upcoming', value: stats.upcomingCount,   color: 'text-blue-400' },
               ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white/4 rounded-xl py-2.5 px-2 text-center border border-white/6 backdrop-blur-sm">
-                  <div className={`text-[22px] font-black tabular-nums leading-tight ${color}`}>{value}</div>
-                  <div className="text-gray-600 text-[9px] uppercase tracking-widest mt-0.5 font-semibold">{label}</div>
+                <div key={label} className="bg-white/4 rounded-xl py-2.5 px-1 text-center border border-white/6">
+                  <div className={`text-xl lg:text-[22px] font-black tabular-nums leading-tight ${color}`}>{value}</div>
+                  <div className="text-gray-600 text-[8px] lg:text-[9px] uppercase tracking-widest mt-0.5 font-semibold">{label}</div>
                 </div>
               ))}
             </div>
 
-            {/* ── Row 3: Personalised greeting (when profile linked) ── */}
+            {/* ── Row 4: Personalised greeting (when profile linked) ── */}
             {myMember && (
-              <div className="mt-4 pt-4 border-t border-white/8 flex items-center gap-3 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white leading-tight">
-                    Hey, {myMember.name.split(' ')[0]}! 🏏
-                  </p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">
-                    <span className="text-gray-400">{myStats?.batting_runs ?? 0} runs</span>
-                    {' · '}
-                    <span className="text-gray-400">{myStats?.bowling_wickets ?? 0} wkts</span>
-                    {myMoms > 0 && <> · <span className="text-yellow-400">{myMoms} MOM</span></>}
-                    <span className="text-gray-600"> this season</span>
-                  </p>
+              <div className="mt-3.5 pt-3.5 border-t border-white/8">
+                {/* Greeting text + My Profile button on same row */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-white leading-tight">
+                      Hey, {myMember.name.split(' ')[0]}! 🏏
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      <span className="text-gray-400">{myStats?.batting_runs ?? 0} runs · {myStats?.bowling_wickets ?? 0} wkts</span>
+                      {myMoms > 0 && <> · <span className="text-yellow-400">{myMoms} MOM</span></>}
+                      <span className="text-gray-600"> this season</span>
+                    </p>
+                  </div>
+                  <Link
+                    to={`/profile/${myMember.id}`}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/25 text-emerald-300 text-[11px] font-bold hover:bg-emerald-600/35 transition-colors whitespace-nowrap"
+                  >
+                    My Profile →
+                  </Link>
                 </div>
+                {/* Milestone pill on its own line below */}
                 {myNextMilestone && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 flex-shrink-0">
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
                     <Target className="w-3 h-3 text-purple-400 flex-shrink-0" />
-                    <span className="text-purple-300 text-[10px] font-bold whitespace-nowrap">
-                      {myNextMilestone.away} to {myNextMilestone.label}
+                    <span className="text-purple-300 text-[10px] font-bold">
+                      {myNextMilestone.away} more to {myNextMilestone.label}
                     </span>
                   </div>
                 )}
-                <Link
-                  to={`/profile/${myMember.id}`}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/25 text-emerald-300 text-[11px] font-bold hover:bg-emerald-600/35 transition-colors whitespace-nowrap flex-shrink-0"
-                >
-                  My Profile →
-                </Link>
               </div>
             )}
           </div>
