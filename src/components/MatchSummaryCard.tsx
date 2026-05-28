@@ -1,6 +1,8 @@
-import { MapPin, Star, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { MapPin, Star, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Match } from '../types';
+import { MatchScorecardModal } from './MatchScorecardModal';
 
 interface Props {
   match: Match;
@@ -40,6 +42,10 @@ export function MatchSummaryCard({ match }: Props) {
   const matchDate = new Date(match.date).toLocaleDateString('en-IN', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
+  const [showScorecard, setShowScorecard] = useState(false);
+  const matchLabel = isInternal
+    ? 'Dhurandars vs Bazigars'
+    : `SCC vs ${match.opponent ?? 'TBD'}`;
 
   return (
     <div className={`rounded-2xl overflow-hidden border ${cfg.border} shadow-xl`}
@@ -136,19 +142,26 @@ export function MatchSummaryCard({ match }: Props) {
           </p>
         )}
 
-        {/* CricHeroes link */}
+        {/* Full Scorecard button (only when ch_match_id set) + modal */}
         {match.ch_match_id && (
-          <div className="mt-2.5 pt-2 border-t border-white/8">
-            <a
-              href={`https://cricheroes.in/scorecard/${match.ch_match_id}/x/x/scorecard`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              <ExternalLink className="w-3 h-3" />
-              Full scorecard on CricHeroes
-            </a>
-          </div>
+          <>
+            <div className="mt-3 pt-2.5 border-t border-white/8">
+              <button
+                onClick={() => setShowScorecard(true)}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-300 text-xs font-bold hover:bg-purple-600/35 transition-colors"
+              >
+                <BarChart2 className="w-3.5 h-3.5" />
+                View Full Scorecard
+              </button>
+            </div>
+            <MatchScorecardModal
+              isOpen={showScorecard}
+              onClose={() => setShowScorecard(false)}
+              chMatchId={match.ch_match_id}
+              matchLabel={matchLabel}
+              matchDate={matchDate}
+            />
+          </>
         )}
 
         {/* View all matches link */}
