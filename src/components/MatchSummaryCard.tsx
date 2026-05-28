@@ -3,6 +3,7 @@ import { MapPin, Star, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Match } from '../types';
 import { MatchScorecardModal } from './MatchScorecardModal';
+import { useFullScorecard } from '../hooks/useFullScorecard';
 
 interface Props {
   match: Match;
@@ -43,6 +44,8 @@ export function MatchSummaryCard({ match }: Props) {
     day: 'numeric', month: 'short', year: 'numeric',
   });
   const [showScorecard, setShowScorecard] = useState(false);
+  // Pre-fetch scorecard data so we can show highlights in the card itself
+  const { data: scorecard } = useFullScorecard(match.ch_match_id);
   const matchLabel = isInternal
     ? 'Dhurandars vs Bazigars'
     : `SCC vs ${match.opponent ?? 'TBD'}`;
@@ -116,6 +119,74 @@ export function MatchSummaryCard({ match }: Props) {
                 {match.opponent_score || '—'}
               </p>
             </div>
+          </div>
+        )}
+
+        {/* ── Top performers (from CricHeroes scorecard) ────────────── */}
+        {scorecard && scorecard.innings.length > 0 && (
+          <div className="mb-3 space-y-3 border-t border-white/8 pt-3">
+            {scorecard.innings.map((inn, i) => {
+              const topBatters = [...inn.batting]
+                .filter(b => b.balls > 0)
+                .sort((a, b) => b.runs - a.runs)
+                .slice(0, 3);
+              const topBowlers = [...inn.bowling]
+                .filter(b => b.wickets > 0)
+                .sort((a, b) => b.wickets - a.wickets || a.runs - b.runs)
+                .slice(0, 3);
+              if (topBatters.length === 0 && topBowlers.length === 0) return null;
+              return (
+                <div key={i}>
+                  {/* Innings label */}
+                  <p className="text-[9px] uppercase tracking-widest font-bold mb-2 flex items-center gap-1.5">
+                    <span className={i === 0 ? 'text-orange-400/80' : 'text-blue-400/80'}>
+                      {i === 0 ? '1st' : '2nd'} Inn
+                    </span>
+                    <span className="text-gray-700">·</span>
+                    <span className="text-gray-500">{inn.teamName}</span>
+                    <span className="text-gray-700 ml-0.5">{inn.score}</span>
+                  </p>
+
+                  {/* Two-column: batters left, bowlers right */}
+                  <div className="grid grid-cols-2 gap-x-3">
+                    {/* Left — Batters */}
+                    <div className="space-y-1">
+                      {topBatters.map(b => (
+                        <div key={b.name} className="flex items-center justify-between gap-1">
+                          <span className="flex items-center gap-1 min-w-0">
+                            <span className="text-[10px]">🏏</span>
+                            <span className="text-[11px] text-gray-300 truncate">{b.name.split(' ')[0]}</span>
+                          </span>
+                          <span className="flex items-center gap-1 flex-shrink-0">
+                            <span className={`text-[12px] font-black tabular-nums ${b.runs >= 50 ? 'text-yellow-400' : 'text-white'}`}>
+                              {b.runs}{b.isNotOut ? '*' : ''}
+                            </span>
+                            <span className="text-gray-700 text-[10px]">({b.balls})</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Right — Bowlers */}
+                    <div className="space-y-1 border-l border-white/6 pl-3">
+                      {topBowlers.length > 0 ? topBowlers.map(b => (
+                        <div key={b.name} className="flex items-center justify-between gap-1">
+                          <span className="flex items-center gap-1 min-w-0">
+                            <span className="text-[10px]">🎯</span>
+                            <span className="text-[11px] text-gray-300 truncate">{b.name.split(' ')[0]}</span>
+                          </span>
+                          <span className={`text-[12px] font-black tabular-nums flex-shrink-0 ${b.wickets >= 3 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                            {b.wickets}/{b.runs}
+                          </span>
+                        </div>
+                      )) : (
+                        <p className="text-[10px] text-gray-700 italic">No wickets</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
