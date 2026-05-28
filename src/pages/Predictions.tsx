@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Crown, Trophy, Target, TrendingUp, ChevronRight, ChevronDown, Sparkles, Medal,
-  Shield, Eye, EyeOff, Gift, Pencil, Check, X,
+  Eye, EyeOff, Gift, Pencil, Check, X,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Button } from '../components/ui/Button';
@@ -386,33 +386,37 @@ export function Predictions() {
           </div>
         )}
 
-        {/* ── ADMIN-ONLY: ALL PREDICTIONS ───────────────────────── */}
-        {isAdmin && allPredictions.length > 0 && (
-          <div className="rounded-2xl overflow-hidden border border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50/60 to-orange-50/30 dark:from-amber-900/10 dark:to-orange-900/5">
+        {/* ── ALL PREDICTIONS (settled matches — visible to everyone) ── */}
+        {allPredictions.length > 0 && (
+          <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setAdminViewOpen(o => !o)}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-amber-100/40 dark:hover:bg-amber-900/20 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-4 py-3.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors text-left"
             >
-              <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <Trophy className="w-4 h-4 text-emerald-500 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-[11px] font-black uppercase tracking-[2px] text-amber-700 dark:text-amber-400">
-                  Admin View · All Predictions
+                <p className="text-[11px] font-black uppercase tracking-[2px] text-gray-700 dark:text-gray-300">
+                  Prediction Results
                 </p>
-                <p className="text-xs text-amber-700/70 dark:text-amber-300/70 mt-0.5">
-                  {allPredictions.length} total prediction{allPredictions.length === 1 ? '' : 's'} across {new Set(allPredictions.map(p => p.match_id)).size} match{new Set(allPredictions.map(p => p.match_id)).size === 1 ? '' : 'es'} · only you can see this
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Who predicted what · revealed after each match
                 </p>
               </div>
               {adminViewOpen
-                ? <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                : <Eye className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                ? <EyeOff className="w-4 h-4 text-gray-400" />
+                : <Eye className="w-4 h-4 text-gray-400" />
               }
             </button>
 
             {adminViewOpen && (
-              <div className="bg-white dark:bg-gray-900 border-t border-amber-200 dark:border-amber-800">
+              <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
                 {(() => {
-                  // Group predictions by match, newest match first
-                  const matchIds = [...new Set(allPredictions.map(p => p.match_id))];
+                  // Only show settled matches so upcoming predictions stay hidden
+                  const settledMatchIds = new Set(
+                    matches.filter(m => ['won', 'lost', 'draw'].includes(m.result)).map(m => m.id)
+                  );
+                  const matchIds = [...new Set(allPredictions.map(p => p.match_id))]
+                    .filter(id => settledMatchIds.has(id));
                   const matchWithPicks = matchIds
                     .map(mid => ({
                       match: matches.find(m => m.id === mid),
