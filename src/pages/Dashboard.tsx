@@ -15,6 +15,9 @@ import { BirthdayBanner } from '../components/BirthdayBanner';
 import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
 import { AnnouncementWall } from '../components/AnnouncementWall';
 import { useWeather } from '../hooks/useWeather';
+import { useLiveScore } from '../hooks/useLiveScore';
+import { LiveScorecard } from '../components/LiveScorecard';
+import { MatchSummaryCard } from '../components/MatchSummaryCard';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useRequests } from '../hooks/useRequests';
@@ -30,6 +33,23 @@ import { useAuth } from '../context/AuthContext';
 // Lazy-loaded heavy components (photos, sponsor data load on-demand)
 const DashboardStars = lazy(() => import('../components/DashboardStars'));
 const DashboardDeferred = lazy(() => import('../components/DashboardDeferred'));
+
+// Wrapper so we can call useLiveScore unconditionally inside a component
+function LiveScorecardWidget({ match }: { match: { id: string; ch_match_id?: string | null; opponent?: string | null; venue?: string } }) {
+  const { data, loading, error, countdown, refetch } = useLiveScore(match.ch_match_id);
+  return (
+    <LiveScorecard
+      data={data}
+      loading={loading}
+      error={error}
+      countdown={countdown}
+      refetch={refetch}
+      chMatchId={match.ch_match_id!}
+      matchOpponent={match.opponent}
+      matchVenue={match.venue}
+    />
+  );
+}
 
 function useCountdown(targetDate: string | null) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
@@ -178,6 +198,11 @@ export function Dashboard() {
     );
   }, [matches]);
 
+  // Most recent completed match — any type (external or internal) for summary card
+  const lastAnyCompletedMatch = useMemo(() => {
+    return matches.find(m => ['won', 'lost', 'draw'].includes(m.result));
+  }, [matches]);
+
 
   // Live ticker items
   const tickerItems = useMemo(() => {
@@ -306,39 +331,11 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* ── MATCH LIVE TODAY ─────────────────────── */}
-        {liveMatchToday && liveMatchToday.ch_match_id && (
-          <a
-            href={`https://cricheroes.in/scorecard/${liveMatchToday.ch_match_id}/x/x/live`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block group"
-          >
-            <div className="relative overflow-hidden rounded-2xl shadow-lg">
-              <div className="absolute inset-0"
-                   style={{ background: 'linear-gradient(135deg, #dc2626 0%, #f97316 50%, #fbbf24 100%)' }} />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-              <div className="relative p-4 lg:p-5 flex items-center gap-3">
-                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-[10px] font-black uppercase tracking-widest border border-white/30 flex-shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  Live Today
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm lg:text-base font-black truncate">
-                    {liveMatchToday.match_type === 'internal' ? 'Internal Match' : `vs ${liveMatchToday.opponent || 'TBD'}`}
-                    {liveMatchToday.our_score && (
-                      <span className="ml-2 text-white/90 font-black tabular-nums">{liveMatchToday.our_score}</span>
-                    )}
-                    {liveMatchToday.opponent_score && (
-                      <span className="ml-1 text-white/70 font-bold tabular-nums">vs {liveMatchToday.opponent_score}</span>
-                    )}
-                  </p>
-                  <p className="text-white/80 text-[11px] mt-0.5">📺 Tap to watch live on CricHeroes →</p>
-                </div>
-              </div>
-            </div>
-          </a>
-        )}
+        {/* ── LIVE SCORECARD (match today with CricHeroes ID) ─────────── */}
+        {liveMatchToday?.ch_match_id && liveMatchToday.result === 'upcoming'
+          ? <LiveScorecardWidget match={liveMatchToday} />
+          : lastAnyCompletedMatch && <MatchSummaryCard match={lastAnyCompletedMatch} />
+        }
 
         {/* ── ON THIS DAY MEMORIES ─────────────────── */}
         {memories.length > 0 && (
