@@ -1,4 +1,4 @@
-import { RefreshCw, WifiOff } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import type { LiveScoreData } from '../hooks/useLiveScore';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   chMatchId:     string;
   matchOpponent?: string | null;
   matchVenue?:   string | null;
+  matchDate?:    string | null;   // ISO date string
 }
 
 // Colour each ball in the current over
@@ -27,34 +28,57 @@ function ballStyle(ball: string) {
 
 export function LiveScorecard({
   data, loading, error, countdown, refetch,
-  chMatchId, matchOpponent, matchVenue,
+  chMatchId, matchOpponent, matchVenue, matchDate,
 }: Props) {
   const chUrl = `https://cricheroes.in/scorecard/${chMatchId}/x/x/live`;
+  const isLive = !!data && !data.result;           // in-progress
+  const isOver = !!data?.result;                   // completed
+  const isPreMatch = !data && (error || loading);  // not started yet
+
+  const fmtMatchDate = matchDate
+    ? new Date(matchDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+    : null;
 
   return (
     <div
       className="rounded-2xl overflow-hidden shadow-2xl"
-      style={{ background: 'linear-gradient(160deg, #0e0024 0%, #07000f 100%)' }}
+      style={{
+        background: isLive
+          ? 'linear-gradient(160deg, #0e0024 0%, #07000f 100%)'
+          : 'linear-gradient(140deg, #050f1a 0%, #071525 100%)',
+      }}
     >
       {/* ── Header bar ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-white/10">
-        {/* LIVE badge */}
-        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-[10px] font-black text-red-400 tracking-widest uppercase">Live</span>
-        </span>
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10">
+        {/* Status badge: LIVE (red pulsing) when in-progress, MATCH DAY (amber) pre-match */}
+        {isLive ? (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/40 flex-shrink-0">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-[10px] font-black text-red-400 tracking-widest uppercase">Live</span>
+          </span>
+        ) : isOver ? (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-500/20 border border-gray-500/30 flex-shrink-0">
+            <span className="w-2 h-2 rounded-full bg-gray-400" />
+            <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">Completed</span>
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 flex-shrink-0">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-[10px] font-black text-amber-400 tracking-widest uppercase">Match Day</span>
+          </span>
+        )}
 
         {/* Venue */}
         {matchVenue && (
-          <span className="text-[11px] text-purple-300/60 truncate hidden sm:block">
+          <span className="text-[11px] text-gray-400/60 truncate hidden sm:block">
             📍 {matchVenue}
           </span>
         )}
 
-        {/* Right side: countdown + refresh */}
+        {/* Right side: refresh countdown + CricHeroes link */}
         <div className="ml-auto flex items-center gap-2 flex-shrink-0">
           <span className="text-[10px] text-gray-600 tabular-nums">
-            {loading ? 'Updating…' : `↻ ${countdown}s`}
+            {loading ? 'Checking…' : `↻ ${countdown}s`}
           </span>
           <button
             onClick={refetch}
@@ -78,18 +102,34 @@ export function LiveScorecard({
       {/* ── Body ────────────────────────────────────────────────────────── */}
       <div className="px-4 pb-4 pt-3">
 
-        {/* Error state — no data at all */}
-        {error && !data && (
-          <div className="flex flex-col items-center py-5 gap-2 text-center">
-            <WifiOff className="w-7 h-7 text-gray-700" />
-            <p className="text-sm text-gray-500">Live score unavailable right now</p>
+        {/* ── PRE-MATCH state: match day but not started yet ──────────── */}
+        {isPreMatch && (
+          <div className="py-2">
+            {/* Opponent name + venue */}
+            <p className="text-[10px] text-amber-400/70 font-bold uppercase tracking-widest mb-1">
+              Today's Match
+            </p>
+            <p className="text-xl font-black text-white mb-1">
+              SCC vs <span className="text-emerald-400">{matchOpponent || 'TBD'}</span>
+            </p>
+            <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap mb-3">
+              {matchVenue && <span>📍 {matchVenue}</span>}
+              {fmtMatchDate && <span>🗓 {fmtMatchDate}</span>}
+            </div>
+            {/* Animated waiting indicator */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/8 border border-amber-500/15">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
+              <p className="text-[11px] text-amber-300/70">
+                Waiting for match to start · auto-refreshing every {15}s
+              </p>
+            </div>
             <a
               href={chUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-purple-400 hover:underline"
+              className="inline-flex items-center gap-1.5 mt-2.5 text-[11px] text-purple-400 hover:text-purple-300 transition-colors"
             >
-              View on CricHeroes →
+              <span>Follow live on CricHeroes →</span>
             </a>
           </div>
         )}
