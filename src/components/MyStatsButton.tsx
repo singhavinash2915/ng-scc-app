@@ -67,12 +67,12 @@ export function MyStatsButton({ compact = false }: { compact?: boolean }) {
           <BarChart3 className="w-4 h-4" />
         )}
         {savedMember
-          ? <span className="truncate max-w-[120px]">{savedMember.name.split(' ')[0]}'s Stats</span>
+          ? <span className="truncate max-w-[64px]">{savedMember.name.split(' ')[0]}</span>
           : 'My Stats'}
         {savedMember && (
           <span
             onClick={handleSwitch}
-            className="text-[10px] opacity-60 hover:opacity-100 underline ml-1"
+            className="text-[10px] opacity-60 hover:opacity-100 underline ml-0.5"
             title="Switch profile"
           >
             switch
