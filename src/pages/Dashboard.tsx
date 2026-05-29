@@ -333,38 +333,41 @@ export function Dashboard() {
               )}
             </div>
 
-            {/* ── Form strip + MyStats: all on one controlled row ── */}
-            <div className="flex items-center gap-1.5 mb-4 min-w-0">
-              {/* Form label */}
-              {lastFiveResults.length > 0 && (
-                <span className="text-gray-600 text-[9px] font-bold uppercase tracking-widest flex-shrink-0">Form</span>
-              )}
-              {/* W/L/D chips */}
-              {lastFiveResults.map(m => (
-                <div key={m.id} className={`w-5 h-5 flex-shrink-0 rounded-md flex items-center justify-center text-[9px] font-black text-white ${
-                  m.result === 'won'  ? 'bg-emerald-500'
-                : m.result === 'lost' ? 'bg-red-500'
-                : 'bg-amber-500'
-                }`}>
-                  {m.result === 'won' ? 'W' : m.result === 'lost' ? 'L' : 'D'}
-                </div>
-              ))}
-              {/* Streak badge — whitespace-nowrap so it never wraps */}
-              {streak && streak.count >= 2 && (
-                <span className={`whitespace-nowrap flex-shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-black ${
-                  streak.result === 'won'
-                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
-                    : 'bg-red-500/15 text-red-300 border border-red-500/25'
-                }`}>
-                  {streak.result === 'won' ? '🔥' : '😤'} {streak.count} streak
-                </span>
-              )}
-              {/* Push MyStats to right */}
-              <div className="flex-1 min-w-0" />
+            {/* ── Row 2: Season info + MyStats (short items, always fit) ── */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-2.5 py-0.5 bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 text-[9px] font-black rounded-full uppercase tracking-widest flex-shrink-0">
+                Season 2025–26
+              </span>
+              <span className="text-gray-600 text-[11px] flex-1 min-w-0">{stats.activeMembers} active</span>
               <div className="flex-shrink-0">
                 <MyStatsButton compact />
               </div>
             </div>
+
+            {/* ── Row 3: Form strip + streak (no competing elements) ── */}
+            {lastFiveResults.length > 0 && (
+              <div className="flex items-center gap-1.5 mb-4">
+                <span className="text-gray-600 text-[9px] font-bold uppercase tracking-widest flex-shrink-0">Form</span>
+                {lastFiveResults.map(m => (
+                  <div key={m.id} className={`w-5 h-5 flex-shrink-0 rounded-md flex items-center justify-center text-[9px] font-black text-white ${
+                    m.result === 'won'  ? 'bg-emerald-500'
+                  : m.result === 'lost' ? 'bg-red-500'
+                  : 'bg-amber-500'
+                  }`}>
+                    {m.result === 'won' ? 'W' : m.result === 'lost' ? 'L' : 'D'}
+                  </div>
+                ))}
+                {streak && streak.count >= 2 && (
+                  <span className={`whitespace-nowrap flex-shrink-0 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black ml-1 ${
+                    streak.result === 'won'
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
+                      : 'bg-red-500/15 text-red-300 border border-red-500/25'
+                  }`}>
+                    {streak.result === 'won' ? '🔥' : '😤'} {streak.count} streak
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* ── Stat chips ── */}
             <div className="grid grid-cols-4 gap-2 lg:gap-2.5">

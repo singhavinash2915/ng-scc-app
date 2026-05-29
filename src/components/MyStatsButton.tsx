@@ -67,7 +67,7 @@ export function MyStatsButton({ compact = false }: { compact?: boolean }) {
           <BarChart3 className="w-4 h-4" />
         )}
         {savedMember
-          ? <span className="truncate max-w-[64px]">{savedMember.name.split(' ')[0]}</span>
+          ? <span className="truncate max-w-[90px]">{savedMember.name.split(' ')[0]}'s Stats</span>
           : 'My Stats'}
         {savedMember && (
           <span
