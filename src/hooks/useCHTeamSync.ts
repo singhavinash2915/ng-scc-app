@@ -159,64 +159,54 @@ export function useCHTeamSync() {
         throw new Error('Could not get team member list — check the team ID');
       }
 
-      // Pick the first member as our "probe" to get match history
-      const probeName = step1Data.members[0]?.name ?? '?';
-      const probeId   = String(step1Data.members[0]?.player_id);
-      console.log(`[CricHeroes sync] Using player "${probeName}" (${probeId}) to fetch match list`);
-      setState(s => ({ ...s, fetchMsg: `Step 2: Fetching matches via ${probeName}…` }));
+      // ── Step 2: Fetch each member's profile page 1 (12 most recent matches each)
+      // Merge all unique SCC match IDs across all members.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const memberList: { player_id: number; name: string }[] = step1Data.members;
+      const totalMembers = memberList.length;
 
-      // ── Step 2: Paginate through the player's match history ─────────────
-      let pageNum = 1;
-      let nextUrl: string | null = null; // null = first page, string = CricHeroes pagination path
+      setState(s => ({ ...s, fetchMsg: `Step 2: Fetching matches from ${totalMembers} members…`, totalPages: totalMembers }));
 
-      while (pageNum <= 30) { // safety cap 30 pages
-        setState(s => ({ ...s, fetchMsg: `Fetching matches page ${pageNum}…`, fetchedPages: pageNum }));
+      for (let mi = 0; mi < totalMembers; mi++) {
+        const member = memberList[mi];
+        const playerId = String(member.player_id);
+        setState(s => ({
+          ...s,
+          fetchMsg: `Fetching ${member.name}'s matches (${mi + 1}/${totalMembers})…`,
+          fetchedPages: mi + 1,
+        }));
 
-        // Build URL: page 1 uses playerId, page 2+ uses nextUrl
-        const params = new URLSearchParams({
-          teamId,
-          type: 'team-matches',
-          playerId: probeId,
-        });
-        if (nextUrl) params.set('nextUrl', nextUrl);
-
-        const res = await fetch(
-          `${supabaseUrl}/functions/v1/cricheroes?${params.toString()}`,
-          { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
-        );
-        if (!res.ok) {
-          let msg = `HTTP ${res.status}`;
-          try { const j = await res.json(); msg = j?.error ?? msg; } catch { /* ignore */ }
-          throw new Error(msg);
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pp = await res.json() as Record<string, any>;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const matchData = pp?.matches ?? {};
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const matchList: Record<string, any>[] = Array.isArray(matchData?.data) ? matchData.data : [];
-
-        if (matchList.length === 0) {
-          if (pageNum === 1) throw new Error('No matches found for this player');
-          break; // no more pages
-        }
-
-        for (const raw of matchList) {
-          const parsed = parseCHMatch(raw, teamId);
-          if (parsed && !seenMatchIds.has(parsed.chMatchId)) {
-            seenMatchIds.add(parsed.chMatchId);
-            allCH.push(parsed);
+        try {
+          const res = await fetch(
+            `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches&playerId=${playerId}`,
+            { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
+          );
+          if (!res.ok) {
+            console.warn(`[CricHeroes sync] Failed for ${member.name}: HTTP ${res.status}`);
+            continue; // skip this member, try next
           }
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pp = await res.json() as Record<string, any>;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const matchData = pp?.matches ?? {};
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const matchList: Record<string, any>[] = Array.isArray(matchData?.data) ? matchData.data : [];
+
+          for (const raw of matchList) {
+            const parsed = parseCHMatch(raw, teamId);
+            if (parsed && !seenMatchIds.has(parsed.chMatchId)) {
+              seenMatchIds.add(parsed.chMatchId);
+              allCH.push(parsed);
+            }
+          }
+        } catch (err) {
+          console.warn(`[CricHeroes sync] Error for ${member.name}:`, err);
+          continue;
         }
 
-        // Check pagination — use the exact next URL from CricHeroes
-        const pageInfo = matchData?.page ?? {};
-        if (!pageInfo.next) break; // no more pages
-        nextUrl = pageInfo.next;
-        pageNum++;
-
-        await new Promise(r => setTimeout(r, 300)); // polite delay
+        // Polite delay between requests
+        if (mi < totalMembers - 1) await new Promise(r => setTimeout(r, 400));
       }
 
       // ── Auto-match CricHeroes matches to app matches ──────────────────────
