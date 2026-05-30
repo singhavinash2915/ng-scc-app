@@ -1422,54 +1422,103 @@ export function Settings() {
                   </div>
                 )}
 
-                {/* Done summary */}
+                {/* Done summary + Sync Again button (always visible when done) */}
                 {syncProgress.status === 'done' && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300 font-semibold">
                       <Check className="w-4 h-4 flex-shrink-0" />
                       {syncProgress.message}
                       {syncProgress.errors > 0 && <span className="text-yellow-600 dark:text-yellow-400 text-xs font-normal">({syncProgress.errors} errors)</span>}
                     </div>
-                    {syncProgress.unmatched.length > 0 && (
-                      <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 p-3 space-y-2">
-                        <p className="text-xs font-bold text-yellow-700 dark:text-yellow-400">
-                          ⚠️ {syncProgress.unmatched.length} SCC player{syncProgress.unmatched.length > 1 ? 's' : ''} not auto-matched — map them below then re-sync:
-                        </p>
-                        <div className="space-y-1.5">
-                          {syncProgress.unmatched.map(chName => (
-                            <div key={chName} className="flex items-center gap-2">
-                              <span className="text-xs text-yellow-800 dark:text-yellow-300 font-mono flex-shrink-0 min-w-0 truncate max-w-[160px]" title={chName}>{chName}</span>
-                              <span className="text-yellow-600/50 flex-shrink-0">→</span>
-                              <select
-                                value={nameMap[chName] ?? ''}
-                                onChange={e => {
-                                  const updated = { ...nameMap, [chName]: e.target.value };
-                                  if (!e.target.value) delete updated[chName];
-                                  setNameMap(updated);
-                                  saveNameMap(updated);
-                                }}
-                                className="flex-1 text-xs rounded-lg border border-yellow-300 dark:border-yellow-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1"
-                              >
-                                <option value="">— pick member —</option>
-                                {[...members].sort((a,b) => a.name.localeCompare(b.name)).map(m => (
-                                  <option key={m.id} value={m.id}>{m.name}</option>
-                                ))}
-                              </select>
-                              {nameMap[chName] && (
-                                <span className="text-emerald-500 text-xs flex-shrink-0">✓</span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        {syncProgress.unmatched.some(n => nameMap[n]) && (
-                          <p className="text-[10px] text-yellow-600/70 dark:text-yellow-400/60">
-                            ✓ Mappings saved. Click "Sync Again" to include these players.
-                          </p>
-                        )}
-                      </div>
-                    )}
+
+                    {/* Unmatched names — collapsible, with ignore option */}
+                    {(() => {
+                      // Filter out names the user chose to ignore
+                      const ignoredNames = JSON.parse(localStorage.getItem('scc-ch-ignored-names') || '[]') as string[];
+                      const pendingUnmatched = syncProgress.unmatched.filter(n => !ignoredNames.includes(n) && !nameMap[n]);
+                      const mappedCount = syncProgress.unmatched.filter(n => nameMap[n]).length;
+                      const ignoredCount = syncProgress.unmatched.filter(n => ignoredNames.includes(n)).length;
+
+                      if (syncProgress.unmatched.length === 0) return null;
+
+                      return (
+                        <details className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 overflow-hidden">
+                          <summary className="px-3 py-2 cursor-pointer text-xs font-bold text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30">
+                            {pendingUnmatched.length > 0
+                              ? `⚠️ ${pendingUnmatched.length} unmatched name${pendingUnmatched.length > 1 ? 's' : ''} (old members?) — tap to map or ignore`
+                              : `✓ All handled (${mappedCount} mapped, ${ignoredCount} ignored)`}
+                          </summary>
+                          <div className="px-3 pb-3 space-y-1.5 border-t border-yellow-200 dark:border-yellow-800 pt-2">
+                            {syncProgress.unmatched.map(chName => {
+                              const isIgnored = ignoredNames.includes(chName);
+                              return (
+                                <div key={chName} className={`flex items-center gap-2 ${isIgnored ? 'opacity-40' : ''}`}>
+                                  <span className="text-xs text-yellow-800 dark:text-yellow-300 font-mono flex-shrink-0 truncate max-w-[120px]" title={chName}>{chName}</span>
+                                  <span className="text-yellow-600/50 flex-shrink-0">→</span>
+                                  {isIgnored ? (
+                                    <span className="text-xs text-gray-400 italic flex-1">ignored</span>
+                                  ) : (
+                                    <select
+                                      value={nameMap[chName] ?? ''}
+                                      onChange={e => {
+                                        const updated = { ...nameMap, [chName]: e.target.value };
+                                        if (!e.target.value) delete updated[chName];
+                                        setNameMap(updated);
+                                        saveNameMap(updated);
+                                      }}
+                                      className="flex-1 text-xs rounded-lg border border-yellow-300 dark:border-yellow-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1"
+                                    >
+                                      <option value="">— pick member —</option>
+                                      {[...members].sort((a,b) => a.name.localeCompare(b.name)).map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                  {nameMap[chName] && <span className="text-emerald-500 text-xs flex-shrink-0">✓</span>}
+                                  {!isIgnored && !nameMap[chName] && (
+                                    <button
+                                      onClick={() => {
+                                        const updated = [...ignoredNames, chName];
+                                        localStorage.setItem('scc-ch-ignored-names', JSON.stringify(updated));
+                                        // Force re-render
+                                        setNameMap(prev => ({ ...prev }));
+                                      }}
+                                      className="text-[10px] text-gray-400 hover:text-red-400 flex-shrink-0"
+                                      title="Ignore — not a current member"
+                                    >
+                                      skip
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </details>
+                      );
+                    })()}
                   </div>
                 )}
+
+                {/* Sync button — always visible */}
+                <Button
+                  onClick={() => {
+                    setDeleteMsg(null);
+                    const SEASON_DATES_SYNC: Record<string, { start: string; end: string }> = {
+                      '2025-26': { start: '2025-10-01', end: '2026-06-30' },
+                      '2024-25': { start: '2024-10-01', end: '2025-06-30' },
+                      '2023-24': { start: '2023-10-01', end: '2024-06-30' },
+                    };
+                    syncStats(matches, members, SEASON_DATES_SYNC[syncMode], syncMode, nameMap);
+                  }}
+                  disabled={syncProgress.status === 'running'}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {syncProgress.status === 'running'
+                    ? `Syncing… ${syncProgress.done}/${syncProgress.total}`
+                    : syncProgress.status === 'done'
+                    ? '↺ Sync Again'
+                    : '⚡ Sync Stats from CricHeroes'}
+                </Button>
 
                 {/* Delete stats */}
                 <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 p-3 space-y-2">
@@ -1501,26 +1550,6 @@ export function Settings() {
                   )}
                 </div>
 
-                {/* Sync button */}
-                <Button
-                  onClick={() => {
-                    setDeleteMsg(null);
-                    const SEASON_DATES_SYNC: Record<string, { start: string; end: string }> = {
-                      '2025-26': { start: '2025-10-01', end: '2026-06-30' },
-                      '2024-25': { start: '2024-10-01', end: '2025-06-30' },
-                      '2023-24': { start: '2023-10-01', end: '2024-06-30' },
-                    };
-                    syncStats(matches, members, SEASON_DATES_SYNC[syncMode], syncMode, nameMap);
-                  }}
-                  disabled={syncProgress.status === 'running'}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  {syncProgress.status === 'running'
-                    ? `Syncing… ${syncProgress.done}/${syncProgress.total}`
-                    : syncProgress.status === 'done'
-                    ? '↺ Sync Again'
-                    : '⚡ Sync Stats from CricHeroes'}
-                </Button>
               </div>
 
               {/* Stats feedback */}
