@@ -38,12 +38,16 @@ interface Acc {
   dismissals:     number;
   // bowling
   bowlInnings:    number;
-  totalBalls:     number;   // whole ball count (overs*6 + extra balls)
+  totalBalls:     number;
   wickets:        number;
   runsConceded:   number;
   bestWkts:       number;
   bestRuns:       number;
   fiveWickets:    number;
+  // fielding
+  catches:        number;
+  stumpings:      number;
+  runOuts:        number;
 }
 
 function emptyAcc(): Acc {
@@ -53,7 +57,56 @@ function emptyAcc(): Acc {
     highest: 0, highestNotOut: false, ducks: 0, fifties: 0, hundreds: 0, dismissals: 0,
     bowlInnings: 0, totalBalls: 0, wickets: 0, runsConceded: 0,
     bestWkts: 0, bestRuns: 9999, fiveWickets: 0,
+    catches: 0, stumpings: 0, runOuts: 0,
   };
+}
+
+// ── Fielding: parse dismissal text ───────────────────────────────────────────
+// CricHeroes formats: "c FielderName b Bowler", "c & b Bowler",
+// "st KeeperName b Bowler", "run out (FielderName)", "run out FielderName"
+function parseFielding(
+  howOut: string,
+  matchId: string,
+  acc: Record<string, Acc>,
+  resolve: (name: string) => Member | null,
+) {
+  if (!howOut) return;
+  // Strip leading/trailing whitespace; keep original casing for name resolution
+  const d = howOut.trim();
+  const dl = d.toLowerCase();
+
+  if (dl.startsWith('c & b ') || dl.startsWith('c&b ')) {
+    // Caught and bowled — the bowler gets the catch
+    const bowlerName = d.replace(/^c\s*&\s*b\s+/i, '').trim();
+    const m = resolve(bowlerName);
+    if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].catches++; acc[m.id].matchSet.add(matchId); }
+
+  } else if (dl.startsWith('c ')) {
+    // Caught: "c FielderName b BowlerName"
+    const inner = d.slice(2);                           // "FielderName b BowlerName"
+    const bIdx = inner.search(/\s+b\s+/i);
+    const fielderName = bIdx >= 0 ? inner.slice(0, bIdx).trim() : inner.trim();
+    const m = resolve(fielderName);
+    if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].catches++; acc[m.id].matchSet.add(matchId); }
+
+  } else if (dl.startsWith('st ')) {
+    // Stumped: "st KeeperName b BowlerName"
+    const inner = d.slice(3);
+    const bIdx = inner.search(/\s+b\s+/i);
+    const keeperName = bIdx >= 0 ? inner.slice(0, bIdx).trim() : inner.trim();
+    const m = resolve(keeperName);
+    if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].stumpings++; acc[m.id].matchSet.add(matchId); }
+
+  } else if (dl.includes('run out')) {
+    // Run out: "run out (FielderName)" or "run out FielderName"
+    // Sometimes "run out (A/B)" — credit the first name
+    const roMatch = d.match(/run out\s*\(?\s*([^)/\n]+)/i);
+    if (roMatch) {
+      const fielderName = roMatch[1].trim();
+      const m = resolve(fielderName);
+      if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].runOuts++; acc[m.id].matchSet.add(matchId); }
+    }
+  }
 }
 
 // ── Name matching ────────────────────────────────────────────────────────────
@@ -244,6 +297,16 @@ export function useStatSync() {
               }
             }
           }
+
+          // ── Fielding: parse dismissal text from OPPONENT batting innings ──
+          // SCC players appear as fielders in the opponent's batting innings.
+          // For internal matches, both innings have SCC fielders.
+          if (!isSCCBatting || isInternal) {
+            for (const b of batting) {
+              if (!b.how_to_out || b.how_to_out === '') continue;
+              parseFielding(String(b.how_to_out), match.id, acc, resolveName);
+            }
+          }
         }
       } catch (err) {
         console.error(`Error on match ${match.ch_match_id}:`, err);
@@ -293,9 +356,9 @@ export function useStatSync() {
           bowling_strike_rate:   bowlSR,
           bowling_best_figures:  bestFigures,
           bowling_five_wickets:  s.fiveWickets,
-          fielding_catches:      0,
-          fielding_stumpings:    0,
-          fielding_run_outs:     0,
+          fielding_catches:      s.catches,
+          fielding_stumpings:    s.stumpings,
+          fielding_run_outs:     s.runOuts,
           updated_at:            new Date().toISOString(),
           last_synced_at:        new Date().toISOString(),
         }, { onConflict: 'member_id,season' });

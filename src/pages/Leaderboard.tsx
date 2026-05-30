@@ -150,8 +150,16 @@ function StatCell({ value, highlight, isTop }: { value: string | number; highlig
   return <span className={highlight ? 'font-semibold text-gray-900 dark:text-white' : ''}>{text}</span>;
 }
 
+const SEASONS = [
+  { value: '2025-26', label: 'Season 2025–26' },
+  { value: '2024-25', label: 'Season 2024–25' },
+  { value: '2023-24', label: 'Season 2023–24' },
+  { value: 'all',     label: 'All Time'        },
+] as const;
+
 export function Leaderboard() {
-  const { stats, loading, error, fetchStats } = useCricketStats('2025-26');
+  const [season, setSeason] = useState<string>('2025-26');
+  const { stats, loading, error, fetchStats } = useCricketStats(season);
   const { counts: momCounts } = useMOMCounts();
   const { formByMember } = useFormGuide();
   const [tab, setTab] = useState<Tab>('batting');
@@ -268,7 +276,7 @@ export function Leaderboard() {
 
   return (
     <div className="space-y-6">
-      <Header title="Leaderboard" subtitle="Season 2025-26 · Oct 2025 → Jun 2026" />
+      <Header title="Leaderboard" subtitle={SEASONS.find(s => s.value === season)?.label ?? season} />
 
       {/* Season banner */}
       <div className="mx-4 sm:mx-0 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-700 dark:to-primary-900 p-5 text-white flex items-center justify-between flex-wrap gap-3">
@@ -277,22 +285,32 @@ export function Leaderboard() {
             <Trophy className="w-6 h-6 text-yellow-300" />
           </div>
           <div>
-            <p className="text-primary-100 text-sm font-medium">Current Season</p>
-            <h2 className="text-xl font-bold">SCC Season 2025–26</h2>
-            <p className="text-primary-200 text-xs">{stats.length} players · Oct 2025 – Jun 2026 · Synced from CricHeroes</p>
+            <p className="text-primary-100 text-sm font-medium">Sangria Cricket Club</p>
+            <h2 className="text-xl font-bold">
+              {SEASONS.find(s => s.value === season)?.label ?? season}
+            </h2>
+            <p className="text-primary-200 text-xs">{stats.length} players · Synced from CricHeroes</p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex flex-col items-end gap-2">
+          {/* Season selector */}
+          <select
+            value={season}
+            onChange={e => setSeason(e.target.value)}
+            className="text-sm font-semibold rounded-xl bg-white/20 hover:bg-white/30 border border-white/20 text-white px-3 py-2 outline-none cursor-pointer"
+          >
+            {SEASONS.map(s => (
+              <option key={s.value} value={s.value} className="text-gray-900">{s.label}</option>
+            ))}
+          </select>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            title="Reload stats from database"
-            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-xl text-sm font-medium"
+            className="flex items-center gap-1.5 text-primary-200 hover:text-white text-xs transition-colors"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Loading...' : 'Reload'}
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Loading…' : 'Reload'}
           </button>
-          <span className="text-primary-200 text-[10px]">Auto-syncs daily at 9 AM</span>
         </div>
       </div>
 
