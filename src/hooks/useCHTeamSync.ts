@@ -166,14 +166,22 @@ export function useCHTeamSync() {
       setState(s => ({ ...s, fetchMsg: `Step 2: Fetching matches via ${probeName}…` }));
 
       // ── Step 2: Paginate through the player's match history ─────────────
-      let page = 1;
-      let hasMore = true;
+      let pageNum = 1;
+      let nextUrl: string | null = null; // null = first page, string = CricHeroes pagination path
 
-      while (hasMore && page <= 30) { // safety cap 30 pages
-        setState(s => ({ ...s, fetchMsg: `Fetching matches page ${page}…`, fetchedPages: page }));
+      while (pageNum <= 30) { // safety cap 30 pages
+        setState(s => ({ ...s, fetchMsg: `Fetching matches page ${pageNum}…`, fetchedPages: pageNum }));
+
+        // Build URL: page 1 uses playerId, page 2+ uses nextUrl
+        const params = new URLSearchParams({
+          teamId,
+          type: 'team-matches',
+          playerId: probeId,
+        });
+        if (nextUrl) params.set('nextUrl', nextUrl);
 
         const res = await fetch(
-          `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches&playerId=${probeId}&page=${page}`,
+          `${supabaseUrl}/functions/v1/cricheroes?${params.toString()}`,
           { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
         );
         if (!res.ok) {
@@ -190,8 +198,8 @@ export function useCHTeamSync() {
         const matchList: Record<string, any>[] = Array.isArray(matchData?.data) ? matchData.data : [];
 
         if (matchList.length === 0) {
-          if (page === 1) throw new Error('No matches found for this player');
-          break;
+          if (pageNum === 1) throw new Error('No matches found for this player');
+          break; // no more pages
         }
 
         for (const raw of matchList) {
@@ -202,12 +210,13 @@ export function useCHTeamSync() {
           }
         }
 
-        // Check pagination
+        // Check pagination — use the exact next URL from CricHeroes
         const pageInfo = matchData?.page ?? {};
-        hasMore = !!pageInfo.next;
-        page++;
+        if (!pageInfo.next) break; // no more pages
+        nextUrl = pageInfo.next;
+        pageNum++;
 
-        if (hasMore) await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 300)); // polite delay
       }
 
       // ── Auto-match CricHeroes matches to app matches ──────────────────────

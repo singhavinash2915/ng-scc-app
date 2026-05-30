@@ -98,13 +98,12 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Step 2: Fetch player profile page N — matches are in __NEXT_DATA__
-      const paginationUrl = page === '1'
-        ? `https://cricheroes.in/player-profile/${playerId}/x`
-        : `https://cricheroes.in/player/get-player-match/${playerId}?pagesize=${pageSize}&pageno=${page}`;
+      // Step 2: Fetch player matches
+      // Client passes nextUrl for page 2+ (the exact path from CricHeroes pagination)
+      const nextUrl = url.searchParams.get('nextUrl');
 
-      if (page === '1') {
-        // Page 1: parse from player profile SSR
+      if (!nextUrl) {
+        // Page 1: parse from player profile SSR (__NEXT_DATA__)
         const { pageProps } = await tryUrls([
           `https://cricheroes.in/player-profile/${playerId}/x`,
         ]);
@@ -117,14 +116,26 @@ Deno.serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       } else {
-        // Page 2+: CricHeroes internal API (JSON response, no HTML)
-        const res = await fetch(paginationUrl, { headers: BROWSER_HEADERS });
-        if (!res.ok) throw new Error(`CricHeroes pagination returned ${res.status}`);
-        const json = await res.json();
-        return new Response(
-          JSON.stringify({ _step: 'matches', matches: json }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
+        // Page 2+: use the exact nextUrl path from CricHeroes
+        // nextUrl is like "/player/get-player-match/3855641?pagesize=12&pageno=2&datetime=..."
+        // Try multiple base domains
+        const bases = ['https://cricheroes.in', 'https://api.cricheroes.in', 'https://cricheroes.com'];
+        let lastErr = '';
+        for (const base of bases) {
+          try {
+            const fullUrl = `${base}${nextUrl.startsWith('/') ? '' : '/'}${nextUrl}`;
+            const res = await fetch(fullUrl, { headers: BROWSER_HEADERS });
+            if (!res.ok) { lastErr = `${base} → ${res.status}`; continue; }
+            const json = await res.json();
+            return new Response(
+              JSON.stringify({ _step: 'matches', matches: json }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+            );
+          } catch (e) {
+            lastErr = `${base} → ${String(e)}`;
+          }
+        }
+        throw new Error(`Pagination failed: ${lastErr}`);
       }
     }
 
