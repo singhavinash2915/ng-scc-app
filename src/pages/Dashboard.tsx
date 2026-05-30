@@ -105,9 +105,9 @@ export function Dashboard() {
 
   const stats = useMemo(() => {
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
-    // Current season: Sep 2025 → Aug 2026
-    const seasonStart = '2025-09-01';
-    const seasonEnd   = '2026-08-31';
+    // Current season: Oct 2025 → Sep 2026
+    const seasonStart = '2025-10-01';
+    const seasonEnd   = '2026-09-30';
     const seasonMatches = matches.filter(m => m.date >= seasonStart && m.date <= seasonEnd);
     const completed = seasonMatches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
     const won = completed.filter(m => m.result === 'won').length;
