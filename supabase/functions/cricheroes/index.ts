@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const teamId = url.searchParams.get('teamId');
     const matchId = url.searchParams.get('matchId');
 
-    // ── Team match list ───────────────────────────────────────────────────────
+    // ── Team match list (via player profile — only reliable SSR source) ──────
     if (type === 'team-matches') {
       if (!teamId) {
         return new Response(
@@ -64,27 +64,68 @@ Deno.serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
-      const page = url.searchParams.get('page') || '1';
-      const pq   = `?page=${page}`;
 
-      // CricHeroes team profile URL patterns to try in order.
-      // The slug after the team ID is optional / varies, so we try several.
-      const candidates = [
-        `https://cricheroes.in/team-profile/${teamId}/x/x/matches${pq}`,
-        `https://cricheroes.in/team-profile/${teamId}/x/matches${pq}`,
-        `https://cricheroes.in/team-profile/${teamId}/matches${pq}`,
-        `https://cricheroes.com/team-profile/${teamId}/x/x/matches${pq}`,
-        `https://cricheroes.com/team-profile/${teamId}/x/matches${pq}`,
-        // Also try without /matches — the team profile page may include recent matches
-        `https://cricheroes.in/team-profile/${teamId}/x/x${pq}`,
-        `https://cricheroes.in/team-profile/${teamId}${pq}`,
-      ];
+      // Step 1: Fetch team profile to get team members & pick the first player
+      const playerId = url.searchParams.get('playerId');  // optional override
+      const page     = url.searchParams.get('page') || '1';
+      const pageSize = url.searchParams.get('pageSize') || '12';
 
-      const { pageProps, url: succeededUrl } = await tryUrls(candidates);
-      return new Response(
-        JSON.stringify({ ...pageProps, _succeededUrl: succeededUrl }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
+      if (!playerId) {
+        // Fetch team profile to get member list
+        const { pageProps: teamPage } = await tryUrls([
+          `https://cricheroes.in/team-profile/${teamId}/matches`,
+          `https://cricheroes.in/team-profile/${teamId}/x/matches`,
+        ]);
+        const members = teamPage?.members as { data?: { members?: { player_id: number; name: string }[] } };
+        const memberList = members?.data?.members ?? [];
+        if (memberList.length === 0) {
+          return new Response(
+            JSON.stringify({ error: 'No members found for this team', teamDetails: teamPage?.teamDetails }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          );
+        }
+        // Return the member list so the client can pick a player and call again
+        return new Response(
+          JSON.stringify({
+            _step: 'pick-player',
+            teamName: (teamPage?.teamDetails as { data?: { team_name?: string } })?.data?.team_name ?? '',
+            members: memberList.map((m: { player_id: number; name: string }) => ({
+              player_id: m.player_id,
+              name: m.name,
+            })),
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+
+      // Step 2: Fetch player profile page N — matches are in __NEXT_DATA__
+      const paginationUrl = page === '1'
+        ? `https://cricheroes.in/player-profile/${playerId}/x`
+        : `https://cricheroes.in/player/get-player-match/${playerId}?pagesize=${pageSize}&pageno=${page}`;
+
+      if (page === '1') {
+        // Page 1: parse from player profile SSR
+        const { pageProps } = await tryUrls([
+          `https://cricheroes.in/player-profile/${playerId}/x`,
+        ]);
+        return new Response(
+          JSON.stringify({
+            _step: 'matches',
+            matches: pageProps?.matches ?? {},
+            playerInfo: (pageProps?.playerInfo as { data?: Record<string, unknown> })?.data ?? {},
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      } else {
+        // Page 2+: CricHeroes internal API (JSON response, no HTML)
+        const res = await fetch(paginationUrl, { headers: BROWSER_HEADERS });
+        if (!res.ok) throw new Error(`CricHeroes pagination returned ${res.status}`);
+        const json = await res.json();
+        return new Response(
+          JSON.stringify({ _step: 'matches', matches: json }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
     }
 
     // ── Match scorecard / live ────────────────────────────────────────────────

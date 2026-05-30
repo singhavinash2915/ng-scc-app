@@ -72,24 +72,34 @@ function opponentSimilar(chOpp: string, appOpp: string | null): boolean {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseCHMatch(raw: Record<string, any>, sccTeamId: string): Omit<CHMatch, 'appMatchId' | 'alreadyLinked' | 'status'> {
-  const id        = String(raw.match_id ?? raw.id ?? '');
-  const dt        = String(raw.start_datetime ?? raw.match_date ?? '');
-  const date      = dt ? dt.split('T')[0] : '';
-  const team1     = String(raw.team1_name ?? raw.team1?.name ?? '');
-  const team2     = String(raw.team2_name ?? raw.team2?.name ?? '');
-  const winTeam   = String(raw.winning_team ?? '');
-  const status    = String(raw.status ?? '');
-  const team1Id   = String(raw.team1_id ?? raw.team1?.id ?? '');
-  // team2Id not used currently but may be useful for future disambiguation
-  // const team2Id = String(raw.team2_id ?? raw.team2?.id ?? '');
+function parseCHMatch(raw: Record<string, any>, sccTeamId: string): Omit<CHMatch, 'appMatchId' | 'alreadyLinked' | 'status'> | null {
+  const id = String(raw.match_id ?? raw.id ?? '');
+  if (!id || id === 'undefined') return null;
 
-  const sccIsTeam1 = team1Id === sccTeamId || isSCC(team1);
-  const opp        = sccIsTeam1 ? team2 : team1;
+  // Player-profile format: team_a / team_b with summaries
+  const teamA    = String(raw.team_a ?? '');
+  const teamB    = String(raw.team_b ?? '');
+  const teamAId  = String(raw.team_a_id ?? '');
+  // Fallback to older keys
+  const team1    = teamA || String(raw.team1_name ?? '');
+  const team2    = teamB || String(raw.team2_name ?? '');
+
+  const dt       = String(raw.match_start_time ?? raw.start_datetime ?? raw.match_date ?? '');
+  const date     = dt ? dt.split('T')[0] : '';
+  const winTeam  = String(raw.winning_team ?? '');
+  const status   = String(raw.status ?? '');
+
+  const sccIsTeamA = teamAId === sccTeamId || isSCC(team1);
+  const opp = sccIsTeamA ? team2 : team1;
   const isInternal = isSCC(team1) && isSCC(team2);
 
-  const ourScore   = String(sccIsTeam1 ? (raw.team1_score ?? raw.team1_total ?? '') : (raw.team2_score ?? raw.team2_total ?? ''));
-  const theirScore = String(sccIsTeam1 ? (raw.team2_score ?? raw.team2_total ?? '') : (raw.team1_score ?? raw.team1_total ?? ''));
+  // Scores: player-profile has team_a_summary / team_b_summary (e.g. "119/10")
+  const ourScore = String(sccIsTeamA
+    ? (raw.team_a_summary ?? raw.team1_score ?? '')
+    : (raw.team_b_summary ?? raw.team2_score ?? ''));
+  const theirScore = String(sccIsTeamA
+    ? (raw.team_b_summary ?? raw.team2_score ?? '')
+    : (raw.team_a_summary ?? raw.team1_score ?? ''));
 
   let result: CHMatch['result'] = 'unknown';
   if (status === 'upcoming' || status === 'live') {
@@ -99,13 +109,16 @@ function parseCHMatch(raw: Record<string, any>, sccTeamId: string): Omit<CHMatch
     else if (winTeam.toLowerCase() === 'draw' || winTeam.toLowerCase() === 'tie') result = 'draw';
     else result = 'lost';
   } else if (status === 'past') {
-    result = 'draw'; // no winner recorded = draw
+    result = 'draw';
   }
+
+  // Only include SCC matches (team A or B is SCC)
+  if (!isSCC(team1) && !isSCC(team2)) return null;
 
   return {
     chMatchId: id, date, team1, team2, opponent: isInternal ? '' : opp,
     isInternal, result, ourScore, theirScore,
-    tournament: String(raw.tournament_name ?? raw.tournament ?? ''),
+    tournament: String(raw.tournament_name ?? ''),
   };
 }
 
@@ -124,67 +137,77 @@ export function useCHTeamSync() {
   // ── Fetch all pages of CricHeroes team matches ──────────────────────────────
   const fetchTeamMatches = useCallback(async (teamId: string, appMatches: Match[]) => {
     if (!teamId.trim()) return;
-    setState(s => ({ ...s, fetchStatus: 'fetching', fetchMsg: 'Fetching from CricHeroes…', chMatches: [], totalPages: 0, fetchedPages: 0 }));
+    setState(s => ({ ...s, fetchStatus: 'fetching', fetchMsg: 'Step 1: Fetching team members…', chMatches: [], totalPages: 0, fetchedPages: 0 }));
 
     const allCH: Array<Omit<CHMatch, 'appMatchId' | 'alreadyLinked' | 'status'>> = [];
-    let page = 1;
-    let totalPages = 1;
+    const seenMatchIds = new Set<string>();
 
     try {
-      while (page <= totalPages && page <= 20) { // safety cap at 20 pages
-        setState(s => ({ ...s, fetchMsg: `Fetching page ${page}${totalPages > 1 ? `/${totalPages}` : ''}…` }));
+      // ── Step 1: Get team member list to find a player ID ────────────────
+      const step1 = await fetch(
+        `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches`,
+        { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
+      );
+      if (!step1.ok) {
+        let msg = `HTTP ${step1.status}`;
+        try { const j = await step1.json(); msg = j?.error ?? msg; } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const step1Data = await step1.json() as Record<string, any>;
+      if (step1Data._step !== 'pick-player' || !step1Data.members?.length) {
+        throw new Error('Could not get team member list — check the team ID');
+      }
+
+      // Pick the first member as our "probe" to get match history
+      const probeName = step1Data.members[0]?.name ?? '?';
+      const probeId   = String(step1Data.members[0]?.player_id);
+      console.log(`[CricHeroes sync] Using player "${probeName}" (${probeId}) to fetch match list`);
+      setState(s => ({ ...s, fetchMsg: `Step 2: Fetching matches via ${probeName}…` }));
+
+      // ── Step 2: Paginate through the player's match history ─────────────
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore && page <= 30) { // safety cap 30 pages
+        setState(s => ({ ...s, fetchMsg: `Fetching matches page ${page}…`, fetchedPages: page }));
 
         const res = await fetch(
-          `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches&page=${page}`,
+          `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches&playerId=${probeId}&page=${page}`,
           { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
         );
         if (!res.ok) {
-          // Surface the actual error message from the edge fn
           let msg = `HTTP ${res.status}`;
           try { const j = await res.json(); msg = j?.error ?? msg; } catch { /* ignore */ }
           throw new Error(msg);
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pp: Record<string, any> = await res.json();
-
-        // Log which URL succeeded (from edge fn debug field)
-        if (pp._succeededUrl) {
-          console.log('[CricHeroes team sync] URL that worked:', pp._succeededUrl);
-        }
-
-        // CricHeroes stores the match list under various keys depending on page/version
+        const pp = await res.json() as Record<string, any>;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const matchList: Record<string, any>[] =
-          pp?.teamMatchList?.data ??
-          pp?.matchList?.data ??
-          pp?.matches?.data ??
-          pp?.teamMatches?.data ??
-          (Array.isArray(pp?.data) ? pp.data : null) ??
-          [];
+        const matchData = pp?.matches ?? {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const matchList: Record<string, any>[] = Array.isArray(matchData?.data) ? matchData.data : [];
 
-        if (matchList.length === 0 && page === 1) {
-          // Return the raw keys so admin can debug
-          const keys = Object.keys(pp).filter(k => k !== '_succeededUrl').join(', ');
-          throw new Error(`No matches found in response (keys: ${keys || 'empty'}) — verify the team ID is correct`);
-        }
-
-        const pagination = pp?.teamMatchList?.pagination ?? pp?.matchList?.pagination ?? pp?.pagination ?? null;
-        if (pagination) {
-          const perPage = Number(pagination.per_page ?? 10);
-          const total   = Number(pagination.total ?? matchList.length);
-          totalPages    = Math.ceil(total / perPage);
+        if (matchList.length === 0) {
+          if (page === 1) throw new Error('No matches found for this player');
+          break;
         }
 
         for (const raw of matchList) {
-          if (!raw.match_id && !raw.id) continue;
-          allCH.push(parseCHMatch(raw, teamId));
+          const parsed = parseCHMatch(raw, teamId);
+          if (parsed && !seenMatchIds.has(parsed.chMatchId)) {
+            seenMatchIds.add(parsed.chMatchId);
+            allCH.push(parsed);
+          }
         }
 
-        setState(s => ({ ...s, totalPages, fetchedPages: page }));
+        // Check pagination
+        const pageInfo = matchData?.page ?? {};
+        hasMore = !!pageInfo.next;
         page++;
 
-        if (page <= totalPages) await new Promise(r => setTimeout(r, 300)); // polite delay
+        if (hasMore) await new Promise(r => setTimeout(r, 300));
       }
 
       // ── Auto-match CricHeroes matches to app matches ──────────────────────
