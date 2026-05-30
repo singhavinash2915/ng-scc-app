@@ -50,7 +50,7 @@ export function Settings() {
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
   const { progress: syncProgress, sync: syncStats, reset: resetSync } = useStatSync();
-  const [syncMode, setSyncMode] = useState<'season' | 'alltime'>('season');
+  const [syncMode, setSyncMode] = useState<'2025-26' | '2024-25' | '2023-24'>('2025-26');
   const [nameMap, setNameMap] = useState<Record<string, string>>(() => loadNameMap());
 
   // ─── Ground & Testimonials ───────────────────────────────────────────────
@@ -1182,11 +1182,12 @@ export function Settings() {
                   Fetches every match scorecard that has a CricHeroes ID, aggregates batting &amp; bowling stats per player, and saves them to the leaderboard.
                 </p>
 
-                {/* Mode selector */}
-                <div className="flex gap-2">
+                {/* Season selector — sync one season at a time */}
+                <div className="flex gap-1.5 flex-wrap">
                   {([
-                    { key: 'season',  label: 'Current Season (Oct 2025 – Jun 2026)' },
-                    { key: 'alltime', label: 'All Time'                             },
+                    { key: '2025-26', label: '2025–26', dates: { start: '2025-10-01', end: '2026-06-30' } },
+                    { key: '2024-25', label: '2024–25', dates: { start: '2024-10-01', end: '2025-06-30' } },
+                    { key: '2023-24', label: '2023–24', dates: { start: '2023-10-01', end: '2024-06-30' } },
                   ] as const).map(opt => (
                     <button
                       key={opt.key}
@@ -1267,11 +1268,12 @@ export function Settings() {
                 {/* Sync button */}
                 <Button
                   onClick={() => {
-                    const seasonFilter = syncMode === 'season'
-                      ? { start: '2025-10-01', end: '2026-06-30' }
-                      : null;
-                    const label = syncMode === 'season' ? '2025-26' : 'all-time';
-                    syncStats(matches, members, seasonFilter, label, nameMap);
+                    const seasonDates: Record<string, { start: string; end: string }> = {
+                      '2025-26': { start: '2025-10-01', end: '2026-06-30' },
+                      '2024-25': { start: '2024-10-01', end: '2025-06-30' },
+                      '2023-24': { start: '2023-10-01', end: '2024-06-30' },
+                    };
+                    syncStats(matches, members, seasonDates[syncMode], syncMode, nameMap);
                   }}
                   disabled={syncProgress.status === 'running'}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"

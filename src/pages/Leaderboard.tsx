@@ -154,8 +154,10 @@ const SEASONS = [
   { value: '2025-26', label: 'Season 2025–26' },
   { value: '2024-25', label: 'Season 2024–25' },
   { value: '2023-24', label: 'Season 2023–24' },
-  { value: 'all',     label: 'All Time'        },
+  { value: 'all',     label: 'Overall (All Seasons)' },
 ] as const;
+// Note: 'all' aggregates every named-year row (2025-26, 2024-25, etc.)
+// Never shows 'all-time' rows (which would double-count current season stats).
 
 export function Leaderboard() {
   const [season, setSeason] = useState<string>('2025-26');
