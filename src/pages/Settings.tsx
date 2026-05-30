@@ -36,6 +36,7 @@ import { useTournaments } from '../hooks/useTournaments';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useSponsor } from '../hooks/useSponsor';
 import { useCricketStats } from '../hooks/useCricketStats';
+import { useStatSync } from '../hooks/useStatSync';
 import type { MemberCricketStats } from '../types';
 
 export function Settings() {
@@ -48,6 +49,8 @@ export function Settings() {
   const { tournaments } = useTournaments();
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
+  const { progress: syncProgress, sync: syncStats, reset: resetSync } = useStatSync();
+  const [syncMode, setSyncMode] = useState<'season' | 'alltime'>('season');
 
   // ─── Ground & Testimonials ───────────────────────────────────────────────
   const {
@@ -1167,6 +1170,93 @@ export function Settings() {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Manually enter or update CricHeroes stats for each member. These power the AI Insights features.
               </p>
+
+              {/* ── Auto-Sync from CricHeroes ──────────────────────────────── */}
+              <div className="rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/10 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                  <p className="text-sm font-bold text-purple-700 dark:text-purple-300">Auto-Sync from CricHeroes</p>
+                </div>
+                <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
+                  Fetches every match scorecard that has a CricHeroes ID, aggregates batting &amp; bowling stats per player, and saves them to the leaderboard.
+                </p>
+
+                {/* Mode selector */}
+                <div className="flex gap-2">
+                  {([
+                    { key: 'season',  label: 'Current Season (Oct 2025 – Jun 2026)' },
+                    { key: 'alltime', label: 'All Time'                             },
+                  ] as const).map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => { setSyncMode(opt.key); resetSync(); }}
+                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold border transition-colors ${
+                        syncMode === opt.key
+                          ? 'bg-purple-600 text-white border-purple-600'
+                          : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Progress bar */}
+                {syncProgress.status === 'running' && (
+                  <div className="space-y-1.5">
+                    <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                      <div
+                        className="h-full bg-purple-500 rounded-full transition-all duration-300"
+                        style={{ width: syncProgress.total > 0 ? `${(syncProgress.done / syncProgress.total) * 100}%` : '0%' }}
+                      />
+                    </div>
+                    <p className="text-xs text-purple-600 dark:text-purple-400">{syncProgress.message}</p>
+                  </div>
+                )}
+
+                {/* Done summary */}
+                {syncProgress.status === 'done' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300 font-semibold">
+                      <Check className="w-4 h-4 flex-shrink-0" />
+                      {syncProgress.message}
+                      {syncProgress.errors > 0 && <span className="text-yellow-600 dark:text-yellow-400 text-xs font-normal">({syncProgress.errors} errors)</span>}
+                    </div>
+                    {syncProgress.unmatched.length > 0 && (
+                      <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 p-2.5">
+                        <p className="text-xs font-bold text-yellow-700 dark:text-yellow-400 mb-1">
+                          ⚠️ {syncProgress.unmatched.length} CricHeroes name{syncProgress.unmatched.length > 1 ? 's' : ''} not matched to a member:
+                        </p>
+                        <p className="text-xs text-yellow-700/80 dark:text-yellow-400/80 leading-relaxed">
+                          {syncProgress.unmatched.join(' · ')}
+                        </p>
+                        <p className="text-[10px] text-yellow-600/60 dark:text-yellow-400/60 mt-1">
+                          Ensure member names in the app match their CricHeroes display names.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sync button */}
+                <Button
+                  onClick={() => {
+                    const seasonFilter = syncMode === 'season'
+                      ? { start: '2025-10-01', end: '2026-06-30' }
+                      : null;
+                    const label = syncMode === 'season' ? '2025-26' : 'all-time';
+                    syncStats(matches, members, seasonFilter, label);
+                  }}
+                  disabled={syncProgress.status === 'running'}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {syncProgress.status === 'running'
+                    ? `Syncing… ${syncProgress.done}/${syncProgress.total}`
+                    : syncProgress.status === 'done'
+                    ? '↺ Sync Again'
+                    : '⚡ Sync Stats from CricHeroes'}
+                </Button>
+              </div>
 
               {/* Stats feedback */}
               {statsError && (
