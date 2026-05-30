@@ -37,6 +37,7 @@ import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useSponsor } from '../hooks/useSponsor';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useStatSync, loadNameMap, saveNameMap } from '../hooks/useStatSync';
+import { useCHTeamSync } from '../hooks/useCHTeamSync';
 import { supabase } from '../lib/supabase';
 import type { MemberCricketStats } from '../types';
 
@@ -51,6 +52,8 @@ export function Settings() {
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
   const { progress: syncProgress, sync: syncStats, reset: resetSync } = useStatSync();
+  const { state: teamSyncState, fetchTeamMatches, applyLinks, reset: resetTeamSync } = useCHTeamSync();
+  const [chTeamId, setChTeamId] = useState(() => localStorage.getItem('scc-ch-team-id') ?? '');
   const [syncMode, setSyncMode] = useState<'2025-26' | '2024-25' | '2023-24'>('2025-26');
   const [nameMap, setNameMap] = useState<Record<string, string>>(() => loadNameMap());
   const [deleteTarget, setDeleteTarget] = useState<'all' | '2025-26' | '2024-25' | '2023-24'>('all');
@@ -1197,6 +1200,126 @@ export function Settings() {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Manually enter or update CricHeroes stats for each member. These power the AI Insights features.
               </p>
+
+              {/* ── Import Match IDs from CricHeroes Team ─────────────────── */}
+              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ExternalLink className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">Import Match IDs from CricHeroes</p>
+                </div>
+                <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">
+                  Enter your SCC CricHeroes team ID and all your matches will be fetched and auto-linked to app matches by date.
+                  Find the team ID in your CricHeroes team profile URL:
+                  <span className="font-mono ml-1 text-emerald-700 dark:text-emerald-300">cricheroes.in/team-profile/<strong>12345</strong>/...</span>
+                </p>
+
+                {/* Team ID input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="CricHeroes Team ID (e.g. 12345)"
+                    value={chTeamId}
+                    onChange={e => {
+                      setChTeamId(e.target.value);
+                      localStorage.setItem('scc-ch-team-id', e.target.value);
+                    }}
+                    className="flex-1 text-sm rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 outline-none focus:border-emerald-500"
+                  />
+                  <Button
+                    onClick={() => { resetTeamSync(); fetchTeamMatches(chTeamId, matches); }}
+                    disabled={!chTeamId.trim() || teamSyncState.fetchStatus === 'fetching'}
+                    className="flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {teamSyncState.fetchStatus === 'fetching' ? 'Fetching…' : 'Fetch Matches'}
+                  </Button>
+                </div>
+
+                {/* Fetch progress */}
+                {teamSyncState.fetchStatus === 'fetching' && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 animate-pulse">{teamSyncState.fetchMsg}</p>
+                )}
+
+                {/* Results summary */}
+                {(teamSyncState.fetchStatus === 'done' || teamSyncState.fetchStatus === 'error') && (
+                  <p className={`text-xs font-semibold ${teamSyncState.fetchStatus === 'error' ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-300'}`}>
+                    {teamSyncState.fetchMsg}
+                  </p>
+                )}
+
+                {/* Save status */}
+                {teamSyncState.saveMsg && (
+                  <p className={`text-xs font-semibold ${teamSyncState.saveStatus === 'error' ? 'text-red-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {teamSyncState.saveMsg}
+                  </p>
+                )}
+
+                {/* Match list table */}
+                {teamSyncState.chMatches.length > 0 && (
+                  <div className="space-y-2">
+                    {/* Summary chips */}
+                    <div className="flex gap-2 flex-wrap text-xs">
+                      {[
+                        { label: 'Auto-linked',   count: teamSyncState.chMatches.filter(c => c.status === 'matched').length,     color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
+                        { label: 'Already set',   count: teamSyncState.chMatches.filter(c => c.status === 'already').length,     color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' },
+                        { label: 'No app match',  count: teamSyncState.chMatches.filter(c => c.status === 'no-app-match').length, color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
+                      ].map(({ label, count, color }) => count > 0 && (
+                        <span key={label} className={`px-2 py-0.5 rounded-full font-bold ${color}`}>{count} {label}</span>
+                      ))}
+                    </div>
+
+                    {/* Scrollable match list */}
+                    <div className="max-h-72 overflow-y-auto rounded-lg border border-emerald-200 dark:border-emerald-800 divide-y divide-emerald-100 dark:divide-emerald-900">
+                      {teamSyncState.chMatches.map(ch => (
+                        <div key={ch.chMatchId} className={`flex items-center gap-2 px-3 py-2 text-xs ${
+                          ch.status === 'already'      ? 'bg-blue-50/50 dark:bg-blue-900/10' :
+                          ch.status === 'matched'      ? 'bg-emerald-50/50 dark:bg-emerald-900/10' :
+                          ch.status === 'no-app-match' ? 'bg-yellow-50/50 dark:bg-yellow-900/10' : ''
+                        }`}>
+                          {/* Status icon */}
+                          <span className="flex-shrink-0 w-4 text-center">
+                            {ch.status === 'already'      ? '🔗' :
+                             ch.status === 'matched'      ? '✓' :
+                             ch.status === 'no-app-match' ? '?' : '·'}
+                          </span>
+                          {/* Date */}
+                          <span className="text-gray-500 flex-shrink-0 w-20">
+                            {ch.date ? new Date(ch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' }) : '—'}
+                          </span>
+                          {/* Opponent / match type */}
+                          <span className="flex-1 font-medium text-gray-800 dark:text-gray-200 truncate">
+                            {ch.isInternal ? '🏟 Internal' : `vs ${ch.opponent || '?'}`}
+                          </span>
+                          {/* Score */}
+                          {ch.ourScore && (
+                            <span className="text-gray-500 flex-shrink-0 tabular-nums">{ch.ourScore}</span>
+                          )}
+                          {/* Result */}
+                          <span className={`flex-shrink-0 font-bold uppercase ${
+                            ch.result === 'won'  ? 'text-emerald-600' :
+                            ch.result === 'lost' ? 'text-red-500' :
+                            ch.result === 'draw' ? 'text-amber-500' : 'text-gray-400'
+                          }`}>{ch.result !== 'unknown' ? ch.result : ''}</span>
+                          {/* CricHeroes ID */}
+                          <span className="text-gray-400 font-mono flex-shrink-0">#{ch.chMatchId}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Save button */}
+                    {teamSyncState.chMatches.some(c => c.status === 'matched') && (
+                      <Button
+                        onClick={() => applyLinks(teamSyncState.chMatches)}
+                        disabled={teamSyncState.saveStatus === 'saving'}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        {teamSyncState.saveStatus === 'saving'
+                          ? 'Saving…'
+                          : `💾 Save ${teamSyncState.chMatches.filter(c => c.status === 'matched').length} Match IDs to App`}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* ── Auto-Sync from CricHeroes ──────────────────────────────── */}
               <div className="rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/10 p-4 space-y-3">
