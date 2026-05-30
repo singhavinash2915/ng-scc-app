@@ -52,7 +52,7 @@ export function Settings() {
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
   const { progress: syncProgress, sync: syncStats, reset: resetSync } = useStatSync();
-  const { state: teamSyncState, fetchTeamMatches, applyLinks, reset: resetTeamSync } = useCHTeamSync();
+  const { state: teamSyncState, fetchTeamMatches, applyLinks, createMissingMatches, reset: resetTeamSync } = useCHTeamSync();
   const [chTeamId, setChTeamId] = useState(() => localStorage.getItem('scc-ch-team-id') ?? '');
   const [syncMode, setSyncMode] = useState<'2025-26' | '2024-25' | '2023-24'>('2025-26');
   const [nameMap, setNameMap] = useState<Record<string, string>>(() => loadNameMap());
@@ -1305,7 +1305,7 @@ export function Settings() {
                       ))}
                     </div>
 
-                    {/* Save button */}
+                    {/* Save matched IDs button */}
                     {teamSyncState.chMatches.some(c => c.status === 'matched') && (
                       <Button
                         onClick={() => applyLinks(teamSyncState.chMatches)}
@@ -1315,6 +1315,19 @@ export function Settings() {
                         {teamSyncState.saveStatus === 'saving'
                           ? 'Saving…'
                           : `💾 Save ${teamSyncState.chMatches.filter(c => c.status === 'matched').length} Match IDs to App`}
+                      </Button>
+                    )}
+
+                    {/* Create missing matches button */}
+                    {teamSyncState.chMatches.some(c => c.status === 'no-app-match') && (
+                      <Button
+                        onClick={() => createMissingMatches(teamSyncState.chMatches)}
+                        disabled={teamSyncState.saveStatus === 'saving'}
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        {teamSyncState.saveStatus === 'saving'
+                          ? 'Creating…'
+                          : `➕ Create ${teamSyncState.chMatches.filter(c => c.status === 'no-app-match').length} Missing Matches from CricHeroes`}
                       </Button>
                     )}
                   </div>

@@ -287,5 +287,73 @@ export function useCHTeamSync() {
     }));
   }, []);
 
-  return { state, fetchTeamMatches, applyLinks, reset };
+  // ── Create: insert new match rows for unmatched CricHeroes matches ────────
+  const createMissingMatches = useCallback(async (toCreate: CHMatch[]) => {
+    const candidates = toCreate.filter(c => c.status === 'no-app-match' && c.date);
+    if (candidates.length === 0) return;
+
+    setState(s => ({ ...s, saveStatus: 'saving', saveMsg: `Creating ${candidates.length} matches…` }));
+    let created = 0;
+    let errors = 0;
+
+    for (const ch of candidates) {
+      // Map CricHeroes result to app result
+      const resultMap: Record<string, string> = { won: 'won', lost: 'lost', draw: 'draw', upcoming: 'upcoming' };
+      const appResult = resultMap[ch.result] ?? 'draw';
+
+      // Determine winning_team for internal matches
+      let winningTeam: string | null = null;
+      if (ch.isInternal && appResult !== 'draw') {
+        // For internal, team1 is typically Dhurandars, team2 Bazigars
+        const t1Lower = ch.team1.toLowerCase();
+        const t2Lower = ch.team2.toLowerCase();
+        if (appResult === 'won') {
+          // "won" from SCC perspective — check which team name contains dhurandar/bazigars
+          if (t1Lower.includes('dhurandar')) winningTeam = 'dhurandars';
+          else if (t1Lower.includes('bazigars') || t1Lower.includes('baazigars')) winningTeam = 'bazigars';
+          else if (t2Lower.includes('dhurandar')) winningTeam = 'dhurandars';
+          else if (t2Lower.includes('bazigars') || t2Lower.includes('baazigars')) winningTeam = 'bazigars';
+        }
+      }
+
+      const insertData = {
+        date: ch.date,
+        venue: '',
+        opponent: ch.isInternal ? (ch.team1 + ' vs ' + ch.team2) : ch.opponent,
+        result: appResult,
+        our_score: ch.ourScore || null,
+        opponent_score: ch.theirScore || null,
+        match_fee: 0,
+        ground_cost: 0,
+        other_expenses: 0,
+        deduct_from_balance: false,
+        notes: ch.tournament || null,
+        match_type: ch.isInternal ? 'internal' : 'external',
+        winning_team: winningTeam,
+        ch_match_id: ch.chMatchId,
+        polling_enabled: false,
+      };
+
+      const { error } = await supabase.from('matches').insert(insertData);
+      if (error) {
+        console.error('Insert match error:', ch.chMatchId, error);
+        errors++;
+      } else {
+        created++;
+      }
+    }
+
+    setState(s => ({
+      ...s,
+      saveStatus: 'done',
+      saveMsg: `✓ Created ${created} matches${errors > 0 ? ` · ${errors} errors` : ''} — reload page to see them`,
+      chMatches: s.chMatches.map(c =>
+        candidates.some(x => x.chMatchId === c.chMatchId)
+          ? { ...c, alreadyLinked: true, status: 'already' as const }
+          : c
+      ),
+    }));
+  }, []);
+
+  return { state, fetchTeamMatches, applyLinks, createMissingMatches, reset };
 }
