@@ -23,12 +23,26 @@ const BROWSER_HEADERS = {
 
 async function fetchNextData(chUrl: string): Promise<Record<string, unknown>> {
   const res = await fetch(chUrl, { headers: BROWSER_HEADERS });
-  if (!res.ok) throw new Error(`CricHeroes returned ${res.status}`);
+  if (!res.ok) throw new Error(`HTTP_${res.status}`);
   const html = await res.text();
   const m = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-  if (!m) throw new Error('Could not find __NEXT_DATA__ in response');
+  if (!m) throw new Error('NO_NEXT_DATA');
   const nextData = JSON.parse(m[1]);
   return nextData?.props?.pageProps ?? {};
+}
+
+// Try a list of candidate URLs; return the first that succeeds
+async function tryUrls(candidates: string[]): Promise<{ pageProps: Record<string, unknown>; url: string }> {
+  const errors: string[] = [];
+  for (const url of candidates) {
+    try {
+      const pageProps = await fetchNextData(url);
+      return { pageProps, url };
+    } catch (e) {
+      errors.push(`${url} → ${String(e)}`);
+    }
+  }
+  throw new Error(`All URLs failed:\n${errors.join('\n')}`);
 }
 
 Deno.serve(async (req) => {
@@ -51,12 +65,26 @@ Deno.serve(async (req) => {
         );
       }
       const page = url.searchParams.get('page') || '1';
-      // CricHeroes team matches page — slug is unknown, x/x works as wildcard
-      const chUrl = `https://cricheroes.in/team-profile/${teamId}/x/x/matches?page=${page}`;
-      const pageProps = await fetchNextData(chUrl);
-      return new Response(JSON.stringify(pageProps), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      const pq   = `?page=${page}`;
+
+      // CricHeroes team profile URL patterns to try in order.
+      // The slug after the team ID is optional / varies, so we try several.
+      const candidates = [
+        `https://cricheroes.in/team-profile/${teamId}/x/x/matches${pq}`,
+        `https://cricheroes.in/team-profile/${teamId}/x/matches${pq}`,
+        `https://cricheroes.in/team-profile/${teamId}/matches${pq}`,
+        `https://cricheroes.com/team-profile/${teamId}/x/x/matches${pq}`,
+        `https://cricheroes.com/team-profile/${teamId}/x/matches${pq}`,
+        // Also try without /matches — the team profile page may include recent matches
+        `https://cricheroes.in/team-profile/${teamId}/x/x${pq}`,
+        `https://cricheroes.in/team-profile/${teamId}${pq}`,
+      ];
+
+      const { pageProps, url: succeededUrl } = await tryUrls(candidates);
+      return new Response(
+        JSON.stringify({ ...pageProps, _succeededUrl: succeededUrl }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     // ── Match scorecard / live ────────────────────────────────────────────────
@@ -67,9 +95,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const chUrl = `https://cricheroes.com/scorecard/${matchId}/x/x/${type}`;
-
-    const pageProps = await fetchNextData(chUrl);
+    const { pageProps } = await tryUrls([
+      `https://cricheroes.com/scorecard/${matchId}/x/x/${type}`,
+      `https://cricheroes.in/scorecard/${matchId}/x/x/${type}`,
+    ]);
     return new Response(JSON.stringify(pageProps), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

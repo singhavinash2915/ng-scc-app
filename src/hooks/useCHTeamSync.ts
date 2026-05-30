@@ -138,22 +138,35 @@ export function useCHTeamSync() {
           `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches&page=${page}`,
           { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
         );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          // Surface the actual error message from the edge fn
+          let msg = `HTTP ${res.status}`;
+          try { const j = await res.json(); msg = j?.error ?? msg; } catch { /* ignore */ }
+          throw new Error(msg);
+        }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pp: Record<string, any> = await res.json();
 
-        // CricHeroes stores match list in several possible keys
+        // Log which URL succeeded (from edge fn debug field)
+        if (pp._succeededUrl) {
+          console.log('[CricHeroes team sync] URL that worked:', pp._succeededUrl);
+        }
+
+        // CricHeroes stores the match list under various keys depending on page/version
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const matchList: Record<string, any>[] =
           pp?.teamMatchList?.data ??
           pp?.matchList?.data ??
           pp?.matches?.data ??
-          pp?.data ??
+          pp?.teamMatches?.data ??
+          (Array.isArray(pp?.data) ? pp.data : null) ??
           [];
 
         if (matchList.length === 0 && page === 1) {
-          throw new Error('No matches found — check team ID or try again');
+          // Return the raw keys so admin can debug
+          const keys = Object.keys(pp).filter(k => k !== '_succeededUrl').join(', ');
+          throw new Error(`No matches found in response (keys: ${keys || 'empty'}) — verify the team ID is correct`);
         }
 
         const pagination = pp?.teamMatchList?.pagination ?? pp?.matchList?.pagination ?? pp?.pagination ?? null;
