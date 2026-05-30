@@ -97,6 +97,19 @@ function matchPlayer(chName: string, members: Member[]): Member | null {
   return null;
 }
 
+// ── Name-map persistence ──────────────────────────────────────────────────────
+// Maps CricHeroes display name → SCC member id.
+// Stored in localStorage so admin only has to do this once.
+const NAME_MAP_KEY = 'scc-ch-name-map';
+
+export function loadNameMap(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(NAME_MAP_KEY) || '{}'); }
+  catch { return {}; }
+}
+export function saveNameMap(map: Record<string, string>) {
+  localStorage.setItem(NAME_MAP_KEY, JSON.stringify(map));
+}
+
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useStatSync() {
@@ -110,6 +123,7 @@ export function useStatSync() {
     members:      Member[],
     seasonFilter: { start: string; end: string } | null,  // null = all-time
     seasonLabel:  string,                                  // e.g. '2025-26' or 'all-time'
+    nameMap:      Record<string, string> = loadNameMap(),  // chName → memberId
   ) => {
     // Filter to matches that have a CricHeroes ID and are completed
     const eligible = matches.filter(m =>
@@ -124,6 +138,16 @@ export function useStatSync() {
     }
 
     setProgress({ total: eligible.length, done: 0, status: 'running', message: 'Starting…', unmatched: [], matchedMembers: 0, errors: 0 });
+
+    // Build a lookup from member id → Member for nameMap resolution
+    const memberById = Object.fromEntries(members.map(m => [m.id, m]));
+
+    // Wrapper that checks manual nameMap before fuzzy matching
+    const resolveName = (chName: string): Member | null => {
+      const mapped = nameMap[chName];
+      if (mapped && memberById[mapped]) return memberById[mapped];
+      return matchPlayer(chName, members);
+    };
 
     const acc: Record<string, Acc> = {};
     const unmatchedSet = new Set<string>();
@@ -165,7 +189,7 @@ export function useStatSync() {
           if (isSCCBatting || isInternal) {
             for (const b of batting) {
               if (!Number(b.balls)) continue;       // never faced a ball → skip
-              const member = matchPlayer(String(b.name ?? ''), members);
+              const member = resolveName(String(b.name ?? ''));
               // Unmatched here means an SCC player whose name differs → worth warning
               if (!member) { if (b.name) unmatchedSet.add(String(b.name)); continue; }
 
@@ -198,7 +222,7 @@ export function useStatSync() {
           // Silently skip anyone not in our members list — they're opponents.
           if (!isSCCBatting || isInternal) {
             for (const b of bowling) {
-              const member = matchPlayer(String(b.name ?? ''), members);
+              const member = resolveName(String(b.name ?? ''));
               if (!member) continue;   // opponent bowler — skip silently
 
               if (!acc[member.id]) acc[member.id] = emptyAcc();

@@ -36,7 +36,7 @@ import { useTournaments } from '../hooks/useTournaments';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useSponsor } from '../hooks/useSponsor';
 import { useCricketStats } from '../hooks/useCricketStats';
-import { useStatSync } from '../hooks/useStatSync';
+import { useStatSync, loadNameMap, saveNameMap } from '../hooks/useStatSync';
 import type { MemberCricketStats } from '../types';
 
 export function Settings() {
@@ -51,6 +51,7 @@ export function Settings() {
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
   const { progress: syncProgress, sync: syncStats, reset: resetSync } = useStatSync();
   const [syncMode, setSyncMode] = useState<'season' | 'alltime'>('season');
+  const [nameMap, setNameMap] = useState<Record<string, string>>(() => loadNameMap());
 
   // ─── Ground & Testimonials ───────────────────────────────────────────────
   const {
@@ -1223,16 +1224,41 @@ export function Settings() {
                       {syncProgress.errors > 0 && <span className="text-yellow-600 dark:text-yellow-400 text-xs font-normal">({syncProgress.errors} errors)</span>}
                     </div>
                     {syncProgress.unmatched.length > 0 && (
-                      <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 p-2.5">
-                        <p className="text-xs font-bold text-yellow-700 dark:text-yellow-400 mb-1">
-                          ⚠️ {syncProgress.unmatched.length} CricHeroes name{syncProgress.unmatched.length > 1 ? 's' : ''} not matched to a member:
+                      <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 p-3 space-y-2">
+                        <p className="text-xs font-bold text-yellow-700 dark:text-yellow-400">
+                          ⚠️ {syncProgress.unmatched.length} SCC player{syncProgress.unmatched.length > 1 ? 's' : ''} not auto-matched — map them below then re-sync:
                         </p>
-                        <p className="text-xs text-yellow-700/80 dark:text-yellow-400/80 leading-relaxed">
-                          {syncProgress.unmatched.join(' · ')}
-                        </p>
-                        <p className="text-[10px] text-yellow-600/60 dark:text-yellow-400/60 mt-1">
-                          Ensure member names in the app match their CricHeroes display names.
-                        </p>
+                        <div className="space-y-1.5">
+                          {syncProgress.unmatched.map(chName => (
+                            <div key={chName} className="flex items-center gap-2">
+                              <span className="text-xs text-yellow-800 dark:text-yellow-300 font-mono flex-shrink-0 min-w-0 truncate max-w-[160px]" title={chName}>{chName}</span>
+                              <span className="text-yellow-600/50 flex-shrink-0">→</span>
+                              <select
+                                value={nameMap[chName] ?? ''}
+                                onChange={e => {
+                                  const updated = { ...nameMap, [chName]: e.target.value };
+                                  if (!e.target.value) delete updated[chName];
+                                  setNameMap(updated);
+                                  saveNameMap(updated);
+                                }}
+                                className="flex-1 text-xs rounded-lg border border-yellow-300 dark:border-yellow-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1"
+                              >
+                                <option value="">— pick member —</option>
+                                {[...members].sort((a,b) => a.name.localeCompare(b.name)).map(m => (
+                                  <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                              </select>
+                              {nameMap[chName] && (
+                                <span className="text-emerald-500 text-xs flex-shrink-0">✓</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {syncProgress.unmatched.some(n => nameMap[n]) && (
+                          <p className="text-[10px] text-yellow-600/70 dark:text-yellow-400/60">
+                            ✓ Mappings saved. Click "Sync Again" to include these players.
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1245,7 +1271,7 @@ export function Settings() {
                       ? { start: '2025-10-01', end: '2026-06-30' }
                       : null;
                     const label = syncMode === 'season' ? '2025-26' : 'all-time';
-                    syncStats(matches, members, seasonFilter, label);
+                    syncStats(matches, members, seasonFilter, label, nameMap);
                   }}
                   disabled={syncProgress.status === 'running'}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
