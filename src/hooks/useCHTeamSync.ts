@@ -80,20 +80,28 @@ function parseCHMatch(raw: Record<string, any>, sccTeamId: string): Omit<CHMatch
   const teamA    = String(raw.team_a ?? '');
   const teamB    = String(raw.team_b ?? '');
   const teamAId  = String(raw.team_a_id ?? '');
+  const teamBId  = String(raw.team_b_id ?? '');
   // Fallback to older keys
   const team1    = teamA || String(raw.team1_name ?? '');
   const team2    = teamB || String(raw.team2_name ?? '');
 
+  // ── STRICT FILTER: only include matches where SCC team ID is one of the teams ──
+  // This prevents non-SCC matches from sneaking in when a player plays for multiple teams
+  const sccIsTeamA = teamAId === sccTeamId;
+  const sccIsTeamB = teamBId === sccTeamId;
+  if (!sccIsTeamA && !sccIsTeamB) return null;  // not an SCC match — skip
+
   const dt       = String(raw.match_start_time ?? raw.start_datetime ?? raw.match_date ?? '');
   const date     = dt ? dt.split('T')[0] : '';
   const winTeam  = String(raw.winning_team ?? '');
+  const winTeamId = String(raw.winning_team_id ?? '');
   const status   = String(raw.status ?? '');
 
-  const sccIsTeamA = teamAId === sccTeamId || isSCC(team1);
   const opp = sccIsTeamA ? team2 : team1;
-  const isInternal = isSCC(team1) && isSCC(team2);
+  // Internal = both teams are SCC (Dhurandars vs Bazigars both under the same team profile)
+  const isInternal = sccIsTeamA && sccIsTeamB;
 
-  // Scores: player-profile has team_a_summary / team_b_summary (e.g. "119/10")
+  // Scores
   const ourScore = String(sccIsTeamA
     ? (raw.team_a_summary ?? raw.team1_score ?? '')
     : (raw.team_b_summary ?? raw.team2_score ?? ''));
@@ -104,16 +112,17 @@ function parseCHMatch(raw: Record<string, any>, sccTeamId: string): Omit<CHMatch
   let result: CHMatch['result'] = 'unknown';
   if (status === 'upcoming' || status === 'live') {
     result = 'upcoming';
+  } else if (winTeamId && winTeamId !== '0') {
+    // Use team ID for result — more reliable than name matching
+    if (winTeamId === sccTeamId) result = 'won';
+    else result = 'lost';
   } else if (winTeam) {
-    if (isSCC(winTeam)) result = 'won';
-    else if (winTeam.toLowerCase() === 'draw' || winTeam.toLowerCase() === 'tie') result = 'draw';
+    if (winTeam.toLowerCase() === 'draw' || winTeam.toLowerCase() === 'tie') result = 'draw';
+    else if (isSCC(winTeam)) result = 'won';
     else result = 'lost';
   } else if (status === 'past') {
     result = 'draw';
   }
-
-  // Only include SCC matches (team A or B is SCC)
-  if (!isSCC(team1) && !isSCC(team2)) return null;
 
   return {
     chMatchId: id, date, team1, team2, opponent: isInternal ? '' : opp,
