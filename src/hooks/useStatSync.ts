@@ -152,55 +152,72 @@ export function useStatSync() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const bowling = (raw.bowling as Array<Record<string, any>>) ?? [];
 
+          // Detect if this innings was batted by an SCC team.
+          // CricHeroes uses names like "Sangria Cricket Club",
+          // "Sangria Dhurandars", "Sangria Bazigars".
+          const teamName = String(raw.teamName ?? '').toLowerCase();
+          const isSCCBatting = teamName.includes('sangria') || teamName.includes('scc');
+          const isInternal   = match.match_type === 'internal';
+
           // ── Batting rows ──
-          for (const b of batting) {
-            if (!Number(b.balls)) continue;       // never faced a ball → skip
-            const member = matchPlayer(String(b.name ?? ''), members);
-            if (!member) { if (b.name) unmatchedSet.add(String(b.name)); continue; }
+          // Only process when it is SCC's batting innings.
+          // (In internal matches both innings are SCC, so always process.)
+          if (isSCCBatting || isInternal) {
+            for (const b of batting) {
+              if (!Number(b.balls)) continue;       // never faced a ball → skip
+              const member = matchPlayer(String(b.name ?? ''), members);
+              // Unmatched here means an SCC player whose name differs → worth warning
+              if (!member) { if (b.name) unmatchedSet.add(String(b.name)); continue; }
 
-            if (!acc[member.id]) acc[member.id] = emptyAcc();
-            const s = acc[member.id];
-            s.matchSet.add(match.id);
-            s.battingInnings++;
+              if (!acc[member.id]) acc[member.id] = emptyAcc();
+              const s = acc[member.id];
+              s.matchSet.add(match.id);
+              s.battingInnings++;
 
-            const runs  = Number(b.runs  ?? 0);
-            const balls = Number(b.balls ?? 0);
-            const notOut = !b.how_to_out || b.how_to_out === '';
+              const runs  = Number(b.runs  ?? 0);
+              const balls = Number(b.balls ?? 0);
+              const notOut = !b.how_to_out || b.how_to_out === '';
 
-            s.runs  += runs;
-            s.balls += balls;
-            s.fours += Number(b['4s'] ?? 0);
-            s.sixes += Number(b['6s'] ?? 0);
-            if (!notOut) s.dismissals++;
-            if (runs > s.highest || (runs === s.highest && !s.highestNotOut && notOut)) {
-              s.highest = runs; s.highestNotOut = notOut;
+              s.runs  += runs;
+              s.balls += balls;
+              s.fours += Number(b['4s'] ?? 0);
+              s.sixes += Number(b['6s'] ?? 0);
+              if (!notOut) s.dismissals++;
+              if (runs > s.highest || (runs === s.highest && !s.highestNotOut && notOut)) {
+                s.highest = runs; s.highestNotOut = notOut;
+              }
+              if (runs === 0 && !notOut) s.ducks++;
+              if (runs >= 100) s.hundreds++;
+              else if (runs >= 50) s.fifties++;
             }
-            if (runs === 0 && !notOut) s.ducks++;
-            if (runs >= 100) s.hundreds++;
-            else if (runs >= 50) s.fifties++;
           }
 
           // ── Bowling rows ──
-          for (const b of bowling) {
-            const member = matchPlayer(String(b.name ?? ''), members);
-            if (!member) { if (b.name) unmatchedSet.add(String(b.name)); continue; }
+          // SCC bowls in the OPPONENT's innings (where opponent is batting).
+          // For internal matches both innings have SCC bowlers, so always process.
+          // Silently skip anyone not in our members list — they're opponents.
+          if (!isSCCBatting || isInternal) {
+            for (const b of bowling) {
+              const member = matchPlayer(String(b.name ?? ''), members);
+              if (!member) continue;   // opponent bowler — skip silently
 
-            if (!acc[member.id]) acc[member.id] = emptyAcc();
-            const s = acc[member.id];
-            s.matchSet.add(match.id);
-            s.bowlInnings++;
+              if (!acc[member.id]) acc[member.id] = emptyAcc();
+              const s = acc[member.id];
+              s.matchSet.add(match.id);
+              s.bowlInnings++;
 
-            const wkts = Number(b.wickets ?? 0);
-            const runs = Number(b.runs    ?? 0);
-            const ov   = Number(b.overs   ?? 0);
-            const bl   = Number(b.balls   ?? 0);
+              const wkts = Number(b.wickets ?? 0);
+              const runs = Number(b.runs    ?? 0);
+              const ov   = Number(b.overs   ?? 0);
+              const bl   = Number(b.balls   ?? 0);
 
-            s.totalBalls   += ov * 6 + bl;
-            s.wickets      += wkts;
-            s.runsConceded += runs;
-            if (wkts >= 5) s.fiveWickets++;
-            if (wkts > s.bestWkts || (wkts === s.bestWkts && runs < s.bestRuns)) {
-              s.bestWkts = wkts; s.bestRuns = runs;
+              s.totalBalls   += ov * 6 + bl;
+              s.wickets      += wkts;
+              s.runsConceded += runs;
+              if (wkts >= 5) s.fiveWickets++;
+              if (wkts > s.bestWkts || (wkts === s.bestWkts && runs < s.bestRuns)) {
+                s.bestWkts = wkts; s.bestRuns = runs;
+              }
             }
           }
         }
