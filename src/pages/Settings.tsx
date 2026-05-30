@@ -1209,25 +1209,69 @@ export function Settings() {
                 </p>
 
                 {/* Season selector — sync one season at a time */}
-                <div className="flex gap-1.5 flex-wrap">
-                  {([
-                    { key: '2025-26', label: '2025–26', dates: { start: '2025-10-01', end: '2026-06-30' } },
-                    { key: '2024-25', label: '2024–25', dates: { start: '2024-10-01', end: '2025-06-30' } },
-                    { key: '2023-24', label: '2023–24', dates: { start: '2023-10-01', end: '2024-06-30' } },
-                  ] as const).map(opt => (
-                    <button
-                      key={opt.key}
-                      onClick={() => { setSyncMode(opt.key); resetSync(); }}
-                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold border transition-colors ${
-                        syncMode === opt.key
-                          ? 'bg-purple-600 text-white border-purple-600'
-                          : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                {(() => {
+                  const SEASON_DATES: Record<string, { start: string; end: string }> = {
+                    '2025-26': { start: '2025-10-01', end: '2026-06-30' },
+                    '2024-25': { start: '2024-10-01', end: '2025-06-30' },
+                    '2023-24': { start: '2023-10-01', end: '2024-06-30' },
+                  };
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex gap-1.5 flex-wrap">
+                        {(['2025-26', '2024-25', '2023-24'] as const).map(key => (
+                          <button
+                            key={key}
+                            onClick={() => { setSyncMode(key); resetSync(); setDeleteMsg(null); }}
+                            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold border transition-colors ${
+                              syncMode === key
+                                ? 'bg-purple-600 text-white border-purple-600'
+                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600'
+                            }`}
+                          >
+                            {key}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Coverage indicator for selected season */}
+                      {(() => {
+                        const { start, end } = SEASON_DATES[syncMode];
+                        const seasonMatches = matches.filter(m =>
+                          ['won', 'lost', 'draw'].includes(m.result) &&
+                          m.date >= start && m.date <= end
+                        );
+                        const withId  = seasonMatches.filter(m => m.ch_match_id).length;
+                        const missing = seasonMatches.length - withId;
+                        if (seasonMatches.length === 0) return (
+                          <p className="text-xs text-gray-500">No completed matches found in {syncMode} date range.</p>
+                        );
+                        return (
+                          <div className="rounded-lg bg-white/60 dark:bg-gray-800/60 border border-purple-200 dark:border-purple-800 p-2.5 space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-600 dark:text-gray-400">CricHeroes coverage — {syncMode}</span>
+                              <span className="font-bold text-purple-700 dark:text-purple-300">{withId}/{seasonMatches.length} matches</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-purple-500 rounded-full transition-all"
+                                style={{ width: `${seasonMatches.length > 0 ? (withId / seasonMatches.length) * 100 : 0}%` }}
+                              />
+                            </div>
+                            {missing > 0 && (
+                              <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                                ⚠️ {missing} match{missing > 1 ? 'es' : ''} missing CricHeroes ID — go to{' '}
+                                <span className="font-bold">Matches → Edit</span> to add them, then re-sync.
+                              </p>
+                            )}
+                            {missing === 0 && withId > 0 && (
+                              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">✓ All matches have CricHeroes IDs</p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                })()}
 
                 {/* Progress bar */}
                 {syncProgress.status === 'running' && (
@@ -1325,12 +1369,12 @@ export function Settings() {
                 <Button
                   onClick={() => {
                     setDeleteMsg(null);
-                    const seasonDates: Record<string, { start: string; end: string }> = {
+                    const SEASON_DATES_SYNC: Record<string, { start: string; end: string }> = {
                       '2025-26': { start: '2025-10-01', end: '2026-06-30' },
                       '2024-25': { start: '2024-10-01', end: '2025-06-30' },
                       '2023-24': { start: '2023-10-01', end: '2024-06-30' },
                     };
-                    syncStats(matches, members, seasonDates[syncMode], syncMode, nameMap);
+                    syncStats(matches, members, SEASON_DATES_SYNC[syncMode], syncMode, nameMap);
                   }}
                   disabled={syncProgress.status === 'running'}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
