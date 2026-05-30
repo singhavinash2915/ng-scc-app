@@ -37,6 +37,7 @@ import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useSponsor } from '../hooks/useSponsor';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useStatSync, loadNameMap, saveNameMap } from '../hooks/useStatSync';
+import { supabase } from '../lib/supabase';
 import type { MemberCricketStats } from '../types';
 
 export function Settings() {
@@ -52,6 +53,31 @@ export function Settings() {
   const { progress: syncProgress, sync: syncStats, reset: resetSync } = useStatSync();
   const [syncMode, setSyncMode] = useState<'2025-26' | '2024-25' | '2023-24'>('2025-26');
   const [nameMap, setNameMap] = useState<Record<string, string>>(() => loadNameMap());
+  const [deleteTarget, setDeleteTarget] = useState<'all' | '2025-26' | '2024-25' | '2023-24'>('all');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
+
+  const handleClearAllStats = async () => {
+    if (!window.confirm(deleteTarget === 'all'
+      ? 'Delete ALL cricket stats for ALL seasons? This cannot be undone.'
+      : `Delete cricket stats for season ${deleteTarget}? This cannot be undone.`)) return;
+    setDeleting(true);
+    setDeleteMsg(null);
+    try {
+      const q = supabase.from('member_cricket_stats').delete();
+      const { error } = deleteTarget === 'all'
+        ? await q.neq('season', '__never__')   // matches all rows
+        : await q.eq('season', deleteTarget);
+      if (error) throw error;
+      setDeleteMsg(deleteTarget === 'all'
+        ? '✓ All stats deleted. Re-sync each season from CricHeroes.'
+        : `✓ Season ${deleteTarget} stats deleted.`);
+    } catch (e) {
+      setDeleteMsg(`Error: ${e instanceof Error ? e.message : 'delete failed'}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // ─── Ground & Testimonials ───────────────────────────────────────────────
   const {
@@ -1265,9 +1291,40 @@ export function Settings() {
                   </div>
                 )}
 
+                {/* Delete stats */}
+                <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 p-3 space-y-2">
+                  <p className="text-xs font-bold text-red-700 dark:text-red-400">🗑 Clear Stats (before re-sync)</p>
+                  <div className="flex gap-2 items-center">
+                    <select
+                      value={deleteTarget}
+                      onChange={e => setDeleteTarget(e.target.value as typeof deleteTarget)}
+                      className="flex-1 text-xs rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1.5"
+                    >
+                      <option value="all">All seasons</option>
+                      <option value="2025-26">Season 2025–26 only</option>
+                      <option value="2024-25">Season 2024–25 only</option>
+                      <option value="2023-24">Season 2023–24 only</option>
+                    </select>
+                    <Button
+                      onClick={handleClearAllStats}
+                      disabled={deleting}
+                      variant="danger"
+                      className="flex-shrink-0 text-xs py-1.5"
+                    >
+                      {deleting ? 'Deleting…' : 'Delete'}
+                    </Button>
+                  </div>
+                  {deleteMsg && (
+                    <p className={`text-xs font-semibold ${deleteMsg.startsWith('✓') ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600'}`}>
+                      {deleteMsg}
+                    </p>
+                  )}
+                </div>
+
                 {/* Sync button */}
                 <Button
                   onClick={() => {
+                    setDeleteMsg(null);
                     const seasonDates: Record<string, { start: string; end: string }> = {
                       '2025-26': { start: '2025-10-01', end: '2026-06-30' },
                       '2024-25': { start: '2024-10-01', end: '2025-06-30' },
