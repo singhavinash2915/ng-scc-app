@@ -1504,9 +1504,9 @@ export function Settings() {
                   onClick={() => {
                     setDeleteMsg(null);
                     const SEASON_DATES_SYNC: Record<string, { start: string; end: string }> = {
-                      '2025-26': { start: '2025-10-01', end: '2026-06-30' },
-                      '2024-25': { start: '2024-10-01', end: '2025-06-30' },
-                      '2023-24': { start: '2023-10-01', end: '2024-06-30' },
+                      '2025-26': { start: '2025-09-01', end: '2026-08-31' },
+                      '2024-25': { start: '2024-09-01', end: '2025-08-31' },
+                      '2023-24': { start: '2023-09-01', end: '2024-08-31' },
                     };
                     syncStats(matches, members, SEASON_DATES_SYNC[syncMode], syncMode, nameMap);
                   }}
