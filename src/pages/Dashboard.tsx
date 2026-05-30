@@ -105,8 +105,7 @@ export function Dashboard() {
 
   const stats = useMemo(() => {
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
-    const ext = matches.filter(m => m.match_type !== 'internal');
-    const completed = ext.filter(m => ['won', 'lost', 'draw'].includes(m.result));
+    const completed = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
     const won = completed.filter(m => m.result === 'won').length;
     const lost = completed.filter(m => m.result === 'lost').length;
     const winRate = completed.length > 0 ? (won / completed.length) * 100 : 0;
