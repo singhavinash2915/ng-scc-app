@@ -116,11 +116,13 @@ export function LiveScorecard({
               {matchVenue && <span>📍 {matchVenue}</span>}
               {fmtMatchDate && <span>🗓 {fmtMatchDate}</span>}
             </div>
-            {/* Animated waiting indicator */}
+            {/* Status strip — adapts based on time of day */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/8 border border-amber-500/15">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
               <p className="text-[11px] text-amber-300/70">
-                Waiting for match to start · auto-refreshing every {15}s
+                {new Date().getHours() >= 6
+                  ? 'Match may be in progress · live score loading automatically…'
+                  : 'Waiting for match to start · auto-refreshing every 15s'}
               </p>
             </div>
             <a

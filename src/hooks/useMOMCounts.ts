@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
  * season (defaults to the current 2025-26 season: Sept 1 2025 → Aug 31 2026).
  * Only matches where result is won/lost/draw and man_of_match_id is set are counted.
  */
-export function useMOMCounts(seasonStart = '2025-09-01', seasonEnd = '2026-08-31') {
+export function useMOMCounts(seasonStart = '2025-10-01', seasonEnd = '2026-06-30') {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 

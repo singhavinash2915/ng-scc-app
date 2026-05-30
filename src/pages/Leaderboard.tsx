@@ -228,42 +228,47 @@ export function Leaderboard() {
 
   const activeStats = tab === 'overall' ? overallSorted : sorted;
 
-  // ── Rank-change tracking (date-based: compare today vs yesterday) ──────────
+  // ── Rank-change tracking ─────────────────────────────────────────────────
+  // Two keys per tab:
+  //   scc-lb-prev-{tab}  → yesterday's (or last-match-day's) ranks — STABLE all day
+  //   scc-lb-today-{tab} → current ranks (updated every time stats load)
+  // On a new calendar day, "today" is promoted to "prev" before overwriting.
   const [prevRanks, setPrevRanks] = useState<Record<string, number>>({});
 
-  // Effect 1: always load yesterday's snapshot from localStorage whenever the
-  // component mounts or the tab changes (fixes the "navigate away and back" bug
-  // where prevRanks was resetting to {} because sessionStorage was still set).
+  // Effect 1: load the stable "previous" snapshot on mount / tab change.
+  // This always reads scc-lb-prev-{tab} which never changes during the same day.
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(`scc-lb-snapshot-${tab}-2025-26`);
+      const stored = localStorage.getItem(`scc-lb-prev-${tab}`);
       setPrevRanks(stored ? (JSON.parse(stored) as Record<string, number>) : {});
     } catch { setPrevRanks({}); }
   }, [tab]);
 
-  // Effect 2: once per calendar day, save the current ranks as the new snapshot.
-  // This means tomorrow's first visit will see today's ranks as "previous".
-  // Within the same day the snapshot stays frozen so the arrows stay stable.
+  // Effect 2: keep scc-lb-today-{tab} up-to-date, promote to prev on new day.
   useEffect(() => {
     if (activeStats.length === 0) return;
-    const snapshotKey = `scc-lb-snapshot-${tab}-2025-26`;
-    const dateKey     = `scc-lb-date-${tab}-2025-26`;
-    const today       = new Date().toDateString();
+    const prevKey   = `scc-lb-prev-${tab}`;
+    const todayKey  = `scc-lb-today-${tab}`;
+    const dateKey   = `scc-lb-date-${tab}`;
+    const today     = new Date().toDateString();
 
     if (localStorage.getItem(dateKey) !== today) {
-      // New day: overwrite snapshot with today's ranks (prevRanks state already
-      // holds yesterday's snapshot from Effect 1, so the display stays correct).
-      const current: Record<string, number> = {};
-      activeStats.forEach((s, i) => { current[s.member_id] = i + 1; });
-      localStorage.setItem(snapshotKey, JSON.stringify(current));
+      // New calendar day — promote yesterday's "today" snapshot to "prev"
+      const todayData = localStorage.getItem(todayKey);
+      if (todayData) localStorage.setItem(prevKey, todayData);
       localStorage.setItem(dateKey, today);
     }
+
+    // Always update today's snapshot so tomorrow's "prev" is accurate
+    const current: Record<string, number> = {};
+    activeStats.forEach((s, i) => { current[s.member_id] = i + 1; });
+    localStorage.setItem(todayKey, JSON.stringify(current));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, stats.length]); // re-check when stats data actually arrives (not on every sort)
+  }, [tab, stats.length]);
 
   return (
     <div className="space-y-6">
-      <Header title="Leaderboard" subtitle="Season 2025-26 · Sept 2025 → today" />
+      <Header title="Leaderboard" subtitle="Season 2025-26 · Oct 2025 → Jun 2026" />
 
       {/* Season banner */}
       <div className="mx-4 sm:mx-0 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-700 dark:to-primary-900 p-5 text-white flex items-center justify-between flex-wrap gap-3">
@@ -274,7 +279,7 @@ export function Leaderboard() {
           <div>
             <p className="text-primary-100 text-sm font-medium">Current Season</p>
             <h2 className="text-xl font-bold">SCC Season 2025–26</h2>
-            <p className="text-primary-200 text-xs">{stats.length} players · Sept 2025 – June 2026 · Synced from CricHeroes</p>
+            <p className="text-primary-200 text-xs">{stats.length} players · Oct 2025 – Jun 2026 · Synced from CricHeroes</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">

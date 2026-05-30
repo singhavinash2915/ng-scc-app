@@ -102,12 +102,17 @@ export function useLiveScore(chMatchId: string | null | undefined) {
     setLoading(true);
     setError(null);
     try {
-      const pp     = await fetchPageProps(chMatchId, 'live');
-      const parsed = parseLiveFromPageProps(pp);
+      // Try 'live' endpoint first; fall back to 'scorecard' if it returns no parseable data
+      let pp     = await fetchPageProps(chMatchId, 'live');
+      let parsed = parseLiveFromPageProps(pp);
+      if (!parsed) {
+        pp     = await fetchPageProps(chMatchId, 'scorecard');
+        parsed = parseLiveFromPageProps(pp);
+      }
       if (parsed) setData({ ...parsed, lastUpdated: new Date() });
-      else setError('Could not parse live score');
+      else setError('no-data');
     } catch {
-      setError('Live score unavailable');
+      setError('network-error');
     } finally {
       setLoading(false);
       setCountdown(POLL_INTERVAL / 1000);
