@@ -143,79 +143,44 @@ export function useCHTeamSync() {
     setState({ chMatches: [], fetchStatus: 'idle', fetchMsg: '', saveStatus: 'idle', saveMsg: '', totalPages: 0, fetchedPages: 0 });
   }, []);
 
-  // ── Fetch all pages of CricHeroes team matches ──────────────────────────────
+  // ── Fetch ALL team matches in one request via _next/data route ───────────────
   const fetchTeamMatches = useCallback(async (teamId: string, appMatches: Match[]) => {
     if (!teamId.trim()) return;
-    setState(s => ({ ...s, fetchStatus: 'fetching', fetchMsg: 'Step 1: Fetching team members…', chMatches: [], totalPages: 0, fetchedPages: 0 }));
+    setState(s => ({ ...s, fetchStatus: 'fetching', fetchMsg: 'Fetching all matches from CricHeroes…', chMatches: [], totalPages: 0, fetchedPages: 0 }));
 
     const allCH: Array<Omit<CHMatch, 'appMatchId' | 'alreadyLinked' | 'status'>> = [];
     const seenMatchIds = new Set<string>();
 
     try {
-      // ── Step 1: Get team member list to find a player ID ────────────────
-      const step1 = await fetch(
-        `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches`,
+      const res = await fetch(
+        `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches&teamName=x`,
         { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
       );
-      if (!step1.ok) {
-        let msg = `HTTP ${step1.status}`;
-        try { const j = await step1.json(); msg = j?.error ?? msg; } catch { /* ignore */ }
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try { const j = await res.json(); msg = j?.error ?? msg; } catch { /* ignore */ }
         throw new Error(msg);
       }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const step1Data = await step1.json() as Record<string, any>;
-      if (step1Data._step !== 'pick-player' || !step1Data.members?.length) {
-        throw new Error('Could not get team member list — check the team ID');
+      const pp = await res.json() as Record<string, any>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const matchData = pp?.matches ?? {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const matchList: Record<string, any>[] = Array.isArray(matchData?.data) ? matchData.data : [];
+
+      if (matchList.length === 0) {
+        throw new Error('No matches found — check the team ID');
       }
 
-      // ── Step 2: Fetch each member's profile page 1 (12 most recent matches each)
-      // Merge all unique SCC match IDs across all members.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const memberList: { player_id: number; name: string }[] = step1Data.members;
-      const totalMembers = memberList.length;
+      setState(s => ({ ...s, fetchMsg: `Processing ${matchList.length} matches…` }));
 
-      setState(s => ({ ...s, fetchMsg: `Step 2: Fetching matches from ${totalMembers} members…`, totalPages: totalMembers }));
-
-      for (let mi = 0; mi < totalMembers; mi++) {
-        const member = memberList[mi];
-        const playerId = String(member.player_id);
-        setState(s => ({
-          ...s,
-          fetchMsg: `Fetching ${member.name}'s matches (${mi + 1}/${totalMembers})…`,
-          fetchedPages: mi + 1,
-        }));
-
-        try {
-          const res = await fetch(
-            `${supabaseUrl}/functions/v1/cricheroes?teamId=${teamId}&type=team-matches&playerId=${playerId}`,
-            { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
-          );
-          if (!res.ok) {
-            console.warn(`[CricHeroes sync] Failed for ${member.name}: HTTP ${res.status}`);
-            continue; // skip this member, try next
-          }
-
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const pp = await res.json() as Record<string, any>;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const matchData = pp?.matches ?? {};
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const matchList: Record<string, any>[] = Array.isArray(matchData?.data) ? matchData.data : [];
-
-          for (const raw of matchList) {
-            const parsed = parseCHMatch(raw, teamId);
-            if (parsed && !seenMatchIds.has(parsed.chMatchId)) {
-              seenMatchIds.add(parsed.chMatchId);
-              allCH.push(parsed);
-            }
-          }
-        } catch (err) {
-          console.warn(`[CricHeroes sync] Error for ${member.name}:`, err);
-          continue;
+      for (const raw of matchList) {
+        const parsed = parseCHMatch(raw, teamId);
+        if (parsed && !seenMatchIds.has(parsed.chMatchId)) {
+          seenMatchIds.add(parsed.chMatchId);
+          allCH.push(parsed);
         }
-
-        // Polite delay between requests
-        if (mi < totalMembers - 1) await new Promise(r => setTimeout(r, 400));
       }
 
       // ── Auto-match CricHeroes matches to app matches ──────────────────────

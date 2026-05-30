@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const teamId = url.searchParams.get('teamId');
     const matchId = url.searchParams.get('matchId');
 
-    // ── Team match list (via player profile — only reliable SSR source) ──────
+    // ── Team match list (via _next/data route on cricheroes.com) ─────────────
     if (type === 'team-matches') {
       if (!teamId) {
         return new Response(
@@ -65,51 +65,32 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Step 1: Fetch team profile to get team members & pick the first player
-      const playerId = url.searchParams.get('playerId');  // optional override
-      const page     = url.searchParams.get('page') || '1';
-      const pageSize = url.searchParams.get('pageSize') || '12';
+      // Step 1: Get the current buildId by fetching any CricHeroes page
+      const probeRes = await fetch(`https://cricheroes.com/team-profile/${teamId}/x/members`, { headers: BROWSER_HEADERS });
+      if (!probeRes.ok) throw new Error(`CricHeroes returned ${probeRes.status}`);
+      const probeHtml = await probeRes.text();
+      const buildMatch = probeHtml.match(/"buildId"\s*:\s*"([^"]+)"/);
+      if (!buildMatch) throw new Error('Could not extract buildId from CricHeroes');
+      const buildId = buildMatch[1];
 
-      if (!playerId) {
-        // Fetch team profile to get member list
-        const { pageProps: teamPage } = await tryUrls([
-          `https://cricheroes.in/team-profile/${teamId}/matches`,
-          `https://cricheroes.in/team-profile/${teamId}/x/matches`,
-        ]);
-        const members = teamPage?.members as { data?: { members?: { player_id: number; name: string }[] } };
-        const memberList = members?.data?.members ?? [];
-        if (memberList.length === 0) {
-          return new Response(
-            JSON.stringify({ error: 'No members found for this team', teamDetails: teamPage?.teamDetails }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-          );
-        }
-        // Return the member list so the client can pick a player and call again
-        return new Response(
-          JSON.stringify({
-            _step: 'pick-player',
-            teamName: (teamPage?.teamDetails as { data?: { team_name?: string } })?.data?.team_name ?? '',
-            members: memberList.map((m: { player_id: number; name: string }) => ({
-              player_id: m.player_id,
-              name: m.name,
-            })),
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
-      }
+      // Step 2: Fetch ALL matches via _next/data route with large pagesize
+      const teamSlug = url.searchParams.get('teamName') || 'x';
+      const dataUrl = `https://cricheroes.com/_next/data/${buildId}/team-profile/${teamId}/${teamSlug}/matches.json?teamId=${teamId}&teamName=${teamSlug}&tabName=matches&pagesize=500`;
 
-      // Step 2: Fetch a single player's profile page (SSR) — returns their 12 most recent matches
-      const { pageProps } = await tryUrls([
-        `https://cricheroes.in/player-profile/${playerId}/x`,
-      ]);
-      return new Response(
-        JSON.stringify({
-          _step: 'matches',
-          matches: pageProps?.matches ?? {},
-          playerInfo: (pageProps?.playerInfo as { data?: Record<string, unknown> })?.data ?? {},
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
+      const dataRes = await fetch(dataUrl, {
+        headers: {
+          ...BROWSER_HEADERS,
+          'x-nextjs-data': '1',
+          'Referer': `https://cricheroes.com/team-profile/${teamId}/${teamSlug}/members`,
+        },
+      });
+      if (!dataRes.ok) throw new Error(`_next/data returned ${dataRes.status}`);
+      const dataJson = await dataRes.json() as Record<string, unknown>;
+      const pageProps = (dataJson as { pageProps?: Record<string, unknown> })?.pageProps ?? {};
+
+      return new Response(JSON.stringify(pageProps), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // ── Match scorecard / live ────────────────────────────────────────────────
