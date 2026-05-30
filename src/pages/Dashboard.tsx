@@ -105,11 +105,15 @@ export function Dashboard() {
 
   const stats = useMemo(() => {
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
-    const completed = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
+    // Current season: Sep 2025 → Aug 2026
+    const seasonStart = '2025-09-01';
+    const seasonEnd   = '2026-08-31';
+    const seasonMatches = matches.filter(m => m.date >= seasonStart && m.date <= seasonEnd);
+    const completed = seasonMatches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
     const won = completed.filter(m => m.result === 'won').length;
     const lost = completed.filter(m => m.result === 'lost').length;
     const winRate = completed.length > 0 ? (won / completed.length) * 100 : 0;
-    const upcomingCount = matches.filter(m => m.result === 'upcoming').length;
+    const upcomingCount = seasonMatches.filter(m => m.result === 'upcoming').length;
     return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount };
   }, [members, matches, getPendingCount, activeCount]);
 
