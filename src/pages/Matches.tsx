@@ -217,7 +217,7 @@ export function Matches() {
     if (!myMemberId) return '';
     return members.find(m => m.id === myMemberId)?.name ?? '';
   }, [myMemberId, members]);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed' | 'won' | 'lost' | 'draw'>('all');
   const [matchTypeFilter, setMatchTypeFilter] = useState<'all' | 'external' | 'internal'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -307,6 +307,9 @@ export function Matches() {
       // Filter by result status
       if (filter === 'upcoming' && match.result !== 'upcoming') return false;
       if (filter === 'completed' && !['won', 'lost', 'draw'].includes(match.result)) return false;
+      if (filter === 'won'  && match.result !== 'won')  return false;
+      if (filter === 'lost' && match.result !== 'lost') return false;
+      if (filter === 'draw' && match.result !== 'draw') return false;
 
       // Filter by match type
       if (matchTypeFilter !== 'all' && match.match_type !== matchTypeFilter) return false;
@@ -698,20 +701,36 @@ export function Matches() {
         {/* Filters */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex gap-2">
-              {(['all', 'upcoming', 'completed'] as const).map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    filter === f
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
-                </button>
-              ))}
+            <div className="flex gap-1.5 flex-wrap">
+              {([
+                { key: 'all',       label: 'All',       activeCls: 'bg-primary-500 text-white' },
+                { key: 'upcoming',  label: 'Upcoming',  activeCls: 'bg-purple-500 text-white' },
+                { key: 'completed', label: 'Played',    activeCls: 'bg-primary-500 text-white' },
+                { key: 'won',       label: 'Won',       activeCls: 'bg-emerald-500 text-white' },
+                { key: 'lost',      label: 'Lost',      activeCls: 'bg-red-500 text-white' },
+                { key: 'draw',      label: 'Draw',      activeCls: 'bg-amber-500 text-white' },
+              ] as const).map(f => {
+                const count = f.key === 'all' ? matches.length
+                  : f.key === 'upcoming'  ? matches.filter(m => m.result === 'upcoming').length
+                  : f.key === 'completed' ? matches.filter(m => ['won','lost','draw'].includes(m.result)).length
+                  : matches.filter(m => m.result === f.key).length;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setFilter(f.key)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                      filter === f.key
+                        ? f.activeCls
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {f.label}
+                    <span className={`text-[10px] tabular-nums font-bold px-1.5 py-0.5 rounded-full ${
+                      filter === f.key ? 'bg-white/25' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+                    }`}>{count}</span>
+                  </button>
+                );
+              })}
             </div>
             <div className="flex-1" />
             {isAdmin && (
