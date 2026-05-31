@@ -112,7 +112,7 @@ export function Dashboard() {
     const completed = seasonMatches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
     const won = completed.filter(m => m.result === 'won').length;
     const lost = completed.filter(m => m.result === 'lost').length;
-    const winRate = completed.length > 0 ? (won / completed.length) * 100 : 0;
+    const winRate = (won + lost) > 0 ? (won / (won + lost)) * 100 : 0;
     const upcomingCount = seasonMatches.filter(m => m.result === 'upcoming').length;
     return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount };
   }, [members, matches, getPendingCount, activeCount]);
@@ -630,7 +630,7 @@ export function Dashboard() {
                 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
               }`}>
                 {streak.result === 'won' ? <Flame className="w-3 h-3" /> : <Activity className="w-3 h-3" />}
-                {streak.count}-match {streak.result === 'won' ? 'win streak 🔥' : streak.result === 'lost' ? 'tough run' : 'draw streak'}
+                {streak.count}-match {streak.result === 'won' ? 'win streak 🔥' : streak.result === 'lost' ? 'tough run' : 'no result streak'}
               </div>
             )}
           </div>
@@ -833,7 +833,7 @@ export function Dashboard() {
                     <span className="text-white font-black text-sm">VS</span>
                   </div>
                   {internalMatchStats.draws > 0 && (
-                    <p className="text-amber-400/70 text-[10px] mt-1">{internalMatchStats.draws} draw{internalMatchStats.draws > 1 ? 's' : ''}</p>
+                    <p className="text-amber-400/70 text-[10px] mt-1">{internalMatchStats.draws} no result{internalMatchStats.draws > 1 ? 's' : ''}</p>
                   )}
                   {internalMatchStats.dhurandarsWins === internalMatchStats.bazigarsWins && (
                     <p className="text-white/40 text-[10px] mt-1">Tied!</p>
@@ -868,7 +868,7 @@ export function Dashboard() {
               </div>
               <div className="flex justify-between mt-1.5">
                 <span className="text-blue-400/60 text-[10px] font-medium">🦁 Dhurandars</span>
-                {internalMatchStats.draws > 0 && <span className="text-amber-400/60 text-[10px] font-medium">Draws</span>}
+                {internalMatchStats.draws > 0 && <span className="text-amber-400/60 text-[10px] font-medium">No Result</span>}
                 <span className="text-purple-400/60 text-[10px] font-medium">Bazigars 🐅</span>
               </div>
 
@@ -883,7 +883,7 @@ export function Dashboard() {
                       'text-amber-300'
                     }`}>
                       {internalMatchStats.lastMatch.winning_team === 'dhurandars' ? '🦁 Dhurandars won' :
-                       internalMatchStats.lastMatch.winning_team === 'bazigars'   ? '🐅 Bazigars won' : 'Draw'}
+                       internalMatchStats.lastMatch.winning_team === 'bazigars'   ? '🐅 Bazigars won' : 'No Result'}
                     </span>
                     {internalMatchStats.lastMatch.our_score && (
                       <span className="text-white/30 text-[10px]">

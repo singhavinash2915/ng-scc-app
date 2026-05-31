@@ -294,8 +294,8 @@ export function BookMatch() {
   }
 
   // ─── Record display ───────────────────────────────────────────────────────
-  const winRate = sccRecord && (sccRecord.wins + sccRecord.losses + sccRecord.draws) > 0
-    ? Math.round((sccRecord.wins / (sccRecord.wins + sccRecord.losses + sccRecord.draws)) * 100)
+  const winRate = sccRecord && (sccRecord.wins + sccRecord.losses) > 0
+    ? Math.round((sccRecord.wins / (sccRecord.wins + sccRecord.losses)) * 100)
     : null;
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -359,7 +359,7 @@ export function BookMatch() {
                     <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-1.5">
                       <span className="text-xs text-emerald-100">
                         <span className="font-bold text-white">{sccRecord.wins}W</span> · <span className="font-bold text-white">{sccRecord.losses}L</span>
-                        {sccRecord.draws > 0 && <> · <span className="font-bold text-white">{sccRecord.draws}D</span></>}
+                        {sccRecord.draws > 0 && <> · <span className="font-bold text-white">{sccRecord.draws}NR</span></>}
                       </span>
                     </div>
                     {ground.name && (

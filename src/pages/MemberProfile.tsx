@@ -164,7 +164,8 @@ export function MemberProfile() {
   const winRate = useMemo(() => {
     const ext = matchesPlayed.filter(m => m.match_type === 'external');
     const won = ext.filter(m => m.result === 'won').length;
-    return ext.length > 0 ? Math.round((won / ext.length) * 100) : 0;
+    const lost = ext.filter(m => m.result === 'lost').length;
+    return (won + lost) > 0 ? Math.round((won / (won + lost)) * 100) : 0;
   }, [matchesPlayed]);
 
   if (!member) {

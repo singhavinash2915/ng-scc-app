@@ -708,7 +708,7 @@ export function Matches() {
                 { key: 'completed', label: 'Played',    activeCls: 'bg-primary-500 text-white' },
                 { key: 'won',       label: 'Won',       activeCls: 'bg-emerald-500 text-white' },
                 { key: 'lost',      label: 'Lost',      activeCls: 'bg-red-500 text-white' },
-                { key: 'draw',      label: 'Draw',      activeCls: 'bg-amber-500 text-white' },
+                { key: 'draw',      label: 'No Result', activeCls: 'bg-amber-500 text-white' },
               ] as const).map(f => {
                 const count = f.key === 'all' ? matches.length
                   : f.key === 'upcoming'  ? matches.filter(m => m.result === 'upcoming').length
@@ -1258,7 +1258,7 @@ export function Matches() {
                     options={[
                       { value: 'upcoming', label: 'Not Yet Played / TBD' },
                       { value: 'won', label: 'Completed' },
-                      { value: 'draw', label: 'Draw' },
+                      { value: 'draw', label: 'No Result' },
                       { value: 'cancelled', label: 'Cancelled' },
                     ]}
                   />
@@ -1321,7 +1321,7 @@ export function Matches() {
                       { value: 'upcoming', label: 'Not Yet Played / TBD' },
                       { value: 'won', label: 'Won' },
                       { value: 'lost', label: 'Lost' },
-                      { value: 'draw', label: 'Draw' },
+                      { value: 'draw', label: 'No Result' },
                       { value: 'cancelled', label: 'Cancelled' },
                     ]}
                   />
@@ -2065,7 +2065,7 @@ export function Matches() {
                 onChange={(e) => setResultData({ ...resultData, result: e.target.value as Match['result'], winning_team: e.target.value === 'draw' ? '' : resultData.winning_team })}
                 options={[
                   { value: 'won', label: 'Completed' },
-                  { value: 'draw', label: 'Draw' },
+                  { value: 'draw', label: 'No Result' },
                   { value: 'cancelled', label: 'Cancelled' },
                 ]}
               />
@@ -2127,7 +2127,7 @@ export function Matches() {
                 options={[
                   { value: 'won', label: 'Won' },
                   { value: 'lost', label: 'Lost' },
-                  { value: 'draw', label: 'Draw' },
+                  { value: 'draw', label: 'No Result' },
                   { value: 'cancelled', label: 'Cancelled' },
                 ]}
               />

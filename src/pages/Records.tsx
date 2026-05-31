@@ -209,7 +209,7 @@ export function Records() {
             </div>
             <div>
               <h2 className="text-2xl lg:text-3xl font-black text-white">Hall of Fame</h2>
-              <p className="text-amber-200/60 text-sm mt-0.5">{teamRecords.total} matches · {teamRecords.won}W · {teamRecords.lost}L · {teamRecords.drawn}D</p>
+              <p className="text-amber-200/60 text-sm mt-0.5">{teamRecords.total} matches · {teamRecords.won}W · {teamRecords.lost}L · {teamRecords.drawn}NR</p>
             </div>
           </div>
         </div>
@@ -502,7 +502,7 @@ export function Records() {
                       <th className="px-3 py-3 text-center text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">P</th>
                       <th className="px-3 py-3 text-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">W</th>
                       <th className="px-3 py-3 text-center text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">L</th>
-                      <th className="px-3 py-3 text-center text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">D</th>
+                      <th className="px-3 py-3 text-center text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">NR</th>
                       <th className="px-3 py-3 text-right text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Win%</th>
                       <th className="px-3 py-3 text-center text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Last</th>
                     </tr>
@@ -531,7 +531,7 @@ export function Records() {
                               : r.lastResult === 'lost' ? 'bg-red-500'
                               : 'bg-amber-500'
                             }`} title={r.lastDate || ''}>
-                              {r.lastResult === 'won' ? 'W' : r.lastResult === 'lost' ? 'L' : 'D'}
+                              {r.lastResult === 'won' ? 'W' : r.lastResult === 'lost' ? 'L' : 'NR'}
                             </span>
                           )}
                         </td>

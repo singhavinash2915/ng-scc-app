@@ -30,8 +30,8 @@ const RESULT_CONFIG = {
     gradient: 'linear-gradient(135deg, #1f2937 0%, #374151 100%)',
     border: 'border-gray-500/30',
     badge: 'bg-gray-400/20 text-gray-300 border-gray-400/40',
-    text: 'DRAW',
-    emoji: '🤝',
+    text: 'NO RESULT',
+    emoji: '🌧️',
     scoreColor: 'text-gray-300',
   },
 };

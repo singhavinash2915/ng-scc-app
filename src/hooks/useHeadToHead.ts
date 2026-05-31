@@ -41,7 +41,7 @@ export function useHeadToHead(matches: Match[]): H2HRecord[] {
         opponent,
         played: list.length,
         won, lost, drawn,
-        winRate: list.length ? Math.round((won / list.length) * 100) : 0,
+        winRate: (won + lost) > 0 ? Math.round((won / (won + lost)) * 100) : 0,
         lastResult: (last?.result as 'won' | 'lost' | 'draw') || null,
         lastDate: last?.date || null,
       };

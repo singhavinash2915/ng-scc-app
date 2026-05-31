@@ -23,7 +23,8 @@ export function About() {
   // Quick stats
   const completedMatches = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result) && m.match_type !== 'internal');
   const won = completedMatches.filter(m => m.result === 'won').length;
-  const winRate = completedMatches.length > 0 ? Math.round((won / completedMatches.length) * 100) : 0;
+  const lost = completedMatches.filter(m => m.result === 'lost').length;
+  const winRate = (won + lost) > 0 ? Math.round((won / (won + lost)) * 100) : 0;
   const totalRuns = cricketStats.reduce((sum, s) => sum + s.batting_runs, 0);
   const totalWkts = cricketStats.reduce((sum, s) => sum + s.bowling_wickets, 0);
   const totalMOMs = Object.values(momCounts).reduce((s, n) => s + n, 0);

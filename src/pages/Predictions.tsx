@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Crown, Trophy, Target, TrendingUp, ChevronRight, ChevronDown, Sparkles, Medal,
-  Eye, EyeOff, Gift, Pencil, Check, X,
+  Eye, EyeOff, Gift, Pencil, Check, X, User, BarChart2, Zap, Star,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Button } from '../components/ui/Button';
@@ -27,6 +27,9 @@ export function Predictions() {
   const { predictions: allPredictions } = usePredictions();
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [adminViewOpen, setAdminViewOpen] = useState(false);
+  const [myMemberId, setMyMemberId] = useState<string>(() =>
+    localStorage.getItem('scc-my-prediction-id') || ''
+  );
 
   // ── Prizes (admin-configurable, stored in localStorage) ──
   const PRIZES_KEY = 'scc-prediction-prizes';
@@ -141,6 +144,26 @@ export function Predictions() {
     members.forEach(x => { m[x.id] = x; });
     return m;
   }, [members]);
+
+  // ── My Predictions Stats ──────────────────────────────────────────────────
+  const myStats = useMemo(() => {
+    if (!myMemberId) return null;
+    const mine = allPredictions.filter(p => p.member_id === myMemberId);
+    if (!mine.length) return null;
+    const scored = mine.filter(p => p.points_earned !== null);
+    const totalPoints = scored.reduce((s, p) => s + (p.points_earned ?? 0), 0);
+    const correct = scored.filter(p => (p.points_earned ?? 0) > 0).length;
+    const hitRate = scored.length > 0 ? Math.round((correct / scored.length) * 100) : 0;
+    const best = scored.reduce((b, p) => ((p.points_earned ?? 0) > (b.points_earned ?? 0) ? p : b), scored[0]);
+    const bestMatch = best ? matches.find(m => m.id === best.match_id) : null;
+    // Last 5 settled predictions with match info
+    const history = scored
+      .sort((a, b) => new Date(b.scored_at!).getTime() - new Date(a.scored_at!).getTime())
+      .slice(0, 5)
+      .map(p => ({ p, match: matches.find(m => m.id === p.match_id) }))
+      .filter(x => x.match);
+    return { totalPoints, correct, hitRate, matchesPredicted: mine.length, scoredCount: scored.length, best, bestMatch, history };
+  }, [myMemberId, allPredictions, matches]);
 
   const [predictMatch, setPredictMatch] = useState<Match | null>(null);
 
@@ -338,6 +361,96 @@ export function Predictions() {
           </div>
         )}
 
+        {/* MY PREDICTIONS STATS */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 px-4 py-3.5 flex items-center gap-2.5 border-b border-gray-200 dark:border-gray-700">
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+              <User className="w-3.5 h-3.5 text-indigo-500" />
+            </div>
+            <p className="text-[11px] font-black uppercase tracking-[2px] text-gray-700 dark:text-gray-300 flex-1">My Predictions</p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-900 p-4 space-y-4">
+            {/* Member selector */}
+            <select
+              value={myMemberId}
+              onChange={e => {
+                setMyMemberId(e.target.value);
+                localStorage.setItem('scc-my-prediction-id', e.target.value);
+              }}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            >
+              <option value="">— Select your name —</option>
+              {members.sort((a, b) => a.name.localeCompare(b.name)).map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+
+            {/* Stats grid */}
+            {myMemberId && !myStats && (
+              <p className="text-center text-sm text-gray-400 py-4">No predictions yet — predict the next match to get started! 🎯</p>
+            )}
+
+            {myStats && (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { icon: <BarChart2 className="w-4 h-4 text-indigo-400" />, label: 'Total Points', value: `${myStats.totalPoints}`, color: 'text-indigo-600 dark:text-indigo-400' },
+                    { icon: <Target className="w-4 h-4 text-emerald-400" />, label: 'Hit Rate', value: `${myStats.hitRate}%`, color: 'text-emerald-600 dark:text-emerald-400' },
+                    { icon: <TrendingUp className="w-4 h-4 text-amber-400" />, label: 'Predicted', value: `${myStats.matchesPredicted}`, color: 'text-amber-600 dark:text-amber-400' },
+                    { icon: <Zap className="w-4 h-4 text-rose-400" />, label: 'Correct', value: `${myStats.correct}/${myStats.scoredCount}`, color: 'text-rose-600 dark:text-rose-400' },
+                  ].map(s => (
+                    <div key={s.label} className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-1.5">{s.icon}<span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{s.label}</span></div>
+                      <p className={`text-xl font-black tabular-nums ${s.color}`}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Best match */}
+                {myStats.bestMatch && (
+                  <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-4 py-3 flex items-center gap-3">
+                    <Star className="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Best Prediction</p>
+                      <p className="text-sm font-bold text-gray-800 dark:text-white truncate">
+                        vs {myStats.bestMatch.opponent} · {fmtDate(myStats.bestMatch.date)}
+                      </p>
+                    </div>
+                    <span className="text-lg font-black text-amber-600 dark:text-amber-400 tabular-nums">+{myStats.best.points_earned}pts</span>
+                  </div>
+                )}
+
+                {/* Last 5 history */}
+                {myStats.history.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Recent Predictions</p>
+                    <div className="space-y-1.5">
+                      {myStats.history.map(({ p, match }) => (
+                        <div key={p.id} className="flex items-center gap-3 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-800">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${
+                            (p.points_earned ?? 0) >= 20 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                            : (p.points_earned ?? 0) > 0  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                            : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                          }`}>
+                            {(p.points_earned ?? 0) > 0 ? '+' : '0'}
+                          </div>
+                          <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">vs {match!.opponent}</span>
+                          <span className="text-xs text-gray-400">{fmtDate(match!.date)}</span>
+                          <span className={`text-sm font-bold tabular-nums ${(p.points_earned ?? 0) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
+                            {(p.points_earned ?? 0) > 0 ? `+${p.points_earned}` : '0'} pts
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
         {/* RECENT MATCHES PREDICTION SUMMARY */}
         {settledWithPredictions.length > 0 && (
           <div>
@@ -468,7 +581,7 @@ export function Predictions() {
                                 const winnerLabel =
                                   p.winner === 'scc' ? 'SCC'
                                   : p.winner === 'opponent' ? (match.opponent || 'Opponent')
-                                  : p.winner === 'draw' ? 'Draw'
+                                  : p.winner === 'draw' ? 'No Result'
                                   : p.winner === 'dhurandars' ? '🔴 Dhurandars'
                                   : p.winner === 'bazigars' ? '🔵 Bazigars'
                                   : '—';

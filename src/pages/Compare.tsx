@@ -62,7 +62,8 @@ function buildSummary(
   );
   const ext = matchesPlayed.filter(m => m.match_type === 'external');
   const won = ext.filter(m => m.result === 'won').length;
-  const winRate = ext.length > 0 ? Math.round((won / ext.length) * 100) : 0;
+  const lost = ext.filter(m => m.result === 'lost').length;
+  const winRate = (won + lost) > 0 ? Math.round((won / (won + lost)) * 100) : 0;
   const radar = computeRadar(memberStats, moms, matchesPlayed.length);
   const ovr = overallRating(radar, member.role);
 

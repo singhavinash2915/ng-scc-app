@@ -286,7 +286,7 @@ export function Calendar() {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-amber-500" />
-                    <span className="text-gray-600 dark:text-gray-400">Draw</span>
+                    <span className="text-gray-600 dark:text-gray-400">No Result</span>
                   </div>
                 </div>
               </CardContent>

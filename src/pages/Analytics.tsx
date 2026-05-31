@@ -39,7 +39,7 @@ export function Analytics() {
     const won = completedMatches.filter(m => m.result === 'won').length;
     const lost = completedMatches.filter(m => m.result === 'lost').length;
     const draw = completedMatches.filter(m => m.result === 'draw').length;
-    const winRate = completedMatches.length > 0 ? (won / completedMatches.length) * 100 : 0;
+    const winRate = (won + lost) > 0 ? (won / (won + lost)) * 100 : 0;
 
     return {
       total: completedMatches.length,
@@ -53,7 +53,7 @@ export function Analytics() {
   const pieData = useMemo(() => [
     { name: 'Won', value: stats.won, color: COLORS.won },
     { name: 'Lost', value: stats.lost, color: COLORS.lost },
-    { name: 'Draw', value: stats.draw, color: COLORS.draw },
+    { name: 'No Result', value: stats.draw, color: COLORS.draw },
   ], [stats]);
 
   const last5Matches = useMemo(() => {
@@ -108,7 +108,7 @@ export function Analytics() {
     return Object.values(byGround)
       .map(g => ({
         ...g,
-        winRate: g.played > 0 ? Math.round((g.won / g.played) * 1000) / 10 : 0,
+        winRate: (g.won + g.lost) > 0 ? Math.round((g.won / (g.won + g.lost)) * 1000) / 10 : 0,
       }))
       .sort((a, b) => b.played - a.played);
   }, [matches]);
@@ -235,7 +235,7 @@ export function Analytics() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Draw</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">No Result</span>
                 </div>
               </div>
             </CardContent>
@@ -329,7 +329,7 @@ export function Analytics() {
                     />
                     <Bar dataKey="won" name="Won" fill={COLORS.won} radius={[4, 4, 0, 0]} />
                     <Bar dataKey="lost" name="Lost" fill={COLORS.lost} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="draw" name="Draw" fill={COLORS.draw} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="draw" name="No Result" fill={COLORS.draw} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -431,7 +431,7 @@ export function Analytics() {
                       <span className="text-emerald-600 dark:text-emerald-400 font-semibold">W {g.won}</span>
                       <span className="text-red-600 dark:text-red-400 font-semibold">L {g.lost}</span>
                       {g.draw > 0 && (
-                        <span className="text-amber-600 dark:text-amber-400 font-semibold">D {g.draw}</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-semibold">NR {g.draw}</span>
                       )}
                     </div>
                   </div>

@@ -196,7 +196,7 @@ export function AnnualReport() {
             </div>
             <div>
               <p className="text-2xl font-black text-amber-600">{data.drawn}</p>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">Drawn</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">No Result</p>
             </div>
           </div>
         </div>
