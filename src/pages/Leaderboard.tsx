@@ -160,7 +160,7 @@ const SEASONS = [
 // Never shows 'all-time' rows (which would double-count current season stats).
 
 export function Leaderboard() {
-  const [season, setSeason] = useState<string>('2025-26');
+  const [season, setSeason] = useState<string>('all');
   const { stats, loading, error, fetchStats } = useCricketStats(season);
   const { counts: momCounts } = useMOMCounts();
   const { formByMember } = useFormGuide();
