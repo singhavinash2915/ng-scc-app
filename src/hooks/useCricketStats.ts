@@ -4,51 +4,15 @@ import type { MemberCricketStats } from '../types';
 
 
 // Only aggregate rows from named year-seasons (e.g. '2025-26', '2024-25').
+// Each season row now contains ONLY that season's stats (properly synced with date filter).
 const YEAR_SEASON = /^\d{4}-\d{2}$/;
 
-// Season rows are CUMULATIVE snapshots. '2025-26' = career total, '2024-25' = total up to Aug 2025.
-// To get an individual season's stats, subtract the previous season's cumulative row.
-// Season ordering: older seasons have smaller start years.
-const SEASON_ORDER = ['2023-24', '2024-25', '2025-26'];
-
-function prevSeason(s: string): string | null {
-  const idx = SEASON_ORDER.indexOf(s);
-  return idx > 0 ? SEASON_ORDER[idx - 1] : null;
+function oversToBalls(o: number): number {
+  const complete = Math.floor(o);
+  return complete * 6 + Math.round((o - complete) * 10);
 }
-
-// Subtract prev cumulative row from curr cumulative row to get one season's delta.
-function deltaStats(curr: MemberCricketStats, prev: MemberCricketStats | null): MemberCricketStats {
-  if (!prev) return curr;
-  const runs    = Math.max(0, curr.batting_runs    - prev.batting_runs);
-  const innings = Math.max(0, curr.batting_innings - prev.batting_innings);
-  const wkts    = Math.max(0, curr.bowling_wickets - prev.bowling_wickets);
-  const toB = (o: number) => { const c = Math.floor(o); return c * 6 + Math.round((o - c) * 10); };
-  const frB = (b: number) => parseFloat(`${Math.floor(b / 6)}.${b % 6}`);
-  const totalBalls = Math.max(0, toB(curr.bowling_overs || 0) - toB(prev.bowling_overs || 0));
-  const runsCon = Math.max(0, curr.bowling_runs_conceded - prev.bowling_runs_conceded);
-  return {
-    ...curr,
-    batting_runs:          runs,
-    batting_innings:       innings,
-    batting_matches:       Math.max(0, curr.batting_matches   - prev.batting_matches),
-    batting_fours:         Math.max(0, curr.batting_fours     - prev.batting_fours),
-    batting_sixes:         Math.max(0, curr.batting_sixes     - prev.batting_sixes),
-    batting_fifties:       Math.max(0, curr.batting_fifties   - prev.batting_fifties),
-    batting_hundreds:      Math.max(0, curr.batting_hundreds  - prev.batting_hundreds),
-    batting_ducks:         Math.max(0, curr.batting_ducks     - prev.batting_ducks),
-    batting_average:       innings > 0 ? Math.round((runs / innings) * 100) / 100 : 0,
-    batting_strike_rate:   curr.batting_strike_rate, // SR not easily delta-able, keep as-is
-    bowling_wickets:       wkts,
-    bowling_overs:         frB(totalBalls),
-    bowling_runs_conceded: runsCon,
-    bowling_five_wickets:  Math.max(0, curr.bowling_five_wickets - prev.bowling_five_wickets),
-    bowling_economy:       totalBalls > 0 ? Math.round((runsCon / (totalBalls / 6)) * 100) / 100 : 0,
-    bowling_average:       wkts > 0 ? Math.round((runsCon / wkts) * 100) / 100 : 0,
-    bowling_strike_rate:   wkts > 0 ? Math.round((totalBalls / wkts) * 100) / 100 : 0,
-    fielding_catches:      Math.max(0, curr.fielding_catches   - prev.fielding_catches),
-    fielding_stumpings:    Math.max(0, curr.fielding_stumpings - prev.fielding_stumpings),
-    fielding_run_outs:     Math.max(0, curr.fielding_run_outs  - prev.fielding_run_outs),
-  };
+function ballsToOvers(balls: number): number {
+  return parseFloat(`${Math.floor(balls / 6)}.${balls % 6}`);
 }
 
 export function useCricketStats(season: string = '2025-26') {
@@ -61,10 +25,9 @@ export function useCricketStats(season: string = '2025-26') {
       setLoading(true);
 
       if (season === 'all') {
-        // Overall (career): the '2025-26' sync was run without a date filter so those rows
-        // already contain ALL-TIME career stats. Older season rows (2024-25 etc.) are subsets.
-        // Summing would double-count. Instead, pick the row with the MOST innings per member
-        // — that is always the cumulative career row.
+        // Overall (career): sum each season row per member.
+        // Each season row contains only that season's stats (isolated sync with date filter),
+        // so summing gives correct career totals without double-counting.
         const { data, error } = await supabase
           .from('member_cricket_stats')
           .select('*, member:members(id, name, avatar_url, matches_played)')
@@ -73,39 +36,66 @@ export function useCricketStats(season: string = '2025-26') {
 
         const byMember: Record<string, MemberCricketStats> = {};
         for (const row of (data || []) as MemberCricketStats[]) {
-          if (!YEAR_SEASON.test(row.season)) continue; // skip 'all-time' etc.
+          if (!YEAR_SEASON.test(row.season)) continue;
           const existing = byMember[row.member_id];
-          // Keep the row with the most innings — that is the most complete / career dataset
-          if (!existing || row.batting_innings > existing.batting_innings) {
+          if (!existing) {
             byMember[row.member_id] = { ...row, season: 'all' };
+            continue;
           }
+          const sumRuns    = existing.batting_runs    + row.batting_runs;
+          const sumInnings = existing.batting_innings + row.batting_innings;
+          const sumWkts    = existing.bowling_wickets + row.bowling_wickets;
+          const totalBalls = oversToBalls(existing.bowling_overs || 0) + oversToBalls(row.bowling_overs || 0);
+          const sumRunsCon = existing.bowling_runs_conceded + row.bowling_runs_conceded;
+          const betterFigs = (() => {
+            const a = existing.bowling_best_figures, b = row.bowling_best_figures;
+            if (!a) return b || ''; if (!b) return a;
+            const pa = a.match(/(\d+)\/(\d+)/), pb = b.match(/(\d+)\/(\d+)/);
+            if (!pa) return b; if (!pb) return a;
+            if (parseInt(pb[1]) > parseInt(pa[1])) return b;
+            if (parseInt(pb[1]) === parseInt(pa[1]) && parseInt(pb[2]) < parseInt(pa[2])) return b;
+            return a;
+          })();
+          byMember[row.member_id] = {
+            ...existing,
+            batting_matches:       existing.batting_matches       + row.batting_matches,
+            batting_innings:       sumInnings,
+            batting_runs:          sumRuns,
+            batting_fours:         existing.batting_fours         + row.batting_fours,
+            batting_sixes:         existing.batting_sixes         + row.batting_sixes,
+            batting_fifties:       existing.batting_fifties       + row.batting_fifties,
+            batting_hundreds:      existing.batting_hundreds      + row.batting_hundreds,
+            batting_ducks:         existing.batting_ducks         + row.batting_ducks,
+            batting_highest_score: Math.max(existing.batting_highest_score || 0, row.batting_highest_score || 0),
+            batting_average:       sumInnings > 0 ? Math.round((sumRuns / sumInnings) * 100) / 100 : 0,
+            batting_strike_rate:   sumRuns > 0
+              ? Math.round(((existing.batting_strike_rate * existing.batting_runs) + (row.batting_strike_rate * row.batting_runs)) / sumRuns * 100) / 100
+              : 0,
+            bowling_innings:       existing.bowling_innings       + row.bowling_innings,
+            bowling_overs:         ballsToOvers(totalBalls),
+            bowling_runs_conceded: sumRunsCon,
+            bowling_wickets:       sumWkts,
+            bowling_five_wickets:  existing.bowling_five_wickets  + row.bowling_five_wickets,
+            bowling_best_figures:  betterFigs,
+            bowling_economy:       totalBalls > 0 ? Math.round((sumRunsCon / (totalBalls / 6)) * 100) / 100 : 0,
+            bowling_average:       sumWkts > 0 ? Math.round((sumRunsCon / sumWkts) * 100) / 100 : 0,
+            bowling_strike_rate:   sumWkts > 0 ? Math.round((totalBalls / sumWkts) * 100) / 100 : 0,
+            fielding_catches:      existing.fielding_catches      + row.fielding_catches,
+            fielding_stumpings:    existing.fielding_stumpings    + row.fielding_stumpings,
+            fielding_run_outs:     existing.fielding_run_outs     + row.fielding_run_outs,
+            season:                'all',
+          };
         }
         setStats(Object.values(byMember).sort((a, b) => b.batting_runs - a.batting_runs));
       } else {
-        // Season rows are cumulative — subtract previous season to get this season's delta.
-        const prev = prevSeason(season);
-
-        const [currRes, prevRes] = await Promise.all([
-          supabase.from('member_cricket_stats')
-            .select('*, member:members(id, name, avatar_url, matches_played)')
-            .eq('season', season)
-            .order('batting_runs', { ascending: false }),
-          prev
-            ? supabase.from('member_cricket_stats').select('*').eq('season', prev)
-            : Promise.resolve({ data: [], error: null }),
-        ]);
-        if (currRes.error) throw currRes.error;
-
-        // Build prev lookup by member_id
-        const prevByMember: Record<string, MemberCricketStats> = {};
-        for (const r of (prevRes.data || []) as MemberCricketStats[]) {
-          prevByMember[r.member_id] = r;
-        }
-
-        const deltaRows = (currRes.data || []).map((row: MemberCricketStats) =>
-          deltaStats(row, prevByMember[row.member_id] ?? null)
-        );
-        setStats(deltaRows.sort((a, b) => b.batting_runs - a.batting_runs));
+        // Season-specific: each row is isolated to that season, use directly.
+        const { data, error } = await supabase
+          .from('member_cricket_stats')
+          .select('*, member:members(id, name, avatar_url, matches_played)')
+          .eq('season', season)
+          .order('batting_runs', { ascending: false });
+        if (error) throw error;
+        setStats(data || []);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch stats');
