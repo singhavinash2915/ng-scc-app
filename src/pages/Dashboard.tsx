@@ -443,17 +443,6 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* ── GROUND & OPPONENT INSIGHTS ───────────────────────────────── */}
-        {matches.length > 0 && (
-          <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px]">Ground & Opponent Insights</p>
-              <a href="/analytics" className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:underline">Full analysis →</a>
-            </div>
-            <GroundOpponentInsights matches={matches} compact />
-          </div>
-        )}
-
         {/* ── ANNOUNCEMENT WALL ────────────────────────────────────────── */}
         <AnnouncementWall />
 
@@ -797,9 +786,6 @@ export function Dashboard() {
           </Suspense>
         )}
 
-        {/* ── SQUAD POLL ──────────────────────────── */}
-        <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
-
         {/* ── INTERNAL BATTLE ─────────────────────── */}
         {internalMatchStats.total > 0 && (
           <div className="relative overflow-hidden rounded-2xl shadow-xl">
@@ -1038,6 +1024,20 @@ export function Dashboard() {
 
         {/* ── CALENDAR ────────────────────────────── */}
         <CalendarWidget matches={matches} />
+
+        {/* ── GROUND & OPPONENT INSIGHTS ───────────────────────────────── */}
+        {matches.length > 0 && (
+          <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px]">Ground & Opponent Insights</p>
+              <a href="/analytics" className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:underline">Full analysis →</a>
+            </div>
+            <GroundOpponentInsights matches={matches} compact />
+          </div>
+        )}
+
+        {/* ── SQUAD POLL ───────────────────────────────────────────────── */}
+        <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
 
         {/* ── JOIN CLUB BANNER ────────────────────── */}
         <Link to="/requests">
