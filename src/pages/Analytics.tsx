@@ -6,6 +6,7 @@ import {
   Calendar,
   Award,
 } from 'lucide-react';
+import { GroundOpponentInsights } from '../components/GroundOpponentInsights';
 import {
   PieChart,
   Pie,
@@ -90,28 +91,6 @@ export function Analytics() {
       .sort((a, b) => b.matches_played - a.matches_played)
       .slice(0, 5);
   }, [members]);
-
-  // ── Ground-wise analysis ────────────────────────────────────────────────────
-  const groundStats = useMemo(() => {
-    const completed = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result) && m.venue && m.venue.trim());
-    const byGround: Record<string, { ground: string; played: number; won: number; lost: number; draw: number }> = {};
-
-    for (const m of completed) {
-      const ground = m.venue!.trim();
-      if (!byGround[ground]) byGround[ground] = { ground, played: 0, won: 0, lost: 0, draw: 0 };
-      byGround[ground].played++;
-      if (m.result === 'won')  byGround[ground].won++;
-      if (m.result === 'lost') byGround[ground].lost++;
-      if (m.result === 'draw') byGround[ground].draw++;
-    }
-
-    return Object.values(byGround)
-      .map(g => ({
-        ...g,
-        winRate: (g.won + g.lost) > 0 ? Math.round((g.won / (g.won + g.lost)) * 1000) / 10 : 0,
-      }))
-      .sort((a, b) => b.played - a.played);
-  }, [matches]);
 
   const loading = matchesLoading || membersLoading;
 
@@ -382,64 +361,8 @@ export function Analytics() {
           </CardContent>
         </Card>
 
-        {/* ── Ground-wise Analysis ─────────────────────────────────────────── */}
-        {groundStats.length > 0 && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Ground-wise Performance</h3>
-                <span className="text-xs text-gray-500">{groundStats.length} grounds played</span>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {groundStats.map((g, idx) => (
-                  <div key={g.ground} className="px-5 py-4">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
-                          idx === 0 ? 'bg-emerald-500 text-white'
-                          : idx === 1 ? 'bg-blue-500 text-white'
-                          : idx === 2 ? 'bg-purple-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                        }`}>{idx + 1}</span>
-                        <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{g.ground}</p>
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <p className={`text-lg font-black tabular-nums ${
-                          g.winRate >= 60 ? 'text-emerald-500'
-                          : g.winRate >= 40 ? 'text-amber-500'
-                          : 'text-red-500'
-                        }`}>{g.winRate}%</p>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Win Rate</p>
-                      </div>
-                    </div>
-                    {/* Result breakdown bar */}
-                    <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex mb-1.5">
-                      {g.won > 0 && (
-                        <div className="h-full bg-emerald-500" style={{ width: `${(g.won / g.played) * 100}%` }} />
-                      )}
-                      {g.draw > 0 && (
-                        <div className="h-full bg-amber-500" style={{ width: `${(g.draw / g.played) * 100}%` }} />
-                      )}
-                      {g.lost > 0 && (
-                        <div className="h-full bg-red-500" style={{ width: `${(g.lost / g.played) * 100}%` }} />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-[11px]">
-                      <span className="text-gray-500">{g.played} matches</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">W {g.won}</span>
-                      <span className="text-red-600 dark:text-red-400 font-semibold">L {g.lost}</span>
-                      {g.draw > 0 && (
-                        <span className="text-amber-600 dark:text-amber-400 font-semibold">NR {g.draw}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* ── Ground & Opponent Analysis ───────────────────────────────────── */}
+        <GroundOpponentInsights matches={matches} />
       </div>
     </div>
   );
