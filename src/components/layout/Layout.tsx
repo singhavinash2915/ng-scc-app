@@ -5,6 +5,7 @@ import { MobileNav } from './MobileNav';
 import { ContactBar } from './ContactBar';
 import { InstallPrompt } from '../InstallPrompt';
 import { OfflineIndicator } from '../OfflineIndicator';
+import { WhatsNewModal } from '../WhatsNewModal';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -29,6 +30,8 @@ export function Layout({ children }: LayoutProps) {
       <MobileNav />
       {/* InstallPrompt is for PWA — hide inside the native app */}
       {!isNative && <InstallPrompt />}
+      {/* What's New — auto-pops once per release version */}
+      <WhatsNewModal />
     </div>
   );
 }
