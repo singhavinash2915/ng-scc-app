@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
+import { CURRENT_VERSION, STORAGE_KEY } from '../../data/releases';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -42,6 +43,7 @@ const publicNavItems = [
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
   { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
   { to: '/about', icon: Info, label: 'About' },
+  { to: '/whats-new', icon: Sparkles, label: "What's New" },
 ];
 
 const adminNavItems = [
@@ -58,6 +60,7 @@ export function Sidebar() {
   const { getPendingCount } = useRequests();
   const pendingCount = getPendingCount();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const hasUnreadRelease = localStorage.getItem(STORAGE_KEY) !== CURRENT_VERSION;
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -122,7 +125,12 @@ export function Sidebar() {
               }
             >
               <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
+              <span className="font-medium flex-1">{item.label}</span>
+              {item.to === '/whats-new' && hasUnreadRelease && (
+                <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-black rounded-full uppercase tracking-wide animate-pulse">
+                  New
+                </span>
+              )}
             </NavLink>
           ))}
 
