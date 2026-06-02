@@ -36,6 +36,7 @@ interface Acc {
   fifties:        number;
   hundreds:       number;
   dismissals:     number;
+  battingRunOuts: number;
   // bowling
   bowlInnings:    number;
   totalBalls:     number;
@@ -54,7 +55,7 @@ function emptyAcc(): Acc {
   return {
     matchSet: new Set(),
     battingInnings: 0, runs: 0, balls: 0, fours: 0, sixes: 0,
-    highest: 0, highestNotOut: false, ducks: 0, fifties: 0, hundreds: 0, dismissals: 0,
+    highest: 0, highestNotOut: false, ducks: 0, fifties: 0, hundreds: 0, dismissals: 0, battingRunOuts: 0,
     bowlInnings: 0, totalBalls: 0, wickets: 0, runsConceded: 0,
     bestWkts: 0, bestRuns: 9999, fiveWickets: 0,
     catches: 0, stumpings: 0, runOuts: 0,
@@ -259,7 +260,10 @@ export function useStatSync() {
               s.balls += balls;
               s.fours += Number(b['4s'] ?? 0);
               s.sixes += Number(b['6s'] ?? 0);
-              if (!notOut) s.dismissals++;
+              if (!notOut) {
+                s.dismissals++;
+                if (String(b.how_to_out ?? '').toLowerCase().includes('run out')) s.battingRunOuts++;
+              }
               if (runs > s.highest || (runs === s.highest && !s.highestNotOut && notOut)) {
                 s.highest = runs; s.highestNotOut = notOut;
               }
@@ -346,6 +350,7 @@ export function useStatSync() {
           batting_ducks:         s.ducks,
           batting_fours:         s.fours,
           batting_sixes:         s.sixes,
+          batting_run_outs:      s.battingRunOuts,
           bowling_matches:       s.matchSet.size,
           bowling_innings:       s.bowlInnings,
           bowling_overs:         oversNum,

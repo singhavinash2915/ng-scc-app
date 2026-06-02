@@ -188,7 +188,10 @@ export function Records() {
     const topMOMs = Object.entries(momCounts).map(([id, c]) => ({ id, count: c }))
       .sort((a, b) => b.count - a.count)[0];
 
-    return { topRuns, topAvg, highestIndividual, topWkts, bestBowling, topCatches, topMOMs, getName, getAvatar };
+    const topRunOuts = [...stats].filter(s => (s.batting_run_outs || 0) > 0)
+      .sort((a, b) => (b.batting_run_outs || 0) - (a.batting_run_outs || 0))[0] ?? null;
+
+    return { topRuns, topAvg, highestIndividual, topWkts, bestBowling, topCatches, topMOMs, topRunOuts, getName, getAvatar };
   }, [stats, momCounts]);
 
   return (
@@ -350,6 +353,16 @@ export function Records() {
                   subtitle={playerRecords.getName(playerRecords.topCatches)}
                   gradient="linear-gradient(135deg, #065f46 0%, #0a1019 100%)"
                   border="1px solid rgba(16,185,129,0.3)"
+                />
+              )}
+              {playerRecords.topRunOuts && (
+                <RecordCard
+                  icon={<span className="text-sm">🏃</span>}
+                  label="Most Run Outs (batting)"
+                  value={`${playerRecords.topRunOuts.batting_run_outs || 0}`}
+                  subtitle={playerRecords.getName(playerRecords.topRunOuts)}
+                  gradient="linear-gradient(135deg, #7c2d12 0%, #0a1019 100%)"
+                  border="1px solid rgba(249,115,22,0.3)"
                 />
               )}
               {playerRecords.topMOMs && (() => {

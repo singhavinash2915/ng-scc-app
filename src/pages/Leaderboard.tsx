@@ -74,6 +74,7 @@ const BATTING_COLS: ColDef[] = [
   { key: 'batting_fours',        label: '4s',    tooltip: 'Fours hit' },
   { key: 'batting_sixes',        label: '6s',    tooltip: 'Sixes hit' },
   { key: 'batting_ducks',        label: 'Ducks', tooltip: 'Ducks — dismissed without scoring (0)' },
+  { key: 'batting_run_outs',     label: 'ROs',   tooltip: 'Times dismissed by run-out while batting' },
 ];
 
 const BOWLING_COLS: ColDef[] = [

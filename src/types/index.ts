@@ -293,6 +293,7 @@ export interface MemberCricketStats {
   batting_ducks: number;
   batting_fours: number;
   batting_sixes: number;
+  batting_run_outs: number;
   // Bowling
   bowling_matches: number;
   bowling_innings: number;
