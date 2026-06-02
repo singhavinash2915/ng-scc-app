@@ -446,8 +446,8 @@ export function Dashboard() {
         {/* ── ANNOUNCEMENT WALL ────────────────────────────────────────── */}
         <AnnouncementWall />
 
-        {/* ── LIVE SCORECARD (only when match is actually in progress) ── */}
-        {liveMatchToday?.ch_match_id && liveMatchToday.result === 'upcoming' && (
+        {/* ── LIVE SCORECARD (any match today that has a CricHeroes ID — upcoming or in-progress) ── */}
+        {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result) && (
           <LiveScorecardWidget match={liveMatchToday} />
         )}
 
