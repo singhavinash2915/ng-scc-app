@@ -4,6 +4,6 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 ALTER TABLE match_predictions
-  ADD COLUMN IF NOT EXISTS score_range     TEXT,    -- 'under_100' | '100_150' | '150_200' | 'over_200'
-  ADD COLUMN IF NOT EXISTS fifty_scored    TEXT,    -- 'yes' | 'no'
-  ADD COLUMN IF NOT EXISTS five_wicket_haul TEXT;   -- 'yes' | 'no'
+  ADD COLUMN IF NOT EXISTS score_range       TEXT,    -- 'under_100' | '100_110' | '110_125' | 'over_125'
+  ADD COLUMN IF NOT EXISTS fifty_scored      TEXT,    -- 'yes' | 'no'
+  ADD COLUMN IF NOT EXISTS three_wicket_haul TEXT;    -- 'yes' | 'no' — anyone takes 3+ wickets

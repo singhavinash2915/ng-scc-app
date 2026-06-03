@@ -39,7 +39,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     mom_id: null,
     score_range: null,
     fifty_scored: null,
-    five_wicket_haul: null,
+    three_wicket_haul: null,
   });
 
   // Restore existing prediction when member is picked
@@ -56,7 +56,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
         mom_id: existing.mom_id,
         score_range: existing.score_range,
         fifty_scored: existing.fifty_scored,
-        five_wicket_haul: existing.five_wicket_haul,
+        three_wicket_haul: existing.three_wicket_haul,
       });
     }
   }, [existing]);
@@ -76,7 +76,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     setMemberId('');
     setPinDigits('');
     setPinError('');
-    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, five_wicket_haul: null });
+    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, three_wicket_haul: null });
   };
 
   const handleClose = () => { handleReset(); onClose(); };
@@ -349,9 +349,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                 <div className="grid grid-cols-2 gap-2">
                   {([
                     { v: 'under_100', l: 'Under 100' },
-                    { v: '100_150',   l: '100 – 150' },
-                    { v: '150_200',   l: '150 – 200' },
-                    { v: 'over_200',  l: 'Over 200' },
+                    { v: '100_110',   l: '100 – 110' },
+                    { v: '110_125',   l: '110 – 125' },
+                    { v: 'over_125',  l: 'Over 125' },
                   ] as const).map(opt => {
                     const sel = form.score_range === opt.v;
                     return (
@@ -392,17 +392,17 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                 </div>
               </div>
 
-              {/* WILL ANYONE TAKE 5+ WICKETS? */}
+              {/* WILL ANYONE TAKE 3+ WICKETS? */}
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
-                  <Flame className="w-3.5 h-3.5 text-red-500" fill="currentColor" /> Anyone takes 5-wicket haul? <span className="text-red-600">+10 pts</span> <span className="text-[9px] text-red-400">RARE!</span>
+                  <Flame className="w-3.5 h-3.5 text-red-500" fill="currentColor" /> Anyone takes 3+ wickets? <span className="text-red-600">+10 pts</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {([{ v: 'yes', l: '🔥 Yes!' }, { v: 'no', l: '❌ No' }] as const).map(opt => {
-                    const sel = form.five_wicket_haul === opt.v;
+                    const sel = form.three_wicket_haul === opt.v;
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
-                        onClick={() => setForm({ ...form, five_wicket_haul: sel ? null : opt.v })}
+                        onClick={() => setForm({ ...form, three_wicket_haul: sel ? null : opt.v })}
                         className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
                           sel
                             ? 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 ring-2 ring-red-500/30'

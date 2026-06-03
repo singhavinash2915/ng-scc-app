@@ -95,7 +95,7 @@ export function Predictions() {
         if (p.mom_id && p.mom_id === outcome.mom_id) points += PREDICTION_POINTS.mom;
         if (p.score_range && p.score_range === outcome.score_range) points += PREDICTION_POINTS.score_range;
         if (p.fifty_scored && p.fifty_scored === outcome.fifty_scored) points += PREDICTION_POINTS.fifty_scored;
-        if (p.five_wicket_haul && p.five_wicket_haul === outcome.five_wicket_haul) points += PREDICTION_POINTS.five_wicket_haul;
+        if (p.three_wicket_haul && p.three_wicket_haul === outcome.three_wicket_haul) points += PREDICTION_POINTS.three_wicket_haul;
 
         const { error } = await supabase
           .from('match_predictions')

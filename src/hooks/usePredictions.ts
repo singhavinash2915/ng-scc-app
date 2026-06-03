@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 export type PredictionWinner = 'scc' | 'opponent' | 'draw' | 'dhurandars' | 'bazigars';
 
 // Bonus prediction option types
-export type ScoreRange     = 'under_100' | '100_150' | '150_200' | 'over_200';
+export type ScoreRange     = 'under_100' | '100_110' | '110_125' | 'over_125';
 export type YesNo          = 'yes' | 'no';
 
 export interface MatchPrediction {
@@ -19,7 +19,7 @@ export interface MatchPrediction {
   // Bonus questions
   score_range:      ScoreRange | null;
   fifty_scored:     YesNo | null;
-  five_wicket_haul: YesNo | null;
+  three_wicket_haul: YesNo | null;
   points_earned: number | null;
   locked_at: string;
   scored_at: string | null;
@@ -32,7 +32,7 @@ export interface PredictionInput {
   mom_id: string | null;
   score_range:      ScoreRange | null;
   fifty_scored:     YesNo | null;
-  five_wicket_haul: YesNo | null;
+  three_wicket_haul: YesNo | null;
 }
 
 // Points config
@@ -43,7 +43,7 @@ const POINTS = {
   mom: 5,
   score_range: 10,
   fifty_scored: 5,
-  five_wicket_haul: 10,   // rare, big reward
+  three_wicket_haul: 10,   // rare, big reward
 };
 
 export function usePredictions(matchId?: string) {
@@ -84,7 +84,7 @@ export function usePredictions(matchId?: string) {
           mom_id: input.mom_id,
           score_range: input.score_range,
           fifty_scored: input.fifty_scored,
-          five_wicket_haul: input.five_wicket_haul,
+          three_wicket_haul: input.three_wicket_haul,
           locked_at: new Date().toISOString(),
         },
         { onConflict: 'match_id,member_id' }
@@ -155,7 +155,7 @@ export function scorePrediction(
     mom_id: string | null;
     score_range?:      ScoreRange | null;
     fifty_scored?:     YesNo | null;
-    five_wicket_haul?: YesNo | null;
+    three_wicket_haul?: YesNo | null;
   }
 ): number {
   let points = 0;
@@ -175,8 +175,8 @@ export function scorePrediction(
   if (prediction.fifty_scored && prediction.fifty_scored === actual.fifty_scored) {
     points += POINTS.fifty_scored;
   }
-  if (prediction.five_wicket_haul && prediction.five_wicket_haul === actual.five_wicket_haul) {
-    points += POINTS.five_wicket_haul;
+  if (prediction.three_wicket_haul && prediction.three_wicket_haul === actual.three_wicket_haul) {
+    points += POINTS.three_wicket_haul;
   }
   return points;
 }

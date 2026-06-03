@@ -15,14 +15,14 @@ export interface MatchOutcome {
   mom_id: string | null;
   score_range:      ScoreRange | null;
   fifty_scored:     YesNo | null;
-  five_wicket_haul: YesNo | null;
+  three_wicket_haul: YesNo | null;
 }
 
 function bucketScore(runs: number): ScoreRange {
   if (runs < 100) return 'under_100';
-  if (runs < 150) return '100_150';
-  if (runs < 200) return '150_200';
-  return 'over_200';
+  if (runs < 110) return '100_110';
+  if (runs < 125) return '110_125';
+  return 'over_125';
 }
 
 function namesMatch(a: string, b: string): boolean {
@@ -101,9 +101,9 @@ export function deriveOutcome(
   const fifty_scored: YesNo | null = sccBattingRows
     ? (sccBattingRows.some(b => (b.runs || 0) >= 50) ? 'yes' : 'no')
     : null;
-  // Anyone in SCC bowling took 5+ wickets?
-  const five_wicket_haul: YesNo | null = sccBowlingRows
-    ? (sccBowlingRows.some(b => (b.wickets || 0) >= 5) ? 'yes' : 'no')
+  // Anyone in SCC bowling took 3+ wickets?
+  const three_wicket_haul: YesNo | null = sccBowlingRows
+    ? (sccBowlingRows.some(b => (b.wickets || 0) >= 3) ? 'yes' : 'no')
     : null;
 
   return {
@@ -114,7 +114,7 @@ export function deriveOutcome(
     mom_id: match.man_of_match_id || null,
     score_range,
     fifty_scored,
-    five_wicket_haul,
+    three_wicket_haul,
   };
 }
 
@@ -125,5 +125,5 @@ export const PREDICTION_POINTS = {
   mom: 5,
   score_range: 10,
   fifty_scored: 5,
-  five_wicket_haul: 10,
+  three_wicket_haul: 10,
 };
