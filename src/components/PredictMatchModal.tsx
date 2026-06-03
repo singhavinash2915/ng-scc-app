@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CheckCircle2, Lock, Crown, Trophy, Zap, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Lock, Crown, Trophy, Zap, TrendingUp, Target, Flame, BarChart2 } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Select } from './ui/Input';
@@ -37,6 +37,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     top_scorer_id: null,
     top_wicket_taker_id: null,
     mom_id: null,
+    score_range: null,
+    fifty_scored: null,
+    five_wicket_haul: null,
   });
 
   // Restore existing prediction when member is picked
@@ -51,6 +54,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
         top_scorer_id: existing.top_scorer_id,
         top_wicket_taker_id: existing.top_wicket_taker_id,
         mom_id: existing.mom_id,
+        score_range: existing.score_range,
+        fifty_scored: existing.fifty_scored,
+        five_wicket_haul: existing.five_wicket_haul,
       });
     }
   }, [existing]);
@@ -70,7 +76,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     setMemberId('');
     setPinDigits('');
     setPinError('');
-    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null });
+    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, five_wicket_haul: null });
   };
 
   const handleClose = () => { handleReset(); onClose(); };
@@ -113,15 +119,20 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     }
   };
 
-  // Eligible SCC members for top-scorer / top-wicket / MOM picks
-  // For internal matches, all selected players are eligible
+  // Eligible SCC members for top-scorer / top-wicket / MOM picks.
+  // For internal matches, all selected players are eligible.
+  // ⚠️ Self-selection is restricted — members cannot bet on themselves to keep
+  // the game honest (and to make predictions more fun).
   const eligibleMembers = useMemo(() => {
-    if (isInternal && match.players) {
-      const ids = new Set(match.players.map(p => p.member_id));
-      return members.filter(m => ids.has(m.id));
-    }
-    return members.filter(m => m.status === 'active');
-  }, [members, match.players, isInternal]);
+    const base = isInternal && match.players
+      ? (() => {
+          const ids = new Set(match.players!.map(p => p.member_id));
+          return members.filter(m => ids.has(m.id));
+        })()
+      : members.filter(m => m.status === 'active');
+    // Exclude the predicting member
+    return base.filter(m => m.id !== memberId);
+  }, [members, match.players, isInternal, memberId]);
 
   const memberOptions = useMemo(() => [
     { value: '', label: '— Skip / not sure —' },
@@ -323,6 +334,89 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
             />
           </div>
 
+          {/* ── BONUS QUESTIONS ─────────────────────────────────────────── */}
+          {!isInternal && (
+            <div className="pt-3 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
+              <p className="text-[10px] font-black uppercase tracking-[2px] text-purple-500 mb-3 flex items-center gap-1.5">
+                ⚡ Bonus Questions · Up to +25 pts
+              </p>
+
+              {/* SCC TOTAL SCORE RANGE */}
+              <div className="mb-4">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <BarChart2 className="w-3.5 h-3.5 text-purple-500" /> SCC Total Score? <span className="text-purple-600">+10 pts</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { v: 'under_100', l: 'Under 100' },
+                    { v: '100_150',   l: '100 – 150' },
+                    { v: '150_200',   l: '150 – 200' },
+                    { v: 'over_200',  l: 'Over 200' },
+                  ] as const).map(opt => {
+                    const sel = form.score_range === opt.v;
+                    return (
+                      <button key={opt.v} type="button" disabled={isLocked}
+                        onClick={() => setForm({ ...form, score_range: sel ? null : opt.v })}
+                        className={`p-2.5 rounded-xl border-2 font-bold text-xs transition-all ${
+                          sel
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500/30'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                        } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+                        {opt.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* WILL ANYONE SCORE 50+? */}
+              <div className="mb-4">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <Target className="w-3.5 h-3.5 text-blue-500" /> Will anyone score 50+? <span className="text-blue-600">+5 pts</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([{ v: 'yes', l: '✅ Yes' }, { v: 'no', l: '❌ No' }] as const).map(opt => {
+                    const sel = form.fifty_scored === opt.v;
+                    return (
+                      <button key={opt.v} type="button" disabled={isLocked}
+                        onClick={() => setForm({ ...form, fifty_scored: sel ? null : opt.v })}
+                        className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                          sel
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/30'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                        } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+                        {opt.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* WILL ANYONE TAKE 5+ WICKETS? */}
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <Flame className="w-3.5 h-3.5 text-red-500" fill="currentColor" /> Anyone takes 5-wicket haul? <span className="text-red-600">+10 pts</span> <span className="text-[9px] text-red-400">RARE!</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([{ v: 'yes', l: '🔥 Yes!' }, { v: 'no', l: '❌ No' }] as const).map(opt => {
+                    const sel = form.five_wicket_haul === opt.v;
+                    return (
+                      <button key={opt.v} type="button" disabled={isLocked}
+                        onClick={() => setForm({ ...form, five_wicket_haul: sel ? null : opt.v })}
+                        className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                          sel
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 ring-2 ring-red-500/30'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                        } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+                        {opt.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="secondary" onClick={handleReset} className="flex-1">Cancel</Button>
             <Button type="submit" loading={submitting} disabled={isLocked} className="flex-1">
@@ -340,7 +434,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
           </div>
           <h3 className="text-lg font-black text-gray-900 dark:text-white">Locked in! 🎰</h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Points will be awarded once the match settles. Max possible: <span className="font-bold text-amber-600">+30 pts</span>.
+            Points will be awarded once the match settles. Max possible: <span className="font-bold text-amber-600">+55 pts</span>.
           </p>
           <Button onClick={handleClose} className="mt-4">Done</Button>
         </div>

@@ -93,6 +93,9 @@ export function Predictions() {
         if (p.top_scorer_id && p.top_scorer_id === outcome.top_scorer_id) points += PREDICTION_POINTS.top_scorer;
         if (p.top_wicket_taker_id && p.top_wicket_taker_id === outcome.top_wicket_taker_id) points += PREDICTION_POINTS.top_wicket_taker;
         if (p.mom_id && p.mom_id === outcome.mom_id) points += PREDICTION_POINTS.mom;
+        if (p.score_range && p.score_range === outcome.score_range) points += PREDICTION_POINTS.score_range;
+        if (p.fifty_scored && p.fifty_scored === outcome.fifty_scored) points += PREDICTION_POINTS.fifty_scored;
+        if (p.five_wicket_haul && p.five_wicket_haul === outcome.five_wicket_haul) points += PREDICTION_POINTS.five_wicket_haul;
 
         const { error } = await supabase
           .from('match_predictions')
@@ -186,7 +189,7 @@ export function Predictions() {
               <h2 className="text-2xl lg:text-3xl font-black text-white">Predict & Win</h2>
               <p className="text-purple-200/70 text-sm mt-1">
                 Before each match: who wins? top scorer? top wicket-taker? MOM?
-                Earn up to <span className="font-bold text-amber-300">+30 points</span> per match.
+                Plus bonus questions! Earn up to <span className="font-bold text-amber-300">+55 points</span> per match.
               </p>
             </div>
           </div>

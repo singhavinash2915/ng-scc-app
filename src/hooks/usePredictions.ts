@@ -4,6 +4,10 @@ import { supabase } from '../lib/supabase';
 // 'dhurandars' / 'bazigars' are used for internal (SCC vs SCC) matches
 export type PredictionWinner = 'scc' | 'opponent' | 'draw' | 'dhurandars' | 'bazigars';
 
+// Bonus prediction option types
+export type ScoreRange     = 'under_100' | '100_150' | '150_200' | 'over_200';
+export type YesNo          = 'yes' | 'no';
+
 export interface MatchPrediction {
   id: string;
   match_id: string;
@@ -12,6 +16,10 @@ export interface MatchPrediction {
   top_scorer_id: string | null;
   top_wicket_taker_id: string | null;
   mom_id: string | null;
+  // Bonus questions
+  score_range:      ScoreRange | null;
+  fifty_scored:     YesNo | null;
+  five_wicket_haul: YesNo | null;
   points_earned: number | null;
   locked_at: string;
   scored_at: string | null;
@@ -22,6 +30,9 @@ export interface PredictionInput {
   top_scorer_id: string | null;
   top_wicket_taker_id: string | null;
   mom_id: string | null;
+  score_range:      ScoreRange | null;
+  fifty_scored:     YesNo | null;
+  five_wicket_haul: YesNo | null;
 }
 
 // Points config
@@ -30,6 +41,9 @@ const POINTS = {
   top_scorer: 10,
   top_wicket_taker: 10,
   mom: 5,
+  score_range: 10,
+  fifty_scored: 5,
+  five_wicket_haul: 10,   // rare, big reward
 };
 
 export function usePredictions(matchId?: string) {
@@ -68,6 +82,9 @@ export function usePredictions(matchId?: string) {
           top_scorer_id: input.top_scorer_id,
           top_wicket_taker_id: input.top_wicket_taker_id,
           mom_id: input.mom_id,
+          score_range: input.score_range,
+          fifty_scored: input.fifty_scored,
+          five_wicket_haul: input.five_wicket_haul,
           locked_at: new Date().toISOString(),
         },
         { onConflict: 'match_id,member_id' }
@@ -136,6 +153,9 @@ export function scorePrediction(
     top_scorer_id: string | null;
     top_wicket_taker_id: string | null;
     mom_id: string | null;
+    score_range?:      ScoreRange | null;
+    fifty_scored?:     YesNo | null;
+    five_wicket_haul?: YesNo | null;
   }
 ): number {
   let points = 0;
@@ -148,6 +168,15 @@ export function scorePrediction(
   }
   if (prediction.mom_id && prediction.mom_id === actual.mom_id) {
     points += POINTS.mom;
+  }
+  if (prediction.score_range && prediction.score_range === actual.score_range) {
+    points += POINTS.score_range;
+  }
+  if (prediction.fifty_scored && prediction.fifty_scored === actual.fifty_scored) {
+    points += POINTS.fifty_scored;
+  }
+  if (prediction.five_wicket_haul && prediction.five_wicket_haul === actual.five_wicket_haul) {
+    points += POINTS.five_wicket_haul;
   }
   return points;
 }
