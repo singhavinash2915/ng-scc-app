@@ -44,7 +44,24 @@ export function parseLiveFromPageProps(pp: Record<string, unknown>): Omit<LiveSc
     const scorecard   = pp?.scorecard as InnRaw[] | undefined;
     const summaryRaw  = pp?.summaryData as { data?: Record<string, unknown> } | undefined;
     const summaryData = summaryRaw?.data;
-    if (!scorecard?.length || !summaryData) return null;
+    if (!summaryData) return null;
+
+    const status = summaryData.status as string;
+
+    // CricHeroes 'live' endpoint sometimes returns an empty scorecard during/after
+    // a match because the SSR data lags behind real-time. If the match is finished,
+    // we can still show a basic result card from summaryData alone.
+    if (!scorecard?.length) {
+      if (status === 'past' && summaryData.winning_team) {
+        return {
+          battingTeam: '', bowlingTeam: '', score: '', overs: '',
+          runRate: '', requiredRunRate: '', battingFirst: false,
+          batsman1: '', batsman2: '', bowler: '', currentOver: [],
+          result: `${summaryData.winning_team} won by ${summaryData.win_by}`,
+        };
+      }
+      return null;
+    }
 
     const currentInn  = scorecard[scorecard.length - 1];
     const prevInn     = scorecard.length > 1 ? scorecard[0] : null;
@@ -76,7 +93,6 @@ export function parseLiveFromPageProps(pp: Record<string, unknown>): Omit<LiveSc
     const ovsStr = cur ? `${cur.overs}${cur.balls ? `.${cur.balls}` : ''}` : '';
     const bowler = cur ? `${cur.name}: ${ovsStr}-${cur.maidens}-${cur.runs}-${cur.wickets}` : '';
 
-    const status = summaryData.status as string;
     const result = status === 'past'
       ? `${summaryData.winning_team} won by ${summaryData.win_by}`
       : '';

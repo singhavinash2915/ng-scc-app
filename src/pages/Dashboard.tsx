@@ -446,8 +446,9 @@ export function Dashboard() {
         {/* ── ANNOUNCEMENT WALL ────────────────────────────────────────── */}
         <AnnouncementWall />
 
-        {/* ── LIVE SCORECARD (any match today that has a CricHeroes ID — upcoming or in-progress) ── */}
-        {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result) && (
+        {/* ── LIVE SCORECARD (any match today with CricHeroes ID — upcoming, in-progress, or just-completed). ── */}
+        {/* Keep visible all day so members see live score during the match AND final score after. */}
+        {liveMatchToday?.ch_match_id && (
           <LiveScorecardWidget match={liveMatchToday} />
         )}
 
