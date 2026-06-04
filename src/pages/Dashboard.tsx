@@ -109,7 +109,11 @@ export function Dashboard() {
     // Current season: Oct 2025 → Sep 2026
     const seasonStart = '2025-10-01';
     const seasonEnd   = '2026-09-30';
-    const seasonMatches = matches.filter(m => m.date >= seasonStart && m.date <= seasonEnd);
+    // Overall SCC stats — external matches only.
+    // Internal matches (Dhurandars vs Bazigars) are SCC vs SCC, so they don't
+    // count as a "win/loss" against an external opponent. They're tracked in
+    // the separate "Internal Rivalry" card.
+    const seasonMatches = matches.filter(m => m.date >= seasonStart && m.date <= seasonEnd && m.match_type !== 'internal');
     const completed = seasonMatches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
     const won = completed.filter(m => m.result === 'won').length;
     const lost = completed.filter(m => m.result === 'lost').length;
@@ -119,7 +123,7 @@ export function Dashboard() {
   }, [members, matches, getPendingCount, activeCount]);
 
   const recentMatches = useMemo(() =>
-    matches.filter(m => ['won', 'lost', 'draw'].includes(m.result)).slice(0, 5),
+    matches.filter(m => m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result)).slice(0, 5),
   [matches]);
   const allLowBalanceMembers = useMemo(() => members.filter(m => isActive(m.id) && m.balance < 1000), [members, isActive]);
   const lowBalanceMembers = useMemo(() => allLowBalanceMembers.slice(0, 5), [allLowBalanceMembers]);

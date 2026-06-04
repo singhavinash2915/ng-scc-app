@@ -36,7 +36,9 @@ export function Analytics() {
   const { members, loading: membersLoading } = useMembers();
 
   const stats = useMemo(() => {
-    const completedMatches = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
+    // External matches only — internal matches (Dhurandars vs Bazigars) are
+    // shown separately in the Internal Rivalry view.
+    const completedMatches = matches.filter(m => m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result));
     const won = completedMatches.filter(m => m.result === 'won').length;
     const lost = completedMatches.filter(m => m.result === 'lost').length;
     const draw = completedMatches.filter(m => m.result === 'draw').length;
@@ -59,7 +61,7 @@ export function Analytics() {
 
   const last5Matches = useMemo(() => {
     return matches
-      .filter(m => ['won', 'lost', 'draw'].includes(m.result))
+      .filter(m => m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result))
       .slice(0, 5)
       .reverse();
   }, [matches]);
@@ -68,7 +70,7 @@ export function Analytics() {
     const monthlyStats: Record<string, { month: string; won: number; lost: number; draw: number }> = {};
 
     matches
-      .filter(m => ['won', 'lost', 'draw'].includes(m.result))
+      .filter(m => m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result))
       .forEach(match => {
         const date = new Date(match.date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;

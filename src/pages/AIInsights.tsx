@@ -216,7 +216,8 @@ export function AIInsights() {
     const topWicketTaker = [...stats].filter(s => s.bowling_wickets > 0).sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0];
     const mvpPlayer = leaderboard[0];
     const allMatchesCount = matches.length;
-    const completedMatches = matches.filter(m => ['won','lost','draw'].includes(m.result));
+    // External matches only for overall club stats
+    const completedMatches = matches.filter(m => m.match_type !== 'internal' && ['won','lost','draw'].includes(m.result));
     const wons = completedMatches.filter(m => m.result === 'won').length;
 
     // ── 1. Members — full profile with balance + cricket stats ──────────────

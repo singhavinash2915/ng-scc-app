@@ -77,8 +77,9 @@ export function AnnualReport() {
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
 
-    // Match summary
-    const completed = yearMatches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
+    // Match summary — external matches only (internal Dhurandars vs Bazigars
+    // are SCC vs SCC and don't represent club performance)
+    const completed = yearMatches.filter(m => m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result));
     const won = completed.filter(m => m.result === 'won').length;
     const lost = completed.filter(m => m.result === 'lost').length;
     const drawn = completed.filter(m => m.result === 'draw').length;
