@@ -56,6 +56,144 @@ function getDayName(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'short' });
 }
 
+// ─── Ground Photo Carousel — auto-rotates + clickable thumbnails/dots ────────
+function GroundPhotoCarousel({
+  photos,
+  groundName,
+  groundAddress,
+  intervalMs = 4000,
+}: {
+  photos: string[];
+  groundName?: string | null;
+  groundAddress?: string | null;
+  intervalMs?: number;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  // Auto-advance
+  useEffect(() => {
+    if (photos.length <= 1 || paused) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % photos.length), intervalMs);
+    return () => clearInterval(t);
+  }, [photos.length, paused, intervalMs]);
+
+  // Reset index if photo list shrinks
+  useEffect(() => {
+    if (idx >= photos.length) setIdx(0);
+  }, [photos.length, idx]);
+
+  if (!photos.length) return null;
+
+  const goTo = (i: number) => {
+    setIdx(i);
+    setPaused(true);
+    setTimeout(() => setPaused(false), 8000); // resume autoplay after 8s of idle
+  };
+  const prev = () => goTo((idx - 1 + photos.length) % photos.length);
+  const next = () => goTo((idx + 1) % photos.length);
+
+  return (
+    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      {/* Main hero */}
+      <div className="relative group">
+        {/* All images stacked, cross-fade between them */}
+        <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-gray-100">
+          {photos.map((url, i) => (
+            <img
+              key={url + i}
+              src={url}
+              alt={groundName || `Ground photo ${i + 1}`}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+                i === idx ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          ))}
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent pointer-events-none" />
+
+        {/* Home Ground badge */}
+        <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
+          <MapPin className="w-3 h-3 text-primary-600" />
+          <span className="text-[11px] font-bold text-gray-900">Home Ground</span>
+        </div>
+
+        {/* Photo counter */}
+        {photos.length > 1 && (
+          <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] font-semibold text-white">
+            {idx + 1} / {photos.length}
+          </div>
+        )}
+
+        {/* Title + address */}
+        <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
+          <h3 className="text-white font-bold text-lg drop-shadow-md">{groundName || 'SCC Ground'}</h3>
+          {groundAddress && <p className="text-white/90 text-xs mt-0.5 drop-shadow-md line-clamp-1">{groundAddress}</p>}
+        </div>
+
+        {/* Prev / Next arrows (visible on hover for desktop, always on mobile) */}
+        {photos.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={prev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-opacity opacity-70 group-hover:opacity-100 sm:opacity-0"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-opacity opacity-70 group-hover:opacity-100 sm:opacity-0"
+              aria-label="Next photo"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </>
+        )}
+
+        {/* Dot indicators */}
+        {photos.length > 1 && photos.length <= 8 && (
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {photos.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => goTo(i)}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === idx ? 'bg-white w-5' : 'bg-white/50 hover:bg-white/80 w-1.5'
+                }`}
+                aria-label={`Go to photo ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnail strip (clickable) */}
+      {photos.length > 1 && (
+        <div className="flex gap-1.5 px-3 py-2 bg-gray-50 border-b border-gray-100 overflow-x-auto scrollbar-hide">
+          {photos.map((url, i) => (
+            <button
+              key={url + i}
+              type="button"
+              onClick={() => goTo(i)}
+              className={`h-14 w-20 rounded-lg overflow-hidden flex-shrink-0 border transition-all ${
+                i === idx
+                  ? 'border-primary-500 ring-2 ring-primary-500/30'
+                  : 'border-gray-200 opacity-70 hover:opacity-100'
+              }`}
+            >
+              <img src={url} alt={`Thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Input classes ────────────────────────────────────────────────────────────
 const inputCls = (err?: boolean) =>
   `w-full bg-white border rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition text-sm ${err ? 'border-red-400' : 'border-gray-200 hover:border-gray-300'}`;
@@ -411,44 +549,15 @@ export function BookMatch() {
             {/* ── Premium Ground details card ──────────────────────────── */}
             {((ground.image_urls?.length || ground.image_url) || ground.address || ground.facilities) && (
               <div className="mb-6 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                {/* Photo gallery — up to 6 photos in a horizontal scroll strip */}
+                {/* Photo gallery — auto-rotating carousel with clickable thumbnails */}
                 {(ground.image_urls?.length > 0 || ground.image_url) && (() => {
-                  const photos = ground.image_urls?.length > 0 ? ground.image_urls : [ground.image_url];
-                  const main = photos[0];
+                  const photos: string[] = ground.image_urls?.length > 0 ? ground.image_urls : [ground.image_url!];
                   return (
-                    <div>
-                      {/* Main hero photo */}
-                      <div className="relative">
-                        <img src={main} alt={ground.name} className="w-full h-44 sm:h-52 object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
-                        <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
-                          <MapPin className="w-3 h-3 text-primary-600" />
-                          <span className="text-[11px] font-bold text-gray-900">Home Ground</span>
-                        </div>
-                        <div className="absolute bottom-3 left-4 right-4">
-                          <h3 className="text-white font-bold text-lg drop-shadow-md">{ground.name || 'SCC Ground'}</h3>
-                          {ground.address && <p className="text-white/90 text-xs mt-0.5 drop-shadow-md line-clamp-1">{ground.address}</p>}
-                        </div>
-                        {photos.length > 1 && (
-                          <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] font-semibold text-white">
-                            1 / {photos.length}
-                          </div>
-                        )}
-                      </div>
-                      {/* Thumbnail strip for additional photos */}
-                      {photos.length > 1 && (
-                        <div className="flex gap-1.5 px-3 py-2 bg-gray-50 border-b border-gray-100 overflow-x-auto scrollbar-hide">
-                          {photos.slice(1).map((url, i) => (
-                            <img
-                              key={i}
-                              src={url}
-                              alt={`Ground ${i + 2}`}
-                              className="h-14 w-20 object-cover rounded-lg flex-shrink-0 border border-gray-200"
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <GroundPhotoCarousel
+                      photos={photos}
+                      groundName={ground.name}
+                      groundAddress={ground.address}
+                    />
                   );
                 })()}
                 <div className="p-4 sm:p-5 space-y-3">
