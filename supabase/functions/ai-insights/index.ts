@@ -27,7 +27,48 @@ Deno.serve(async (req) => {
 
     switch (type) {
       case 'squad_selector':
-        prompt = `You are the SCC team selector. Pick the best XI using recent selection history and CricHeroes performance stats.
+        if (Array.isArray(data.preSelectedSquad) && data.preSelectedSquad.length > 0) {
+          // ── MODE A: a squad has already been picked — analyse expected performance ──
+          prompt = `You are the SCC team analyst. A squad has ALREADY been selected for this match. Your job is NOT to pick a new XI — your job is to predict how THIS specific squad will perform and give tactical advice.
+
+═══ MATCH ═══
+${data.match ? `Opponent: ${data.match.opponent || 'Internal Match'}
+Venue: ${data.match.venue || 'TBD'}
+Date: ${data.match.date}
+Type: ${data.match.match_type}` : 'Match TBD'}
+
+═══ SELECTED SQUAD (${data.preSelectedSquad.length} players) ═══
+${JSON.stringify(data.preSelectedSquad, null, 2)}
+
+═══ HOW TO READ THE DATA ═══
+- ch_runs / ch_avg / ch_sr / ch_hs / ch_fifties = season batting stats
+- ch_wickets / ch_economy / ch_best = season bowling stats
+- ch_catches = fielding catches
+- last_10_selected = how often this player is picked recently (consistency)
+- team (if present) = internal-match team (dhurandars / bazigars)
+
+═══ OUTPUT FORMAT ═══
+Write a tight match-day analysis using ONLY the selected squad above. Do NOT mention any player not in the squad.
+
+**Squad Strength Score** — rate the squad x/10 with a one-line reason.
+
+**Top match-winners** — pick the 2-3 players from this squad most likely to win the match. Cite their actual stats (runs/wkts/avg/eco).
+
+**Batting plan** — Suggested top 3 batters from the squad based on ch_runs + ch_avg + ch_sr. ${data.match?.match_type === 'internal' ? 'For internal matches, list per team if team field is present.' : ''}
+
+**Bowling attack** — Main wicket-takers from the squad and economy bowlers.
+
+**Areas of concern** — Any imbalance in the squad (e.g. too few bowlers, no wicket-keeper, missing all-rounder).
+
+**Match call** — One punchy sentence predicting how this squad performs vs ${data.match?.opponent || 'the opponent'}.
+
+⚠️ STRICT RULES:
+- Use ONLY the squad listed above. Do NOT recommend other players.
+- Use ONLY the stats provided. Do NOT invent numbers.
+- Keep total under 280 words.`;
+        } else {
+          // ── MODE B: no squad yet — recommend a best XI (original behaviour) ──
+          prompt = `You are the SCC team selector. No squad has been picked yet for this match — recommend the best XI using recent selection history and CricHeroes performance stats.
 
 ═══ MATCH ═══
 ${data.match ? `Opponent: ${data.match.opponent || 'Internal Match'}
@@ -66,6 +107,7 @@ ${JSON.stringify(data.players, null, 2)}
 **Selector's Note**: One punchy line on team balance and the key selection call.
 
 Keep total under 350 words.`;
+        }
         break;
 
       case 'match_prediction':

@@ -143,7 +143,40 @@ export function AIInsights() {
       // Sort by recent selection frequency, then by runs as tiebreaker
       .sort((a, b) => b.last_10_selected - a.last_10_selected || b.ch_runs - a.ch_runs);
 
-    const squadCacheKey = `squad_${match?.date || 'next'}_v2`;
+    // If a squad has already been selected for the match (admin populated match.players),
+    // build a rich pre-selected-squad object with full stats for each chosen player.
+    // The AI will then analyse THAT specific squad's expected performance instead of
+    // recommending one from scratch.
+    const preSelectedSquad = match?.players?.length
+      ? match.players
+          .map(mp => {
+            const member = members.find(mm => mm.id === mp.member_id);
+            const s = stats.find(st => st.member_id === mp.member_id);
+            if (!member) return null;
+            const recentSelected = last10.filter(mt => mt.players?.some(p => p.member_id === mp.member_id)).length;
+            return {
+              name: member.name,
+              role: member.role || 'unknown',
+              jersey: member.jersey_number,
+              team: mp.team || null,
+              last_10_selected: recentSelected,
+              last_10_pct: last10.length > 0 ? `${Math.round((recentSelected / last10.length) * 100)}%` : '0%',
+              ch_runs: s?.batting_runs ?? 0,
+              ch_avg: Number((s?.batting_average ?? 0).toFixed(1)),
+              ch_sr: Number((s?.batting_strike_rate ?? 0).toFixed(0)),
+              ch_hs: s?.batting_highest_score ?? 0,
+              ch_fifties: s?.batting_fifties ?? 0,
+              ch_wickets: s?.bowling_wickets ?? 0,
+              ch_economy: Number((s?.bowling_economy ?? 0).toFixed(1)),
+              ch_best: s?.bowling_best_figures || '—',
+              ch_catches: s?.fielding_catches ?? 0,
+            };
+          })
+          .filter(Boolean)
+      : null;
+
+    // Cache key includes whether a squad is set so analyses don't collide.
+    const squadCacheKey = `squad_${match?.date || 'next'}_${preSelectedSquad ? 'analysis' : 'recommend'}_v3`;
     generateSingleInsight('squad', 'squad_selector', {
       match: match ? {
         opponent: match.opponent,
@@ -151,6 +184,7 @@ export function AIInsights() {
         date: match.date,
         match_type: match.match_type,
       } : null,
+      preSelectedSquad,
       players,
       last_10_window: last10.length,
       total_in_pool: players.length,
@@ -634,10 +668,20 @@ export function AIInsights() {
               </div>
             )}
 
-            <Button onClick={() => handleSquadSelector()} disabled={loadingInsight.squad} className="w-full">
-              <Sparkles className="w-4 h-4 mr-2" />
-              {loadingInsight.squad ? 'AI is selecting best XI…' : 'Generate Smart Best XI'}
-            </Button>
+            {(() => {
+              const sel = matches.find(m => m.id === selectedMatch) || upcomingMatches[0];
+              const hasSquad = (sel?.players?.length || 0) > 0;
+              return (
+                <Button onClick={() => handleSquadSelector()} disabled={loadingInsight.squad} className="w-full">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {loadingInsight.squad
+                    ? (hasSquad ? 'Analysing selected squad…' : 'AI is selecting best XI…')
+                    : (hasSquad
+                        ? `Analyse Selected Squad (${sel!.players!.length})`
+                        : 'Generate Smart Best XI')}
+                </Button>
+              );
+            })()}
           </Card>
 
           {/* AI Output */}
