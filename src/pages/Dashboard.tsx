@@ -290,6 +290,21 @@ export function Dashboard() {
         <BirthdayBanner members={members} />
         <RenewalReminderBanner members={members} />
 
+        {/* ── BOOK A MATCH — subtle, share-with-opponents prompt ─────────── */}
+        <a
+          href="/book-match"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/8 border border-white/10 hover:border-emerald-500/30 transition-colors"
+        >
+          <span className="text-[14px] flex-shrink-0">📣</span>
+          <span className="flex-1 text-[11px] text-gray-400 group-hover:text-gray-300">
+            Got a team that wants to play SCC? <span className="text-emerald-400/90 font-semibold">Share the booking link</span>
+          </span>
+          <ChevronRight className="w-3 h-3 text-gray-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+        </a>
+
+
         {/* ── PREMIUM HERO ──────────────────────────────────────────────── */}
         <div className="relative overflow-hidden rounded-2xl"
              style={{ background: 'radial-gradient(ellipse at 5% 0%, rgba(5,150,105,0.22) 0%, transparent 50%), radial-gradient(ellipse at 95% 100%, rgba(37,99,235,0.15) 0%, transparent 50%), linear-gradient(160deg, #050e1b 0%, #070c17 50%, #050a12 100%)' }}>

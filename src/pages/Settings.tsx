@@ -21,6 +21,7 @@ import {
   MapPin,
   Star,
   Plus,
+  QrCode,
 } from 'lucide-react';
 import { useGroundSettings } from '../hooks/useGroundSettings';
 import { Header } from '../components/layout/Header';
@@ -82,12 +83,19 @@ export function Settings() {
     }
   };
 
-  // ─── Ground & Testimonials ───────────────────────────────────────────────
+  // ─── Ground, Testimonials & UPI ──────────────────────────────────────────
   const {
-    ground, testimonials, saving: groundSaving, error: groundError,
+    ground, testimonials, upi, saving: groundSaving, error: groundError,
     fetchSettings, saveGround, uploadGroundImage, removeGroundImage,
     addTestimonial, updateTestimonial, deleteTestimonial,
+    saveUpi, uploadQrCode,
   } = useGroundSettings();
+
+  // UPI form
+  const [upiIdInput, setUpiIdInput]       = useState('');
+  const [upiNameInput, setUpiNameInput]   = useState('');
+  const [qrUploading, setQrUploading]     = useState(false);
+  const [upiSavedMsg, setUpiSavedMsg]     = useState<string | null>(null);
 
   // Ground form
   const [groundName, setGroundName]             = useState('');
@@ -122,6 +130,59 @@ export function Settings() {
     setGroundTiming(ground.timing);
     setGroundNotes(ground.notes);
   }, [ground]);
+
+  // Sync UPI form when data loads
+  useEffect(() => {
+    setUpiIdInput(upi.upi_id);
+    setUpiNameInput(upi.upi_name);
+  }, [upi]);
+
+  const handleSaveUpi = async () => {
+    setUpiSavedMsg(null);
+    const ok = await saveUpi({
+      upi_id: upiIdInput.trim(),
+      upi_name: upiNameInput.trim(),
+      qr_code_url: upi.qr_code_url,
+    });
+    if (ok) {
+      setUpiSavedMsg('✓ UPI settings saved');
+      setTimeout(() => setUpiSavedMsg(null), 3000);
+    }
+  };
+
+  const handleUploadQr = async (file: File) => {
+    setQrUploading(true);
+    setUpiSavedMsg(null);
+    try {
+      const url = await uploadQrCode(file);
+      if (url) {
+        const ok = await saveUpi({
+          upi_id: upiIdInput.trim() || upi.upi_id,
+          upi_name: upiNameInput.trim() || upi.upi_name,
+          qr_code_url: url,
+        });
+        if (ok) {
+          setUpiSavedMsg('✓ QR code uploaded');
+          setTimeout(() => setUpiSavedMsg(null), 3000);
+        }
+      }
+    } finally {
+      setQrUploading(false);
+    }
+  };
+
+  const handleRemoveQr = async () => {
+    setUpiSavedMsg(null);
+    const ok = await saveUpi({
+      upi_id: upiIdInput.trim() || upi.upi_id,
+      upi_name: upiNameInput.trim() || upi.upi_name,
+      qr_code_url: '',
+    });
+    if (ok) {
+      setUpiSavedMsg('✓ QR code removed');
+      setTimeout(() => setUpiSavedMsg(null), 3000);
+    }
+  };
 
   const handleSaveGround = async () => {
     setGroundFormError('');
@@ -1040,6 +1101,93 @@ export function Settings() {
               <Button onClick={handleSaveGround} disabled={groundSaving} className="w-full">
                 <Save className="w-4 h-4 mr-2" />
                 {groundSaving ? 'Saving...' : 'Save Ground Details'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* UPI / QR Code (Admin Only) */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-primary-500" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">UPI Payment Settings</h3>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Used on the Book a Match page when opponent teams pay by UPI. The QR code is shown to opponents, and the UPI ID is what AI verification compares against.
+              </p>
+
+              {/* QR code upload */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  UPI QR Code
+                </label>
+                <div className="flex gap-3 items-start">
+                  {/* Preview */}
+                  <div className="w-28 h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {upi.qr_code_url ? (
+                      <img src={upi.qr_code_url} alt="UPI QR" className="w-full h-full object-contain bg-white" />
+                    ) : (
+                      <QrCode className="w-10 h-10 text-gray-300" />
+                    )}
+                  </div>
+                  {/* Actions */}
+                  <div className="flex-1 space-y-2">
+                    <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
+                      <Upload className="w-3.5 h-3.5" />
+                      {qrUploading ? 'Uploading…' : (upi.qr_code_url ? 'Replace QR' : 'Upload QR')}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={qrUploading}
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) handleUploadQr(f);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    {upi.qr_code_url && (
+                      <button
+                        onClick={handleRemoveQr}
+                        className="flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Remove
+                      </button>
+                    )}
+                    <p className="text-[10px] text-gray-400">PNG/JPG, max ~2MB. Crisp square images work best.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* UPI ID & Name */}
+              <Input
+                label="UPI ID *"
+                value={upiIdInput}
+                onChange={e => setUpiIdInput(e.target.value)}
+                placeholder="scc.cricket@upi"
+              />
+              <Input
+                label="Display Name"
+                value={upiNameInput}
+                onChange={e => setUpiNameInput(e.target.value)}
+                placeholder="Sangria Cricket Club"
+              />
+
+              {upiSavedMsg && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
+                  {upiSavedMsg}
+                </div>
+              )}
+
+              <Button onClick={handleSaveUpi} disabled={groundSaving || !upiIdInput.trim()} className="w-full">
+                <Save className="w-4 h-4 mr-2" />
+                Save UPI Settings
               </Button>
             </CardContent>
           </Card>

@@ -31,8 +31,10 @@ import {
 } from 'lucide-react';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const UPI_ID  = 'scc.cricket@upi'; // Admin: update in Settings
-const UPI_NAME = 'Sangria Cricket Club';
+// UPI ID and QR code are loaded from app_configs (admin-editable in Settings).
+// These defaults are used only as a safety net if config hasn't been saved yet.
+const UPI_FALLBACK_ID   = 'scc.cricket@upi';
+const UPI_FALLBACK_NAME = 'Sangria Cricket Club';
 const WA_NUMBER = '918888546860';   // WhatsApp number without +
 const BOOKING_PAGE_URL = typeof window !== 'undefined'
   ? `${window.location.origin}/book-match`
@@ -262,7 +264,10 @@ function MatchCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function BookMatch() {
   const { slots, loading, fetchSlots, createBooking } = useMatchBookings();
-  const { ground, testimonials, fetchSettings } = useGroundSettings();
+  const { ground, testimonials, upi, fetchSettings } = useGroundSettings();
+  const upiId   = upi.upi_id   || UPI_FALLBACK_ID;
+  const upiName = upi.upi_name || UPI_FALLBACK_NAME;
+  const qrUrl   = upi.qr_code_url;
 
   // Trust-builder data
   const [sccRecord, setSccRecord] = useState<{ wins:number; losses:number; draws:number } | null>(null);
@@ -402,7 +407,7 @@ export function BookMatch() {
       teamName: teamName.trim(), contactName: contactName.trim(),
       contactPhone: contactPhone.trim(), chTeamId: chTeamId.trim(),
       paymentMethod, screenshotFile: screenshotFile ?? undefined,
-      expectedUpiId: UPI_ID,
+      expectedUpiId: upiId,
     });
     setSubmitting(false);
     if (result.success) {
@@ -415,7 +420,7 @@ export function BookMatch() {
   }
 
   function handleCopyUPI() {
-    navigator.clipboard.writeText(UPI_ID).then(() => { setCopied(true); setTimeout(()=>setCopied(false),2000); });
+    navigator.clipboard.writeText(upiId).then(() => { setCopied(true); setTimeout(()=>setCopied(false),2000); });
   }
 
   async function handleDownloadCard() {
@@ -947,20 +952,28 @@ export function BookMatch() {
                 </h3>
                 <div className="flex flex-col items-center gap-3">
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl">
-                    <div className="w-40 h-40 bg-gray-100 rounded-xl flex flex-col items-center justify-center gap-2">
-                      <QrCode className="w-14 h-14 text-gray-300"/>
-                      <p className="text-xs text-gray-400 text-center">SCC UPI QR<br/>(Set by admin)</p>
-                    </div>
+                    {qrUrl ? (
+                      <img
+                        src={qrUrl}
+                        alt="SCC UPI QR code"
+                        className="w-40 h-40 object-contain rounded-xl bg-white"
+                      />
+                    ) : (
+                      <div className="w-40 h-40 bg-gray-100 rounded-xl flex flex-col items-center justify-center gap-2">
+                        <QrCode className="w-14 h-14 text-gray-300"/>
+                        <p className="text-xs text-gray-400 text-center">SCC UPI QR<br/>(Set by admin)</p>
+                      </div>
+                    )}
                   </div>
                   <div className="text-center w-full">
                     <p className="text-xs text-gray-500 mb-1.5">Or pay directly to UPI ID</p>
                     <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
-                      <span className="font-mono text-sm font-semibold text-gray-900">{UPI_ID}</span>
+                      <span className="font-mono text-sm font-semibold text-gray-900">{upiId}</span>
                       <button onClick={handleCopyUPI} className="text-primary-500 hover:text-primary-700 transition">
                         {copied ? <Check className="w-4 h-4"/> : <Copy className="w-4 h-4"/>}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">Name: {UPI_NAME}</p>
+                    <p className="text-xs text-gray-400 mt-1">Name: {upiName}</p>
                   </div>
                 </div>
 

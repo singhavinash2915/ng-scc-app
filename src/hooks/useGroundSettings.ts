@@ -20,8 +20,21 @@ export interface BookingTestimonial {
   active: boolean;
 }
 
+export interface UpiSettings {
+  upi_id: string;
+  upi_name: string;
+  qr_code_url: string;   // public URL to QR image (Supabase storage)
+}
+
 const GROUND_KEY       = 'ground_details';
 const TESTIMONIALS_KEY = 'booking_testimonials';
+const UPI_KEY          = 'booking_upi';
+
+const defaultUpi: UpiSettings = {
+  upi_id: 'scc.cricket@upi',
+  upi_name: 'Sangria Cricket Club',
+  qr_code_url: '',
+};
 
 const defaultGround: GroundDetails = {
   name: 'SCC Ground',
@@ -37,11 +50,12 @@ const defaultGround: GroundDetails = {
 export function useGroundSettings() {
   const [ground, setGround]           = useState<GroundDetails>(defaultGround);
   const [testimonials, setTestimonials] = useState<BookingTestimonial[]>([]);
+  const [upi, setUpi]                 = useState<UpiSettings>(defaultUpi);
   const [loading, setLoading]         = useState(false);
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState<string | null>(null);
 
-  // ─── Fetch both settings ──────────────────────────────────────────────────
+  // ─── Fetch all settings ───────────────────────────────────────────────────
   const fetchSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -49,7 +63,7 @@ export function useGroundSettings() {
       const { data, error: err } = await supabase
         .from('app_configs')
         .select('key, value')
-        .in('key', [GROUND_KEY, TESTIMONIALS_KEY]);
+        .in('key', [GROUND_KEY, TESTIMONIALS_KEY, UPI_KEY]);
 
       if (err) throw err;
 
@@ -65,6 +79,9 @@ export function useGroundSettings() {
         }
         if (row.key === TESTIMONIALS_KEY) {
           setTestimonials((row.value as BookingTestimonial[]) || []);
+        }
+        if (row.key === UPI_KEY) {
+          setUpi({ ...defaultUpi, ...(row.value as Partial<UpiSettings>) });
         }
       }
     } catch (err) {
@@ -153,10 +170,46 @@ export function useGroundSettings() {
     return saveTestimonials(updated);
   };
 
+  // ─── Save UPI settings ────────────────────────────────────────────────────
+  const saveUpi = async (data: UpiSettings): Promise<boolean> => {
+    setSaving(true);
+    try {
+      const { error: err } = await supabase
+        .from('app_configs')
+        .upsert({ key: UPI_KEY, value: data as unknown as Record<string, unknown> }, { onConflict: 'key' });
+      if (err) throw err;
+      setUpi(data);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save UPI settings');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ─── Upload UPI QR code image (replaces previous) ─────────────────────────
+  const uploadQrCode = async (file: File): Promise<string | null> => {
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `qr/scc-upi-qr-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('sponsors')        // reuse public sponsors bucket
+        .upload(path, file, { upsert: false });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('sponsors').getPublicUrl(path);
+      return publicUrl;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'QR upload failed');
+      return null;
+    }
+  };
+
   return {
-    ground, testimonials, loading, saving, error,
+    ground, testimonials, upi, loading, saving, error,
     fetchSettings,
     saveGround, uploadGroundImage, removeGroundImage,
     saveTestimonials, addTestimonial, updateTestimonial, deleteTestimonial,
+    saveUpi, uploadQrCode,
   };
 }
