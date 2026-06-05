@@ -163,12 +163,16 @@ export function BookMatch() {
     (async () => {
       setLoadingTrust(true);
       try {
-        // Recent external match results
+        // Current-season external match results (same window the Dashboard uses)
+        const SEASON_START = '2025-10-01';
+        const SEASON_END   = '2026-09-30';
         const { data: matches } = await supabase
           .from('matches')
           .select('result')
           .eq('match_type', 'external')
           .in('result', ['won','lost','draw'])
+          .gte('date', SEASON_START)
+          .lte('date', SEASON_END)
           .order('date', { ascending: false });
 
         if (matches) {
