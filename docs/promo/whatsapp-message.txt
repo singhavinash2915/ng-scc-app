@@ -1,0 +1,24 @@
+🏏 *Cricket Club Management App* — Free to use!
+
+Built by Sangria Cricket Club for cricket clubs that want pro-level tools without paying for them.
+
+*What's inside:*
+
+✅ *Auto stats sync* from CricHeroes — no manual entry
+✅ *AI Squad Selector* picks the Best XI for you
+✅ *Predictions game* — earn up to 55 pts per match, season prizes 🎁
+✅ *21 unlockable achievements* per player (Century Maker, Iron Man, MOM Master…)
+✅ *Live scorecard* on match day
+✅ *Squad polling* — who's available this Sunday?
+✅ *Online payments* (UPI + Razorpay) with AI screenshot verification
+✅ *Book-a-Match* — opposing teams can book + pay you directly
+✅ *Cricket DNA cards* — see each player's personality type
+✅ *Hall of Fame, monthly awards, head-to-head records*
+✅ *Dark mode + works offline (PWA)*
+
+*Try it now 👉* https://singhavinash2915.github.io/ng-scc-app/
+
+📷 IG: @sangriacricket_official
+✉️ sangriacricket@gmail.com
+
+_Fork it free for your own club: github.com/singhavinash2915/ng-scc-app_
