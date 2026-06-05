@@ -288,6 +288,8 @@ export function BookMatch() {
   const [bookingId, setBookingId]     = useState<string|null>(null);
   const [submitError, setSubmitError] = useState<string|null>(null);
   const [copied, setCopied]           = useState(false);
+  const [autoVerified, setAutoVerified] = useState(false);
+  const [validationReason, setValidationReason] = useState<string|null>(null);
   const [downloading, setDownloading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cardRef      = useRef<HTMLDivElement>(null);
@@ -400,9 +402,15 @@ export function BookMatch() {
       teamName: teamName.trim(), contactName: contactName.trim(),
       contactPhone: contactPhone.trim(), chTeamId: chTeamId.trim(),
       paymentMethod, screenshotFile: screenshotFile ?? undefined,
+      expectedUpiId: UPI_ID,
     });
     setSubmitting(false);
-    if (result.success) { setBookingId(result.bookingId ?? null); setStep('success'); }
+    if (result.success) {
+      setBookingId(result.bookingId ?? null);
+      setAutoVerified(result.autoVerified ?? false);
+      setValidationReason(result.validationReason ?? null);
+      setStep('success');
+    }
     else setSubmitError(result.error ?? 'Booking failed. Please try again.');
   }
 
@@ -956,6 +964,14 @@ export function BookMatch() {
                   </div>
                 </div>
 
+                {/* AI verification hint */}
+                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-100">
+                  <span className="text-base flex-shrink-0">⚡</span>
+                  <p className="text-[11px] text-emerald-700 leading-snug">
+                    <span className="font-bold">Instant verification:</span> we check your payment screenshot automatically using AI — most bookings confirm in seconds, no waiting for admin review.
+                  </p>
+                </div>
+
                 {/* Screenshot — required */}
                 <div>
                   <p className="text-sm font-semibold text-gray-700 mb-1">
@@ -1030,7 +1046,9 @@ export function BookMatch() {
               </button>
               <button onClick={handleSubmit} disabled={submitting}
                 className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm">
-                {submitting ? <><Loader2 className="w-4 h-4 animate-spin"/>Submitting…</> : 'Confirm Booking'}
+                {submitting
+                  ? <><Loader2 className="w-4 h-4 animate-spin"/>{paymentMethod === 'upi' ? 'Verifying payment…' : 'Submitting…'}</>
+                  : 'Confirm Booking'}
               </button>
             </div>
           </div>
@@ -1041,15 +1059,37 @@ export function BookMatch() {
           <div className="space-y-5">
             <div className="text-center">
               <div className="flex justify-center mb-4">
-                <div className="w-20 h-20 rounded-full bg-primary-100 border-2 border-primary-300 flex items-center justify-center">
-                  <CheckCircle2 className="w-10 h-10 text-primary-500"/>
+                <div className={`w-20 h-20 rounded-full border-2 flex items-center justify-center ${
+                  autoVerified
+                    ? 'bg-emerald-100 border-emerald-300'
+                    : 'bg-primary-100 border-primary-300'
+                }`}>
+                  <CheckCircle2 className={`w-10 h-10 ${autoVerified ? 'text-emerald-500' : 'text-primary-500'}`} />
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Request Sent!</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                {autoVerified ? 'Payment Verified! ⚡' : 'Booking Request Sent!'}
+              </h2>
               <p className="text-gray-500 text-sm">
-                SCC admin will verify your payment and confirm shortly.
+                {autoVerified
+                  ? 'Your booking is confirmed — payment auto-verified in real-time.'
+                  : 'SCC admin will verify your payment and confirm shortly.'}
               </p>
             </div>
+
+            {/* AI validation result banner */}
+            {paymentMethod === 'upi' && validationReason && (
+              <div className={`rounded-xl px-4 py-3 text-xs border ${
+                autoVerified
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-amber-50 border-amber-200 text-amber-800'
+              }`}>
+                <p className="font-bold mb-0.5 flex items-center gap-1.5">
+                  {autoVerified ? '✅ Auto-verified' : '⏳ Admin will review'}
+                </p>
+                <p className="text-[11px] opacity-90">{validationReason}</p>
+              </div>
+            )}
 
             {/* Confirmation card (downloadable) */}
             <div className="flex justify-center">

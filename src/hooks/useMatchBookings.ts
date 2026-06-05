@@ -131,7 +131,14 @@ export function useMatchBookings() {
     chTeamId: string;       // Required
     paymentMethod: 'upi' | 'razorpay';
     screenshotFile?: File;  // Required for UPI
-  }): Promise<{ success: boolean; bookingId?: string; error?: string }> => {
+    expectedUpiId?: string; // SCC's UPI ID — for auto-validation
+  }): Promise<{
+    success: boolean;
+    bookingId?: string;
+    error?: string;
+    autoVerified?: boolean;
+    validationReason?: string;
+  }> => {
     try {
       // Monthly limit check (CricHeroes ID is now always provided)
       const limitCheck = await checkMonthlyLimit(params.contactPhone, params.chTeamId, params.slotDate);
@@ -167,6 +174,27 @@ export function useMatchBookings() {
         screenshotUrl = publicUrl;
       }
 
+      // Auto-validate UPI payment screenshot via Claude Vision (best-effort,
+      // never blocks the booking — admin can still review manually if AI is
+      // unsure or unavailable).
+      let validation: { verdict: 'verified' | 'needs_review' | 'rejected'; reason: string; extracted: unknown } | null = null;
+      if (screenshotUrl && params.paymentMethod === 'upi' && params.expectedUpiId) {
+        try {
+          const { data: fnData } = await supabase.functions.invoke('validate-payment-screenshot', {
+            body: {
+              screenshotUrl,
+              expectedAmount: params.amount,
+              expectedUpiId: params.expectedUpiId,
+            },
+          });
+          if (fnData?.verdict) validation = fnData;
+        } catch {
+          // Silent fallback — admin will verify
+        }
+      }
+
+      const autoVerified = validation?.verdict === 'verified';
+
       // Insert booking
       const { data: booking, error: bookErr } = await supabase
         .from('match_bookings')
@@ -178,9 +206,12 @@ export function useMatchBookings() {
           cricheroes_team_id: params.chTeamId,
           payment_method: params.paymentMethod,
           payment_screenshot_url: screenshotUrl,
-          payment_status: screenshotUrl ? 'paid' : 'pending',
+          payment_status: autoVerified ? 'verified' : (screenshotUrl ? 'paid' : 'pending'),
           status: 'pending',
           amount: params.amount,
+          payment_validation: validation,
+          payment_validated_at: validation ? new Date().toISOString() : null,
+          payment_auto_verified: autoVerified,
         }])
         .select()
         .single();
@@ -193,7 +224,12 @@ export function useMatchBookings() {
         .update({ is_available: false })
         .eq('id', params.slotId);
 
-      return { success: true, bookingId: booking.id };
+      return {
+        success: true,
+        bookingId: booking.id,
+        autoVerified,
+        validationReason: validation?.reason,
+      };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Booking failed' };
     }
