@@ -7,6 +7,40 @@ import { useTournaments } from '../hooks/useTournaments';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useAIInsight } from '../hooks/useAIInsight';
 import { useScorecardHighlights } from '../hooks/useScorecardHighlights';
+import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
+
+const SCC_TEAM_ID = 7927431;
+
+// Fetch the actual scorecard for a CricHeroes match and return SCC batting +
+// bowling rows so we can build a faithful match-report prompt. Returns null on any error.
+async function fetchSccScorecardRows(chMatchId: string | null | undefined) {
+  if (!chMatchId) return null;
+  try {
+    const r = await fetch(
+      `${supabaseUrl}/functions/v1/cricheroes?matchId=${chMatchId}&type=scorecard`,
+      { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } },
+    );
+    if (!r.ok) return null;
+    const pp = await r.json() as Record<string, unknown>;
+    const sc = pp?.scorecard as Array<Record<string, unknown>> | undefined;
+    if (!sc?.length) return null;
+
+    // Each entry has a team's innings: teamName + teamId + batting[] + bowling[]
+    const sccInning = sc.find(inn => (inn as { teamId?: number }).teamId === SCC_TEAM_ID);
+    const oppInning = sc.find(inn => (inn as { teamId?: number }).teamId !== SCC_TEAM_ID);
+    return {
+      sccBatting: (sccInning?.batting as Array<Record<string, unknown>>) ?? [],
+      sccBowling: (oppInning?.bowling as Array<Record<string, unknown>>) ?? [], // SCC bowls in opponent's innings
+      sccTotal:   (sccInning?.inning as { total_run?: number; total_wicket?: number })?.total_run,
+      sccWkts:    (sccInning?.inning as { total_run?: number; total_wicket?: number })?.total_wicket,
+      oppTotal:   (oppInning?.inning as { total_run?: number; total_wicket?: number })?.total_run,
+      oppWkts:    (oppInning?.inning as { total_run?: number; total_wicket?: number })?.total_wicket,
+      oppName:    oppInning?.teamName as string | undefined,
+    };
+  } catch {
+    return null;
+  }
+}
 import { AIInsightCard } from '../components/AIInsightCard';
 import { CricketIdentityCard } from '../components/CricketIdentityCard';
 import { Card } from '../components/ui/Card';
@@ -490,10 +524,19 @@ export function AIInsights() {
                 </h3>
                 <Button
                   variant="secondary"
-                  onClick={() => generateSingleInsight('match_report', 'match_report', {
-                    match: recentMatches[0],
-                    players: recentMatches[0].players?.map(p => ({ name: p.member?.name, team: p.team })),
-                  })}
+                  onClick={async () => {
+                    const m = recentMatches[0];
+                    const sc = await fetchSccScorecardRows(m.ch_match_id);
+                    generateSingleInsight('match_report', 'match_report', {
+                      match: {
+                        date: m.date, opponent: m.opponent, venue: m.venue,
+                        result: m.result, our_score: m.our_score, opponent_score: m.opponent_score,
+                        man_of_match: m.man_of_match?.name ?? null,
+                      },
+                      scorecard: sc,
+                      players: m.players?.map(p => ({ name: p.member?.name, team: p.team })),
+                    });
+                  }}
                   className="text-xs"
                 >
                   <RefreshCw className="w-3 h-3 mr-1" />
@@ -505,10 +548,19 @@ export function AIInsights() {
                 insight={insights.match_report || null}
                 loading={loadingInsight.match_report || false}
                 error={null}
-                onRefresh={() => generateSingleInsight('match_report', 'match_report', {
-                  match: recentMatches[0],
-                  players: recentMatches[0].players?.map(p => ({ name: p.member?.name, team: p.team })),
-                }, true)}
+                onRefresh={async () => {
+                  const m = recentMatches[0];
+                  const sc = await fetchSccScorecardRows(m.ch_match_id);
+                  generateSingleInsight('match_report', 'match_report', {
+                    match: {
+                      date: m.date, opponent: m.opponent, venue: m.venue,
+                      result: m.result, our_score: m.our_score, opponent_score: m.opponent_score,
+                      man_of_match: m.man_of_match?.name ?? null,
+                    },
+                    scorecard: sc,
+                    players: m.players?.map(p => ({ name: p.member?.name, team: p.team })),
+                  }, true);
+                }}
               />
               {!insights.match_report && !loadingInsight.match_report && (
                 <div className="text-center py-4 text-gray-400 text-sm">

@@ -148,15 +148,76 @@ Weaknesses identified: ${JSON.stringify(data.weaknesses)}
 Suggest: (1) Top 3 priority training areas, (2) Specific drills for each, (3) Mental game tips, (4) Weekly training schedule suggestion, (5) Short-term goal (next 5 matches).`;
         break;
 
-      case 'match_report':
-        prompt = `Write an exciting match report for this SCC match:
+      case 'match_report': {
+        // Find the MOM's actual contribution from the scorecard.
+        // This is what was missing before — Claude was guessing batting vs bowling.
+        const momName: string | null = data.match?.man_of_match ?? null;
+        const sc = data.scorecard;
+        const norm = (s: string) => (s || '').toLowerCase().replace(/[^a-z]/g, '');
+        let momBatLine = '';
+        let momBowlLine = '';
+        let momRole = 'unknown';
+        if (momName && sc) {
+          const nm = norm(momName);
+          const bat = (sc.sccBatting || []).find((b: Record<string, unknown>) =>
+            norm((b.name as string) || '').includes(nm) || nm.includes(norm((b.name as string) || ''))
+          );
+          const bowl = (sc.sccBowling || []).find((b: Record<string, unknown>) =>
+            norm((b.name as string) || '').includes(nm) || nm.includes(norm((b.name as string) || ''))
+          );
+          if (bat) momBatLine = `${bat.runs} runs off ${bat.balls} balls (${bat['4s'] || 0} fours, ${bat['6s'] || 0} sixes${bat.how_to_out ? ', ' + bat.how_to_out : ', not out'})`;
+          if (bowl && Number(bowl.wickets) > 0) momBowlLine = `${bowl.wickets}/${bowl.runs} in ${bowl.overs}${bowl.balls ? '.' + bowl.balls : ''} overs (econ ${bowl.economy_rate || '?'})`;
+          if (momBatLine && momBowlLine) momRole = 'all-rounder';
+          else if (momBowlLine) momRole = 'bowler';
+          else if (momBatLine) momRole = 'batter';
+        }
 
-Match Details: ${JSON.stringify(data.match)}
-Players: ${JSON.stringify(data.players)}
-Man of Match: ${data.match?.man_of_match?.name || 'Not awarded'}
+        // Top 3 batters + top 3 wicket-takers for SCC in this match (for "Key moments")
+        const topBatters = (sc?.sccBatting || [])
+          .filter((b: Record<string, unknown>) => Number(b.balls) > 0)
+          .sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(b.runs) - Number(a.runs))
+          .slice(0, 3)
+          .map((b: Record<string, unknown>) => `${b.name}: ${b.runs}(${b.balls})`);
+        const topBowlers = (sc?.sccBowling || [])
+          .filter((b: Record<string, unknown>) => Number(b.wickets) > 0)
+          .sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(b.wickets) - Number(a.wickets))
+          .slice(0, 3)
+          .map((b: Record<string, unknown>) => `${b.name}: ${b.wickets}/${b.runs}`);
 
-Write: (1) Punchy headline, (2) Match summary (3-4 sentences), (3) Hero of the match spotlight, (4) Key moments, (5) What this result means for SCC's journey.`;
+        prompt = `Write an exciting cricket match report for this SCC match.
+
+⚠️ STRICT RULES — follow these exactly:
+1. Use ONLY the facts provided below. Do NOT invent stats, scores, or performances.
+2. When describing the Man of the Match, base it ONLY on the figures listed below. If MOM is a "bowler", praise the bowling spell — do NOT praise their batting unless batting figures are also listed. Vice versa for batter.
+3. If a player isn't mentioned in the figures, do NOT name them.
+4. Keep it tight: ≤ 200 words total.
+
+────────────────────────────
+MATCH FACTS:
+- Opponent: ${data.match?.opponent ?? 'Unknown'}
+- Venue: ${data.match?.venue ?? 'Unknown'}
+- Date: ${data.match?.date ?? 'Unknown'}
+- Result: SCC ${data.match?.result ?? '?'}
+- SCC score: ${data.match?.our_score ?? sc?.sccTotal + '/' + sc?.sccWkts ?? '?'}
+- Opponent score: ${data.match?.opponent_score ?? sc?.oppTotal + '/' + sc?.oppWkts ?? '?'}
+
+MAN OF THE MATCH: ${momName ?? 'Not awarded'}
+- Role in this match: ${momRole}
+- Batting figures: ${momBatLine || '(did not bat / no significant batting contribution)'}
+- Bowling figures: ${momBowlLine || '(did not bowl / no wickets)'}
+
+TOP SCC BATTERS THIS MATCH: ${topBatters.length ? topBatters.join(', ') : '(no data)'}
+TOP SCC WICKET-TAKERS: ${topBowlers.length ? topBowlers.join(', ') : '(no data)'}
+────────────────────────────
+
+Write the report with these sections (markdown headers ok):
+1. **Punchy headline** (≤ 10 words)
+2. **Match summary** (2-3 sentences using ONLY the scores above)
+3. **Hero of the match** — explain why ${momName ?? 'the MOM'} won, citing ONLY the figures above. If they won for bowling, describe the bowling spell. If batting, the batting innings. If all-round, both. Do not invent extra details.
+4. **Key moments** (1-2 bullet points, from the top performers list above)
+5. **What this means for SCC** (1 sentence on momentum/season journey)`;
         break;
+      }
 
       case 'head_to_head':
         prompt = `Analyze head-to-head between these two SCC players:
