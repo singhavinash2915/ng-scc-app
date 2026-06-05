@@ -22,6 +22,7 @@ import {
   ArrowLeftRight,
   BookOpen,
   ExternalLink,
+  Gamepad2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -39,6 +40,7 @@ const publicNavItems = [
   { to: '/compare', icon: ArrowLeftRight, label: 'Compare' },
   { to: '/records', icon: Award, label: 'Hall of Fame' },
   { to: '/predictions', icon: Sparkles, label: 'Predictions' },
+  { to: '/hub', icon: Gamepad2, label: 'Club Hub' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
   { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
@@ -96,19 +98,17 @@ export function Sidebar() {
           </div>
         </Link>
 
-        {/* Book a match CTA — admin only until the feature goes fully public */}
-        {isAdmin && (
-          <a
-            href="/book-match"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Book a Match vs SCC
-            <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
-          </a>
-        )}
+        {/* Book a match CTA — public, for opponent teams who want to play SCC */}
+        <a
+          href="/book-match"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          Book a Match vs SCC
+          <ExternalLink className="w-3 h-3 ml-auto opacity-60" />
+        </a>
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">

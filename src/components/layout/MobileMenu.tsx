@@ -58,20 +58,18 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {/* Book a match CTA — admin only until the feature goes fully public */}
-            {isAdmin && (
-              <a
-                href="/book-match"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
-                onClick={onClose}
-              >
-                <BookOpen className="w-5 h-5" />
-                <span className="font-medium">Book a Match vs SCC</span>
-                <ExternalLink className="w-4 h-4 ml-auto opacity-60" />
-              </a>
-            )}
+            {/* Book a match CTA — public, for opponent teams who want to play SCC */}
+            <a
+              href="/book-match"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
+              onClick={onClose}
+            >
+              <BookOpen className="w-5 h-5" />
+              <span className="font-medium">Book a Match vs SCC</span>
+              <ExternalLink className="w-4 h-4 ml-auto opacity-60" />
+            </a>
 
             {/* Public navigation items */}
             {[
