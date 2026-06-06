@@ -38,6 +38,7 @@ const AnnualReport = lazy(() => import('./pages/AnnualReport').then(m => ({ defa
 const Compare   = lazy(() => import('./pages/Compare').then(m => ({ default: m.Compare })));
 const Bookings  = lazy(() => import('./pages/Bookings').then(m => ({ default: m.Bookings })));
 const WhatsNew  = lazy(() => import('./pages/WhatsNew').then(m => ({ default: m.WhatsNew })));
+const EngagementHub = lazy(() => import('./pages/EngagementHub').then(m => ({ default: m.EngagementHub })));
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -115,6 +116,7 @@ const AppRoutes = () => (
         <Route path="/feedback"      element={<Suspense fallback={<PageLoader />}><Feedback /></Suspense>} />
         <Route path="/about"         element={<Suspense fallback={<PageLoader />}><About /></Suspense>} />
         <Route path="/whats-new"     element={<Suspense fallback={<PageLoader />}><WhatsNew /></Suspense>} />
+        <Route path="/hub"           element={<Suspense fallback={<PageLoader />}><EngagementHub /></Suspense>} />
       </Route>
     </Routes>
   </>

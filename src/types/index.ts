@@ -359,6 +359,57 @@ export interface MatchBooking {
   match?: Match;
 }
 
+// ============================================================
+// Engagement Features
+// ============================================================
+
+export interface MatchChatMessage {
+  id: string;
+  match_id: string;
+  member_id: string;
+  message: string;
+  emoji: string | null;
+  created_at: string;
+  member?: Member;
+}
+
+export interface ClubPoll {
+  id: string;
+  question: string;
+  type: 'poll' | 'quiz';
+  options: { text: string; isCorrect?: boolean }[];
+  category: 'fun' | 'cricket' | 'scc_history';
+  is_active: boolean;
+  expires_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ClubPollVote {
+  id: string;
+  poll_id: string;
+  member_id: string;
+  option_index: number;
+  created_at: string;
+}
+
+export interface SeasonAwardCategory {
+  id: string;
+  name: string;
+  emoji: string | null;
+  season: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface SeasonAwardVote {
+  id: string;
+  category_id: string;
+  voter_id: string;
+  nominee_id: string;
+  created_at: string;
+}
+
 export type AIInsightType =
   | 'squad_selector'
   | 'match_prediction'
