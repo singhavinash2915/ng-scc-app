@@ -39,69 +39,161 @@ type InnRaw = {
   bowling: { name: string; overs: number; balls: number; maidens: number; runs: number; wickets: number }[];
 };
 
+// ─── miniScorecard.data shape (live-ball-by-ball feed from CricHeroes) ────────
+type MiniTeam = {
+  id: number;
+  name: string;
+  summary: string;       // "32/4" or "Yet to bat"
+  innings: { inning: number; total_run: number; total_wicket: number; overs_played: string; summary?: { score?: string; over?: string; rr?: string } }[];
+};
+type MiniBatter = { name: string; runs: number; balls: number; '4s': number; '6s': number; strike_rate: string; status?: string };
+type MiniBowler = { name: string; overs: number; balls: number; maidens: number; runs: number; wickets: number; economy_rate: string };
+type MiniData = {
+  status: 'live' | 'past';
+  current_inning: number;
+  overs: number;          // max overs for the match (e.g. 15)
+  team_a: MiniTeam;
+  team_b: MiniTeam;
+  batsmen?: { sb?: MiniBatter; nsb?: MiniBatter };
+  bowlers?:  { sb?: MiniBowler; nsb?: MiniBowler };
+  recent_over?: string;   // "0 4 1 1 1 | 0wd 0 1 1"
+  current_partnership?: string;
+  last_wicket?: string;
+  fall_of_wicket?: string;
+  projected_score?: number;
+  winning_team?: string;
+  win_by?: string;
+};
+
+// Convert miniScorecard.data → our LiveScoreData shape.
+// This is the PRIMARY source during live matches — the static `scorecard` array
+// is empty in CricHeroes SSR until the match concludes.
+function parseFromMini(mini: MiniData): Omit<LiveScoreData, 'lastUpdated'> | null {
+  if (!mini) return null;
+
+  const battingFirst = mini.current_inning === 1;
+  const battingTeamObj = battingFirst ? mini.team_a : mini.team_b;
+  const bowlingTeamObj = battingFirst ? mini.team_b : mini.team_a;
+  const battingInn = battingTeamObj?.innings?.find(i => i.inning === mini.current_inning) || battingTeamObj?.innings?.[0];
+
+  const battingTeam = battingTeamObj?.name || '';
+  const bowlingTeam = bowlingTeamObj?.name || '';
+  const score       = battingInn?.summary?.score || battingTeamObj?.summary || `${battingInn?.total_run ?? 0}/${battingInn?.total_wicket ?? 0}`;
+  const overs       = (battingInn?.summary?.over || `${battingInn?.overs_played || '0'} Ov`).replace(/[()]/g, '').trim();
+  const runRate     = battingInn?.summary?.rr || '';
+
+  // Required run rate (second innings only)
+  let requiredRunRate = '';
+  if (!battingFirst) {
+    const firstInn = mini.team_a?.innings?.[0] || mini.team_b?.innings?.[0];
+    const target = (firstInn?.total_run ?? 0) + 1;
+    const maxOvers = mini.overs || 20;
+    const decOvers = parseFloat(battingInn?.overs_played || '0');
+    const oversLeft = maxOvers - decOvers;
+    const runsNeed = target - (battingInn?.total_run ?? 0);
+    if (oversLeft > 0 && runsNeed > 0) requiredRunRate = (runsNeed / oversLeft).toFixed(2);
+  }
+
+  // Active batsmen (striker first, then non-striker)
+  const sb = mini.batsmen?.sb;
+  const nsb = mini.batsmen?.nsb;
+  const batsman1 = sb ? `${sb.name}: ${sb.runs} (${sb.balls})${(sb['4s'] || sb['6s']) ? ` · ${sb['4s']}x4 ${sb['6s']}x6` : ''} *` : '';
+  const batsman2 = nsb ? `${nsb.name}: ${nsb.runs} (${nsb.balls})` : '';
+
+  // Current bowler
+  const bw = mini.bowlers?.sb;
+  const ovsStr = bw ? `${bw.overs}${bw.balls ? '.' + bw.balls : ''}` : '';
+  const bowler = bw ? `${bw.name}: ${ovsStr}-${bw.maidens}-${bw.runs}-${bw.wickets} (eco ${bw.economy_rate})` : '';
+
+  // Current over balls — "0 4 1 1 1 | 0wd 0 1 1" → array of ball labels
+  // Split on whitespace, keep the "|" as a divider marker so UI can render distinctly if it wants.
+  const currentOver = (mini.recent_over || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-12); // last over or so
+
+  // Result string for completed matches
+  const result = mini.status === 'past' && mini.winning_team
+    ? `${mini.winning_team} won by ${mini.win_by}`
+    : '';
+
+  return {
+    battingTeam, bowlingTeam, score, overs, runRate,
+    requiredRunRate, battingFirst, batsman1, batsman2,
+    bowler, result, currentOver,
+  };
+}
+
 export function parseLiveFromPageProps(pp: Record<string, unknown>): Omit<LiveScoreData, 'lastUpdated'> | null {
   try {
+    // ── PRIMARY: miniScorecard.data is what CricHeroes populates during a live
+    // match (ball-by-ball). Their `scorecard` array stays empty until the match
+    // is over, so we MUST read miniScorecard first to show live data.
+    const mini = (pp?.miniScorecard as { status?: boolean; data?: MiniData } | undefined)?.data;
+    if (mini && (mini.status === 'live' || mini.status === 'past')) {
+      const parsed = parseFromMini(mini);
+      if (parsed && (parsed.score || parsed.result)) return parsed;
+    }
+
+    // ── FALLBACK 1: structured `scorecard` array (post-match endpoint) ────────
     const scorecard   = pp?.scorecard as InnRaw[] | undefined;
     const summaryRaw  = pp?.summaryData as { data?: Record<string, unknown> } | undefined;
     const summaryData = summaryRaw?.data;
-    if (!summaryData) return null;
 
-    const status = summaryData.status as string;
+    if (scorecard?.length) {
+      const currentInn  = scorecard[scorecard.length - 1];
+      const prevInn     = scorecard.length > 1 ? scorecard[0] : null;
+      const status      = summaryData?.status as string | undefined;
 
-    // CricHeroes 'live' endpoint sometimes returns an empty scorecard during/after
-    // a match because the SSR data lags behind real-time. If the match is finished,
-    // we can still show a basic result card from summaryData alone.
-    if (!scorecard?.length) {
-      if (status === 'past' && summaryData.winning_team) {
-        return {
-          battingTeam: '', bowlingTeam: '', score: '', overs: '',
-          runRate: '', requiredRunRate: '', battingFirst: false,
-          batsman1: '', batsman2: '', bowler: '', currentOver: [],
-          result: `${summaryData.winning_team} won by ${summaryData.win_by}`,
-        };
+      const battingTeam = currentInn.teamName ?? '';
+      const bowlingTeam = prevInn?.teamName ?? '';
+      const summary     = currentInn.inning?.summary;
+      const score       = summary?.score ?? `${currentInn.inning?.total_run ?? ''}/${currentInn.inning?.total_wicket ?? ''}`;
+      const overs       = (summary?.over ?? '').replace(/[()]/g, '').trim();
+      const runRate     = summary?.rr ?? '';
+      const battingFirst = scorecard.length === 1;
+
+      let requiredRunRate = '';
+      if (!battingFirst && prevInn && summaryData) {
+        const target    = ((prevInn.inning?.total_run ?? 0) as number) + 1;
+        const maxOvers  = (summaryData.overs as number) || 20;
+        const decOvers  = parseFloat(overs) || 0;
+        const oversLeft = maxOvers - decOvers;
+        const runsNeed  = target - ((currentInn.inning?.total_run ?? 0) as number);
+        if (oversLeft > 0 && runsNeed > 0) requiredRunRate = (runsNeed / oversLeft).toFixed(2);
       }
-      return null;
+
+      const active   = (currentInn.batting || []).filter(b => !b.how_to_out || b.how_to_out === '');
+      const batsman1 = active[0] ? `${active[0].name}: ${active[0].runs} (${active[0].balls})` : '';
+      const batsman2 = active[1] ? `${active[1].name}: ${active[1].runs} (${active[1].balls})` : '';
+
+      const bwl    = currentInn.bowling || [];
+      const cur    = bwl[bwl.length - 1];
+      const ovsStr = cur ? `${cur.overs}${cur.balls ? `.${cur.balls}` : ''}` : '';
+      const bowler = cur ? `${cur.name}: ${ovsStr}-${cur.maidens}-${cur.runs}-${cur.wickets}` : '';
+
+      const result = (status === 'past' && summaryData)
+        ? `${summaryData.winning_team} won by ${summaryData.win_by}`
+        : '';
+
+      return {
+        battingTeam, bowlingTeam, score, overs, runRate,
+        requiredRunRate, battingFirst, batsman1, batsman2,
+        bowler, result, currentOver: [],
+      };
     }
 
-    const currentInn  = scorecard[scorecard.length - 1];
-    const prevInn     = scorecard.length > 1 ? scorecard[0] : null;
-
-    const battingTeam = currentInn.teamName ?? '';
-    const bowlingTeam = prevInn?.teamName ?? '';
-    const summary     = currentInn.inning?.summary;
-    const score       = summary?.score ?? `${currentInn.inning?.total_run ?? ''}/${currentInn.inning?.total_wicket ?? ''}`;
-    const overs       = (summary?.over ?? '').replace(/[()]/g, '').trim();
-    const runRate     = summary?.rr ?? '';
-    const battingFirst = scorecard.length === 1;
-
-    let requiredRunRate = '';
-    if (!battingFirst && prevInn) {
-      const target    = ((prevInn.inning?.total_run ?? 0) as number) + 1;
-      const maxOvers  = (summaryData.overs as number) || 20;
-      const decOvers  = parseFloat(overs) || 0;
-      const oversLeft = maxOvers - decOvers;
-      const runsNeed  = target - ((currentInn.inning?.total_run ?? 0) as number);
-      if (oversLeft > 0 && runsNeed > 0) requiredRunRate = (runsNeed / oversLeft).toFixed(2);
+    // ── FALLBACK 2: completed match with no scorecard but summary has winner ─
+    if (summaryData?.status === 'past' && summaryData.winning_team) {
+      return {
+        battingTeam: '', bowlingTeam: '', score: '', overs: '',
+        runRate: '', requiredRunRate: '', battingFirst: false,
+        batsman1: '', batsman2: '', bowler: '', currentOver: [],
+        result: `${summaryData.winning_team} won by ${summaryData.win_by}`,
+      };
     }
 
-    const active   = currentInn.batting.filter(b => !b.how_to_out || b.how_to_out === '');
-    const batsman1 = active[0] ? `${active[0].name}: ${active[0].runs} (${active[0].balls})` : '';
-    const batsman2 = active[1] ? `${active[1].name}: ${active[1].runs} (${active[1].balls})` : '';
-
-    const bwl    = currentInn.bowling;
-    const cur    = bwl[bwl.length - 1];
-    const ovsStr = cur ? `${cur.overs}${cur.balls ? `.${cur.balls}` : ''}` : '';
-    const bowler = cur ? `${cur.name}: ${ovsStr}-${cur.maidens}-${cur.runs}-${cur.wickets}` : '';
-
-    const result = status === 'past'
-      ? `${summaryData.winning_team} won by ${summaryData.win_by}`
-      : '';
-
-    return {
-      battingTeam, bowlingTeam, score, overs, runRate,
-      requiredRunRate, battingFirst, batsman1, batsman2,
-      bowler, result, currentOver: [],
-    };
+    return null;
   } catch {
     return null;
   }
