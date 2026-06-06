@@ -196,6 +196,28 @@ Suggest: (1) Top 3 priority training areas, (2) Specific drills for each, (3) Me
         const momName: string | null = data.match?.man_of_match ?? null;
         const sc = data.scorecard;
         const norm = (s: string) => (s || '').toLowerCase().replace(/[^a-z]/g, '');
+
+        // Safety: build the set of CONFIRMED SCC player names (anyone in the
+        // selected squad / players list). The AI MUST NOT praise anyone not
+        // in this set — this prevents opposition players being attributed to
+        // SCC even if the client sends bad scorecard data.
+        const sccRosterNorm = new Set<string>();
+        if (Array.isArray(data.players)) {
+          for (const p of data.players) {
+            const n = norm((p as { name?: string }).name || '');
+            if (n) sccRosterNorm.add(n);
+          }
+        }
+        const isOnSccRoster = (name: string) => {
+          const n = norm(name);
+          if (!n) return false;
+          if (sccRosterNorm.size === 0) return true; // no roster passed — trust scorecard
+          for (const r of sccRosterNorm) {
+            if (r === n || r.includes(n) || n.includes(r)) return true;
+          }
+          return false;
+        };
+
         let momBatLine = '';
         let momBowlLine = '';
         let momRole = 'unknown';
@@ -215,13 +237,15 @@ Suggest: (1) Top 3 priority training areas, (2) Specific drills for each, (3) Me
         }
 
         // Top 3 batters + top 3 wicket-takers for SCC in this match (for "Key moments")
+        // ⚠️ Filter through the SCC roster check to eliminate any opposition
+        // players that might have slipped into the scorecard arrays.
         const topBatters = (sc?.sccBatting || [])
-          .filter((b: Record<string, unknown>) => Number(b.balls) > 0)
+          .filter((b: Record<string, unknown>) => Number(b.balls) > 0 && isOnSccRoster((b.name as string) || ''))
           .sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(b.runs) - Number(a.runs))
           .slice(0, 3)
           .map((b: Record<string, unknown>) => `${b.name}: ${b.runs}(${b.balls})`);
         const topBowlers = (sc?.sccBowling || [])
-          .filter((b: Record<string, unknown>) => Number(b.wickets) > 0)
+          .filter((b: Record<string, unknown>) => Number(b.wickets) > 0 && isOnSccRoster((b.name as string) || ''))
           .sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(b.wickets) - Number(a.wickets))
           .slice(0, 3)
           .map((b: Record<string, unknown>) => `${b.name}: ${b.wickets}/${b.runs}`);

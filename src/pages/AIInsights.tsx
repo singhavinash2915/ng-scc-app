@@ -11,6 +11,16 @@ import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 
 const SCC_TEAM_ID = 7927431;
 
+// Identify which innings is SCC's. The CricHeroes scorecard uses snake_case
+// `team_id` (not camelCase `teamId`). We also accept a team-name fallback in
+// case the API ever changes. Either match is sufficient.
+function isSccInning(inn: Record<string, unknown>): boolean {
+  const id = (inn as { team_id?: number }).team_id;
+  if (id === SCC_TEAM_ID) return true;
+  const name = String((inn as { teamName?: string }).teamName || '').toLowerCase();
+  return name.includes('sangria') || name.includes(' scc') || name === 'scc';
+}
+
 // Fetch the actual scorecard for a CricHeroes match and return SCC batting +
 // bowling rows so we can build a faithful match-report prompt. Returns null on any error.
 async function fetchSccScorecardRows(chMatchId: string | null | undefined) {
@@ -25,14 +35,21 @@ async function fetchSccScorecardRows(chMatchId: string | null | undefined) {
     const sc = pp?.scorecard as Array<Record<string, unknown>> | undefined;
     if (!sc?.length) return null;
 
-    // Each entry has a team's innings: teamName + teamId + batting[] + bowling[]
-    const sccInning = sc.find(inn => (inn as { teamId?: number }).teamId === SCC_TEAM_ID);
-    const oppInning = sc.find(inn => (inn as { teamId?: number }).teamId !== SCC_TEAM_ID);
+    const sccInning = sc.find(inn => isSccInning(inn));
+    const oppInning = sc.find(inn => !isSccInning(inn));
+
+    // ⚠️ Sanity check — if we can't positively identify the SCC innings, bail out.
+    // Returning the wrong innings would cause the AI to attribute opposition
+    // performances to SCC players (which is exactly the bug we're fixing).
+    if (!sccInning) return null;
+
     return {
-      sccBatting: (sccInning?.batting as Array<Record<string, unknown>>) ?? [],
-      sccBowling: (oppInning?.bowling as Array<Record<string, unknown>>) ?? [], // SCC bowls in opponent's innings
-      sccTotal:   (sccInning?.inning as { total_run?: number; total_wicket?: number })?.total_run,
-      sccWkts:    (sccInning?.inning as { total_run?: number; total_wicket?: number })?.total_wicket,
+      // SCC's batting innings — SCC batters are here
+      sccBatting: (sccInning.batting as Array<Record<string, unknown>>) ?? [],
+      // SCC bowls in the OPPONENT's batting innings — so bowlers there are SCC bowlers
+      sccBowling: (oppInning?.bowling as Array<Record<string, unknown>>) ?? [],
+      sccTotal:   (sccInning.inning as { total_run?: number; total_wicket?: number })?.total_run,
+      sccWkts:    (sccInning.inning as { total_run?: number; total_wicket?: number })?.total_wicket,
       oppTotal:   (oppInning?.inning as { total_run?: number; total_wicket?: number })?.total_run,
       oppWkts:    (oppInning?.inning as { total_run?: number; total_wicket?: number })?.total_wicket,
       oppName:    oppInning?.teamName as string | undefined,
