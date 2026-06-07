@@ -470,7 +470,7 @@ export function Predictions() {
                   return p.winner === actual;
                 }).length;
                 return (
-                  <Link to={`/profile/${memberById[predictions[0]?.member_id]?.id || ''}`} key={match.id}>
+                  <Link to={`/matches?focus=${match.id}`} key={match.id}>
                     <div className="rounded-xl p-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">

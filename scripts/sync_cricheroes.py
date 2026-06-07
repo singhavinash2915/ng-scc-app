@@ -22,7 +22,7 @@ CH_PARAMS    = "teamId=7927431&teamName=sangria-cricket-club&tabName=leaderboard
 # ── Supabase config ───────────────────────────────────────────────────────────
 SUPABASE_URL = "https://zrrmpaatydhlkntfpcmw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1wYWF0eWRobGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4Mjc4ODM0N30.kHot4i6MNPjt2neNzJ_tMAplJi_9CiYNgFzAzmEgdeg"
-SEASON       = "2025-26"
+SEASON       = "all-time"   # CricHeroes API returns all-time career stats (not season-filtered)
 
 # ── CricHeroes player_id → Supabase member UUID ───────────────────────────────
 CH_TO_SB = {
@@ -145,9 +145,19 @@ def main():
     print(f"{len(fielding)} rows")
 
     stats = {}
+    # Track which mapped UUIDs actually got data — helps spot players whose
+    # CricHeroes player_id is wrong / has changed (e.g. they renamed account).
+    matched_uuids = set()
+    # Track CricHeroes players who appeared in the leaderboards but aren't in
+    # our CH_TO_SB mapping — these might be new SCC players who need adding.
+    unmapped_ch_players = {}
     for row in batting:
         uid = CH_TO_SB.get(row['player_id'])
-        if not uid: continue
+        if not uid:
+            if (row.get('total_match') or 0) >= 1:  # only flag real players, not noise
+                unmapped_ch_players[row['player_id']] = row.get('name', '?')
+            continue
+        matched_uuids.add(uid)
         s = stats.setdefault(uid, {**DEFAULTS, 'member_id': uid})
         s.update({'batting_matches':si(row.get('total_match')), 'batting_innings':si(row.get('innings')),
                   'batting_runs':si(row.get('total_runs')), 'batting_highest_score':si(row.get('highest_run')),
@@ -157,7 +167,11 @@ def main():
 
     for row in bowling:
         uid = CH_TO_SB.get(row['player_id'])
-        if not uid: continue
+        if not uid:
+            if (row.get('total_match') or 0) >= 1:
+                unmapped_ch_players[row['player_id']] = row.get('name', '?')
+            continue
+        matched_uuids.add(uid)
         s = stats.setdefault(uid, {**DEFAULTS, 'member_id': uid})
         s.update({'bowling_matches':si(row.get('total_match')), 'bowling_innings':si(row.get('innings')),
                   'bowling_overs':sf(row.get('overs')), 'bowling_wickets':si(row.get('total_wickets')),
@@ -167,13 +181,52 @@ def main():
 
     for row in fielding:
         uid = CH_TO_SB.get(row['player_id'])
-        if not uid: continue
+        if not uid:
+            if (row.get('catches') or 0) >= 1 or (row.get('stumpings') or 0) >= 1 or (row.get('run_outs') or 0) >= 1:
+                unmapped_ch_players[row['player_id']] = row.get('name', '?')
+            continue
+        matched_uuids.add(uid)
         s = stats.setdefault(uid, {**DEFAULTS, 'member_id': uid})
         s.update({'fielding_catches':si(row.get('catches')), 'fielding_stumpings':si(row.get('stumpings')),
                   'fielding_run_outs':si(row.get('run_outs'))})
 
     rows = list(stats.values())
-    print(f"\nSyncing {len(rows)} members to Supabase...")
+
+    # ── Skip-if-unchanged guard ──────────────────────────────────────────────
+    # Compute a fingerprint of the totals across all players. If the CricHeroes
+    # numbers haven't moved since the last run, there's no new match and we
+    # don't need to delete + reinsert rows in the DB.
+    import hashlib, os
+    state_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.last_sync_fingerprint.txt')
+
+    total_runs    = sum(r['batting_runs']     for r in rows)
+    total_wickets = sum(r['bowling_wickets']  for r in rows)
+    total_catches = sum(r['fielding_catches'] for r in rows)
+    total_matches = sum(r['batting_matches']  for r in rows)
+    # Per-player runs string captures changes even when the total is unchanged
+    # (e.g. one player loses runs while another gains the same amount).
+    per_player = '|'.join(f"{r['member_id']}:{r['batting_runs']}/{r['bowling_wickets']}/{r['fielding_catches']}/{r['batting_matches']}"
+                          for r in sorted(rows, key=lambda r: r['member_id']))
+    fingerprint_input = f"{SEASON}|R{total_runs}|W{total_wickets}|C{total_catches}|M{total_matches}|{per_player}"
+    fingerprint = hashlib.sha256(fingerprint_input.encode()).hexdigest()
+
+    last_fingerprint = ''
+    if os.path.exists(state_file):
+        with open(state_file) as f:
+            last_fingerprint = f.read().strip()
+
+    if fingerprint == last_fingerprint:
+        print(f"\n✓ No new match data since last sync — skipping DB write.")
+        print(f"  Players: {len(rows)} · Total runs: {total_runs} · Total wkts: {total_wickets} · Total catches: {total_catches}")
+        print(f"  Fingerprint unchanged: {fingerprint[:12]}…")
+        return
+
+    print(f"\nSyncing {len(rows)} members to Supabase…")
+    print(f"  Totals: {total_runs} runs · {total_wickets} wkts · {total_catches} catches · {total_matches} matches")
+    if last_fingerprint:
+        print(f"  Fingerprint changed: {last_fingerprint[:12]}… → {fingerprint[:12]}…")
+    else:
+        print(f"  First sync (no previous fingerprint).")
 
     code, err = sb_call("DELETE", f"member_cricket_stats?season=eq.{SEASON}")
     if err: print(f"  Delete warning: {err[:100]}")
@@ -183,11 +236,45 @@ def main():
         print(f"  ❌ Insert failed ({code}): {err[:200]}")
         sys.exit(1)
 
+    # Save the new fingerprint only after a successful insert.
+    with open(state_file, 'w') as f:
+        f.write(fingerprint)
+
     print(f"  ✅ {len(rows)} records synced! (HTTP {code})")
     print(f"\nTop 5 batters:")
     for r in sorted(rows, key=lambda x: -x['batting_runs'])[:5]:
         name = next((row['name'] for row in batting if CH_TO_SB.get(row['player_id'])==r['member_id']), '?')
         print(f"  {name:<25} Runs:{r['batting_runs']:>5}  Wkts:{r['bowling_wickets']:>4}  Catches:{r['fielding_catches']:>3}")
+
+    # ── Mapping health diagnostics ───────────────────────────────────────────
+    # 1) Mapped SCC members whose CricHeroes ID returned NO data — wrong ID?
+    mapped_no_data = [uid for uid in CH_TO_SB.values() if uid not in matched_uuids]
+    if mapped_no_data:
+        print(f"\n⚠️  {len(mapped_no_data)} SCC members are mapped but CricHeroes returned no stats for them:")
+        for uid in mapped_no_data:
+            ch_id = next((cid for cid, sid in CH_TO_SB.items() if sid == uid), '?')
+            comment = ''
+            # try to grab the comment after the # in the mapping line via a quick re-scan
+            import re
+            try:
+                with open(__file__) as f:
+                    for line in f:
+                        m = re.match(rf'\s*{ch_id}\s*:\s*"{uid}"\s*,?\s*#\s*(.+)', line)
+                        if m: comment = m.group(1).strip(); break
+            except Exception: pass
+            print(f"     CricHeroes ID {ch_id} → {uid}  ({comment})")
+        print("     → Check that CricHeroes player_id is correct (visit their CH profile).")
+        print("     → If they truly haven't played any CH-tracked matches, ignore this.")
+
+    # 2) CricHeroes players in the leaderboard who AREN'T in our mapping —
+    # could be new SCC members who need adding to CH_TO_SB.
+    if unmapped_ch_players:
+        print(f"\nℹ️  {len(unmapped_ch_players)} CricHeroes players are in the leaderboard but NOT in CH_TO_SB:")
+        for ch_id, name in list(unmapped_ch_players.items())[:20]:
+            print(f"     CricHeroes ID {ch_id} → {name}")
+        if len(unmapped_ch_players) > 20:
+            print(f"     … and {len(unmapped_ch_players) - 20} more")
+        print("     → If any are SCC members, add them to CH_TO_SB.")
 
 if __name__ == '__main__':
     main()

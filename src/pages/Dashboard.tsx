@@ -465,6 +465,14 @@ export function Dashboard() {
         {/* ── ANNOUNCEMENT WALL ────────────────────────────────────────── */}
         <AnnouncementWall />
 
+        {/* ── TEAM PHOTO CAROUSEL (lazy) ─────────────────────────────────── */}
+        {/* Showcase recent team match photos near the top of the dashboard. */}
+        {showDeferred && (
+          <Suspense fallback={null}>
+            <DashboardDeferred section="photos" />
+          </Suspense>
+        )}
+
         {/* ── LIVE SCORECARD ─────────────────────────────────────────────── */}
         {/* Shown only while the match is in-progress (admin hasn't set the final result yet). */}
         {/* Once admin marks the match won/lost/draw, the widget hides since the result lives elsewhere. */}
@@ -1036,12 +1044,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* ── PHOTO GALLERY (lazy) ─────────────────── */}
-        {showDeferred && (
-          <Suspense fallback={null}>
-            <DashboardDeferred section="photos" />
-          </Suspense>
-        )}
+        {/* (Photo gallery moved up — see "TEAM PHOTO CAROUSEL" above) */}
 
         {/* ── CALENDAR ────────────────────────────── */}
         <CalendarWidget matches={matches} />

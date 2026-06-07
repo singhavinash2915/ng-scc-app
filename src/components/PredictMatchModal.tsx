@@ -13,7 +13,10 @@ interface Props {
   match: Match;
 }
 
-const PREDICT_CLOSE_MINUTES_BEFORE = 30;  // Predictions lock 30 min before match start
+// Predictions stay open until 6 AM on match day (most matches start 7:00 AM+,
+// so this gives members a full 30-min buffer to lock in their picks at the
+// last minute on match morning).
+const PREDICT_LOCK_HOUR = 6; // 06:00 local time on match date
 
 /**
  * Predict-the-match modal.
@@ -61,10 +64,13 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     }
   }, [existing]);
 
-  // Predictions close N minutes before match
+  // Predictions lock at 06:00 local time on match day, or whenever the match
+  // result is set (whichever comes first).
   const isLocked = useMemo(() => {
-    const matchDate = new Date(match.date);
-    const cutoff = new Date(matchDate.getTime() - PREDICT_CLOSE_MINUTES_BEFORE * 60_000);
+    // match.date is an ISO date string like "2026-06-09". Build a Date at 06:00
+    // local time on that date.
+    const [y, m, d] = match.date.split('-').map(Number);
+    const cutoff = new Date(y, (m || 1) - 1, d || 1, PREDICT_LOCK_HOUR, 0, 0);
     return Date.now() > cutoff.getTime() || ['won', 'lost', 'draw'].includes(match.result);
   }, [match]);
 
@@ -174,7 +180,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
             Predictions are closed for this match
           </p>
           <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-            Predictions lock 30 min before match start.
+            Predictions lock at 6:00 AM on match day.
           </p>
         </div>
       )}
