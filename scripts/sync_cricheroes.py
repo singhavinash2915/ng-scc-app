@@ -244,7 +244,7 @@ def main():
     for row in bowling:
         uid = CH_TO_SB.get(row['player_id'])
         if not uid:
-            if (row.get('total_match') or 0) >= 1:
+            if si(row.get('total_match')) >= 1:
                 unmapped_ch_players[row['player_id']] = row.get('name', '?')
             continue
         matched_uuids.add(uid)
