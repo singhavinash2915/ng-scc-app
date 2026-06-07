@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Trophy, Crown, Star, ChevronLeft, Camera, Calendar as CalIcon,
@@ -9,6 +9,8 @@ import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useCricketStats } from '../hooks/useCricketStats';
+import { supabase } from '../lib/supabase';
+import type { MemberCricketStats } from '../types';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useFormGuide, type FormResult } from '../hooks/useFormGuide';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
@@ -130,7 +132,31 @@ export function MemberProfile() {
   const [showCard, setShowCard] = useState(false);
 
   const member = members.find(m => m.id === id);
-  const memberStats = stats.find(s => s.member_id === id);
+  const seasonStats = stats.find(s => s.member_id === id);
+
+  // Fallback: if there's no 2025-26 row (e.g. the daily sync only writes the
+  // all-time row for some players, or the name match failed during season
+  // sync), pull the all-time row so the profile still shows numbers instead
+  // of all-zeros.
+  const [fallbackStats, setFallbackStats] = useState<MemberCricketStats | null>(null);
+  useEffect(() => {
+    if (!id) { setFallbackStats(null); return; }
+    if (seasonStats) { setFallbackStats(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('member_cricket_stats')
+        .select('*')
+        .eq('member_id', id)
+        .order('batting_runs', { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      setFallbackStats((data?.[0] as MemberCricketStats) || null);
+    })();
+    return () => { cancelled = true; };
+  }, [id, seasonStats]);
+
+  const memberStats = seasonStats || fallbackStats || undefined;
   const moms = momCounts[id || ''] || 0;
   const form = formByMember[id || ''];
   const matchesPlayed = useMemo(() => {
