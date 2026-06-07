@@ -69,6 +69,82 @@ CH_TO_SB = {
 
 import time
 
+def ch_request(url):
+    """One-shot CricHeroes API GET with our auth headers. Returns parsed JSON or None on failure."""
+    req = urllib.request.Request(url, headers={
+        "api-key": CH_API_KEY, "authorization": CH_AUTH, "udid": CH_UDID,
+        "device-type": "Chrome: 146.0.0.0", "accept": "application/json",
+        "origin": "https://cricheroes.com", "referer": "https://cricheroes.com/",
+        "user-agent": CH_UA
+    })
+    try:
+        with urllib.request.urlopen(req) as r:
+            return json.loads(r.read())
+    except Exception:
+        return None
+
+
+def ch_fetch_player_solo(ch_player_id):
+    """
+    Fallback for players that don't show up in the team leaderboard
+    (e.g. they've been removed from the team roster on CricHeroes,
+    or play infrequently and are filtered out).
+
+    Scrapes their individual career stats by fetching the player-profile
+    page and reading the SSR-embedded JSON (same __NEXT_DATA__ trick the
+    match scorecard sync uses).
+
+    Returns flat dict with batting/bowling/fielding totals, or None on
+    any error.
+    """
+    import re
+    url = f"https://cricheroes.com/player-profile/{ch_player_id}/x/stats"
+    browser_headers = {
+        "User-Agent":
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+            "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-IN,en;q=0.9",
+    }
+    try:
+        req = urllib.request.Request(url, headers=browser_headers)
+        with urllib.request.urlopen(req) as r:
+            html = r.read().decode("utf-8", errors="ignore")
+        m = re.search(
+            r'<script id="__NEXT_DATA__" type="application/json">([\s\S]*?)</script>',
+            html,
+        )
+        if not m: return None
+        next_data = json.loads(m.group(1))
+        pp = next_data.get("props", {}).get("pageProps", {}) or {}
+
+        # CricHeroes player profile embeds a "playerStatistics" or "stats"
+        # block. Names vary by route — try a few keys and merge.
+        candidates = []
+        for k in ("playerStatistics", "stats", "statisticData", "playerStats", "statsData"):
+            v = pp.get(k)
+            if isinstance(v, dict): candidates.append(v)
+            elif isinstance(v, list): candidates.extend(x for x in v if isinstance(x, dict))
+
+        # Also walk through nested data->stats if present
+        nested = pp.get("data", {}) if isinstance(pp.get("data"), dict) else {}
+        for k in ("stats", "batting", "bowling", "fielding"):
+            v = nested.get(k)
+            if isinstance(v, dict): candidates.append(v)
+
+        if not candidates: return None
+
+        # Flatten: pick the first non-None value across candidates per key.
+        merged = {}
+        for c in candidates:
+            for kk, vv in c.items():
+                if kk not in merged and vv not in (None, "", "-"):
+                    merged[kk] = vv
+        return merged or None
+    except Exception:
+        return None
+
+
 def ch_fetch_all(endpoint_name):
     import time
     all_data, page = [], 1
@@ -186,6 +262,40 @@ def main():
                 unmapped_ch_players[row['player_id']] = row.get('name', '?')
             continue
         matched_uuids.add(uid)
+        s = stats.setdefault(uid, {**DEFAULTS, 'member_id': uid})
+        s.update({'fielding_catches':si(row.get('catches')), 'fielding_stumpings':si(row.get('stumpings')),
+                  'fielding_run_outs':si(row.get('run_outs'))})
+
+    # ── Ensure every mapped SCC member has a row, even if CricHeroes returned
+    # ── no leaderboard data (so they still appear in the app with zeros
+    # ── rather than disappearing entirely). Then try the individual
+    # ── player-profile fallback to pull at least something.
+    for ch_id, uid in CH_TO_SB.items():
+        if uid in matched_uuids: continue
+        # Add zero-row placeholder so they show up in the leaderboard
+        stats.setdefault(uid, {**DEFAULTS, 'member_id': uid})
+
+        solo = ch_fetch_player_solo(ch_id)
+        if not solo: continue
+        # Pull whatever fields we can recognise from the player profile JSON
+        # (CricHeroes uses slightly different keys here than in team leaderboards)
+        s = stats[uid]
+        def pick(*keys):
+            for k in keys:
+                v = solo.get(k)
+                if v not in (None, '', '-'): return v
+            return None
+        runs    = pick('total_runs', 'runs', 'batting_runs', 'totalRun')
+        wkts    = pick('total_wickets', 'wickets', 'bowling_wickets')
+        matches = pick('total_match', 'matches', 'total_matches')
+        innings = pick('innings', 'batting_innings')
+        catches = pick('catches', 'fielding_catches', 'total_catches')
+        if runs is not None: s['batting_runs'] = si(runs)
+        if wkts is not None: s['bowling_wickets'] = si(wkts)
+        if matches is not None: s['batting_matches'] = si(matches); s['bowling_matches'] = si(matches)
+        if innings is not None: s['batting_innings'] = si(innings)
+        if catches is not None: s['fielding_catches'] = si(catches)
+        print(f"  ↳ Fallback fetch for {ch_id}: runs={runs} wkts={wkts} catches={catches}")
         s = stats.setdefault(uid, {**DEFAULTS, 'member_id': uid})
         s.update({'fielding_catches':si(row.get('catches')), 'fielding_stumpings':si(row.get('stumpings')),
                   'fielding_run_outs':si(row.get('run_outs'))})
