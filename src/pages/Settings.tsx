@@ -22,8 +22,10 @@ import {
   Star,
   Plus,
   QrCode,
+  Camera,
 } from 'lucide-react';
 import { useGroundSettings } from '../hooks/useGroundSettings';
+import { useTeamGallery } from '../hooks/useTeamGallery';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -96,6 +98,20 @@ export function Settings() {
   const [upiNameInput, setUpiNameInput]   = useState('');
   const [qrUploading, setQrUploading]     = useState(false);
   const [upiSavedMsg, setUpiSavedMsg]     = useState<string | null>(null);
+
+  // ── Team Gallery (dashboard carousel) ──────────────────────────────────────
+  const {
+    gallery: teamGallery,
+    saving:  gallerySaving,
+    addPhoto:    addGalleryPhoto,
+    removePhoto: removeGalleryPhoto,
+    updateCaption: updateGalleryCaption,
+  } = useTeamGallery();
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryMsg, setGalleryMsg]             = useState<string | null>(null);
+  const [newPhotoCaption, setNewPhotoCaption]   = useState('');
+  const [editingCaptionUrl, setEditingCaptionUrl] = useState<string | null>(null);
+  const [editingCaptionText, setEditingCaptionText] = useState('');
 
   // Ground form
   const [groundName, setGroundName]             = useState('');
@@ -977,6 +993,152 @@ export function Settings() {
                       Cancel
                     </Button>
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Team Gallery — Dashboard Photo Carousel (Admin Only) */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-primary-500" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Team Gallery <span className="text-xs text-gray-400">({teamGallery.photos.length})</span>
+                </h3>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Photos shown in the carousel on the Dashboard. Drag-drop, group photos, match-day moments — anything you want members to see at the top of the app.
+              </p>
+
+              {/* Upload new photo */}
+              <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-4 space-y-3">
+                <Input
+                  label="Caption (optional)"
+                  placeholder="e.g. SCC vs Yashwin Stars — Champions Trophy 2026"
+                  value={newPhotoCaption}
+                  onChange={e => setNewPhotoCaption(e.target.value)}
+                />
+                <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
+                  <Upload className="w-4 h-4" />
+                  {galleryUploading ? 'Uploading…' : 'Upload Photo'}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    disabled={galleryUploading}
+                    onChange={async e => {
+                      const f = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!f) return;
+                      setGalleryUploading(true);
+                      setGalleryMsg(null);
+                      try {
+                        const ok = await addGalleryPhoto(f, newPhotoCaption);
+                        if (ok) {
+                          setGalleryMsg('✓ Photo added — refresh Dashboard to see it');
+                          setNewPhotoCaption('');
+                          setTimeout(() => setGalleryMsg(null), 3000);
+                        } else {
+                          setGalleryMsg('⚠ Upload failed — try again');
+                        }
+                      } finally {
+                        setGalleryUploading(false);
+                      }
+                    }}
+                  />
+                </label>
+                <p className="text-[10px] text-gray-400 text-center">PNG / JPG / WebP. Landscape 16:9 looks best on the carousel.</p>
+              </div>
+
+              {galleryMsg && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm border ${
+                  galleryMsg.startsWith('✓')
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
+                }`}>
+                  {galleryMsg}
+                </div>
+              )}
+
+              {/* Current photos grid */}
+              {teamGallery.photos.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">In carousel ({teamGallery.photos.length})</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {teamGallery.photos.map((p, i) => (
+                      <div key={p.url} className="relative group rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                        <div className="aspect-[4/3] overflow-hidden">
+                          <img src={p.url} alt={p.caption || `Photo ${i + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="px-2 py-1.5 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 min-h-[36px]">
+                          {editingCaptionUrl === p.url ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                value={editingCaptionText}
+                                onChange={e => setEditingCaptionText(e.target.value)}
+                                placeholder="Caption…"
+                                className="flex-1 text-[11px] bg-transparent border-0 focus:outline-none text-gray-700 dark:text-gray-300"
+                                autoFocus
+                              />
+                              <button
+                                onClick={async () => {
+                                  await updateGalleryCaption(p.url, editingCaptionText);
+                                  setEditingCaptionUrl(null);
+                                }}
+                                className="p-0.5 text-emerald-500 hover:text-emerald-700"
+                                title="Save"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setEditingCaptionUrl(null)}
+                                className="p-0.5 text-gray-400 hover:text-gray-600"
+                                title="Cancel"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setEditingCaptionUrl(p.url);
+                                setEditingCaptionText(p.caption || '');
+                              }}
+                              className="text-left w-full text-[11px] text-gray-600 dark:text-gray-400 truncate hover:text-gray-900 dark:hover:text-gray-200"
+                              title="Click to edit caption"
+                            >
+                              {p.caption || <span className="italic text-gray-400">Add caption…</span>}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Delete button overlay (visible on hover) */}
+                        <button
+                          onClick={async () => {
+                            if (confirm('Remove this photo from the dashboard carousel?')) {
+                              await removeGalleryPhoto(p.url);
+                            }
+                          }}
+                          disabled={gallerySaving}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all disabled:opacity-50"
+                          title="Remove photo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {teamGallery.photos.length === 0 && (
+                <div className="text-center py-4 text-sm text-gray-400">
+                  No team photos yet. Upload one above — it'll appear in the Dashboard carousel.
                 </div>
               )}
             </CardContent>

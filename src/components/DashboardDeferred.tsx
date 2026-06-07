@@ -1,7 +1,9 @@
 import { Camera, Building2, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from './ui/Card';
 import { PhotoCarousel } from './PhotoCarousel';
+import { TeamGalleryCarousel } from './TeamGalleryCarousel';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
+import { useTeamGallery } from '../hooks/useTeamGallery';
 import { useSponsor } from '../hooks/useSponsor';
 
 interface DashboardDeferredProps {
@@ -10,10 +12,17 @@ interface DashboardDeferredProps {
 
 export function DashboardDeferred({ section }: DashboardDeferredProps) {
   const { photos: matchPhotos } = useMatchPhotos();
+  const { gallery, loading: galleryLoading } = useTeamGallery();
   const { sponsors } = useSponsor();
 
   if (section === 'photos') {
-    if (!matchPhotos.length) return null;
+    // Admin-curated gallery takes precedence. Falls back to recent match photos
+    // when admin hasn't selected anything yet.
+    if (galleryLoading) return null;
+    if (gallery.photos.length > 0) {
+      return <TeamGalleryCarousel photos={gallery.photos} autoPlayInterval={5000} />;
+    }
+    if (matchPhotos.length === 0) return null;
     return (
       <div>
         <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-3">
