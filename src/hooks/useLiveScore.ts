@@ -1,6 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 
+export interface LiveBatter {
+  name: string;
+  runs: number;
+  balls: number;
+  fours: number;
+  sixes: number;
+  sr: string;
+  isStriker: boolean;
+}
+
+export interface LiveBowler {
+  name: string;
+  overs: string;          // "1.3" — over.balls notation
+  maidens: number;
+  runs: number;
+  wickets: number;
+  economy: string;
+}
+
 export interface LiveScoreData {
   battingTeam: string;
   bowlingTeam: string;
@@ -12,7 +31,13 @@ export interface LiveScoreData {
   batsman1: string;
   batsman2: string;
   bowler: string;
-  result: string;         // empty = in progress, filled = match over
+  // ── Structured rows for the CricHeroes-style table view ─────────────────
+  batters: LiveBatter[];      // active batters (striker first)
+  bowlers: LiveBowler[];      // current bowler first, then previous
+  partnership?: string;       // e.g. "13(8)"
+  projectedScore?: number;    // when in 1st innings
+  tossDetails?: string;       // e.g. "Toss: Sangria Cricket Club opt to bat"
+  result: string;             // empty = in progress, filled = match over
   currentOver: string[];
   lastUpdated: Date;
 }
@@ -61,6 +86,7 @@ type MiniData = {
   last_wicket?: string;
   fall_of_wicket?: string;
   projected_score?: number;
+  toss_details?: string;
   winning_team?: string;
   win_by?: string;
 };
@@ -100,10 +126,39 @@ function parseFromMini(mini: MiniData): Omit<LiveScoreData, 'lastUpdated'> | nul
   const batsman1 = sb ? `${sb.name}: ${sb.runs} (${sb.balls})${(sb['4s'] || sb['6s']) ? ` · ${sb['4s']}x4 ${sb['6s']}x6` : ''} *` : '';
   const batsman2 = nsb ? `${nsb.name}: ${nsb.runs} (${nsb.balls})` : '';
 
+  // Structured batter rows for the CricHeroes-style table
+  const batters: LiveBatter[] = [];
+  if (sb) batters.push({
+    name: sb.name, runs: sb.runs, balls: sb.balls, fours: sb['4s'] || 0,
+    sixes: sb['6s'] || 0, sr: sb.strike_rate || '0.00', isStriker: true,
+  });
+  if (nsb) batters.push({
+    name: nsb.name, runs: nsb.runs, balls: nsb.balls, fours: nsb['4s'] || 0,
+    sixes: nsb['6s'] || 0, sr: nsb.strike_rate || '0.00', isStriker: false,
+  });
+
   // Current bowler
   const bw = mini.bowlers?.sb;
   const ovsStr = bw ? `${bw.overs}${bw.balls ? '.' + bw.balls : ''}` : '';
   const bowler = bw ? `${bw.name}: ${ovsStr}-${bw.maidens}-${bw.runs}-${bw.wickets} (eco ${bw.economy_rate})` : '';
+
+  // Structured bowler rows
+  const bowlers: LiveBowler[] = [];
+  const buildBowler = (b: MiniBowler | undefined): LiveBowler | null => {
+    if (!b) return null;
+    return {
+      name: b.name,
+      overs: `${b.overs}${b.balls ? '.' + b.balls : ''}`,
+      maidens: b.maidens || 0,
+      runs: b.runs || 0,
+      wickets: b.wickets || 0,
+      economy: b.economy_rate || '0.00',
+    };
+  };
+  const sbB = buildBowler(mini.bowlers?.sb);
+  const nsbB = buildBowler(mini.bowlers?.nsb);
+  if (sbB) bowlers.push(sbB);
+  if (nsbB) bowlers.push(nsbB);
 
   // Current over balls — "0 4 1 1 1 | 0wd 0 1 1" → array of ball labels
   // Split on whitespace, keep the "|" as a divider marker so UI can render distinctly if it wants.
@@ -120,7 +175,11 @@ function parseFromMini(mini: MiniData): Omit<LiveScoreData, 'lastUpdated'> | nul
   return {
     battingTeam, bowlingTeam, score, overs, runRate,
     requiredRunRate, battingFirst, batsman1, batsman2,
-    bowler, result, currentOver,
+    bowler, batters, bowlers,
+    partnership: mini.current_partnership,
+    projectedScore: mini.projected_score,
+    tossDetails: mini.toss_details,
+    result, currentOver,
   };
 }
 
@@ -179,7 +238,7 @@ export function parseLiveFromPageProps(pp: Record<string, unknown>): Omit<LiveSc
       return {
         battingTeam, bowlingTeam, score, overs, runRate,
         requiredRunRate, battingFirst, batsman1, batsman2,
-        bowler, result, currentOver: [],
+        bowler, batters: [], bowlers: [], result, currentOver: [],
       };
     }
 
@@ -188,7 +247,7 @@ export function parseLiveFromPageProps(pp: Record<string, unknown>): Omit<LiveSc
       return {
         battingTeam: '', bowlingTeam: '', score: '', overs: '',
         runRate: '', requiredRunRate: '', battingFirst: false,
-        batsman1: '', batsman2: '', bowler: '', currentOver: [],
+        batsman1: '', batsman2: '', bowler: '', batters: [], bowlers: [], currentOver: [],
         result: `${summaryData.winning_team} won by ${summaryData.win_by}`,
       };
     }

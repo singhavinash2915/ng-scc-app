@@ -150,36 +150,49 @@ export function LiveScorecard({
         {(data && !data.result) && (
           <>
             {/* ── Score row ─────────────────────────────────────── */}
-            <div className="flex items-end justify-between mb-1.5">
-              <div className="flex items-baseline gap-2">
-                <span className="text-base font-black text-white/80">
+            <div className="flex items-end justify-between mb-1">
+              <div className="flex items-baseline gap-2 min-w-0">
+                <span className="text-sm font-bold text-white/70 truncate">
                   {data.battingTeam || (matchOpponent ? 'SCC' : '—')}
                 </span>
-                {data.score && (
-                  <span className="text-4xl font-black text-yellow-400 leading-none tabular-nums tracking-tight">
-                    {data.score}
-                  </span>
-                )}
               </div>
               {data.bowlingTeam && (
-                <span className="text-xs text-gray-500 pb-1">
+                <span className="text-[10px] text-gray-500 pb-1 truncate">
                   vs <span className="text-gray-400 font-semibold">{data.bowlingTeam}</span>
                 </span>
               )}
             </div>
-
-            {/* ── Overs + rates row ─────────────────────────────── */}
-            <div className="flex items-center gap-3 mb-3 flex-wrap">
+            <div className="flex items-baseline gap-2 mb-2">
+              {data.score && (
+                <span className="text-4xl font-black text-yellow-400 leading-none tabular-nums tracking-tight">
+                  {data.score}
+                </span>
+              )}
               {data.overs && (
-                <span className="text-sm font-mono text-cyan-400 font-bold">{data.overs} ov</span>
-              )}
-              {data.runRate && (
-                <span className="text-xs font-mono text-cyan-300/70">CRR {data.runRate}</span>
-              )}
-              {!data.battingFirst && data.requiredRunRate && (
-                <span className="text-xs font-mono text-orange-400 font-bold">RRR {data.requiredRunRate}</span>
+                <span className="text-sm font-mono text-cyan-400 font-bold">({data.overs} Ov)</span>
               )}
             </div>
+
+            {/* ── Rates + projected ─────────────────────────────── */}
+            <div className="flex items-center gap-3 mb-2 flex-wrap text-[11px]">
+              {data.runRate && (
+                <span className="text-gray-400">CRR <span className="text-cyan-300 font-mono font-bold">{data.runRate}</span></span>
+              )}
+              {data.battingFirst && data.projectedScore != null && data.projectedScore > 0 && (
+                <span className="text-gray-400">Proj. score <span className="text-emerald-300 font-mono font-bold">{data.projectedScore}</span></span>
+              )}
+              {!data.battingFirst && data.requiredRunRate && (
+                <span className="text-gray-400">RRR <span className="text-orange-400 font-mono font-bold">{data.requiredRunRate}</span></span>
+              )}
+              {data.partnership && (
+                <span className="text-gray-400">P'ship <span className="text-white/80 font-mono font-bold">{data.partnership}</span></span>
+              )}
+            </div>
+
+            {/* ── Toss strip ─────────────────────────────────────── */}
+            {data.tossDetails && (
+              <p className="text-[10px] text-amber-400/70 mb-3 truncate">🪙 {data.tossDetails}</p>
+            )}
 
             {/* ── Current over balls ─────────────────────────────── */}
             {data.currentOver.length > 0 && (
@@ -196,38 +209,57 @@ export function LiveScorecard({
               </div>
             )}
 
-            {/* ── Divider ─────────────────────────────────────────── */}
-            <div className="border-t border-white/8 my-2.5" />
-
-            {/* ── Batsmen + Bowler ──────────────────────────────── */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-              {/* Batting */}
-              <div>
-                <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">
-                  🏏 Batting
-                </p>
-                {data.batsman1 ? (
-                  <p className="text-sm text-yellow-300 font-semibold truncate">{data.batsman1}</p>
-                ) : (
-                  <p className="text-sm text-gray-600">—</p>
-                )}
-                {data.batsman2 && (
-                  <p className="text-sm text-white/50 truncate mt-0.5">{data.batsman2}</p>
-                )}
+            {/* ── Batters table (CricHeroes style) ──────────────── */}
+            {data.batters && data.batters.length > 0 && (
+              <div className="mt-3 rounded-xl bg-black/30 border border-white/8 overflow-hidden">
+                <div className="grid grid-cols-[1fr_36px_36px_28px_28px_44px] gap-1 px-3 py-1.5 text-[9px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
+                  <span>Batters</span>
+                  <span className="text-right">R</span>
+                  <span className="text-right">B</span>
+                  <span className="text-right">4s</span>
+                  <span className="text-right">6s</span>
+                  <span className="text-right">SR</span>
+                </div>
+                {data.batters.map((b, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_36px_36px_28px_28px_44px] gap-1 px-3 py-2 text-xs items-center">
+                    <span className={`truncate ${b.isStriker ? 'text-yellow-300 font-bold' : 'text-white/80 font-semibold'}`}>
+                      {b.name}{b.isStriker ? ' *' : ''}
+                    </span>
+                    <span className={`text-right tabular-nums font-bold ${b.isStriker ? 'text-yellow-300' : 'text-white'}`}>{b.runs}</span>
+                    <span className="text-right tabular-nums text-white/70">{b.balls}</span>
+                    <span className="text-right tabular-nums text-white/50">{b.fours}</span>
+                    <span className="text-right tabular-nums text-white/50">{b.sixes}</span>
+                    <span className="text-right tabular-nums text-white/60">{b.sr}</span>
+                  </div>
+                ))}
               </div>
+            )}
 
-              {/* Bowling */}
-              <div>
-                <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">
-                  🎯 Bowling
-                </p>
-                {data.bowler ? (
-                  <p className="text-sm text-cyan-300 font-semibold truncate">{data.bowler}</p>
-                ) : (
-                  <p className="text-sm text-gray-600">—</p>
-                )}
+            {/* ── Bowlers table ─────────────────────────────────── */}
+            {data.bowlers && data.bowlers.length > 0 && (
+              <div className="mt-2 rounded-xl bg-black/30 border border-white/8 overflow-hidden">
+                <div className="grid grid-cols-[1fr_36px_28px_36px_28px_44px] gap-1 px-3 py-1.5 text-[9px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
+                  <span>Bowlers</span>
+                  <span className="text-right">O</span>
+                  <span className="text-right">M</span>
+                  <span className="text-right">R</span>
+                  <span className="text-right">W</span>
+                  <span className="text-right">Eco</span>
+                </div>
+                {data.bowlers.map((b, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_36px_28px_36px_28px_44px] gap-1 px-3 py-2 text-xs items-center">
+                    <span className={`truncate ${i === 0 ? 'text-cyan-300 font-bold' : 'text-white/70 font-semibold'}`}>
+                      {b.name}{i === 0 ? ' *' : ''}
+                    </span>
+                    <span className="text-right tabular-nums text-white/80">{b.overs}</span>
+                    <span className="text-right tabular-nums text-white/50">{b.maidens}</span>
+                    <span className="text-right tabular-nums text-white/80">{b.runs}</span>
+                    <span className={`text-right tabular-nums font-bold ${b.wickets > 0 ? 'text-red-400' : 'text-white/50'}`}>{b.wickets}</span>
+                    <span className="text-right tabular-nums text-white/60">{b.economy}</span>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </>
         )}
 

@@ -371,11 +371,17 @@ export function useSccRankings(
       }));
     };
 
+    // All-rounder threshold scales down for single-season views (smaller
+    // sample size → fewer players hit a high cutoff). 50% of the all-time bar.
+    const arThreshold = window
+      ? Math.round(ALL_ROUNDER_MIN_PER_DISCIPLINE * 0.5)
+      : ALL_ROUNDER_MIN_PER_DISCIPLINE;
+
     const batters = buildRanked('compositeBatter', e => e.battingTotal > 0);
     const bowlers = buildRanked('compositeBowler', e => e.bowlingTotal > 0);
     const allRounders = buildRanked('compositeAllRound', e =>
-      e.battingTotal >= ALL_ROUNDER_MIN_PER_DISCIPLINE &&
-      e.bowlingTotal >= ALL_ROUNDER_MIN_PER_DISCIPLINE
+      e.battingTotal >= arThreshold &&
+      e.bowlingTotal >= arThreshold
     );
 
     return { batters, bowlers, allRounders };
