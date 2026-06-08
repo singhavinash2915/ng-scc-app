@@ -72,29 +72,106 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const normalizeName = (s: string) => (s || '').toLowerCase().replace(/[^a-z]/g, '');
 
 // Match a CricHeroes scorecard name to an SCC member. Returns the member id or null.
-// Uses progressive fuzzy matching: exact normalized → first-word → substring.
+//
+// CricHeroes uses a few naming conventions:
+//   "Avinash Singh"      — full name, easy match
+//   "Aditya P"           — first name + last-name initial (the user has TWO
+//                          "Aditya"s in the squad: Purohit and Jaiswal). We
+//                          MUST distinguish these by the initial — otherwise
+//                          Aditya Purohit's stats balloon by absorbing Aditya
+//                          Jaiswal's contributions too.
+//   "Aditya"             — first name only, ambiguous when there are multiple
+//                          members with the same first name.
+//
+// Algorithm:
+//   1. Exact normalised match  → straight win
+//   2. "First + initial" form  → match first word AND last-name initial
+//   3. Single-word first name  → match ONLY if exactly one member has that
+//                                first name (no ambiguity). Otherwise return
+//                                null so the row is skipped — better to lose
+//                                one row than misattribute it.
+//   4. Substring fallback      → only if no other Aditya/etc exists
 function buildNameMatcher(members: Member[]) {
-  const exact: Record<string, string> = {};
-  const firstWord: Record<string, string> = {};
+  // Build indexes:
+  //   exactByNorm[normalised full name]  = memberId
+  //   byFirstName[normalised first word] = memberId[]   (can be multiple)
+  const exactByNorm: Record<string, string> = {};
+  const byFirstName: Record<string, string[]> = {};
+  const memberMeta: Record<string, { firstNorm: string; lastInitial: string; fullNorm: string }> = {};
+
   for (const m of members) {
-    const norm = normalizeName(m.name);
-    exact[norm] = m.id;
-    const first = m.name.toLowerCase().split(/\s+/)[0];
-    if (first) firstWord[normalizeName(first)] = m.id;
+    const fullNorm = normalizeName(m.name);
+    exactByNorm[fullNorm] = m.id;
+    const parts = m.name.toLowerCase().split(/\s+/).filter(Boolean);
+    const firstNorm = normalizeName(parts[0] || '');
+    const lastInitial = parts.length > 1 ? (parts[parts.length - 1][0] || '') : '';
+    memberMeta[m.id] = { firstNorm, lastInitial, fullNorm };
+    if (firstNorm) {
+      if (!byFirstName[firstNorm]) byFirstName[firstNorm] = [];
+      byFirstName[firstNorm].push(m.id);
+    }
   }
+
   return (chName: string): string | null => {
-    const norm = normalizeName(chName);
-    if (!norm) return null;
-    if (exact[norm]) return exact[norm];
-    // Try first word
-    const firstChWord = chName.toLowerCase().split(/\s+/)[0];
-    const firstNorm = normalizeName(firstChWord);
-    if (firstNorm && firstWord[firstNorm]) return firstWord[firstNorm];
-    // Substring match either direction
+    const cleaned = (chName || '').trim();
+    if (!cleaned) return null;
+    const norm = normalizeName(cleaned);
+
+    // 1. Exact match
+    if (exactByNorm[norm]) return exactByNorm[norm];
+
+    const parts = cleaned.toLowerCase().split(/\s+/).filter(Boolean);
+    const firstNorm = normalizeName(parts[0] || '');
+
+    // 2. First name + single-letter initial form (e.g. "Aditya P", "Vinay R")
+    if (parts.length === 2 && parts[1].replace(/[^a-z]/g, '').length <= 1) {
+      const chInitial = parts[1][0] || '';
+      const candidates = byFirstName[firstNorm] || [];
+      // Prefer the candidate whose LAST-name initial matches the CH initial
+      const initialMatch = candidates.find(id => memberMeta[id].lastInitial === chInitial);
+      if (initialMatch) return initialMatch;
+      // No exact-initial match: if only one candidate exists, fall back to them
+      if (candidates.length === 1) return candidates[0];
+      // Multiple candidates and none match the initial → skip (ambiguous)
+      return null;
+    }
+
+    // 3. Multi-word name (e.g. "Aditya Purohit" matching "Aditya Purohit"
+    //    is already handled by exact match; here we handle near-matches)
+    if (parts.length >= 2) {
+      const lastWordNorm = normalizeName(parts[parts.length - 1] || '');
+      // Find members whose first word matches AND whose last name starts with same letters
+      const candidates = byFirstName[firstNorm] || [];
+      for (const id of candidates) {
+        const memberLastFull = members.find(m => m.id === id)!.name.toLowerCase().split(/\s+/).pop() || '';
+        const memberLastNorm = normalizeName(memberLastFull);
+        if (memberLastNorm && (memberLastNorm === lastWordNorm
+            || memberLastNorm.startsWith(lastWordNorm)
+            || lastWordNorm.startsWith(memberLastNorm))) {
+          return id;
+        }
+      }
+      // Substring fallback only if first name is unambiguous (1 candidate)
+      if (candidates.length === 1) return candidates[0];
+    }
+
+    // 4. Single-word name (e.g. just "Aditya"). Only match if there's ONE
+    //    member with this first name — otherwise too ambiguous, skip.
+    if (parts.length === 1) {
+      const candidates = byFirstName[firstNorm] || [];
+      if (candidates.length === 1) return candidates[0];
+      return null; // ambiguous — skip rather than misattribute
+    }
+
+    // 5. Final substring fallback — only if it doesn't collide with another
+    //    member's first name. (rare path)
     for (const m of members) {
-      const memberNorm = normalizeName(m.name);
-      if (memberNorm.length >= 4 && norm.includes(memberNorm)) return m.id;
-      if (norm.length >= 4 && memberNorm.includes(norm)) return m.id;
+      const memberNorm = memberMeta[m.id].fullNorm;
+      if (memberNorm.length >= 6 && norm.includes(memberNorm)) {
+        // Make sure no OTHER member could also match
+        const others = members.filter(x => x.id !== m.id && normalizeName(x.name).length >= 6 && norm.includes(normalizeName(x.name)));
+        if (others.length === 0) return m.id;
+      }
     }
     return null;
   };
