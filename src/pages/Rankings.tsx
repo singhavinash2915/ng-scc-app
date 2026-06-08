@@ -8,9 +8,16 @@ import { Modal } from '../components/ui/Modal';
 import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import { useAllScorecards } from '../hooks/useAllScorecards';
-import { useSccRankings, RANKING_CONSTANTS, type RankedPlayer } from '../hooks/useSccRankings';
+import { useSccRankings, RANKING_CONSTANTS, type RankedPlayer, type RankingMode } from '../hooks/useSccRankings';
 
 type Tab = 'batting' | 'bowling' | 'allrounder';
+
+const MODE_LABELS: { id: RankingMode; label: string }[] = [
+  { id: 'all',     label: 'Overall (All-Time)' },
+  { id: '2025-26', label: 'Season 2025–26' },
+  { id: '2024-25', label: 'Season 2024–25' },
+  { id: '2023-24', label: 'Season 2023–24' },
+];
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode; color: string }[] = [
   { id: 'batting',    label: 'Batting',     icon: <TrendingUp className="w-3.5 h-3.5" />, color: 'from-blue-500 to-indigo-600' },
@@ -22,7 +29,9 @@ export function Rankings() {
   const { matches, loading: matchesLoading } = useMatches();
   const { members, loading: membersLoading } = useMembers();
   const { scorecards, loading: scLoading } = useAllScorecards();
-  const rankings = useSccRankings(matches, members, scorecards);
+
+  const [mode, setMode] = useState<RankingMode>('all');
+  const rankings = useSccRankings(matches, members, scorecards, mode);
 
   const [tab, setTab] = useState<Tab>('batting');
   const [showInfo, setShowInfo] = useState(false);
@@ -38,11 +47,11 @@ export function Rankings() {
   const top3 = list.slice(0, 3);
   const rest = list.slice(3, 50);
 
-  const seasonLabel = '2025–26';
+  const modeLabel = MODE_LABELS.find(m => m.id === mode)?.label || 'Overall';
 
   return (
     <div>
-      <Header title="SCC Rankings" subtitle={`ICC-style player ratings · Season ${seasonLabel}`} />
+      <Header title="SCC Rankings" subtitle={`ICC-style player ratings · ${modeLabel}`} />
 
       <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-4">
         {/* ── Title bar with info button ─────────────────────────────────── */}
@@ -59,6 +68,23 @@ export function Rankings() {
             <Info className="w-3.5 h-3.5" />
             How it works
           </button>
+        </div>
+
+        {/* ── Mode selector (Overall / Season) ───────────────────────────── */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+          {MODE_LABELS.map(m => (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                mode === m.id
+                  ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
 
         {/* ── Tab bar ────────────────────────────────────────────────────── */}
@@ -237,9 +263,14 @@ function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
       <div className="space-y-4 text-sm">
         <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 p-3.5">
           <p className="text-xs leading-relaxed text-emerald-900 dark:text-emerald-300">
-            <strong>ICC-style weighted rating.</strong> Each player earns points from every match — adjusted for opposition quality, win/loss, and how recent the match was. Final rating normalised 0–1000.
+            <strong>ICC-style weighted rating.</strong> Each player earns points from every match — adjusted for opposition quality and win/loss. Final rating normalised 0–1000.
           </p>
         </div>
+
+        <Section icon="🌐" title="Overall vs Season views">
+          <Bullet><strong>Overall (All-Time)</strong>: includes every external match SCC has ever played, with recent matches weighted more heavily (time decay).</Bullet>
+          <Bullet><strong>Season 2025–26 / 2024–25 / 2023–24</strong>: only includes matches in that season's window (Oct → Sep). Time decay is OFF so every match counts equally — a fair summary of who actually performed that season.</Bullet>
+        </Section>
 
         <Section icon="🏏" title="Batting Points (per innings)">
           <Bullet>Base = runs scored</Bullet>
@@ -277,13 +308,14 @@ function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           <Bullet>×{c.LOSS_MULT.toFixed(2)} when SCC loses</Bullet>
         </Section>
 
-        <Section icon="⏳" title="Time Decay (recent form matters)">
+        <Section icon="⏳" title="Time Decay (Overall mode only)">
           {c.TIME_DECAY_STEPS.map((s, i) => (
             <Bullet key={i}>
               {i === 0 ? '0' : c.TIME_DECAY_STEPS[i - 1].days + '+'}–{s.days} days: ×{s.mult.toFixed(2)}
             </Bullet>
           ))}
           <Bullet>365+ days: ×{c.TIME_DECAY_OLD.toFixed(2)}</Bullet>
+          <Bullet><strong>Season views</strong>: time decay is disabled — every match in the chosen season counts equally so the ranking is a fair summary, not just recent-form-driven.</Bullet>
         </Section>
 
         <Section icon="🌟" title="All-Rounder Qualification">

@@ -187,11 +187,26 @@ function buildOppositionMultiplier(matches: Match[]): (opponent: string | null) 
   };
 }
 
+// ─── Season-mode option ────────────────────────────────────────────────────
+// "all" = every external match SCC has ever played (with time-decay weighting)
+// "2025-26" / "2024-25" / "2023-24" = only matches within that season's
+//   window (Oct→Sep), with time-decay re-baselined so the most recent match in
+//   the season is treated as "this week" (decay = 1.0).
+export type RankingMode = 'all' | '2025-26' | '2024-25' | '2023-24';
+
+interface SeasonWindow { start: string; end: string }
+const SEASON_WINDOWS: Record<Exclude<RankingMode, 'all'>, SeasonWindow> = {
+  '2025-26': { start: '2025-10-01', end: '2026-09-30' },
+  '2024-25': { start: '2024-10-01', end: '2025-09-30' },
+  '2023-24': { start: '2023-10-01', end: '2024-09-30' },
+};
+
 // ─── Main hook ─────────────────────────────────────────────────────────────
 export function useSccRankings(
   matches: Match[],
   members: Member[],
   scorecards: MatchScorecard[] | null,
+  mode: RankingMode = 'all',
 ): SccRankings {
   return useMemo(() => {
     if (!scorecards || scorecards.length === 0 || members.length === 0) {
@@ -203,7 +218,14 @@ export function useSccRankings(
 
     const resolveName = buildNameMatcher(members);
     const oppMult    = buildOppositionMultiplier(matches);
-    const now = Date.now();
+
+    // Time-decay behaviour:
+    //   - All-time mode: decay relative to TODAY (recent matches matter more)
+    //   - Season mode: NO decay — every match within the selected season
+    //     counts equally, so we get a fair "who was the best in 2024-25?" view
+    //     rather than just rewarding late-season form.
+    const window = mode === 'all' ? null : SEASON_WINDOWS[mode];
+    const baselineDate = Date.now();
 
     // member_id → accumulator
     type Acc = { battingTotal: number; bowlingTotal: number; fieldingTotal: number; momBonus: number; matchesCounted: number; bestMatch: { date: string; opponent: string; points: number } | null };
@@ -219,8 +241,14 @@ export function useSccRankings(
       if (match.match_type === 'internal') continue;
       if (!['won', 'lost', 'draw'].includes(match.result)) continue;
 
-      const daysAgo = Math.floor((now - new Date(match.date).getTime()) / 86400000);
-      const decay = timeDecay(daysAgo);
+      // Season filter — skip matches outside the chosen window
+      if (window && (match.date < window.start || match.date > window.end)) continue;
+
+      // Time decay only applies in all-time mode. In a single-season view we
+      // treat every match in the season as equally weighted (decay = 1.0).
+      const decay = window
+        ? 1.0
+        : timeDecay(Math.floor(Math.max(0, (baselineDate - new Date(match.date).getTime()) / 86400000)));
       const opponentMultiplier = oppMult(match.opponent);
       const resultMult = match.result === 'won' ? WIN_MULT : match.result === 'lost' ? LOSS_MULT : DRAW_MULT;
       const matchMult = decay * opponentMultiplier * resultMult;
@@ -351,7 +379,7 @@ export function useSccRankings(
     );
 
     return { batters, bowlers, allRounders };
-  }, [matches, members, scorecards]);
+  }, [matches, members, scorecards, mode]);
 }
 
 // Export the constants so the "How it's calculated" UI can show real numbers
