@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, ArrowLeftRight, BookOpen, ExternalLink, Gamepad2 } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Gamepad2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -79,7 +79,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
               { to: '/hub', icon: Gamepad2, label: 'Club Hub' },
               { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
-              { to: '/compare', icon: ArrowLeftRight, label: 'Compare' },
+              { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
               { to: '/records', icon: Award, label: 'Hall of Fame' },
               { to: '/predictions', icon: Sparkles, label: 'Predictions' },
               { to: '/finance', icon: Wallet, label: 'Finance' },

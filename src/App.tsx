@@ -39,6 +39,7 @@ const Compare   = lazy(() => import('./pages/Compare').then(m => ({ default: m.C
 const Bookings  = lazy(() => import('./pages/Bookings').then(m => ({ default: m.Bookings })));
 const WhatsNew  = lazy(() => import('./pages/WhatsNew').then(m => ({ default: m.WhatsNew })));
 const EngagementHub = lazy(() => import('./pages/EngagementHub').then(m => ({ default: m.EngagementHub })));
+const Rankings = lazy(() => import('./pages/Rankings').then(m => ({ default: m.Rankings })));
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -117,6 +118,7 @@ const AppRoutes = () => (
         <Route path="/about"         element={<Suspense fallback={<PageLoader />}><About /></Suspense>} />
         <Route path="/whats-new"     element={<Suspense fallback={<PageLoader />}><WhatsNew /></Suspense>} />
         <Route path="/hub"           element={<Suspense fallback={<PageLoader />}><EngagementHub /></Suspense>} />
+        <Route path="/rankings"      element={<Suspense fallback={<PageLoader />}><Rankings /></Suspense>} />
       </Route>
     </Routes>
   </>
