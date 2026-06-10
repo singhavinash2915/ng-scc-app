@@ -20,6 +20,12 @@ export interface MatchOutcome {
   internal_most_sixes: SixesTeam | null;
   internal_margin:     MarginType | null;
   internal_milestone:  YesNo | null;
+  internal_highest_team: SixesTeam | null;
+  internal_duck:         YesNo | null;
+  int_dhur_top_scorer_id: string | null;
+  int_baz_top_scorer_id:  string | null;
+  int_dhur_top_wicket_id: string | null;
+  int_baz_top_wicket_id:  string | null;
 }
 
 function bucketScore(runs: number): ScoreRange {
@@ -134,6 +140,12 @@ export function deriveOutcome(
   let internal_most_sixes: SixesTeam | null = null;
   let internal_margin:     MarginType | null = null;
   let internal_milestone:  YesNo | null = null;
+  let internal_highest_team: SixesTeam | null = null;
+  let internal_duck:         YesNo | null = null;
+  let int_dhur_top_scorer_id: string | null = null;
+  let int_baz_top_scorer_id:  string | null = null;
+  let int_dhur_top_wicket_id: string | null = null;
+  let int_baz_top_wicket_id:  string | null = null;
 
   if (match.match_type === 'internal' && scorecard) {
     const inn1Team = internalTeamOf(scorecard.innings1_team_name);
@@ -141,12 +153,38 @@ export function deriveOutcome(
     const inn1Bat  = scorecard.innings1_batting;
     const inn2Bat  = scorecard.innings2_batting;
 
+    // Map each team to its batting + bowling rows.
+    // A team BOWLS in the OTHER team's batting innings.
+    const dhurBat  = inn1Team === 'dhurandars' ? inn1Bat : inn2Bat;
+    const bazBat   = inn1Team === 'dhurandars' ? inn2Bat : inn1Bat;
+    const dhurBowl = inn1Team === 'dhurandars' ? scorecard.innings2_bowling : scorecard.innings1_bowling;
+    const bazBowl  = inn1Team === 'dhurandars' ? scorecard.innings1_bowling : scorecard.innings2_bowling;
+
+    const topScorerOf = (rows: BatterRow[] | null): BatterRow | null =>
+      rows && rows.length ? [...rows].filter(b => (b.balls || 0) > 0).sort((a, b) => b.runs - a.runs)[0] || null : null;
+    const topWicketOf = (rows: BowlerRow[] | null): BowlerRow | null =>
+      rows && rows.length ? [...rows].sort((a, b) => (b.wickets - a.wickets) || (a.runs - b.runs))[0] || null : null;
+    const maxRunsOf = (rows: BatterRow[] | null): number =>
+      rows && rows.length ? Math.max(0, ...rows.map(b => b.runs || 0)) : 0;
+
+    // Per-team top scorers / top wicket-takers
+    const ds = topScorerOf(dhurBat); if (ds) int_dhur_top_scorer_id = resolveToMemberId(ds.name);
+    const bs = topScorerOf(bazBat);  if (bs) int_baz_top_scorer_id  = resolveToMemberId(bs.name);
+    const dw = topWicketOf(dhurBowl); if (dw && dw.wickets > 0) int_dhur_top_wicket_id = resolveToMemberId(dw.name);
+    const bw = topWicketOf(bazBowl);  if (bw && bw.wickets > 0) int_baz_top_wicket_id  = resolveToMemberId(bw.name);
+
     // Most sixes — compare the two teams' batting innings
     if (inn1Team && inn2Team && (inn1Bat || inn2Bat)) {
-      const sixes1 = sumSixes(inn1Bat);
-      const sixes2 = sumSixes(inn2Bat);
-      if (sixes1 === sixes2) internal_most_sixes = 'tie';
-      else internal_most_sixes = sixes1 > sixes2 ? inn1Team : inn2Team;
+      const sixesD = sumSixes(dhurBat);
+      const sixesB = sumSixes(bazBat);
+      internal_most_sixes = sixesD === sixesB ? 'tie' : sixesD > sixesB ? 'dhurandars' : 'bazigars';
+    }
+
+    // Highest individual score — which team has the bigger single knock
+    if (inn1Team && inn2Team && (inn1Bat || inn2Bat)) {
+      const hiD = maxRunsOf(dhurBat);
+      const hiB = maxRunsOf(bazBat);
+      internal_highest_team = hiD === hiB ? 'tie' : hiD > hiB ? 'dhurandars' : 'bazigars';
     }
 
     // Winning margin (run-difference based — robust for internal matches that
@@ -159,8 +197,12 @@ export function deriveOutcome(
     }
 
     // Anyone score 30+ across either innings?
-    const all30 = [...(inn1Bat || []), ...(inn2Bat || [])].some(b => (b.runs || 0) >= 30);
-    if (inn1Bat || inn2Bat) internal_milestone = all30 ? 'yes' : 'no';
+    const allBat = [...(inn1Bat || []), ...(inn2Bat || [])];
+    if (allBat.length) {
+      internal_milestone = allBat.some(b => (b.runs || 0) >= 30) ? 'yes' : 'no';
+      // Will anyone get a duck (out for 0)?
+      internal_duck = allBat.some(b => (b.runs || 0) === 0 && !!(b.how_to_out && b.how_to_out.trim())) ? 'yes' : 'no';
+    }
   }
 
   return {
@@ -175,6 +217,12 @@ export function deriveOutcome(
     internal_most_sixes,
     internal_margin,
     internal_milestone,
+    internal_highest_team,
+    internal_duck,
+    int_dhur_top_scorer_id,
+    int_baz_top_scorer_id,
+    int_dhur_top_wicket_id,
+    int_baz_top_wicket_id,
   };
 }
 
@@ -189,4 +237,8 @@ export const PREDICTION_POINTS = {
   internal_most_sixes: 10,
   internal_margin: 10,
   internal_milestone: 5,
+  internal_highest_team: 5,
+  internal_duck: 5,
+  int_team_top_scorer: 5,
+  int_team_top_wicket: 5,
 };

@@ -99,6 +99,12 @@ export function Predictions() {
         if (p.internal_most_sixes && p.internal_most_sixes === outcome.internal_most_sixes) points += PREDICTION_POINTS.internal_most_sixes;
         if (p.internal_margin && p.internal_margin === outcome.internal_margin) points += PREDICTION_POINTS.internal_margin;
         if (p.internal_milestone && p.internal_milestone === outcome.internal_milestone) points += PREDICTION_POINTS.internal_milestone;
+        if (p.internal_highest_team && p.internal_highest_team === outcome.internal_highest_team) points += PREDICTION_POINTS.internal_highest_team;
+        if (p.internal_duck && p.internal_duck === outcome.internal_duck) points += PREDICTION_POINTS.internal_duck;
+        if (p.int_dhur_top_scorer_id && p.int_dhur_top_scorer_id === outcome.int_dhur_top_scorer_id) points += PREDICTION_POINTS.int_team_top_scorer;
+        if (p.int_baz_top_scorer_id && p.int_baz_top_scorer_id === outcome.int_baz_top_scorer_id) points += PREDICTION_POINTS.int_team_top_scorer;
+        if (p.int_dhur_top_wicket_id && p.int_dhur_top_wicket_id === outcome.int_dhur_top_wicket_id) points += PREDICTION_POINTS.int_team_top_wicket;
+        if (p.int_baz_top_wicket_id && p.int_baz_top_wicket_id === outcome.int_baz_top_wicket_id) points += PREDICTION_POINTS.int_team_top_wicket;
 
         const { error } = await supabase
           .from('match_predictions')

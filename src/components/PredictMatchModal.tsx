@@ -46,6 +46,12 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     internal_most_sixes: null,
     internal_margin: null,
     internal_milestone: null,
+    internal_highest_team: null,
+    internal_duck: null,
+    int_dhur_top_scorer_id: null,
+    int_baz_top_scorer_id: null,
+    int_dhur_top_wicket_id: null,
+    int_baz_top_wicket_id: null,
   });
 
   // Restore existing prediction when member is picked
@@ -66,6 +72,12 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
         internal_most_sixes: existing.internal_most_sixes,
         internal_margin: existing.internal_margin,
         internal_milestone: existing.internal_milestone,
+        internal_highest_team: existing.internal_highest_team,
+        internal_duck: existing.internal_duck,
+        int_dhur_top_scorer_id: existing.int_dhur_top_scorer_id,
+        int_baz_top_scorer_id: existing.int_baz_top_scorer_id,
+        int_dhur_top_wicket_id: existing.int_dhur_top_wicket_id,
+        int_baz_top_wicket_id: existing.int_baz_top_wicket_id,
       });
     }
   }, [existing]);
@@ -88,7 +100,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     setMemberId('');
     setPinDigits('');
     setPinError('');
-    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, three_wicket_haul: null, internal_most_sixes: null, internal_margin: null, internal_milestone: null });
+    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, three_wicket_haul: null, internal_most_sixes: null, internal_margin: null, internal_milestone: null, internal_highest_team: null, internal_duck: null, int_dhur_top_scorer_id: null, int_baz_top_scorer_id: null, int_dhur_top_wicket_id: null, int_baz_top_wicket_id: null });
   };
 
   const handleClose = () => { handleReset(); onClose(); };
@@ -152,6 +164,26 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(m => ({ value: m.id, label: m.name })),
   ], [eligibleMembers]);
+
+  // Per-team options for internal matches. If the squad has been assigned
+  // (match.players with a `team` field), filter to that team. Otherwise the
+  // squad isn't set yet → fall back to all active members so prediction still works.
+  const teamOptions = useMemo(() => {
+    const buildFor = (team: 'dhurandars' | 'bazigars') => {
+      const assigned = (match.players || []).filter(p => p.team === team).map(p => p.member_id);
+      const pool = assigned.length > 0
+        ? members.filter(m => assigned.includes(m.id))
+        : members.filter(m => m.status === 'active');
+      return [
+        { value: '', label: '— Skip / not sure —' },
+        ...pool
+          .filter(m => m.id !== memberId)         // keep the no-self-prediction rule
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(m => ({ value: m.id, label: m.name })),
+      ];
+    };
+    return { dhurandars: buildFor('dhurandars'), bazigars: buildFor('bazigars') };
+  }, [members, match.players, memberId]);
 
   // Aggregate of others' predictions for social signal
   const tally = useMemo(() => {
@@ -307,31 +339,72 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
             </div>
           </div>
 
-          {/* TOP SCORER */}
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
-              <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> Top scorer? <span className="text-blue-600">+10 pts</span>
-            </label>
-            <Select
-              value={form.top_scorer_id || ''}
-              onChange={(e) => setForm({ ...form, top_scorer_id: e.target.value || null })}
-              options={memberOptions}
-              disabled={isLocked}
-            />
-          </div>
+          {/* TOP SCORER / TOP WICKET — external only (single combined picks) */}
+          {!isInternal && (
+            <>
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> Top scorer? <span className="text-blue-600">+10 pts</span>
+                </label>
+                <Select
+                  value={form.top_scorer_id || ''}
+                  onChange={(e) => setForm({ ...form, top_scorer_id: e.target.value || null })}
+                  options={memberOptions}
+                  disabled={isLocked}
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <Zap className="w-3.5 h-3.5 text-red-500" fill="currentColor" /> Top wicket-taker? <span className="text-red-600">+10 pts</span>
+                </label>
+                <Select
+                  value={form.top_wicket_taker_id || ''}
+                  onChange={(e) => setForm({ ...form, top_wicket_taker_id: e.target.value || null })}
+                  options={memberOptions}
+                  disabled={isLocked}
+                />
+              </div>
+            </>
+          )}
 
-          {/* TOP WICKET-TAKER */}
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
-              <Zap className="w-3.5 h-3.5 text-red-500" fill="currentColor" /> Top wicket-taker? <span className="text-red-600">+10 pts</span>
-            </label>
-            <Select
-              value={form.top_wicket_taker_id || ''}
-              onChange={(e) => setForm({ ...form, top_wicket_taker_id: e.target.value || null })}
-              options={memberOptions}
-              disabled={isLocked}
-            />
-          </div>
+          {/* PER-TEAM STARS — internal only */}
+          {isInternal && (
+            <div className="rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-[2px] text-gray-500">⭐ Team Stars</p>
+              <div>
+                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
+                  🦁 Dhurandars top scorer? <span className="text-gray-400 font-normal">+5</span>
+                </label>
+                <Select value={form.int_dhur_top_scorer_id || ''}
+                  onChange={(e) => setForm({ ...form, int_dhur_top_scorer_id: e.target.value || null })}
+                  options={teamOptions.dhurandars} disabled={isLocked} />
+              </div>
+              <div>
+                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1.5">
+                  🐅 Bazigars top scorer? <span className="text-gray-400 font-normal">+5</span>
+                </label>
+                <Select value={form.int_baz_top_scorer_id || ''}
+                  onChange={(e) => setForm({ ...form, int_baz_top_scorer_id: e.target.value || null })}
+                  options={teamOptions.bazigars} disabled={isLocked} />
+              </div>
+              <div>
+                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
+                  🦁 Dhurandars top wicket-taker? <span className="text-gray-400 font-normal">+5</span>
+                </label>
+                <Select value={form.int_dhur_top_wicket_id || ''}
+                  onChange={(e) => setForm({ ...form, int_dhur_top_wicket_id: e.target.value || null })}
+                  options={teamOptions.dhurandars} disabled={isLocked} />
+              </div>
+              <div>
+                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1.5">
+                  🐅 Bazigars top wicket-taker? <span className="text-gray-400 font-normal">+5</span>
+                </label>
+                <Select value={form.int_baz_top_wicket_id || ''}
+                  onChange={(e) => setForm({ ...form, int_baz_top_wicket_id: e.target.value || null })}
+                  options={teamOptions.bazigars} disabled={isLocked} />
+              </div>
+            </div>
+          )}
 
           {/* MOM */}
           <div>
@@ -433,7 +506,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
           {isInternal && (
             <div className="pt-3 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
               <p className="text-[10px] font-black uppercase tracking-[2px] text-purple-500 mb-3 flex items-center gap-1.5">
-                🔥 Rivalry Bonus · Up to +25 pts
+                🔥 Rivalry Bonus · Up to +35 pts
               </p>
 
               {/* MOST SIXES TEAM */}
@@ -505,6 +578,56 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                         className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
                           sel
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/30'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                        } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+                        {opt.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* HIGHEST INDIVIDUAL SCORE — WHICH TEAM */}
+              <div className="mt-4">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <Crown className="w-3.5 h-3.5 text-amber-500" fill="currentColor" /> Highest individual score? <span className="text-amber-600">+5 pts</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { v: 'dhurandars', l: '🦁 Dhurandars', c: 'text-red-600 dark:text-red-400' },
+                    { v: 'tie',        l: '🤝 Tie',        c: 'text-gray-500' },
+                    { v: 'bazigars',   l: '🐅 Bazigars',   c: 'text-blue-600 dark:text-blue-400' },
+                  ] as const).map(opt => {
+                    const sel = form.internal_highest_team === opt.v;
+                    return (
+                      <button key={opt.v} type="button" disabled={isLocked}
+                        onClick={() => setForm({ ...form, internal_highest_team: sel ? null : opt.v })}
+                        className={`p-2.5 rounded-xl border-2 font-bold text-xs transition-all ${
+                          sel
+                            ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 ring-2 ring-amber-500/30'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                        } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+                        <span className={sel ? 'text-amber-700 dark:text-amber-300' : opt.c}>{opt.l}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* WILL THERE BE A DUCK? */}
+              <div className="mt-4">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  🦆 Will anyone get a DUCK? <span className="text-emerald-600">+5 pts</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([{ v: 'yes', l: '🦆 Yes!' }, { v: 'no', l: '🛡️ No' }] as const).map(opt => {
+                    const sel = form.internal_duck === opt.v;
+                    return (
+                      <button key={opt.v} type="button" disabled={isLocked}
+                        onClick={() => setForm({ ...form, internal_duck: sel ? null : opt.v })}
+                        className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                          sel
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/30'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
                         } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
                         {opt.l}

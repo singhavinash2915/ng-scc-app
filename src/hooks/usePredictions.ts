@@ -27,6 +27,13 @@ export interface MatchPrediction {
   internal_most_sixes: SixesTeam | null;
   internal_margin:     MarginType | null;
   internal_milestone:  YesNo | null;
+  internal_highest_team: SixesTeam | null;   // which team has the highest individual score
+  internal_duck:         YesNo | null;       // will anyone get a duck
+  // Per-team star picks
+  int_dhur_top_scorer_id: string | null;
+  int_baz_top_scorer_id:  string | null;
+  int_dhur_top_wicket_id: string | null;
+  int_baz_top_wicket_id:  string | null;
   points_earned: number | null;
   locked_at: string;
   scored_at: string | null;
@@ -43,6 +50,12 @@ export interface PredictionInput {
   internal_most_sixes: SixesTeam | null;
   internal_margin:     MarginType | null;
   internal_milestone:  YesNo | null;
+  internal_highest_team: SixesTeam | null;
+  internal_duck:         YesNo | null;
+  int_dhur_top_scorer_id: string | null;
+  int_baz_top_scorer_id:  string | null;
+  int_dhur_top_wicket_id: string | null;
+  int_baz_top_wicket_id:  string | null;
 }
 
 // Points config
@@ -58,6 +71,11 @@ const POINTS = {
   internal_most_sixes: 10,
   internal_margin: 10,
   internal_milestone: 5,
+  internal_highest_team: 5,
+  internal_duck: 5,
+  // Per-team star picks (smaller pool → lower reward each)
+  int_team_top_scorer: 5,
+  int_team_top_wicket: 5,
 };
 
 export function usePredictions(matchId?: string) {
@@ -102,6 +120,12 @@ export function usePredictions(matchId?: string) {
           internal_most_sixes: input.internal_most_sixes,
           internal_margin: input.internal_margin,
           internal_milestone: input.internal_milestone,
+          internal_highest_team: input.internal_highest_team,
+          internal_duck: input.internal_duck,
+          int_dhur_top_scorer_id: input.int_dhur_top_scorer_id,
+          int_baz_top_scorer_id: input.int_baz_top_scorer_id,
+          int_dhur_top_wicket_id: input.int_dhur_top_wicket_id,
+          int_baz_top_wicket_id: input.int_baz_top_wicket_id,
           locked_at: new Date().toISOString(),
         },
         { onConflict: 'match_id,member_id' }
@@ -176,6 +200,12 @@ export function scorePrediction(
     internal_most_sixes?: SixesTeam | null;
     internal_margin?:     MarginType | null;
     internal_milestone?:  YesNo | null;
+    internal_highest_team?: SixesTeam | null;
+    internal_duck?:         YesNo | null;
+    int_dhur_top_scorer_id?: string | null;
+    int_baz_top_scorer_id?:  string | null;
+    int_dhur_top_wicket_id?: string | null;
+    int_baz_top_wicket_id?:  string | null;
   }
 ): number {
   let points = 0;
@@ -207,6 +237,25 @@ export function scorePrediction(
   }
   if (prediction.internal_milestone && prediction.internal_milestone === actual.internal_milestone) {
     points += POINTS.internal_milestone;
+  }
+  if (prediction.internal_highest_team && prediction.internal_highest_team === actual.internal_highest_team) {
+    points += POINTS.internal_highest_team;
+  }
+  if (prediction.internal_duck && prediction.internal_duck === actual.internal_duck) {
+    points += POINTS.internal_duck;
+  }
+  // Per-team star picks
+  if (prediction.int_dhur_top_scorer_id && prediction.int_dhur_top_scorer_id === actual.int_dhur_top_scorer_id) {
+    points += POINTS.int_team_top_scorer;
+  }
+  if (prediction.int_baz_top_scorer_id && prediction.int_baz_top_scorer_id === actual.int_baz_top_scorer_id) {
+    points += POINTS.int_team_top_scorer;
+  }
+  if (prediction.int_dhur_top_wicket_id && prediction.int_dhur_top_wicket_id === actual.int_dhur_top_wicket_id) {
+    points += POINTS.int_team_top_wicket;
+  }
+  if (prediction.int_baz_top_wicket_id && prediction.int_baz_top_wicket_id === actual.int_baz_top_wicket_id) {
+    points += POINTS.int_team_top_wicket;
   }
   return points;
 }
