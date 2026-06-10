@@ -43,6 +43,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     score_range: null,
     fifty_scored: null,
     three_wicket_haul: null,
+    internal_most_sixes: null,
+    internal_margin: null,
+    internal_milestone: null,
   });
 
   // Restore existing prediction when member is picked
@@ -60,6 +63,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
         score_range: existing.score_range,
         fifty_scored: existing.fifty_scored,
         three_wicket_haul: existing.three_wicket_haul,
+        internal_most_sixes: existing.internal_most_sixes,
+        internal_margin: existing.internal_margin,
+        internal_milestone: existing.internal_milestone,
       });
     }
   }, [existing]);
@@ -82,7 +88,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     setMemberId('');
     setPinDigits('');
     setPinError('');
-    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, three_wicket_haul: null });
+    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, three_wicket_haul: null, internal_most_sixes: null, internal_margin: null, internal_milestone: null });
   };
 
   const handleClose = () => { handleReset(); onClose(); };
@@ -412,6 +418,93 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                         className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
                           sel
                             ? 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 ring-2 ring-red-500/30'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                        } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+                        {opt.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── INTERNAL RIVALRY BONUS QUESTIONS ─────────────────────────── */}
+          {isInternal && (
+            <div className="pt-3 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
+              <p className="text-[10px] font-black uppercase tracking-[2px] text-purple-500 mb-3 flex items-center gap-1.5">
+                🔥 Rivalry Bonus · Up to +25 pts
+              </p>
+
+              {/* MOST SIXES TEAM */}
+              <div className="mb-4">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <Flame className="w-3.5 h-3.5 text-orange-500" fill="currentColor" /> Most sixes? <span className="text-orange-600">+10 pts</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { v: 'dhurandars', l: '🦁 Dhurandars', c: 'text-red-600 dark:text-red-400' },
+                    { v: 'tie',        l: '🤝 Tie',        c: 'text-gray-500' },
+                    { v: 'bazigars',   l: '🐅 Bazigars',   c: 'text-blue-600 dark:text-blue-400' },
+                  ] as const).map(opt => {
+                    const sel = form.internal_most_sixes === opt.v;
+                    return (
+                      <button key={opt.v} type="button" disabled={isLocked}
+                        onClick={() => setForm({ ...form, internal_most_sixes: sel ? null : opt.v })}
+                        className={`p-2.5 rounded-xl border-2 font-bold text-xs transition-all ${
+                          sel
+                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30 ring-2 ring-orange-500/30'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                        } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+                        <span className={sel ? 'text-orange-700 dark:text-orange-300' : opt.c}>{opt.l}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* WINNING MARGIN */}
+              <div className="mb-4">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <Target className="w-3.5 h-3.5 text-purple-500" /> Winning margin? <span className="text-purple-600">+10 pts</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { v: 'thriller',    l: '😮 Thriller',  sub: '≤8 runs' },
+                    { v: 'comfortable', l: '👍 Comfy',     sub: '9–30' },
+                    { v: 'dominant',    l: '💪 Dominant',  sub: '31+' },
+                  ] as const).map(opt => {
+                    const sel = form.internal_margin === opt.v;
+                    return (
+                      <button key={opt.v} type="button" disabled={isLocked}
+                        onClick={() => setForm({ ...form, internal_margin: sel ? null : opt.v })}
+                        className={`p-2 rounded-xl border-2 font-bold text-xs transition-all leading-tight ${
+                          sel
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500/30'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                        } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
+                        <div>{opt.l}</div>
+                        <div className="text-[9px] font-normal opacity-60 mt-0.5">{opt.sub}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ANYONE 30+? */}
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> Will anyone score 30+? <span className="text-blue-600">+5 pts</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([{ v: 'yes', l: '✅ Yes' }, { v: 'no', l: '❌ No' }] as const).map(opt => {
+                    const sel = form.internal_milestone === opt.v;
+                    return (
+                      <button key={opt.v} type="button" disabled={isLocked}
+                        onClick={() => setForm({ ...form, internal_milestone: sel ? null : opt.v })}
+                        className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                          sel
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/30'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
                         } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
                         {opt.l}

@@ -7,6 +7,9 @@ export type PredictionWinner = 'scc' | 'opponent' | 'draw' | 'dhurandars' | 'baz
 // Bonus prediction option types
 export type ScoreRange     = 'under_100' | '100_110' | '110_125' | 'over_125';
 export type YesNo          = 'yes' | 'no';
+// Internal-match bonus types
+export type SixesTeam      = 'dhurandars' | 'bazigars' | 'tie';
+export type MarginType     = 'thriller' | 'comfortable' | 'dominant';
 
 export interface MatchPrediction {
   id: string;
@@ -16,10 +19,14 @@ export interface MatchPrediction {
   top_scorer_id: string | null;
   top_wicket_taker_id: string | null;
   mom_id: string | null;
-  // Bonus questions
+  // Bonus questions (external matches)
   score_range:      ScoreRange | null;
   fifty_scored:     YesNo | null;
   three_wicket_haul: YesNo | null;
+  // Bonus questions (internal Dhurandars vs Bazigars matches)
+  internal_most_sixes: SixesTeam | null;
+  internal_margin:     MarginType | null;
+  internal_milestone:  YesNo | null;
   points_earned: number | null;
   locked_at: string;
   scored_at: string | null;
@@ -33,6 +40,9 @@ export interface PredictionInput {
   score_range:      ScoreRange | null;
   fifty_scored:     YesNo | null;
   three_wicket_haul: YesNo | null;
+  internal_most_sixes: SixesTeam | null;
+  internal_margin:     MarginType | null;
+  internal_milestone:  YesNo | null;
 }
 
 // Points config
@@ -44,6 +54,10 @@ const POINTS = {
   score_range: 10,
   fifty_scored: 5,
   three_wicket_haul: 10,   // rare, big reward
+  // Internal bonuses
+  internal_most_sixes: 10,
+  internal_margin: 10,
+  internal_milestone: 5,
 };
 
 export function usePredictions(matchId?: string) {
@@ -85,6 +99,9 @@ export function usePredictions(matchId?: string) {
           score_range: input.score_range,
           fifty_scored: input.fifty_scored,
           three_wicket_haul: input.three_wicket_haul,
+          internal_most_sixes: input.internal_most_sixes,
+          internal_margin: input.internal_margin,
+          internal_milestone: input.internal_milestone,
           locked_at: new Date().toISOString(),
         },
         { onConflict: 'match_id,member_id' }
@@ -156,6 +173,9 @@ export function scorePrediction(
     score_range?:      ScoreRange | null;
     fifty_scored?:     YesNo | null;
     three_wicket_haul?: YesNo | null;
+    internal_most_sixes?: SixesTeam | null;
+    internal_margin?:     MarginType | null;
+    internal_milestone?:  YesNo | null;
   }
 ): number {
   let points = 0;
@@ -177,6 +197,16 @@ export function scorePrediction(
   }
   if (prediction.three_wicket_haul && prediction.three_wicket_haul === actual.three_wicket_haul) {
     points += POINTS.three_wicket_haul;
+  }
+  // Internal-match bonus scoring
+  if (prediction.internal_most_sixes && prediction.internal_most_sixes === actual.internal_most_sixes) {
+    points += POINTS.internal_most_sixes;
+  }
+  if (prediction.internal_margin && prediction.internal_margin === actual.internal_margin) {
+    points += POINTS.internal_margin;
+  }
+  if (prediction.internal_milestone && prediction.internal_milestone === actual.internal_milestone) {
+    points += POINTS.internal_milestone;
   }
   return points;
 }

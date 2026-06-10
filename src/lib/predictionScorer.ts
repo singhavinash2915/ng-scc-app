@@ -4,7 +4,7 @@
  */
 import type { Match } from '../types';
 import type { MatchScorecard, BatterRow, BowlerRow } from '../hooks/useMatchScorecard';
-import type { ScoreRange, YesNo } from '../hooks/usePredictions';
+import type { ScoreRange, YesNo, SixesTeam, MarginType } from '../hooks/usePredictions';
 
 const SCC_TEAM_ID = 7927431;
 
@@ -16,6 +16,10 @@ export interface MatchOutcome {
   score_range:      ScoreRange | null;
   fifty_scored:     YesNo | null;
   three_wicket_haul: YesNo | null;
+  // Internal-match bonus outcomes
+  internal_most_sixes: SixesTeam | null;
+  internal_margin:     MarginType | null;
+  internal_milestone:  YesNo | null;
 }
 
 function bucketScore(runs: number): ScoreRange {
@@ -23,6 +27,19 @@ function bucketScore(runs: number): ScoreRange {
   if (runs < 110) return '100_110';
   if (runs < 125) return '110_125';
   return 'over_125';
+}
+
+// Identify which internal SCC team an innings belongs to from the team name.
+function internalTeamOf(teamName: string | null): 'dhurandars' | 'bazigars' | null {
+  const n = (teamName || '').toLowerCase();
+  if (n.includes('dhurand')) return 'dhurandars';
+  if (n.includes('baazig') || n.includes('bazig')) return 'bazigars';
+  return null;
+}
+
+function sumSixes(rows: BatterRow[] | null): number {
+  if (!rows) return 0;
+  return rows.reduce((sum, b) => sum + (Number(b['6s']) || 0), 0);
 }
 
 function namesMatch(a: string, b: string): boolean {
@@ -61,17 +78,24 @@ export function deriveOutcome(
   let sccBowlingRows: BowlerRow[] | null = null;
 
   if (scorecard) {
-    sccBattingRows = scorecard.innings1_team_id === SCC_TEAM_ID
-      ? scorecard.innings1_batting
-      : scorecard.innings2_team_id === SCC_TEAM_ID
-        ? scorecard.innings2_batting
-        : null;
-    // SCC bowls in OPPONENT's batting innings
-    sccBowlingRows = scorecard.innings1_team_id === SCC_TEAM_ID
-      ? scorecard.innings2_bowling
-      : scorecard.innings2_team_id === SCC_TEAM_ID
-        ? scorecard.innings1_bowling
-        : null;
+    if (match.match_type === 'internal') {
+      // Internal: both innings are SCC teams (Dhurandars + Bazigars), so the
+      // "top scorer" and "top wicket-taker" are the best across BOTH innings.
+      sccBattingRows = [...(scorecard.innings1_batting || []), ...(scorecard.innings2_batting || [])];
+      sccBowlingRows = [...(scorecard.innings1_bowling || []), ...(scorecard.innings2_bowling || [])];
+    } else {
+      sccBattingRows = scorecard.innings1_team_id === SCC_TEAM_ID
+        ? scorecard.innings1_batting
+        : scorecard.innings2_team_id === SCC_TEAM_ID
+          ? scorecard.innings2_batting
+          : null;
+      // SCC bowls in OPPONENT's batting innings
+      sccBowlingRows = scorecard.innings1_team_id === SCC_TEAM_ID
+        ? scorecard.innings2_bowling
+        : scorecard.innings2_team_id === SCC_TEAM_ID
+          ? scorecard.innings1_bowling
+          : null;
+    }
 
     if (sccBattingRows && sccBattingRows.length > 0) {
       topScorer = [...sccBattingRows].filter(b => b.balls > 0).sort((a, b) => b.runs - a.runs)[0] || null;
@@ -106,6 +130,39 @@ export function deriveOutcome(
     ? (sccBowlingRows.some(b => (b.wickets || 0) >= 3) ? 'yes' : 'no')
     : null;
 
+  // ── Internal-match (Dhurandars vs Bazigars) bonus outcomes ─────────────────
+  let internal_most_sixes: SixesTeam | null = null;
+  let internal_margin:     MarginType | null = null;
+  let internal_milestone:  YesNo | null = null;
+
+  if (match.match_type === 'internal' && scorecard) {
+    const inn1Team = internalTeamOf(scorecard.innings1_team_name);
+    const inn2Team = internalTeamOf(scorecard.innings2_team_name);
+    const inn1Bat  = scorecard.innings1_batting;
+    const inn2Bat  = scorecard.innings2_batting;
+
+    // Most sixes — compare the two teams' batting innings
+    if (inn1Team && inn2Team && (inn1Bat || inn2Bat)) {
+      const sixes1 = sumSixes(inn1Bat);
+      const sixes2 = sumSixes(inn2Bat);
+      if (sixes1 === sixes2) internal_most_sixes = 'tie';
+      else internal_most_sixes = sixes1 > sixes2 ? inn1Team : inn2Team;
+    }
+
+    // Winning margin (run-difference based — robust for internal matches that
+    // allow more than 11 batters, so wicket-margin is unreliable)
+    const inn1Total = (scorecard.innings1_summary?.total_run ?? null);
+    const inn2Total = (scorecard.innings2_summary?.total_run ?? null);
+    if (inn1Total != null && inn2Total != null) {
+      const diff = Math.abs(inn1Total - inn2Total);
+      internal_margin = diff <= 8 ? 'thriller' : diff <= 30 ? 'comfortable' : 'dominant';
+    }
+
+    // Anyone score 30+ across either innings?
+    const all30 = [...(inn1Bat || []), ...(inn2Bat || [])].some(b => (b.runs || 0) >= 30);
+    if (inn1Bat || inn2Bat) internal_milestone = all30 ? 'yes' : 'no';
+  }
+
   return {
     winner,
     top_scorer_id: topScorer ? resolveToMemberId(topScorer.name) : null,
@@ -115,6 +172,9 @@ export function deriveOutcome(
     score_range,
     fifty_scored,
     three_wicket_haul,
+    internal_most_sixes,
+    internal_margin,
+    internal_milestone,
   };
 }
 
@@ -126,4 +186,7 @@ export const PREDICTION_POINTS = {
   score_range: 10,
   fifty_scored: 5,
   three_wicket_haul: 10,
+  internal_most_sixes: 10,
+  internal_margin: 10,
+  internal_milestone: 5,
 };

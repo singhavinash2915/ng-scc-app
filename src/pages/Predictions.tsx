@@ -96,6 +96,9 @@ export function Predictions() {
         if (p.score_range && p.score_range === outcome.score_range) points += PREDICTION_POINTS.score_range;
         if (p.fifty_scored && p.fifty_scored === outcome.fifty_scored) points += PREDICTION_POINTS.fifty_scored;
         if (p.three_wicket_haul && p.three_wicket_haul === outcome.three_wicket_haul) points += PREDICTION_POINTS.three_wicket_haul;
+        if (p.internal_most_sixes && p.internal_most_sixes === outcome.internal_most_sixes) points += PREDICTION_POINTS.internal_most_sixes;
+        if (p.internal_margin && p.internal_margin === outcome.internal_margin) points += PREDICTION_POINTS.internal_margin;
+        if (p.internal_milestone && p.internal_milestone === outcome.internal_milestone) points += PREDICTION_POINTS.internal_milestone;
 
         const { error } = await supabase
           .from('match_predictions')
