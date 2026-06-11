@@ -56,6 +56,9 @@ export function Predictions() {
   // Auto-score any unscored predictions whose match has settled and has a scorecard
   const [scoring, setScoring] = useState(false);
   const [scoredCount, setScoredCount] = useState<number | null>(null);
+  // Scorecards for settled matches with predictions — used to reveal the ACTUAL
+  // result (correct answers) alongside each member's picks.
+  const [scorecards, setScorecards] = useState<Record<string, MatchScorecard>>({});
 
   const scoreSettledPredictions = async () => {
     setScoring(true);
@@ -128,6 +131,25 @@ export function Predictions() {
     const unscored = allPredictions.filter(p => p.points_earned === null);
     if (unscored.length === 0) return;
     scoreSettledPredictions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matches.length, allPredictions.length]);
+
+  // Load scorecards for settled matches that have predictions, so we can show the
+  // ACTUAL result (correct answers) next to everyone's picks.
+  useEffect(() => {
+    if (matches.length === 0 || allPredictions.length === 0) return;
+    const settledIds = new Set(matches.filter(m => ['won', 'lost', 'draw'].includes(m.result)).map(m => m.id));
+    const ids = [...new Set(allPredictions.map(p => p.match_id))].filter(id => settledIds.has(id));
+    if (ids.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from('match_scorecards').select('*').in('match_id', ids);
+      if (cancelled || !data) return;
+      const byId: Record<string, MatchScorecard> = {};
+      (data as MatchScorecard[]).forEach(c => { byId[c.match_id] = c; });
+      setScorecards(byId);
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matches.length, allPredictions.length]);
 
@@ -486,7 +508,7 @@ export function Predictions() {
                           {fmtDate(match.date)} · {match.result.toUpperCase()}
                         </p>
                         <h4 className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">
-                          vs {match.opponent || 'TBD'}
+                          {match.match_type === 'internal' ? '🔴 Dhurandars vs Bazigars 🔵' : `vs ${match.opponent || 'TBD'}`}
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           🎰 {predictions.length} predicted · ✓ {correctWinner} got the winner right
@@ -554,6 +576,10 @@ export function Predictions() {
                     if (!match) return null;
                     const isExpanded = expandedMatchId === match.id;
                     const settled = ['won', 'lost', 'draw'].includes(match.result);
+                    const isInternal = match.match_type === 'internal';
+                    // Actual outcome (correct answers) — needs the scorecard
+                    const outcome = settled ? deriveOutcome(match, scorecards[match.id] || null, members) : null;
+                    const nameOf = (id: string | null | undefined) => (id ? memberById[id]?.name || '—' : '—');
                     return (
                       <div key={match.id} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
                         <button
@@ -585,6 +611,42 @@ export function Predictions() {
 
                         {isExpanded && (
                           <div className="bg-gray-50 dark:bg-gray-800/30 px-4 py-3 space-y-2">
+                            {/* ACTUAL RESULT — the correct answers, so picks below can be judged */}
+                            {outcome && (
+                              <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-900/20 p-3">
+                                <p className="text-[10px] font-black uppercase tracking-[2px] text-emerald-700 dark:text-emerald-300 mb-1.5 flex items-center gap-1">
+                                  <Trophy className="w-3 h-3" /> Actual Result
+                                </p>
+                                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                                  {isInternal ? (
+                                    <>
+                                      <PickRow label="Winner" value={teamPickLabel(outcome.winner)} />
+                                      <PickRow label="MOM" value={nameOf(outcome.mom_id)} />
+                                      <PickRow label="🔴 Top Run" value={nameOf(outcome.int_dhur_top_scorer_id)} />
+                                      <PickRow label="🔵 Top Run" value={nameOf(outcome.int_baz_top_scorer_id)} />
+                                      <PickRow label="🔴 Top Wkt" value={nameOf(outcome.int_dhur_top_wicket_id)} />
+                                      <PickRow label="🔵 Top Wkt" value={nameOf(outcome.int_baz_top_wicket_id)} />
+                                      <PickRow label="Most 6s" value={teamPickLabel(outcome.internal_most_sixes)} />
+                                      <PickRow label="Margin" value={marginPickLabel(outcome.internal_margin)} />
+                                      <PickRow label="Top Knock" value={teamPickLabel(outcome.internal_highest_team)} />
+                                      <PickRow label="Any 30+" value={ynLabel(outcome.internal_milestone)} />
+                                      <PickRow label="Duck?" value={ynLabel(outcome.internal_duck)} />
+                                    </>
+                                  ) : (
+                                    <>
+                                      <PickRow label="Winner" value={
+                                        outcome.winner === 'scc' ? 'SCC'
+                                        : outcome.winner === 'opponent' ? (match.opponent || 'Opponent')
+                                        : 'No Result'
+                                      } />
+                                      <PickRow label="MOM" value={nameOf(outcome.mom_id)} />
+                                      <PickRow label="Top Scorer" value={nameOf(outcome.top_scorer_id)} />
+                                      <PickRow label="Top Wkt" value={nameOf(outcome.top_wicket_taker_id)} />
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                             {picks
                               .sort((a, b) => (b.points_earned ?? -1) - (a.points_earned ?? -1))
                               .map(p => {
@@ -626,10 +688,28 @@ export function Predictions() {
                                       )}
                                     </div>
                                     <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-                                      <PickRow label="Winner" value={winnerLabel} />
-                                      <PickRow label="Top Scorer" value={topScorer || '—'} />
-                                      <PickRow label="Top Wkt" value={topWkt || '—'} />
-                                      <PickRow label="MOM" value={mom || '—'} />
+                                      {isInternal ? (
+                                        <>
+                                          <PickRow label="Winner" value={winnerLabel} />
+                                          <PickRow label="MOM" value={mom || '—'} />
+                                          <PickRow label="🔴 Top Run" value={nameOf(p.int_dhur_top_scorer_id)} />
+                                          <PickRow label="🔵 Top Run" value={nameOf(p.int_baz_top_scorer_id)} />
+                                          <PickRow label="🔴 Top Wkt" value={nameOf(p.int_dhur_top_wicket_id)} />
+                                          <PickRow label="🔵 Top Wkt" value={nameOf(p.int_baz_top_wicket_id)} />
+                                          <PickRow label="Most 6s" value={teamPickLabel(p.internal_most_sixes)} />
+                                          <PickRow label="Margin" value={marginPickLabel(p.internal_margin)} />
+                                          <PickRow label="Top Knock" value={teamPickLabel(p.internal_highest_team)} />
+                                          <PickRow label="Any 30+" value={ynLabel(p.internal_milestone)} />
+                                          <PickRow label="Duck?" value={ynLabel(p.internal_duck)} />
+                                        </>
+                                      ) : (
+                                        <>
+                                          <PickRow label="Winner" value={winnerLabel} />
+                                          <PickRow label="Top Scorer" value={topScorer || '—'} />
+                                          <PickRow label="Top Wkt" value={topWkt || '—'} />
+                                          <PickRow label="MOM" value={mom || '—'} />
+                                        </>
+                                      )}
                                     </div>
                                     <p className="text-[10px] text-gray-400 mt-1.5">
                                       Locked {new Date(p.locked_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
@@ -660,6 +740,20 @@ export function Predictions() {
     </div>
   );
 }
+
+// ── Internal-match label helpers (shared by picks + actual-result display) ──
+const teamPickLabel = (t: string | null | undefined): string =>
+  t === 'dhurandars' ? '🔴 Dhurandars'
+  : t === 'bazigars' ? '🔵 Bazigars'
+  : t === 'tie' ? '🤝 Tie'
+  : '—';
+const marginPickLabel = (m: string | null | undefined): string =>
+  m === 'thriller' ? '😮 Thriller'
+  : m === 'comfortable' ? '👍 Comfy'
+  : m === 'dominant' ? '💪 Dominant'
+  : '—';
+const ynLabel = (v: string | null | undefined): string =>
+  v === 'yes' ? '✅ Yes' : v === 'no' ? '❌ No' : '—';
 
 function PickRow({ label, value }: { label: string; value: string }) {
   return (
