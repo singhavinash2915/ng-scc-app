@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Match, Member } from '../types';
 import type { MatchScorecard, BatterRow, BowlerRow } from './useMatchScorecard';
+import { CH_PLAYER_TO_MEMBER } from './useStatSync';
 
 const SCC_TEAM_ID = 7927431;
 
@@ -294,6 +295,15 @@ export function useSccRankings(
     for (const m of matches) matchById[m.id] = m;
 
     const resolveName = buildNameMatcher(members);
+    const memberIdSet = new Set(members.map(m => m.id));
+    // Prefer CricHeroes player_id (authoritative — never collides). This is what
+    // keeps the two Adityas (Purohit "Aditya P" / Jaiswal "Aditya") from being
+    // folded together. Falls back to fuzzy name matching for unmapped players.
+    const resolveRow = (row: BatterRow | BowlerRow): string | null => {
+      const byId = CH_PLAYER_TO_MEMBER[row.player_id];
+      if (byId && memberIdSet.has(byId)) return byId;
+      return resolveName(row.name);
+    };
     const oppMult    = buildOppositionMultiplier(matches);
 
     // Time-decay behaviour:
@@ -350,7 +360,7 @@ export function useSccRankings(
 
       if (sccBatting) {
         for (const b of sccBatting) {
-          const mid = resolveName(b.name);
+          const mid = resolveRow(b);
           if (!mid) continue;
           const pts = battingPoints(b);
           if (pts > 0) bump(mid, 'bat', pts);
@@ -359,7 +369,7 @@ export function useSccRankings(
 
       if (sccBowling) {
         for (const b of sccBowling) {
-          const mid = resolveName(b.name);
+          const mid = resolveRow(b);
           if (!mid) continue;
           const pts = bowlingPoints(b);
           if (pts > 0) bump(mid, 'bowl', pts);

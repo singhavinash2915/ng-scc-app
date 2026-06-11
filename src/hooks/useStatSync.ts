@@ -10,6 +10,54 @@ import { useState, useCallback } from 'react';
 import { supabase, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 import type { Match, Member } from '../types';
 
+// ── CricHeroes player_id → SCC member UUID ────────────────────────────────────
+// CricHeroes scorecard rows carry an authoritative numeric player_id. Matching
+// on it is bulletproof — it sidesteps every name-collision problem (most
+// notably the TWO Adityas: Purohit 20844962 and Jaiswal 5447632, who otherwise
+// get folded together because CricHeroes shows one as "Aditya P" and the other
+// as bare "Aditya"). Keep this in sync with CH_TO_SB in scripts/sync_cricheroes.py.
+export const CH_PLAYER_TO_MEMBER: Record<number, string> = {
+  680643:  '5d623102-766a-4243-83ef-2fb941ae96f3',  // Shaan Shaikh
+  3855641: '7545cb6b-41fe-4102-b392-f560ae44805f',  // Avinash Singh
+  26474497:'329137e8-ea3d-4a68-94a3-718e24e610cb',  // Adarsh Dwivedi
+  5447632: '8fc244d3-cbfb-4c9c-8c5b-efd47143d902',  // Aditya Jaiswal ("Aditya")
+  20844962:'b8c4f216-25f5-4e85-881c-4973ab4cb042',  // Aditya Purohit ("Aditya P")
+  1450076: 'c800fdc4-92e0-4b58-832d-0672dff61a9c',  // Ajinkya Gharpure
+  4391800: '230629f4-cd80-4903-8b75-c485c75b2de7',  // Akash Jadhav
+  30975147:'35e097af-b2b0-468c-b0e0-6220de787cf4',  // Anand
+  26769238:'4fc80954-a105-4570-9c4a-88fac57b45be',  // Animesh Saxena
+  14518769:'69035791-1be6-4cab-8315-120eccefe44b',  // Aprmay Kumar
+  2793490: 'c5e6cb6d-394d-4623-ab3d-c28705b77514',  // Arpan Thakur
+  36043018:'45a04053-f886-40a5-967c-f581d5b4ffeb',  // Bharat Mishra
+  26733102:'01491044-fbf0-48db-ae71-561d153d28e6',  // Dhawal Jain
+  27853017:'3505303e-3288-49ef-b1cc-44285ecedbed',  // Gourav Shrivastava
+  26218657:'055558d1-2999-44f5-881e-38d80ae4d92f',  // Harshit Upadhyay
+  3142063: 'da957ad5-baa8-44b9-9dc6-56f2afa6e7ea',  // Honey Porwal
+  30974333:'35481bee-823f-4fbb-9f84-9c9a716c616e',  // Mayank Nayak
+  26805965:'8cfc8965-bb5b-4718-a2ba-d1ca202760a5',  // Nikhil
+  4842518: '6571e062-9ac5-414f-b0d6-12e53b680327',  // Niraj Parmeshwar
+  16794243:'d9729561-fead-488c-9d8f-8a7b52c93567',  // Piyush Pankaj
+  16937743:'6ee157f3-e24c-4f1b-aad8-542145f5c828',  // Prateek Singh
+  6100183: '2d43ae38-6a5d-4c88-841e-3ccc06a1671d',  // PRATIK PATIL
+  15337300:'f258b017-932e-4a63-b217-34410199a1a5',  // Rajat
+  30406057:'1c6cb1c4-f523-4b16-9997-0764190931fc',  // Raushan
+  33275197:'6c00436e-cd4c-4c86-bc49-e0ba36179223',  // Rishi Gupta
+  26739447:'ef718518-322a-4cb6-a843-dba1bdc8fc1f',  // Ritik Lodha
+  3954444: '1046e698-8d6e-4f14-8c2d-c7759764f02e',  // Rohan Kumar Rao
+  14464945:'e412ba18-86c9-4896-ad06-f687b0bdc88c',  // Saurabh Lele
+  4541847: '49439c54-f8bb-45af-81d0-d99a3875f214',  // Shakhil Srivastava
+  34079971:'afeea407-dd39-4894-ba6b-e7d81fad005e',  // Shubham Chavhan
+  26805068:'7c466077-bd02-4f23-ad4d-218bd8d70fff',  // Shubham Garethiya
+  29767342:'3f98ee10-fa48-4c60-b4fb-f85ecc5af1d4',  // Shubham Patil
+  26769030:'04e8130d-78c4-44b7-a54e-e50c206941c6',  // Soumyaranjan Mohapatra
+  26869497:'09a4ec82-55fa-4ffd-915e-a2bfe71e8768',  // Sudhakar Dama
+  5536842: '1f68f840-b4ec-49a2-bcde-49d7fcf17dd0',  // Sushil Yadav
+  26769283:'9dcb188f-b007-4427-8114-86984c2c209f',  // Tarang
+  26804704:'85762f91-6b6d-46fe-a6cf-9a2b38f07338',  // Vaibhav Shrivastav
+  32434601:'64d33e23-8e61-4406-b1c2-e540da9c9da5',  // Vinay Raut
+  42750501:'13972b5b-0423-42e2-9490-1ae2f892218c',  // Abhishek Manhas
+};
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface SyncProgress {
@@ -224,12 +272,21 @@ export function useStatSync() {
     // Build a lookup from member id → Member for nameMap resolution
     const memberById = Object.fromEntries(members.map(m => [m.id, m]));
 
-    // Wrapper that checks manual nameMap before fuzzy matching
-    const resolveName = (chName: string): Member | null => {
+    // Resolve a scorecard row to a member. Order of trust:
+    //   1. CricHeroes player_id (authoritative — never collides)
+    //   2. admin's manual nameMap override
+    //   3. fuzzy name matching
+    const resolveRow = (chName: string, playerId?: number | null): Member | null => {
+      if (playerId != null) {
+        const byId = CH_PLAYER_TO_MEMBER[playerId];
+        if (byId && memberById[byId]) return memberById[byId];
+      }
       const mapped = nameMap[chName];
       if (mapped && memberById[mapped]) return memberById[mapped];
       return matchPlayer(chName, members);
     };
+    // Name-only resolver for fielding (dismissal text has no player_id).
+    const resolveName = (chName: string): Member | null => resolveRow(chName, null);
 
     const acc: Record<string, Acc> = {};
     const unmatchedSet = new Set<string>();
@@ -271,7 +328,7 @@ export function useStatSync() {
           if (isSCCBatting || isInternal) {
             for (const b of batting) {
               if (!Number(b.balls)) continue;       // never faced a ball → skip
-              const member = resolveName(String(b.name ?? ''));
+              const member = resolveRow(String(b.name ?? ''), b.player_id != null ? Number(b.player_id) : null);
               // Unmatched here means an SCC player whose name differs → worth warning
               if (!member) { if (b.name) unmatchedSet.add(String(b.name)); continue; }
 
@@ -307,7 +364,7 @@ export function useStatSync() {
           // Silently skip anyone not in our members list — they're opponents.
           if (!isSCCBatting || isInternal) {
             for (const b of bowling) {
-              const member = resolveName(String(b.name ?? ''));
+              const member = resolveRow(String(b.name ?? ''), b.player_id != null ? Number(b.player_id) : null);
               if (!member) continue;   // opponent bowler — skip silently
 
               if (!acc[member.id]) acc[member.id] = emptyAcc();
