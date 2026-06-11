@@ -362,6 +362,103 @@ def upsert_match(row):
         return 'updated' if code2 in (200, 204) else 'error'
     return 'skipped'
 
+# ── Internal-match (Dhurandars vs Bazigars) reconciliation ────────────────────
+# Internal matches are SCC-vs-SCC, so they do NOT appear in the SCC team feed that
+# the main sync walks (their CricHeroes teams are separate "Sangria Dhurandhars" /
+# "Sangria Baazigars" sides). They're created manually in the app with a ch_match_id.
+# This step pulls their result/scores straight from the CricHeroes match page once
+# the game is over, so admins don't have to enter it by hand.
+
+_INTERNAL_BUILD_ID = None
+
+def _ch_build_id():
+    """Scrape the Next.js buildId from cricheroes.com (used by the public SSR page)."""
+    global _INTERNAL_BUILD_ID
+    if _INTERNAL_BUILD_ID:
+        return _INTERNAL_BUILD_ID
+    req = urllib.request.Request('https://cricheroes.com/', headers={'user-agent': CH_UA})
+    html = urllib.request.urlopen(req, timeout=15).read().decode()
+    m = re.search(r'"buildId":"([^"]+)"', html)
+    if not m:
+        raise RuntimeError('Could not find Next.js buildId on cricheroes.com')
+    _INTERNAL_BUILD_ID = m.group(1)
+    return _INTERNAL_BUILD_ID
+
+def _ch_match_summary(ch_match_id):
+    """Return summaryData.data for a match via the public SSR endpoint, or None."""
+    url = (f'https://cricheroes.com/_next/data/{_ch_build_id()}'
+           f'/scorecard/{ch_match_id}/x/x/scorecard.json')
+    req = urllib.request.Request(url, headers={'user-agent': CH_UA, 'accept': 'application/json'})
+    try:
+        data = json.loads(urllib.request.urlopen(req, timeout=20).read())
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+    sd = (data.get('pageProps', {}) or {}).get('summaryData', {}) or {}
+    return sd.get('data') if sd.get('status') else None
+
+def _internal_team_of(name):
+    n = (name or '').lower()
+    if 'dhurand' in n:
+        return 'dhurandars'
+    if 'baazig' in n or 'bazig' in n:
+        return 'bazigars'
+    return None
+
+def _strip_super_over(score):
+    """'134/10 & 7/1' → '134/10' (drop the super-over portion)."""
+    return (score or '').split('&')[0].strip()
+
+def reconcile_internal_matches():
+    """Update any still-'upcoming' internal match whose CricHeroes game is now over."""
+    code, rows = sb_call(
+        "GET", "matches",
+        params="select=id,date,result,ch_match_id&match_type=eq.internal"
+               "&result=eq.upcoming&ch_match_id=not.is.null")
+    if code != 200 or not rows:
+        return 0
+    updated = 0
+    for r in rows:
+        ch_id = r['ch_match_id']
+        try:
+            s = _ch_match_summary(ch_id)
+        except Exception as e:
+            print(f"  ⚠️  internal ch={ch_id}: fetch failed ({type(e).__name__})")
+            continue
+        if not s:
+            continue
+        # Only act once the match has actually finished
+        finished = str(s.get('status', '')).lower() == 'past' or \
+                   str(s.get('match_result', '')).lower() == 'resulted'
+        if not finished:
+            print(f"  · internal ch={ch_id} not finished yet ({s.get('status')})")
+            continue
+        ta, tb = s.get('team_a', {}) or {}, s.get('team_b', {}) or {}
+        a_side = _internal_team_of(ta.get('name'))
+        b_side = _internal_team_of(tb.get('name'))
+        # Map Dhurandars → our_score, Bazigars → opponent_score (app convention)
+        dhur = ta if a_side == 'dhurandars' else tb if b_side == 'dhurandars' else None
+        baz  = ta if a_side == 'bazigars' else tb if b_side == 'bazigars' else None
+        winner = _internal_team_of(s.get('winning_team'))
+        update = {
+            'result':         'won' if winner else 'draw',
+            'winning_team':   winner,
+            'our_score':      _strip_super_over((dhur or {}).get('summary')),
+            'opponent_score': _strip_super_over((baz or {}).get('summary')),
+        }
+        win_by = s.get('win_by') or ''
+        if win_by:
+            update['notes'] = win_by
+        code2, _ = sb_call("PATCH", "matches", body=update, params=f"id=eq.{r['id']}")
+        if code2 in (200, 204):
+            updated += 1
+            print(f"  🏏 internal ch={ch_id} → {winner or 'draw'}  "
+                  f"({update['our_score']} vs {update['opponent_score']}) | {win_by}")
+        else:
+            print(f"  ⚠️  internal ch={ch_id}: update failed (HTTP {code2})")
+    return updated
+
 def load_supabase_members():
     """Fetch members from Supabase and populate MEMBER_NAME_TO_ID (lowercased names)."""
     code, data = sb_call("GET", "members", params="select=id,name")
@@ -428,8 +525,14 @@ def main():
             mom_tag = ' ⭐MOM'
         print(f"  {tag} {m['date']} {m['result'].upper():<8} vs {m['opponent'][:30]}{mom_tag}")
 
+    # Internal (Dhurandars vs Bazigars) matches aren't in the team feed above —
+    # reconcile their results straight from each match's CricHeroes page.
+    print("\nReconciling internal matches...")
+    internal_updated = reconcile_internal_matches()
+
     print(f"\n{'='*50}")
     print(f"  Inserted: {counts['inserted']}  Updated: {counts['updated']}  Skipped: {counts['skipped']}")
+    print(f"  Internal results updated: {internal_updated}")
     print(f"  MOM resolved: {mom_resolved} / {len(ch_matches)}")
     print(f"  ✅ Sync complete!")
 
