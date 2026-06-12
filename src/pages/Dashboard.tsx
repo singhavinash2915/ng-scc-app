@@ -14,6 +14,7 @@ import { BirthdayBanner } from '../components/BirthdayBanner';
 import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
 import { AnnouncementWall } from '../components/AnnouncementWall';
 import { GroundOpponentInsights } from '../components/GroundOpponentInsights';
+import { MatchCentreCard } from '../components/MatchCentreCard';
 import { useWeather } from '../hooks/useWeather';
 import { useLiveScore } from '../hooks/useLiveScore';
 import { LiveScorecard } from '../components/LiveScorecard';
@@ -760,6 +761,16 @@ export function Dashboard() {
           </div>
 
         </div>
+
+        {/* ── MATCH CENTRE — pre-match analytics for the next match ───── */}
+        {nextUpcomingMatch && (
+          <MatchCentreCard
+            nextMatch={nextUpcomingMatch}
+            matches={matches}
+            members={members}
+            cricketStats={cricketStats}
+          />
+        )}
 
         {/* ── LAST MATCH SUMMARY + ON THIS DAY ────────────────────────── */}
         {(lastAnyCompletedMatch || memories.length > 0) && (
