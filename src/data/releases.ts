@@ -20,6 +20,28 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.06.12',
+    date: '12 June 2026',
+    title: 'Match Centre & Rankings Week 🏏',
+    subtitle: 'Pre-match analytics · ICC-style Rankings · Internal Rivalry predictions',
+    notes: [
+      // ── Headline features ────────────────────────────────────────────────
+      { emoji: '📊', title: 'Match Centre — Pre-Match Analytics', tag: 'new',      desc: 'A new card on the Dashboard for the next match: head-to-head record, our avg score vs theirs, a win-probability meter, recent form, venue record, key players to watch and a storyline. See exactly what we\'re up against!' },
+      { emoji: '🏅', title: 'SCC Player Rankings',                tag: 'new',      desc: 'An ICC-style ratings page — every player gets a rating from batting, bowling & fielding, weighted by recent form and opposition. Switch between Overall (all-time) and any season. (Replaces the old Compare page.)' },
+      { emoji: '🥊', title: 'Internal Rivalry Predictions',      tag: 'new',      desc: 'Dhurandars vs Bazigars matches now have their own prediction game — pick each team\'s top scorer & wicket-taker, plus rivalry bonuses (most sixes, winning margin, highest knock, anyone out for a duck). Up to 70 points — call out the other team!' },
+      { emoji: '🖼️', title: 'Team Gallery',                      tag: 'new',      desc: 'An admin-curated photo gallery to show off our best team moments.' },
+
+      // ── Improvements ─────────────────────────────────────────────────────
+      { emoji: '📺', title: 'Live Scorecard — Cleaner Layout',    tag: 'improved', desc: 'The in-match scorecard now matches CricHeroes\' familiar table layout — easier to read batting & bowling at a glance.' },
+      { emoji: '✅', title: 'Prediction Results Revealed',        tag: 'improved', desc: 'After a match settles, the Predictions page now shows the actual result alongside everyone\'s picks — including each team\'s top scorer/wicket-taker for internal games.' },
+      { emoji: '🔄', title: 'Internal Results Auto-Update',       tag: 'improved', desc: 'Dhurandars vs Bazigars match results and scorecards now sync automatically from CricHeroes — no manual entry.' },
+      { emoji: '👤', title: 'Smarter Player Profiles',           tag: 'improved', desc: 'A profile now falls back to all-time stats when the current season has no data yet, so it\'s never blank.' },
+
+      // ── Fixes ────────────────────────────────────────────────────────────
+      { emoji: '🎯', title: 'Stats Accuracy — Two Adityas Fixed', tag: 'fixed',    desc: 'Players who share a first name (our two Adityas) were being merged — inflating one and erasing the other. Stats are now matched by each player\'s unique CricHeroes ID across the Leaderboard, Rankings and Profiles, so everyone gets exactly their own numbers.' },
+    ],
+  },
+  {
     version: '2026.06.06',
     date: '6 June 2026',
     title: 'Mega Weekend Drop 🚀',
