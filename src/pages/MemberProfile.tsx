@@ -20,6 +20,7 @@ import { usePlayerScorecards } from '../hooks/usePlayerScorecards';
 import { useTransactions } from '../hooks/useTransactions';
 import { SkillRadarChart } from '../components/SkillRadarChart';
 import { RivalryCard } from '../components/RivalryCard';
+import { SeasonWrappedButton } from '../components/SeasonWrappedButton';
 import { PlayerCardModal } from '../components/PlayerCardModal';
 import { computeRadar, overallRating } from '../utils/playerRating';
 
@@ -322,6 +323,7 @@ export function MemberProfile() {
                   <ArrowLeftRight className="w-3.5 h-3.5" />
                   Compare
                 </Link>
+                {member && <SeasonWrappedButton memberId={member.id} />}
               </div>
 
               {form && form.length > 0 && (

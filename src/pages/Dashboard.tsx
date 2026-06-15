@@ -15,6 +15,7 @@ import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
 import { AnnouncementWall } from '../components/AnnouncementWall';
 import { GroundOpponentInsights } from '../components/GroundOpponentInsights';
 import { MatchCentreCard } from '../components/MatchCentreCard';
+import { DashboardWrappedBanner } from '../components/DashboardWrappedBanner';
 import { useWeather } from '../hooks/useWeather';
 import { useLiveScore } from '../hooks/useLiveScore';
 import { LiveScorecard } from '../components/LiveScorecard';
@@ -761,6 +762,9 @@ export function Dashboard() {
           </div>
 
         </div>
+
+        {/* ── SEASON WRAPPED — personal season story ─────────────────── */}
+        <DashboardWrappedBanner />
 
         {/* ── MATCH CENTRE — pre-match analytics for the next match ───── */}
         {nextUpcomingMatch && (
