@@ -39,7 +39,6 @@ const publicNavItems = [
   { to: '/hub', icon: Gamepad2, label: 'Club Hub' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
   { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
-  { to: '/fantasy', icon: Gamepad2, label: 'Fantasy League' },
   { to: '/records', icon: Award, label: 'Hall of Fame' },
   { to: '/predictions', icon: Sparkles, label: 'Predictions' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
