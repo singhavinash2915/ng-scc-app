@@ -19,6 +19,7 @@ import { useMatchMemories } from '../hooks/useMatchMemories';
 import { usePlayerScorecards } from '../hooks/usePlayerScorecards';
 import { useTransactions } from '../hooks/useTransactions';
 import { SkillRadarChart } from '../components/SkillRadarChart';
+import { RivalryCard } from '../components/RivalryCard';
 import { PlayerCardModal } from '../components/PlayerCardModal';
 import { computeRadar, overallRating } from '../utils/playerRating';
 
@@ -490,6 +491,11 @@ export function MemberProfile() {
                 <SkillRadarChart radar={radar} color="#34d399" size={260} />
               </div>
             </div>
+
+            {/* Teammate rivalry */}
+            {member && (
+              <RivalryCard viewedId={member.id} stats={stats} members={members} momCounts={momCounts} />
+            )}
 
             {/* Latest unlocks */}
             {unlockedCount > 0 && (
