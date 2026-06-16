@@ -288,6 +288,13 @@ export function Dashboard() {
 
       <div className="p-4 lg:p-8 space-y-4">
 
+        {/* ── LIVE SCORECARD — pinned to the very top on match day ───────── */}
+        {/* Shown only while today's match is in-progress (admin hasn't set the */}
+        {/* final result yet). Hides once the result is marked won/lost/draw. */}
+        {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result) && (
+          <LiveScorecardWidget match={liveMatchToday} />
+        )}
+
         {/* ── ALERTS ─────────────────────────────────────────────────────── */}
         <BirthdayBanner members={members} />
         <RenewalReminderBanner members={members} />
@@ -475,12 +482,6 @@ export function Dashboard() {
           </Suspense>
         )}
 
-        {/* ── LIVE SCORECARD ─────────────────────────────────────────────── */}
-        {/* Shown only while the match is in-progress (admin hasn't set the final result yet). */}
-        {/* Once admin marks the match won/lost/draw, the widget hides since the result lives elsewhere. */}
-        {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result) && (
-          <LiveScorecardWidget match={liveMatchToday} />
-        )}
 
         {/* ── BENTO GRID ────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 auto-rows-[minmax(120px,auto)]">
