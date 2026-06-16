@@ -6,7 +6,6 @@ import { useMembers } from './useMembers';
 import { useFantasyPoints } from './useFantasyPoints';
 import { usePlayerScorecards } from './usePlayerScorecards';
 import { useAchievements } from './useAchievements';
-import { useRivalry, suggestRival, type Rivalry } from './useRivalry';
 
 export interface WrappedBadge { emoji: string; title: string; tier?: string }
 
@@ -37,10 +36,9 @@ export interface WrappedData {
   bowlingRank: number | null;
   totalRanked: number;
   fantasyTotal: number;
-  // badges + rivalry
+  // badges
   badges: WrappedBadge[];
   badgeCount: number;
-  rival: Rivalry | null;
 }
 
 function rankOf(id: string, ordered: string[]): number | null {
@@ -64,12 +62,6 @@ export function useSeasonWrapped(memberId: string | null, season = '2025-26', pr
 
   const myStat = stats.find(s => s.member_id === memberId);
   const achievements = useAchievements(myStat, momCounts[memberId || ''] || 0, myStat?.batting_matches || 0);
-
-  const rivalId = useMemo(
-    () => (memberId ? suggestRival(memberId, stats, members, momCounts) : null),
-    [memberId, stats, members, momCounts],
-  );
-  const rival = useRivalry(memberId, rivalId, stats, members, momCounts);
 
   return useMemo(() => {
     if (!member || !memberId) return null;
@@ -110,7 +102,6 @@ export function useSeasonWrapped(memberId: string | null, season = '2025-26', pr
       fantasyTotal,
       badges: achievements.filter(a => a.unlocked).map(a => ({ emoji: a.emoji, title: a.title, tier: a.tier })),
       badgeCount: achievements.filter(a => a.unlocked).length,
-      rival,
     };
-  }, [member, memberId, myStat, prevStats, stats, fantasy, knocks, spells, momCounts, achievements, rival, season]);
+  }, [member, memberId, myStat, prevStats, stats, fantasy, knocks, spells, momCounts, achievements, season]);
 }

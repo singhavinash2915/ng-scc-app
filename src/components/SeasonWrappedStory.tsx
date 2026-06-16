@@ -159,22 +159,6 @@ export function SeasonWrappedStory({ memberId, season = '2025-26', onClose }: Pr
       });
     }
 
-    if (data.rival) {
-      const r = data.rival;
-      const meFirst = r.a.member.name.split(' ')[0];
-      list.push({
-        bg: 'linear-gradient(160deg,#e11d48,#881337 60%,#0a0f1a)',
-        content: (
-          <>
-            <Kicker>Your rivalry</Kicker>
-            <p className="text-3xl font-black text-white mt-5">{meFirst} <span className="text-white/50 text-xl">vs</span> {r.b.member.name.split(' ')[0]}</p>
-            <p className="text-5xl font-black text-white tabular-nums my-4">{r.aWins}<span className="text-white/40 text-3xl"> – </span>{r.bWins}</p>
-            <Sub>{r.banter}</Sub>
-          </>
-        ),
-      });
-    }
-
     list.push({
       bg: 'linear-gradient(160deg,#7c3aed,#0f766e 55%,#0a0f1a)',
       content: (
