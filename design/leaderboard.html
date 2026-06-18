@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCC — Leaderboard concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:radial-gradient(800px circle at 50% -8%,rgba(245,158,11,0.16),transparent 42%),radial-gradient(700px circle at 100% 30%,rgba(16,185,129,0.12),transparent 45%),#080b12;color:#e8edf5;min-height:100vh;padding:18px 16px 40px;-webkit-font-smoothing:antialiased}
+  .num{font-family:'Sora',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+  .glass{background:linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025));border:1px solid rgba(255,255,255,0.09);border-radius:18px;backdrop-filter:blur(14px);box-shadow:0 10px 30px -12px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.06)}
+  .kicker{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8a94a6}
+  .av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Sora';font-weight:800;color:#0c1019}
+</style>
+</head>
+<body>
+
+  <!-- Title + tabs -->
+  <div style="margin-bottom:18px">
+    <div class="num" style="font-size:24px;font-weight:800">Leaderboard</div>
+    <div style="font-size:12px;color:#8a94a6;margin-top:2px">Season 2025–26 · synced from CricHeroes</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:20px">
+    <span style="font-size:12px;font-weight:700;padding:7px 15px;border-radius:999px;background:linear-gradient(135deg,#10b981,#0d9488);color:#04140e">Batting</span>
+    <span style="font-size:12px;font-weight:600;padding:7px 15px;border-radius:999px;background:rgba(255,255,255,0.06);color:#94a3b8">Bowling</span>
+    <span style="font-size:12px;font-weight:600;padding:7px 15px;border-radius:999px;background:rgba(255,255,255,0.06);color:#94a3b8">Fielding</span>
+  </div>
+
+  <!-- Podium -->
+  <div style="display:flex;align-items:flex-end;justify-content:center;gap:10px;margin-bottom:22px">
+    <!-- 2nd -->
+    <div style="text-align:center;flex:1">
+      <div class="av" style="width:54px;height:54px;margin:0 auto 8px;background:linear-gradient(135deg,#cbd5e1,#94a3b8);border:2px solid #cbd5e1;font-size:18px">SH</div>
+      <div style="font-size:12px;font-weight:700">Shaan</div>
+      <div class="num" style="font-size:14px;color:#cbd5e1;font-weight:700">1,293</div>
+      <div style="margin-top:7px;height:70px;border-radius:14px 14px 0 0;background:linear-gradient(180deg,rgba(203,213,225,0.25),rgba(203,213,225,0.05));border:1px solid rgba(203,213,225,0.25);border-bottom:none;display:flex;align-items:flex-start;justify-content:center;padding-top:8px"><span class="num" style="font-size:22px;font-weight:800;color:#cbd5e1">2</span></div>
+    </div>
+    <!-- 1st -->
+    <div style="text-align:center;flex:1">
+      <div style="font-size:20px;margin-bottom:3px">👑</div>
+      <div class="av" style="width:66px;height:66px;margin:0 auto 8px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border:2px solid #fcd34d;font-size:22px;box-shadow:0 8px 24px -6px rgba(245,158,11,0.6)">AV</div>
+      <div style="font-size:13px;font-weight:700">Avinash</div>
+      <div class="num" style="font-size:15px;color:#fbbf24;font-weight:800">1,840</div>
+      <div style="margin-top:7px;height:98px;border-radius:14px 14px 0 0;background:linear-gradient(180deg,rgba(245,158,11,0.3),rgba(245,158,11,0.05));border:1px solid rgba(245,158,11,0.35);border-bottom:none;display:flex;align-items:flex-start;justify-content:center;padding-top:8px"><span class="num" style="font-size:26px;font-weight:800;color:#fbbf24">1</span></div>
+    </div>
+    <!-- 3rd -->
+    <div style="text-align:center;flex:1">
+      <div class="av" style="width:50px;height:50px;margin:0 auto 8px;background:linear-gradient(135deg,#f0a574,#d97742);border:2px solid #f0a574;font-size:16px">SO</div>
+      <div style="font-size:12px;font-weight:700">Soumya</div>
+      <div class="num" style="font-size:13px;color:#f0a574;font-weight:700">1,102</div>
+      <div style="margin-top:7px;height:54px;border-radius:14px 14px 0 0;background:linear-gradient(180deg,rgba(240,165,116,0.22),rgba(240,165,116,0.05));border:1px solid rgba(240,165,116,0.25);border-bottom:none;display:flex;align-items:flex-start;justify-content:center;padding-top:8px"><span class="num" style="font-size:20px;font-weight:800;color:#f0a574">3</span></div>
+    </div>
+  </div>
+
+  <!-- Ranked list -->
+  <div style="display:flex;flex-direction:column;gap:9px">
+    <!-- highlighted (you) -->
+    <div class="glass" style="padding:12px 14px;display:flex;align-items:center;gap:13px;border-color:rgba(16,185,129,0.4);background:linear-gradient(160deg,rgba(16,185,129,0.14),rgba(16,185,129,0.04))">
+      <span class="num" style="width:22px;font-weight:800;color:#34d399;font-size:15px">4</span>
+      <div class="av" style="width:38px;height:38px;background:linear-gradient(135deg,#10b981,#0d9488);font-size:13px">DH</div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:700">Dhawal Jain <span style="font-size:10px;color:#6ee7b7;font-weight:600">· you</span></div><div style="font-size:11px;color:#8a94a6">38 inn · avg 28.4</div></div>
+      <div class="num" style="font-size:17px;font-weight:800;color:#34d399">967</div>
+    </div>
+    <!-- others -->
+    <div class="glass" style="padding:12px 14px;display:flex;align-items:center;gap:13px">
+      <span class="num" style="width:22px;font-weight:700;color:#64748b;font-size:14px">5</span>
+      <div class="av" style="width:38px;height:38px;background:linear-gradient(135deg,#60a5fa,#3b82f6);font-size:13px;color:#fff">AK</div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:700">Akash Jadhav</div><div style="font-size:11px;color:#8a94a6">34 inn · avg 24.1</div></div>
+      <div class="num" style="font-size:17px;font-weight:800">812</div>
+    </div>
+    <div class="glass" style="padding:12px 14px;display:flex;align-items:center;gap:13px">
+      <span class="num" style="width:22px;font-weight:700;color:#64748b;font-size:14px">6</span>
+      <div class="av" style="width:38px;height:38px;background:linear-gradient(135deg,#f472b6,#db2777);font-size:13px;color:#fff">SU</div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:700">Sushil Yadav</div><div style="font-size:11px;color:#8a94a6">31 inn · avg 22.8</div></div>
+      <div class="num" style="font-size:17px;font-weight:800">734</div>
+    </div>
+    <div class="glass" style="padding:12px 14px;display:flex;align-items:center;gap:13px">
+      <span class="num" style="width:22px;font-weight:700;color:#64748b;font-size:14px">7</span>
+      <div class="av" style="width:38px;height:38px;background:linear-gradient(135deg,#a78bfa,#7c3aed);font-size:13px;color:#fff">RA</div>
+      <div style="flex:1"><div style="font-size:13.5px;font-weight:700">Raushan Kumar</div><div style="font-size:11px;color:#8a94a6">29 inn · avg 21.5</div></div>
+      <div class="num" style="font-size:17px;font-weight:800">688</div>
+    </div>
+  </div>
+
+</body>
+</html>
