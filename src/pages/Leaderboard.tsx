@@ -415,7 +415,7 @@ export function Leaderboard() {
             <OverallTable players={overallSorted} momCounts={momCounts} formByMember={formByMember} prevRanks={prevRanks} />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-max text-sm">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                     <th className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">#</th>
@@ -510,7 +510,7 @@ export function Leaderboard() {
 function OverallTable({ players, momCounts, formByMember, prevRanks = {} }: { players: MemberCricketStats[]; momCounts: Record<string, number>; formByMember: Record<string, FormResult[]>; prevRanks?: Record<string, number> }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-10">#</th>

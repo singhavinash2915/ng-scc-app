@@ -639,7 +639,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
             </div>
           )}
 
-          <div className="flex gap-2 pt-2">
+          <div className="sticky bottom-0 -mx-6 -mb-5 px-6 pt-3 pb-5 flex gap-2 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
             <Button type="button" variant="secondary" onClick={handleReset} className="flex-1">Cancel</Button>
             <Button type="submit" loading={submitting} disabled={isLocked} className="flex-1">
               {existing ? 'Update Prediction' : 'Lock In Prediction'}
