@@ -42,6 +42,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
     opponent, isInternal, firstMeeting, played, won, lost, winRate,
     avgRunsUs, avgRunsThem, venueName, venuePlayed, venueWon, venueLost,
     form, winProbability, storyline, keyBatsman, keyBowler, predictTotal, predictForUs,
+    internalH2H,
   } = preview;
 
   return (
@@ -60,17 +61,23 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
           <BarChart3 className="w-4 h-4 text-violet-300" />
           <span className="text-violet-300 text-[10px] font-bold uppercase tracking-[2px]">Match Centre</span>
         </div>
-        <span className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/40">Pre-match analytics</span>
+        {isInternal ? (
+          <span className="text-[9px] font-black uppercase tracking-[1.5px] text-amber-300 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-full">🏆 El Clásico</span>
+        ) : (
+          <span className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/40">Pre-match analytics</span>
+        )}
       </div>
 
-      {/* SCC vs Opponent */}
-      <div className="relative flex items-center justify-center gap-4 mb-4">
-        <span className="text-lg lg:text-xl font-black text-white text-right flex-1 truncate">Sangria CC</span>
+      {/* Teams */}
+      <div className="relative flex items-center justify-center gap-3 mb-4">
+        <span className={`text-lg lg:text-xl font-black text-right flex-1 truncate ${isInternal ? 'text-rose-300' : 'text-white'}`}>
+          {isInternal ? 'Dhurandhars' : 'Sangria CC'}
+        </span>
         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/8 border border-white/15 flex-shrink-0">
           <Swords className="w-4 h-4 text-violet-300" />
         </div>
-        <span className="text-lg lg:text-xl font-black bg-gradient-to-r from-violet-300 to-emerald-300 bg-clip-text text-transparent text-left flex-1 truncate">
-          {isInternal ? 'Internal' : opponent}
+        <span className={`text-lg lg:text-xl font-black text-left flex-1 truncate ${isInternal ? 'text-sky-300' : 'bg-gradient-to-r from-violet-300 to-emerald-300 bg-clip-text text-transparent'}`}>
+          {isInternal ? 'Baazigars' : opponent}
         </span>
       </div>
 
@@ -78,6 +85,53 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       <div className="relative mb-4 rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5">
         <p className="text-[12px] lg:text-[13px] text-gray-200 leading-snug font-medium">{storyline}</p>
       </div>
+
+      {/* El Clásico head-to-head (internal) */}
+      {isInternal && internalH2H && internalH2H.played > 0 && (() => {
+        const { dhur, baz, played: ip, lastWinner, form: ifrm } = internalH2H;
+        const dhurPct = dhur + baz > 0 ? Math.round((dhur / (dhur + baz)) * 100) : 50;
+        return (
+          <div className="relative mb-4 rounded-xl bg-white/5 border border-white/10 p-3.5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/50">Rivalry · all-time</span>
+              <span className="text-[9px] font-semibold text-white/40">{ip} clásicos</span>
+            </div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-center flex-1">
+                <p className="text-rose-300 text-3xl font-black tabular-nums leading-none">{dhur}</p>
+                <p className="text-rose-300/70 text-[9px] font-bold uppercase tracking-wider mt-1">Dhurandhars</p>
+              </div>
+              <span className="text-white/30 text-lg font-black px-2">–</span>
+              <div className="text-center flex-1">
+                <p className="text-sky-300 text-3xl font-black tabular-nums leading-none">{baz}</p>
+                <p className="text-sky-300/70 text-[9px] font-bold uppercase tracking-wider mt-1">Baazigars</p>
+              </div>
+            </div>
+            {/* rivalry meter */}
+            <div className="flex h-2 rounded-full overflow-hidden mb-2.5 bg-sky-500/30">
+              <div className="bg-rose-500 transition-[width] duration-700" style={{ width: `${dhurPct}%` }} />
+            </div>
+            {/* recent winners + last result */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="text-[8px] font-bold uppercase tracking-wider text-white/40 mr-1">Last 5</span>
+                {ifrm.map((w, i) => (
+                  <span key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black ${
+                    w === 'D' ? 'bg-rose-500/30 text-rose-200' : 'bg-sky-500/30 text-sky-200'
+                  }`}>{w}</span>
+                ))}
+              </div>
+              {lastWinner && (
+                <span className="text-[10px] font-semibold text-white/50">
+                  Last: <span className={lastWinner === 'dhurandars' ? 'text-rose-300' : 'text-sky-300'}>
+                    {lastWinner === 'dhurandars' ? 'Dhurandhars' : 'Baazigars'}
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Head-to-head stat row */}
       {!isInternal && (
@@ -112,6 +166,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       )}
 
       {/* Win probability meter */}
+      {!isInternal && (
       <div className="relative mb-4">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[10px] font-bold uppercase tracking-[1.5px] text-white/50 flex items-center gap-1">
@@ -126,8 +181,10 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
           />
         </div>
       </div>
+      )}
 
       {/* Form + venue */}
+      {!isInternal && (
       <div className="relative grid grid-cols-2 gap-2 mb-4">
         <div className="rounded-xl bg-white/5 border border-white/8 px-3 py-2.5">
           <p className="text-gray-500 text-[8px] font-bold uppercase tracking-[1px] mb-1.5 flex items-center gap-1">
@@ -165,6 +222,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
           )}
         </div>
       </div>
+      )}
 
       {/* Key players to watch */}
       {(keyBatsman || keyBowler) && (

@@ -52,6 +52,14 @@ export interface MatchPreview {
   keyBowler: KeyPlayer | null;
   predictTotal: number;
   predictForUs: number;
+  // Internal "El Clasico" rivalry (Dhurandhars vs Baazigars) — only for internal matches
+  internalH2H: {
+    dhur: number;
+    baz: number;
+    played: number;
+    lastWinner: 'dhurandars' | 'bazigars' | null;
+    form: Array<'D' | 'B'>;   // recent winners, most recent first (D=Dhurandhars, B=Baazigars)
+  } | null;
 }
 
 function parseRuns(s: string | null | undefined): number | null {
@@ -87,6 +95,24 @@ export function useMatchPreview(
       m.match_type === 'external' &&
       ['won', 'lost', 'draw'].includes(m.result)
     );
+
+    // ── Internal "El Clasico" rivalry (Dhurandhars vs Baazigars) ──────────────
+    let internalH2H: MatchPreview['internalH2H'] = null;
+    if (isInternal) {
+      const internalDecided = matches
+        .filter(m => m.match_type === 'internal'
+          && ['won', 'lost', 'draw'].includes(m.result)
+          && (m.winning_team === 'dhurandars' || m.winning_team === 'bazigars'))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const dhur = internalDecided.filter(m => m.winning_team === 'dhurandars').length;
+      const baz = internalDecided.filter(m => m.winning_team === 'bazigars').length;
+      internalH2H = {
+        dhur, baz,
+        played: internalDecided.length,
+        lastWinner: (internalDecided[0]?.winning_team as 'dhurandars' | 'bazigars') || null,
+        form: internalDecided.slice(0, 5).map(m => m.winning_team === 'dhurandars' ? 'D' : 'B') as Array<'D' | 'B'>,
+      };
+    }
 
     // ── Head-to-head vs this opponent ─────────────────────────────────────────
     const h2h = h2hAll.find(r => r.opponent.toLowerCase() === opponent.toLowerCase());
@@ -138,7 +164,18 @@ export function useMatchPreview(
       ? ` We average ${avgRunsUs} to their ${avgRunsThem}.`
       : '';
     if (isInternal) {
-      storyline = `Bragging rights on the line — Dhurandars vs Bazigars. No mercy, no excuses. 🔥`;
+      const h = internalH2H;
+      if (h && h.played > 0) {
+        if (h.dhur === h.baz) {
+          storyline = `El Clásico, dead level — Dhurandhars and Baazigars locked ${h.dhur}–${h.baz} from ${h.played}. Whoever wins tomorrow takes the bragging rights. 🔥`;
+        } else {
+          const leadName = h.dhur > h.baz ? 'Dhurandhars' : 'Baazigars';
+          const trailName = h.dhur > h.baz ? 'Baazigars' : 'Dhurandhars';
+          storyline = `El Clásico — ${leadName} lead the rivalry ${Math.max(h.dhur, h.baz)}–${Math.min(h.dhur, h.baz)}. Can ${trailName} hit back, or do ${leadName} pull clear? 🔥`;
+        }
+      } else {
+        storyline = `El Clásico — Dhurandhars vs Baazigars. Bragging rights on the line. No mercy, no excuses. 🔥`;
+      }
     } else if (firstMeeting) {
       storyline = `First-ever meeting with ${opponent} — no history, everything to play for.`;
     } else if (won === 0 && lost > 0) {
@@ -185,6 +222,7 @@ export function useMatchPreview(
       form, winProbability, storyline,
       keyBatsman, keyBowler,
       predictTotal: decisivePicks.length, predictForUs,
+      internalH2H,
     };
   }, [nextMatch, matches, members, cricketStats, predictions, h2hAll]);
 }
