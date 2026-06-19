@@ -255,9 +255,13 @@ export function useStatSync() {
     seasonLabel:  string,                                  // e.g. '2025-26' or 'all-time'
     nameMap:      Record<string, string> = loadNameMap(),  // chName → memberId
   ) => {
-    // Filter to matches that have a CricHeroes ID and are completed
+    // Filter to matches that have a CricHeroes ID and are completed.
+    // Internal (Dhurandhars vs Baazigars) matches are deliberately EXCLUDED so
+    // the club's El Clasico games never pollute season/external player stats —
+    // they're tracked separately via the Internal Rivalry views.
     const eligible = matches.filter(m =>
       m.ch_match_id &&
+      m.match_type !== 'internal' &&
       ['won', 'lost', 'draw'].includes(m.result) &&
       (!seasonFilter || (m.date >= seasonFilter.start && m.date <= seasonFilter.end))
     );

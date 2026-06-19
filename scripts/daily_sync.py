@@ -32,15 +32,16 @@ def run(script, label):
 def main():
     print(f"\n🏏 SCC Daily Sync — {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-    code1 = run('sync_cricheroes.py', 'Step 1/3: Player Stats (CricHeroes → Supabase)')
-    code2 = run('sync_matches.py',    'Step 2/3: Match History (CricHeroes → Supabase)')
-    code3 = run('sync_scorecards.py', 'Step 3/3: Detailed Scorecards (CricHeroes → Supabase)')
+    code1 = run('sync_cricheroes.py', 'Step 1/4: Player Stats (CricHeroes → Supabase)')
+    code2 = run('sync_matches.py',    'Step 2/4: Match History (CricHeroes → Supabase)')
+    code4 = run('sync_internal.py',   'Step 3/4: Internal Matches (Dhurandhars vs Baazigars)')
+    code3 = run('sync_scorecards.py', 'Step 4/4: Detailed Scorecards (CricHeroes → Supabase)')
 
     print(f"\n{'='*60}")
-    if code1 == 0 and code2 == 0 and code3 == 0:
+    if code1 == 0 and code2 == 0 and code3 == 0 and code4 == 0:
         print("✅ All syncs completed successfully!")
     else:
-        print(f"⚠️  Completed with errors (stats:{code1} matches:{code2} scorecards:{code3})")
+        print(f"⚠️  Completed with errors (stats:{code1} matches:{code2} internal:{code4} scorecards:{code3})")
         print("   Check auth token if seeing 401/403 errors.")
     print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Done.")
 
