@@ -283,7 +283,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="bg-gray-950 min-h-screen">
+    <div className="dark aurora-bg min-h-screen">
       <Header title="Dashboard" subtitle="Sangria Cricket Club" />
 
       <div className="p-4 lg:p-8 space-y-4">
@@ -315,147 +315,125 @@ export function Dashboard() {
 
 
         {/* ── PREMIUM HERO ──────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl"
-             style={{ background: 'radial-gradient(ellipse at 5% 0%, rgba(5,150,105,0.22) 0%, transparent 50%), radial-gradient(ellipse at 95% 100%, rgba(37,99,235,0.15) 0%, transparent 50%), linear-gradient(160deg, #050e1b 0%, #070c17 50%, #050a12 100%)' }}>
+        <div className="glass relative overflow-hidden rounded-3xl p-5 lg:p-7">
+          {/* aurora glows inside the panel */}
+          <div className="absolute -top-24 -right-12 w-72 h-72 bg-emerald-500/25 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-12 w-72 h-72 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
 
-          {/* ── Decorative layer ── */}
-          {/* top highlight line */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/35 to-transparent pointer-events-none" />
-          {/* subtle grid texture */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.025]"
-               style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-          {/* big diffuse glows */}
-          <div className="absolute -top-20 -left-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 -right-16 w-72 h-72 bg-blue-500/8 rounded-full blur-3xl pointer-events-none" />
-          {/* border */}
-          <div className="absolute inset-0 border border-white/8 rounded-2xl pointer-events-none" />
-
-          <div className="relative p-4 lg:p-6">
-
-            {/* ── Row 1: Logo + Club name + Avatar ── */}
-            <div className="flex items-center gap-3.5 mb-3">
-              {/* Logo with glow halo */}
-              <div className="relative flex-shrink-0">
-                <div className="absolute -inset-1.5 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-400/10 blur-md" />
-                <img src="/scc-logo.jpg" alt="SCC"
-                     className="relative w-11 h-11 lg:w-13 lg:h-13 rounded-xl object-cover border border-white/20 shadow-2xl" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-white font-black text-[17px] lg:text-2xl leading-tight tracking-tight">
-                  Sangria Cricket Club
-                </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="inline-flex items-center px-2.5 py-0.5 bg-emerald-500/18 border border-emerald-400/30 text-emerald-300 text-[9px] font-black rounded-full uppercase tracking-widest">
-                    Season 2025–26
-                  </span>
-                  <span className="text-gray-600 text-[11px]">{stats.activeMembers} active</span>
-                </div>
-              </div>
-              {/* Avatar top-right */}
-              {myMember && (
-                <Link to={`/profile/${myMember.id}`} className="flex-shrink-0">
-                  {myMember.avatar_url ? (
-                    <img src={myMember.avatar_url} alt={myMember.name}
-                         className="w-10 h-10 rounded-full object-cover border-2 border-emerald-400/50 ring-2 ring-emerald-400/10 shadow-lg" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600/50 to-teal-600/40 border-2 border-emerald-400/50 flex items-center justify-center shadow-lg">
-                      <span className="text-emerald-200 font-black text-sm">{myMember.name[0]}</span>
-                    </div>
-                  )}
-                </Link>
-              )}
+          {/* ── Identity row ── */}
+          <div className="relative flex items-center gap-4 mb-5">
+            <div className="relative flex-shrink-0">
+              <div className="absolute -inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/45 to-teal-400/10 blur-lg" />
+              <img src="/scc-logo.jpg" alt="SCC"
+                   className="relative w-14 h-14 lg:w-16 lg:h-16 rounded-2xl object-cover border border-white/25 shadow-2xl" />
             </div>
-
-            {/* ── Row 2: Season info + MyStats (short items, always fit) ── */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="px-2.5 py-0.5 bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 text-[9px] font-black rounded-full uppercase tracking-widest flex-shrink-0">
-                Season 2025–26
-              </span>
-              <span className="text-gray-600 text-[11px] flex-1 min-w-0">{stats.activeMembers} active</span>
-              <div className="flex-shrink-0">
-                <MyStatsButton compact />
+            <div className="flex-1 min-w-0">
+              <h1 className="font-display text-2xl lg:text-4xl font-extrabold leading-none tracking-tight bg-gradient-to-r from-white via-emerald-100 to-teal-200 bg-clip-text text-transparent">
+                Sangria CC
+              </h1>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-400/35 text-emerald-200 text-[9px] font-black rounded-full uppercase tracking-[2px]">
+                  Season 2025–26
+                </span>
+                <span className="text-gray-400 text-[11px]">{stats.activeMembers} active</span>
               </div>
             </div>
-
-            {/* ── Row 3: Form strip + streak (no competing elements) ── */}
-            {lastFiveResults.length > 0 && (
-              <div className="flex items-center gap-1.5 mb-4">
-                <span className="text-gray-600 text-[9px] font-bold uppercase tracking-widest flex-shrink-0">Form</span>
-                {lastFiveResults.map(m => (
-                  <div key={m.id} className={`w-5 h-5 flex-shrink-0 rounded-md flex items-center justify-center text-[9px] font-black text-white ${
-                    m.result === 'won'  ? 'bg-emerald-500'
-                  : m.result === 'lost' ? 'bg-red-500'
-                  : 'bg-amber-500'
-                  }`}>
-                    {m.result === 'won' ? 'W' : m.result === 'lost' ? 'L' : 'D'}
-                  </div>
-                ))}
-                {streak && streak.count >= 2 && (
-                  <span className={`whitespace-nowrap flex-shrink-0 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black ml-1 ${
-                    streak.result === 'won'
-                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
-                      : 'bg-red-500/15 text-red-300 border border-red-500/25'
-                  }`}>
-                    {streak.result === 'won' ? '🔥' : '😤'} {streak.count} streak
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* ── Stat chips ── */}
-            <div className="grid grid-cols-4 gap-2 lg:gap-2.5">
-              {[
-                { label: 'Matches',  value: stats.matchesPlayed,   numColor: 'text-white',      accent: 'from-white/5',        border: 'border-white/8',         bar: 'bg-white/20' },
-                { label: 'Won',      value: animatedWon,           numColor: 'text-emerald-400', accent: 'from-emerald-500/12', border: 'border-emerald-500/20',   bar: 'bg-emerald-400' },
-                { label: 'Win %',    value: `${animatedWinRate}%`, numColor: 'text-amber-400',   accent: 'from-amber-500/12',   border: 'border-amber-500/20',     bar: 'bg-amber-400' },
-                { label: 'Upcoming', value: stats.upcomingCount,   numColor: 'text-blue-400',    accent: 'from-blue-500/12',    border: 'border-blue-500/20',      bar: 'bg-blue-400' },
-              ].map(({ label, value, numColor, accent, border, bar }) => (
-                <div key={label} className={`relative rounded-xl pt-3 pb-2.5 px-1 text-center border ${border} bg-gradient-to-b ${accent} to-transparent overflow-hidden`}>
-                  {/* Colored top accent bar */}
-                  <div className={`absolute top-0 left-1/4 right-1/4 h-0.5 ${bar} rounded-full opacity-60`} />
-                  <div className={`text-2xl lg:text-3xl font-black tabular-nums leading-tight ${numColor}`}>{value}</div>
-                  <div className="text-gray-600 text-[8px] lg:text-[9px] uppercase tracking-widest mt-1 font-bold">{label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* ── Personal greeting ── */}
             {myMember && (
-              <div className="mt-4 pt-4 border-t border-white/8">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-black text-white text-sm leading-tight">
-                      Hey, {myMember.name.split(' ')[0]}! 🏏
-                    </p>
-                    <p className="text-[11px] mt-0.5">
-                      <span className="text-gray-400">{myStats?.batting_runs ?? 0} runs · {myStats?.bowling_wickets ?? 0} wkts</span>
-                      {myMoms > 0 && <><span className="text-gray-700"> · </span><span className="text-yellow-400 font-bold">{myMoms} MOM</span></>}
-                      <span className="text-gray-600"> this season</span>
-                    </p>
-                  </div>
-                  <Link
-                    to={`/profile/${myMember.id}`}
-                    className="flex-shrink-0 px-3.5 py-1.5 rounded-xl bg-gradient-to-br from-emerald-600/25 to-teal-600/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold hover:from-emerald-600/40 hover:border-emerald-500/50 transition-all whitespace-nowrap shadow-lg shadow-emerald-900/30"
-                  >
-                    My Profile →
-                  </Link>
-                </div>
-                {myNextMilestone && (
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                    <Target className="w-3 h-3 text-purple-400 flex-shrink-0" />
-                    <span className="text-purple-300 text-[10px] font-bold">
-                      {myNextMilestone.away} more to {myNextMilestone.label}
-                    </span>
+              <Link to={`/profile/${myMember.id}`} className="flex-shrink-0">
+                {myMember.avatar_url ? (
+                  <img src={myMember.avatar_url} alt={myMember.name}
+                       className="w-11 h-11 rounded-full object-cover border-2 border-emerald-400/60 ring-2 ring-emerald-400/15 shadow-lg" />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-600/50 to-teal-600/40 border-2 border-emerald-400/60 flex items-center justify-center shadow-lg">
+                    <span className="text-emerald-200 font-black text-sm">{myMember.name[0]}</span>
                   </div>
                 )}
-              </div>
+              </Link>
             )}
           </div>
+
+          {/* ── My-stats switcher (own row, avoids crowding the title) ── */}
+          <div className="relative flex justify-start mb-4">
+            <MyStatsButton compact />
+          </div>
+
+          {/* ── Form strip + streak ── */}
+          {lastFiveResults.length > 0 && (
+            <div className="relative flex items-center gap-1.5 mb-4">
+              <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest flex-shrink-0">Form</span>
+              {lastFiveResults.map(m => (
+                <div key={m.id} className={`w-6 h-6 flex-shrink-0 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-md ${
+                  m.result === 'won'  ? 'bg-gradient-to-br from-emerald-400 to-emerald-600'
+                : m.result === 'lost' ? 'bg-gradient-to-br from-rose-400 to-red-600'
+                : 'bg-gradient-to-br from-amber-400 to-amber-600'
+                }`}>
+                  {m.result === 'won' ? 'W' : m.result === 'lost' ? 'L' : 'D'}
+                </div>
+              ))}
+              {streak && streak.count >= 2 && (
+                <span className={`whitespace-nowrap flex-shrink-0 inline-flex items-center gap-0.5 px-2.5 py-1 rounded-full text-[10px] font-black ml-1 ${
+                  streak.result === 'won'
+                    ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30'
+                    : 'bg-red-500/20 text-red-200 border border-red-500/30'
+                }`}>
+                  {streak.result === 'won' ? '🔥' : '😤'} {streak.count} streak
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* ── Stat tiles ── */}
+          <div className="relative grid grid-cols-4 gap-2.5">
+            {[
+              { label: 'Matches',  value: stats.matchesPlayed,   numColor: 'text-white',       bar: 'bg-white/40' },
+              { label: 'Won',      value: animatedWon,           numColor: 'text-emerald-300', bar: 'bg-emerald-400' },
+              { label: 'Win %',    value: `${animatedWinRate}%`, numColor: 'text-amber-300',   bar: 'bg-amber-400' },
+              { label: 'Upcoming', value: stats.upcomingCount,   numColor: 'text-sky-300',     bar: 'bg-sky-400' },
+            ].map(({ label, value, numColor, bar }) => (
+              <div key={label} className="relative rounded-2xl pt-3.5 pb-3 px-1 text-center overflow-hidden bg-white/[0.04] border border-white/10">
+                <div className={`absolute top-0 left-1/4 right-1/4 h-0.5 ${bar} rounded-full`} />
+                <div className={`font-display text-2xl lg:text-3xl font-extrabold tabular-nums leading-tight ${numColor}`}>{value}</div>
+                <div className="text-gray-400 text-[8px] lg:text-[9px] uppercase tracking-widest mt-1 font-bold">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Personal greeting ── */}
+          {myMember && (
+            <div className="relative mt-5 pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-display font-bold text-white text-base leading-tight">
+                    Hey, {myMember.name.split(' ')[0]}! 🏏
+                  </p>
+                  <p className="text-[11px] mt-1">
+                    <span className="text-gray-300">{myStats?.batting_runs ?? 0} runs · {myStats?.bowling_wickets ?? 0} wkts</span>
+                    {myMoms > 0 && <><span className="text-gray-600"> · </span><span className="text-amber-300 font-bold">{myMoms} MOM</span></>}
+                    <span className="text-gray-500"> this season</span>
+                  </p>
+                </div>
+                <Link
+                  to={`/profile/${myMember.id}`}
+                  className="flex-shrink-0 px-4 py-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[11px] font-bold hover:brightness-110 transition-all whitespace-nowrap shadow-lg shadow-emerald-900/40"
+                >
+                  My Profile →
+                </Link>
+              </div>
+              {myNextMilestone && (
+                <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/15 border border-purple-500/25">
+                  <Target className="w-3 h-3 text-purple-300 flex-shrink-0" />
+                  <span className="text-purple-200 text-[10px] font-bold">
+                    {myNextMilestone.away} more to {myNextMilestone.label}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── LIVE TICKER ──────────────────────────────────────────────── */}
         {tickerItems.length > 0 && (
-          <div className="flex items-center gap-3 overflow-x-auto py-2 px-3.5 bg-black/40 border border-white/8 rounded-xl backdrop-blur-sm">
+          <div className="glass flex items-center gap-3 overflow-x-auto py-2 px-3.5 rounded-xl">
             <span className="flex items-center gap-1 px-2 py-0.5 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-md flex-shrink-0">
               <Radio className="w-2.5 h-2.5 animate-pulse" />
               Live
@@ -566,26 +544,24 @@ export function Dashboard() {
           </div>
 
           {/* Members (2x1) */}
-          <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
-               style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)' }}>
-            <div className="absolute inset-0 border border-blue-500/25 rounded-2xl pointer-events-none" />
+          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5">
+            <div className="absolute top-0 left-5 right-5 h-0.5 bg-blue-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-2 relative">
               <Users className="w-3.5 h-3.5 text-blue-400" />
               <span className="text-blue-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Members</span>
             </div>
-            <p className="text-4xl lg:text-5xl font-black text-white tabular-nums relative leading-none">{animatedMembers}</p>
+            <p className="font-display text-4xl lg:text-5xl font-extrabold text-white tabular-nums relative leading-none">{animatedMembers}</p>
             <p className="text-gray-400 text-[11px] mt-2 relative">of {stats.totalMembers} · <span className="text-blue-300">active</span></p>
           </div>
 
           {/* Club Funds (2x1) */}
-          <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
-               style={{ background: 'linear-gradient(135deg, #065f46 0%, #0a1019 100%)' }}>
-            <div className="absolute inset-0 border border-emerald-500/25 rounded-2xl pointer-events-none" />
+          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5">
+            <div className="absolute top-0 left-5 right-5 h-0.5 bg-emerald-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-2 relative">
               <IndianRupee className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Club Funds</span>
             </div>
-            <p className="text-4xl lg:text-5xl font-black text-white tabular-nums relative leading-none">
+            <p className="font-display text-4xl lg:text-5xl font-extrabold text-white tabular-nums relative leading-none">
               ₹{animatedFunds >= 1000 ? `${(animatedFunds / 1000).toFixed(1)}k` : animatedFunds.toLocaleString('en-IN')}
             </p>
             {/* Season growth trend pill */}
@@ -612,9 +588,8 @@ export function Dashboard() {
           </div>
 
           {/* Win Rate Donut (2x2) */}
-          <div className="col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5"
-               style={{ background: 'linear-gradient(135deg, #9a3412 0%, #0a1019 100%)' }}>
-            <div className="absolute inset-0 border border-orange-500/25 rounded-2xl pointer-events-none" />
+          <div className="glass col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5">
+            <div className="absolute top-0 left-5 right-5 h-0.5 bg-amber-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-3 relative">
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
               <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Win Rate</span>
@@ -670,9 +645,8 @@ export function Dashboard() {
 
           {/* MOM Race Leaderboard (2x2) */}
           {topMOMs.length > 0 && (
-            <div className="col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5"
-                 style={{ background: 'linear-gradient(135deg, #854d0e 0%, #0a1019 100%)' }}>
-              <div className="absolute inset-0 border border-yellow-500/25 rounded-2xl pointer-events-none" />
+            <div className="glass col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5">
+              <div className="absolute top-0 left-5 right-5 h-0.5 bg-amber-400 rounded-full opacity-70" />
               <div className="flex items-center justify-between mb-3 relative">
                 <div className="flex items-center gap-1.5">
                   <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
@@ -709,9 +683,8 @@ export function Dashboard() {
 
           {/* Player of the Month / Week (2x1) */}
           {featuredPlayer && (
-            <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
-                 style={{ background: 'radial-gradient(300px circle at 0% 0%, rgba(244,114,182,0.25), transparent 55%), linear-gradient(135deg, #831843 0%, #1a0510 55%, #0a1019 100%)' }}>
-              <div className="absolute inset-0 border border-pink-500/30 rounded-2xl pointer-events-none" />
+            <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5">
+              <div className="absolute top-0 left-5 right-5 h-0.5 bg-pink-400 rounded-full opacity-70" />
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-pink-400/15 rounded-full blur-2xl" />
               <div className="flex items-center justify-between mb-2 relative">
                 <div className="flex items-center gap-1.5">
@@ -743,14 +716,13 @@ export function Dashboard() {
           )}
 
           {/* This Month (2x1) */}
-          <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5"
-               style={{ background: 'linear-gradient(135deg, #064e3b 0%, #0a1019 100%)' }}>
-            <div className="absolute inset-0 border border-emerald-500/25 rounded-2xl pointer-events-none" />
+          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5">
+            <div className="absolute top-0 left-5 right-5 h-0.5 bg-emerald-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-2 relative">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">This Month</span>
             </div>
-            <p className="text-3xl lg:text-4xl font-black text-white tabular-nums relative leading-none">
+            <p className="font-display text-3xl lg:text-4xl font-extrabold text-white tabular-nums relative leading-none">
               <span className={monthSummary.deposits - monthSummary.expenses >= 0 ? 'text-emerald-300' : 'text-red-300'}>
                 {monthSummary.deposits - monthSummary.expenses >= 0 ? '+' : '−'}₹{Math.abs(monthSummary.deposits - monthSummary.expenses).toLocaleString('en-IN')}
               </span>
@@ -790,8 +762,7 @@ export function Dashboard() {
 
             {/* On This Day — side panel on desktop, stacks below on mobile */}
             {memories.length > 0 && (
-              <div className="rounded-2xl border border-white/8 p-4 flex flex-col justify-center"
-                   style={{ background: 'linear-gradient(135deg, #1a0820 0%, #0d0d0d 100%)' }}>
+              <div className="glass rounded-2xl p-4 flex flex-col justify-center">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-lg">🗓️</span>
                   <span className="text-pink-400 text-[10px] font-bold uppercase tracking-[2px]">On This Day</span>
@@ -833,8 +804,8 @@ export function Dashboard() {
 
         {/* ── INTERNAL BATTLE ─────────────────────── */}
         {internalMatchStats.total > 0 && (
-          <div className="relative overflow-hidden rounded-2xl shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-slate-900 to-purple-900" />
+          <div className="glass relative overflow-hidden rounded-2xl shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/25 via-transparent to-purple-600/25" />
             <div className="absolute inset-0 opacity-[0.08]" style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='20' x2='40' y2='20' stroke='white' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='20' y2='40' stroke='white' stroke-width='0.5'/%3E%3C/svg%3E")`,
               backgroundSize: '40px 40px',
@@ -963,8 +934,7 @@ export function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
           {/* Recent Matches */}
-          <div className="rounded-2xl overflow-hidden border border-white/8"
-               style={{ background: 'linear-gradient(180deg, #0d0d0d 0%, #0f0f0f 100%)' }}>
+          <div className="glass rounded-2xl overflow-hidden">
             <div className="px-4 py-3.5 border-b border-white/8 flex items-center justify-between">
               <h3 className="font-bold text-white flex items-center gap-2 text-sm">
                 <Calendar className="w-3.5 h-3.5 text-emerald-400" />
@@ -1006,8 +976,7 @@ export function Dashboard() {
           </div>
 
           {/* Low Balance Alert */}
-          <div className="rounded-2xl overflow-hidden border border-white/8"
-               style={{ background: 'linear-gradient(180deg, #0d0d0d 0%, #0f0f0f 100%)' }}>
+          <div className="glass rounded-2xl overflow-hidden">
             <div className="px-4 py-3.5 border-b border-white/8 flex items-center justify-between">
               <h3 className="font-bold text-white flex items-center gap-2 text-sm">
                 <AlertCircle className="w-3.5 h-3.5 text-yellow-500" />
@@ -1067,7 +1036,7 @@ export function Dashboard() {
 
         {/* ── GROUND & OPPONENT INSIGHTS ───────────────────────────────── */}
         {matches.length > 0 && (
-          <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4">
+          <div className="glass rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px]">Ground & Opponent Insights</p>
               <a href="/analytics" className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:underline">Full analysis →</a>
