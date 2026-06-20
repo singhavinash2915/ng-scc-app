@@ -16,6 +16,7 @@ import { AnnouncementWall } from '../components/AnnouncementWall';
 import { GroundOpponentInsights } from '../components/GroundOpponentInsights';
 import { MatchCentreCard } from '../components/MatchCentreCard';
 import { DashboardWrappedBanner } from '../components/DashboardWrappedBanner';
+import { ElClasicoChampionBanner } from '../components/ElClasicoChampionBanner';
 import { useWeather } from '../hooks/useWeather';
 import { useLiveScore } from '../hooks/useLiveScore';
 import { LiveScorecard } from '../components/LiveScorecard';
@@ -287,6 +288,9 @@ export function Dashboard() {
       <Header title="Dashboard" subtitle="Sangria Cricket Club" />
 
       <div className="p-4 lg:p-8 space-y-4">
+
+        {/* ── EL CLÁSICO CHAMPIONS — 24h heroic victory showcase ────────── */}
+        <ElClasicoChampionBanner matches={matches} />
 
         {/* ── LIVE SCORECARD — pinned to the very top on match day ───────── */}
         {/* Shown only while today's match is in-progress (admin hasn't set the */}
