@@ -58,6 +58,34 @@ function getDayName(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'short' });
 }
 
+// Dates reserved for the Sangria Internal League (no external bookings):
+//   • Months WITH Saturdays → 2 alternate Saturdays (1st & 3rd) + the middle Thursday
+//   • Months with NO Saturdays → 2 alternate Tuesdays (1st & 3rd)
+// Derived from the available slots so it stays correct as new months are added.
+function computeReservedDates(slots: MatchSlot[]): Set<string> {
+  const reserved = new Set<string>();
+  const dow = (d: string) => new Date(d + 'T00:00:00').getDay(); // 2=Tue, 4=Thu, 6=Sat
+  const byMonth: Record<string, MatchSlot[]> = {};
+  slots.forEach(s => { const k = s.date.slice(0, 7); (byMonth[k] ||= []).push(s); });
+
+  for (const key of Object.keys(byMonth)) {
+    const ms = byMonth[key];
+    const sats = ms.filter(s => s.day_type === 'saturday').sort((a, b) => a.date.localeCompare(b.date));
+    if (sats.length > 0) {
+      // 1st & 3rd Saturday (fall back to the last available if fewer than 3)
+      [sats[0], sats[2] ?? sats[sats.length - 1]].forEach(s => s && reserved.add(s.date));
+      // middle Thursday of the month
+      const thu = ms.filter(s => s.day_type === 'weekday' && dow(s.date) === 4).sort((a, b) => a.date.localeCompare(b.date));
+      if (thu.length) reserved.add(thu[Math.floor((thu.length - 1) / 2)].date);
+    } else {
+      // no Saturdays this month → 1st & 3rd Tuesday
+      const tue = ms.filter(s => s.day_type === 'weekday' && dow(s.date) === 2).sort((a, b) => a.date.localeCompare(b.date));
+      [tue[0], tue[2] ?? tue[tue.length - 1]].forEach(s => s && reserved.add(s.date));
+    }
+  }
+  return reserved;
+}
+
 // ─── Ground Photo Carousel — auto-rotates + clickable thumbnails/dots ────────
 function GroundPhotoCarousel({
   photos,
@@ -350,6 +378,7 @@ export function BookMatch() {
     slots.forEach(s => { const k = s.date.slice(0,7); if (!map[k]) map[k]=[]; map[k].push(s); });
     return map;
   }, [slots]);
+  const reservedDates     = useMemo(() => computeReservedDates(slots), [slots]);
   const monthKeys         = useMemo(() => Object.keys(slotsByMonth).sort(), [slotsByMonth]);
   const currentMonthKey   = monthKeys[currentMonthIndex] ?? '';
   const currentMonthSlots = slotsByMonth[currentMonthKey] ?? [];
@@ -357,12 +386,13 @@ export function BookMatch() {
     ? `${MONTHS[parseInt(currentMonthKey.split('-')[1])-1]} ${currentMonthKey.split('-')[0]}`
     : '';
 
-  function slotStatus(slot: MatchSlot): 'available'|'pending'|'booked'|'blocked' {
+  function slotStatus(slot: MatchSlot): 'available'|'pending'|'booked'|'blocked'|'reserved' {
     if (!slot.is_available) {
       if (slot.booking?.status === 'confirmed') return 'booked';
       if (slot.booking?.status === 'pending')   return 'pending';
       return 'blocked';
     }
+    if (reservedDates.has(slot.date)) return 'reserved';   // held for SCC internal league
     return 'available';
   }
 
@@ -719,10 +749,11 @@ export function BookMatch() {
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-5 px-5 py-3 border-b border-gray-100 text-xs text-gray-600 bg-gray-50/50">
+            <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap px-5 py-3 border-b border-gray-100 text-xs text-gray-600 bg-gray-50/50">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary-500 ring-2 ring-primary-100"/>Available</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100"/>Pending</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300 ring-2 ring-gray-100"/>Booked</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500 ring-2 ring-violet-100"/>SCC Internal</span>
             </div>
 
             {/* Slots */}
@@ -748,23 +779,32 @@ export function BookMatch() {
                             ? isSat
                               ? 'bg-gradient-to-br from-amber-50 to-white border-amber-200 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
                               : 'bg-gradient-to-br from-primary-50 to-white border-primary-200 hover:border-primary-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
-                            : status==='pending' ? 'bg-amber-50/60 border-amber-200 cursor-not-allowed opacity-70' :
+                            : status==='reserved' ? 'bg-gradient-to-br from-violet-50 to-white border-violet-200 cursor-not-allowed' :
+                              status==='pending' ? 'bg-amber-50/60 border-amber-200 cursor-not-allowed opacity-70' :
                                                    'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
                         }`}>
                         {avail && isSat && (
                           <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-amber-700 bg-amber-300 rounded-full px-1.5 py-0.5 shadow-sm">SAT</div>
                         )}
+                        {status==='reserved' && (
+                          <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-white bg-violet-500 rounded-full px-1.5 py-0.5 shadow-sm">SCC</div>
+                        )}
                         <div className={`text-[10px] font-bold mb-0.5 tracking-wide uppercase ${
                           avail
                             ? isSat ? 'text-amber-600' : 'text-primary-600'
-                            : status==='pending' ? 'text-amber-600' : 'text-gray-400'
+                            : status==='reserved' ? 'text-violet-500' :
+                              status==='pending' ? 'text-amber-600' : 'text-gray-400'
                         }`}>
                           {getDayName(slot.date)}
                         </div>
-                        <div className={`font-black text-base ${avail?'text-gray-900':'text-gray-400'}`}>{formatShortDate(slot.date)}</div>
-                        <div className={`text-xs mt-1 font-semibold ${avail?(isSat?'text-amber-700':'text-primary-700'):'text-gray-400'}`}>
-                          ₹{slot.price.toLocaleString('en-IN')}
-                        </div>
+                        <div className={`font-black text-base ${avail?'text-gray-900':status==='reserved'?'text-violet-900':'text-gray-400'}`}>{formatShortDate(slot.date)}</div>
+                        {status==='reserved' ? (
+                          <div className="text-[10px] text-violet-600 font-bold mt-1 leading-tight">🏏 Internal League</div>
+                        ) : (
+                          <div className={`text-xs mt-1 font-semibold ${avail?(isSat?'text-amber-700':'text-primary-700'):'text-gray-400'}`}>
+                            ₹{slot.price.toLocaleString('en-IN')}
+                          </div>
+                        )}
                         {status==='pending' && <div className="text-[10px] text-amber-600 font-bold mt-0.5">Pending</div>}
                         {(status==='booked'||status==='blocked') && <div className="text-[10px] text-gray-400 font-bold mt-0.5">Booked</div>}
                       </button>
