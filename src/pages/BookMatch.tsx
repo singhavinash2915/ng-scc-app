@@ -913,7 +913,7 @@ export function BookMatch() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Team Name <span className="text-red-500">*</span></label>
-                <input type="text" placeholder="e.g. Mumbai Warriors CC" value={teamName}
+                <input type="text" placeholder="SCC - Sangria Cricket Club" value={teamName}
                   onChange={e=>{ setTeamName(e.target.value); setFormErrors(f=>({...f,teamName:''})); }}
                   className={inputCls(!!formErrors.teamName)} />
                 {formErrors.teamName && <p className="text-red-500 text-xs mt-1">{formErrors.teamName}</p>}

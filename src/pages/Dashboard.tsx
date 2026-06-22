@@ -333,7 +333,7 @@ export function Dashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="font-display text-2xl lg:text-4xl font-extrabold leading-none tracking-tight bg-gradient-to-r from-white via-emerald-100 to-teal-200 bg-clip-text text-transparent">
-                Sangria CC
+                Sangria Cricket Club
               </h1>
               <div className="flex items-center gap-2 mt-2">
                 <span className="inline-flex items-center px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-400/35 text-emerald-200 text-[9px] font-black rounded-full uppercase tracking-[2px]">
