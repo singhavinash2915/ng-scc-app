@@ -58,9 +58,10 @@ function getDayName(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'short' });
 }
 
-// Dates reserved for the Sangria Internal League (no external bookings):
-//   • Months WITH Saturdays → 2 alternate Saturdays (1st & 3rd) + the middle Thursday
-//   • Months with NO Saturdays → 2 alternate Tuesdays (1st & 3rd)
+// Dates reserved for the Sangria Internal League (no external bookings).
+// Cadence = one internal game per week across three weeks:
+//   • Months WITH Saturdays → 2nd Saturday, 3rd Thursday, 4th Saturday
+//   • Months with NO Saturdays → 2nd & 4th Tuesday
 // Derived from the available slots so it stays correct as new months are added.
 function computeReservedDates(slots: MatchSlot[]): Set<string> {
   const reserved = new Set<string>();
@@ -70,17 +71,18 @@ function computeReservedDates(slots: MatchSlot[]): Set<string> {
 
   for (const key of Object.keys(byMonth)) {
     const ms = byMonth[key];
+    const last = <T,>(arr: T[]) => arr[arr.length - 1];
     const sats = ms.filter(s => s.day_type === 'saturday').sort((a, b) => a.date.localeCompare(b.date));
     if (sats.length > 0) {
-      // 1st & 3rd Saturday (fall back to the last available if fewer than 3)
-      [sats[0], sats[2] ?? sats[sats.length - 1]].forEach(s => s && reserved.add(s.date));
-      // middle Thursday of the month
+      // 2nd & 4th Saturday (fall back to the last available if fewer)
+      [sats[1] ?? last(sats), sats[3] ?? last(sats)].forEach(s => s && reserved.add(s.date));
+      // 3rd Thursday of the month
       const thu = ms.filter(s => s.day_type === 'weekday' && dow(s.date) === 4).sort((a, b) => a.date.localeCompare(b.date));
-      if (thu.length) reserved.add(thu[Math.floor((thu.length - 1) / 2)].date);
+      if (thu.length) reserved.add((thu[2] ?? last(thu)).date);
     } else {
-      // no Saturdays this month → 1st & 3rd Tuesday
+      // no Saturdays this month → 2nd & 4th Tuesday
       const tue = ms.filter(s => s.day_type === 'weekday' && dow(s.date) === 2).sort((a, b) => a.date.localeCompare(b.date));
-      [tue[0], tue[2] ?? tue[tue.length - 1]].forEach(s => s && reserved.add(s.date));
+      [tue[1] ?? last(tue), tue[3] ?? last(tue)].forEach(s => s && reserved.add(s.date));
     }
   }
   return reserved;
