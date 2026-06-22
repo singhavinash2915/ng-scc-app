@@ -7,6 +7,7 @@ import type { MatchSlot } from '../types';
 import {
   CalendarDays,
   CheckCircle2,
+  ExternalLink,
   XCircle,
   ChevronLeft,
   ChevronRight,
@@ -56,6 +57,17 @@ function formatShortDate(dateStr: string) {
 }
 function getDayName(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'short' });
+}
+
+// Pull the numeric CricHeroes team id out of whatever the user pastes — a full
+// profile link, a team-profile path, or just the bare id number.
+function extractTeamId(input: string): string | null {
+  const s = (input || '').trim();
+  const path = s.match(/team-profile\/(\d+)/);
+  if (path) return path[1];
+  if (/^\d{3,}$/.test(s)) return s;
+  const anyNum = s.match(/(\d{4,})/);
+  return anyNum ? anyNum[1] : null;
 }
 
 // Dates reserved for the Sangria Internal League (no external bookings).
@@ -266,7 +278,7 @@ function MatchCard({
         <div style={{ fontSize:11, opacity:0.6, marginBottom:6, textTransform:'uppercase', letterSpacing:1 }}>Match</div>
         <div style={{ fontSize:18, fontWeight:900 }}>{teamName}</div>
         <div style={{ fontSize:13, opacity:0.6, margin:'4px 0' }}>vs</div>
-        <div style={{ fontSize:18, fontWeight:900 }}>Sangria Cricket Club</div>
+        <div style={{ fontSize:18, fontWeight:900 }}>SCC – Sangria Cricket Club</div>
       </div>
 
       {/* Details */}
@@ -381,6 +393,7 @@ export function BookMatch() {
     return map;
   }, [slots]);
   const reservedDates     = useMemo(() => computeReservedDates(slots), [slots]);
+  const detectedTeamId    = extractTeamId(chTeamId);
   const monthKeys         = useMemo(() => Object.keys(slotsByMonth).sort(), [slotsByMonth]);
   const currentMonthKey   = monthKeys[currentMonthIndex] ?? '';
   const currentMonthSlots = slotsByMonth[currentMonthKey] ?? [];
@@ -406,7 +419,8 @@ export function BookMatch() {
     if (!contactPhone.trim()) errs.contactPhone = 'Phone number is required';
     else if (!/^[6-9]\d{9}$/.test(contactPhone.replace(/\s/g,'')))
       errs.contactPhone = 'Enter a valid 10-digit Indian mobile number';
-    if (!chTeamId.trim()) errs.chTeamId = 'CricHeroes Team ID is required to prevent duplicate bookings';
+    if (!chTeamId.trim()) errs.chTeamId = 'CricHeroes team link or ID is required to prevent duplicate bookings';
+    else if (!extractTeamId(chTeamId)) errs.chTeamId = 'Couldn\'t read a team ID — paste your CricHeroes team link or enter the ID number';
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -437,7 +451,7 @@ export function BookMatch() {
     const result = await createBooking({
       slotId: selectedSlot.id, slotDate: selectedSlot.date, amount: selectedSlot.price,
       teamName: teamName.trim(), contactName: contactName.trim(),
-      contactPhone: contactPhone.trim(), chTeamId: chTeamId.trim(),
+      contactPhone: contactPhone.trim(), chTeamId: extractTeamId(chTeamId) || chTeamId.trim(),
       paymentMethod, screenshotFile: screenshotFile ?? undefined,
       expectedUpiId: upiId,
     });
@@ -494,7 +508,7 @@ export function BookMatch() {
           <div className="flex items-center gap-3">
             <img src="/scc-logo.jpg" alt="SCC" className="w-10 h-10 rounded-xl object-cover shadow ring-2 ring-primary-100" />
             <div>
-              <h1 className="font-bold text-gray-900 text-base leading-tight">Sangria Cricket Club</h1>
+              <h1 className="font-bold text-gray-900 text-base leading-tight">SCC – Sangria Cricket Club</h1>
               <p className="text-xs text-primary-600 font-medium">Book a Match · Season 2026–27</p>
             </div>
           </div>
@@ -928,21 +942,32 @@ export function BookMatch() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  CricHeroes Team Profile Link <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    CricHeroes Team — link or ID <span className="text-red-500">*</span>
+                  </label>
+                  <a href="https://cricheroes.com/" target="_blank" rel="noopener noreferrer"
+                    className="text-xs font-semibold text-primary-600 hover:text-primary-700 inline-flex items-center gap-1">
+                    Open CricHeroes <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
                 <div className="relative">
                   <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="text" placeholder="https://cricheroes.in/team-profile/12345" value={chTeamId}
+                  <input type="text" inputMode="text" placeholder="Paste team link or type team ID (e.g. 12345)" value={chTeamId}
                     onChange={e=>{ setChTeamId(e.target.value); setFormErrors(f=>({...f,chTeamId:''})); }}
                     className={iconInputCls(!!formErrors.chTeamId)} />
                 </div>
                 {formErrors.chTeamId ? (
                   <p className="text-red-500 text-xs mt-1">{formErrors.chTeamId}</p>
+                ) : detectedTeamId ? (
+                  <div className="mt-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-700 flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>Team ID <strong>{detectedTeamId}</strong> detected — you're good to go.</span>
+                  </div>
                 ) : (
                   <div className="mt-1.5 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-blue-700 flex gap-1.5">
                     <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    <span>Required to enforce one-slot-per-team rule. Team ID stays the same regardless of who contacts us. <strong>How:</strong> CricHeroes app → Your team → Share → Copy link.</span>
+                    <span>Just paste your team's CricHeroes link, or type your team ID. Tip: in the CricHeroes app → Your team → <strong>Share</strong> → Copy link. Keeps bookings one-per-team.</span>
                   </div>
                 )}
               </div>
