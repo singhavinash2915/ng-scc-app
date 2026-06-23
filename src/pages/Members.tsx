@@ -22,6 +22,10 @@ import type { Member } from '../types';
 const MEMBER_PIN = 'scc';
 const PIN_STORAGE_KEY = 'scc-member-access';
 
+// Publicly visible member on the locked Members page — acts as the team's
+// face/contact card for visiting teams who land here without the PIN.
+const PUBLIC_SHOWCASE_MEMBER_ID = '7545cb6b-41fe-4102-b392-f560ae44805f'; // Avinash Singh
+
 // Cricket profile display helpers
 const ROLE_ICON: Record<string, string> = {
   batsman: '🏏', bowler: '⚡', all_rounder: '🌟', wicket_keeper: '🧤',
@@ -372,17 +376,48 @@ export function Members() {
   };
 
   // ---- Member PIN Gate (admins bypass) ----
+  // One member (the team's captain/contact) is shown publicly as a showcase
+  // for visiting teams. The full roster stays behind the PIN.
   if (!isAdmin && !hasAccess) {
+    const showcase = members.find(m => m.id === PUBLIC_SHOWCASE_MEMBER_ID);
     return (
       <div>
-        <Header title="Members" subtitle="Team members — Members Only" />
-        <div className="max-w-sm mx-auto mt-12">
+        <Header title="Members" subtitle="Team contact + full roster" />
+        <div className="max-w-md mx-auto mt-6 px-4 space-y-4">
+
+          {/* Public showcase card */}
+          {showcase && (
+            <Card animate>
+              <CardContent className="p-5">
+                <div className="text-[10px] font-bold uppercase tracking-[2px] text-emerald-600 dark:text-emerald-400 mb-3">
+                  ⭐ Team Captain · Contact
+                </div>
+                <Link to={`/profile/${showcase.id}`} className="flex items-center gap-3.5 group">
+                  {showcase.avatar_url ? (
+                    <img src={showcase.avatar_url} alt={showcase.name}
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-400/40 ring-2 ring-emerald-400/15 shadow-md group-hover:scale-105 transition-transform" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 border-2 border-emerald-400/40 flex items-center justify-center shadow-md">
+                      <span className="text-emerald-50 font-black text-xl">{showcase.name.charAt(0)}</span>
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-black text-gray-900 dark:text-white text-base leading-tight">{showcase.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sangria Cricket Club</p>
+                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1.5">View profile →</p>
+                  </div>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* PIN gate for the full roster */}
           <Card animate>
-            <CardContent className="text-center py-10">
-              <Lock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Members Only</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                Enter the member PIN to view team members.
+            <CardContent className="text-center py-8">
+              <Lock className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Full Team — Members Only</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+                Enter the member PIN to see the full SCC roster.
               </p>
               <form onSubmit={handlePinSubmit} className="space-y-3">
                 <input
@@ -391,11 +426,10 @@ export function Members() {
                   onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
                   placeholder="Enter member PIN"
                   className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                  autoFocus
                 />
                 {pinError && <p className="text-sm text-red-500">{pinError}</p>}
                 <Button type="submit" className="w-full" disabled={!pinInput.trim()}>
-                  Access Members
+                  Unlock Roster
                 </Button>
               </form>
             </CardContent>

@@ -97,9 +97,11 @@ async function buildScorecardArray(matchId: string) {
     const team = data[side] ?? {};
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const metaByNum: Record<number, any> = {};
-    for (const i of (team.innings ?? [])) metaByNum[i.inning] = i;
+    for (const i of (team.innings ?? [])) metaByNum[Number(i.inning)] = i;
     for (const sc of (team.scorecard ?? [])) {
-      const meta = metaByNum[sc.inning] ?? {};
+      // CricHeroes returns super-over innings as strings ('3'/'4') — coerce.
+      const innNum = Number(sc.inning);
+      const meta = metaByNum[innNum] ?? {};
       innings.push({
         team_id: team.id,
         teamName: team.name ?? '',
@@ -107,7 +109,7 @@ async function buildScorecardArray(matchId: string) {
           summary: meta.summary ?? {},
           total_run: meta.total_run, total_wicket: meta.total_wicket,
           total_extra: meta.total_extra, overs_played: meta.overs_played,
-          is_allout: meta.is_allout, inning_num: sc.inning,
+          is_allout: meta.is_allout, inning_num: innNum,
         },
         batting: sc.batting ?? [],
         bowling: sc.bowling ?? [],

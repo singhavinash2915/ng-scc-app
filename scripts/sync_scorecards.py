@@ -57,7 +57,11 @@ def fetch_scorecard(ch_match_id, max_retries=3):
                 meta_by_num = {i.get('inning'): i for i in (team.get('innings') or [])}
                 for sc in (team.get('scorecard') or []):
                     num = sc.get('inning')
-                    meta = meta_by_num.get(num, {})
+                    # CricHeroes returns super-over innings as strings ('3'/'4');
+                    # coerce to int so meta-lookup and sorting are consistent.
+                    try: num = int(num) if num is not None else None
+                    except (TypeError, ValueError): pass
+                    meta = meta_by_num.get(num, meta_by_num.get(str(num), {}))
                     innings.append({
                         'team_id':  team.get('id'),
                         'teamName': team.get('name', ''),
@@ -74,7 +78,11 @@ def fetch_scorecard(ch_match_id, max_retries=3):
                         'bowling': sc.get('bowling', []),
                         'extras':  sc.get('extras', {}),
                     })
-            innings.sort(key=lambda x: x['inning'].get('inning_num') or 0)
+            def _key(x):
+                v = x['inning'].get('inning_num')
+                try: return int(v) if v is not None else 0
+                except (TypeError, ValueError): return 0
+            innings.sort(key=_key)
             return innings if innings else None
         except urllib.error.HTTPError as e:
             if e.code == 404:

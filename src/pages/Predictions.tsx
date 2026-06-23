@@ -68,19 +68,34 @@ export function Predictions() {
       const settledMatches = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result));
       if (settledMatches.length === 0) { setScoredCount(0); return; }
 
-      // Fetch any unscored predictions for those matches
-      const unscored = allPredictions.filter(p =>
-        p.points_earned === null &&
-        settledMatches.some(m => m.id === p.match_id)
-      );
-      if (unscored.length === 0) { setScoredCount(0); return; }
-
-      // For each match with unscored predictions, fetch its scorecard once
-      const matchIds = [...new Set(unscored.map(p => p.match_id))];
+      // Candidates to score: unscored predictions PLUS predictions that were
+      // scored before the scorecard arrived (e.g. when the result syncs first
+      // and scorecards come in a later cron run — first-pass scoring would
+      // award 0 because top_scorer/top_wkt/MOM had no source data).
+      const candidateMatchIds = [...new Set(allPredictions
+        .filter(p => settledMatches.some(m => m.id === p.match_id))
+        .map(p => p.match_id))];
+      if (candidateMatchIds.length === 0) { setScoredCount(0); return; }
       const { data: cards } = await supabase
         .from('match_scorecards')
         .select('*')
-        .in('match_id', matchIds);
+        .in('match_id', candidateMatchIds);
+      const cardFetchedAt: Record<string, string> = {};
+      (cards || []).forEach((c: MatchScorecard & { fetched_at?: string }) => {
+        if (c.fetched_at) cardFetchedAt[c.match_id] = c.fetched_at;
+      });
+      const unscored = allPredictions.filter(p => {
+        if (!settledMatches.some(m => m.id === p.match_id)) return false;
+        if (p.points_earned === null) return true;
+        // Was the scorecard fetched AFTER we scored? → rescore.
+        const cf = cardFetchedAt[p.match_id];
+        return !!(cf && p.scored_at && new Date(cf).getTime() > new Date(p.scored_at).getTime());
+      });
+      if (unscored.length === 0) { setScoredCount(0); return; }
+
+      // For each match with predictions to (re)score, the scorecard is already in cards.
+      const matchIds = [...new Set(unscored.map(p => p.match_id))];
+      void matchIds; // (cards already fetched above)
       const cardByMatch: Record<string, MatchScorecard> = {};
       (cards || []).forEach((c: MatchScorecard) => { cardByMatch[c.match_id] = c; });
 
@@ -125,11 +140,10 @@ export function Predictions() {
     }
   };
 
-  // Auto-trigger scoring once on page load
+  // Auto-trigger scoring once on page load. Runs whenever predictions exist;
+  // scoreSettledPredictions is a no-op if nothing's actually unscored or stale.
   useEffect(() => {
     if (matches.length === 0 || allPredictions.length === 0) return;
-    const unscored = allPredictions.filter(p => p.points_earned === null);
-    if (unscored.length === 0) return;
     scoreSettledPredictions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matches.length, allPredictions.length]);
