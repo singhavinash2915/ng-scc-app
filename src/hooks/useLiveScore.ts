@@ -183,8 +183,53 @@ function parseFromMini(mini: MiniData): Omit<LiveScoreData, 'lastUpdated'> | nul
   };
 }
 
+// ─── liveFeed shape (from our edge function, sourced from the CricHeroes API) ─
+type LiveFeedTeam = { name: string; score: string | null; overs: string; inning: number | null };
+type LiveFeed = {
+  status: 'live' | 'completed' | 'upcoming';
+  maxOvers: number | null;
+  currentInning: number | null;
+  teamA: LiveFeedTeam;
+  teamB: LiveFeedTeam;
+  result: string;
+  ground: string;
+  tossDetails: string;
+};
+
+// Map the API-sourced liveFeed → our LiveScoreData. Ball-by-ball (batsmen/
+// bowler/this-over) isn't available from this source, so those stay empty and
+// the widget shows the score line + result.
+function parseFromLiveFeed(lf: LiveFeed): Omit<LiveScoreData, 'lastUpdated'> | null {
+  if (!lf || lf.status === 'upcoming') return null;
+  const battingIsA = lf.teamA.inning != null && lf.currentInning != null
+    ? lf.teamA.inning === lf.currentInning
+    : true;
+  const batting = battingIsA ? lf.teamA : lf.teamB;
+  const bowling = battingIsA ? lf.teamB : lf.teamA;
+  return {
+    battingTeam: batting.name || '',
+    bowlingTeam: bowling.name || '',
+    score: batting.score || '',
+    overs: batting.overs || '',
+    runRate: '',
+    requiredRunRate: '',
+    battingFirst: lf.currentInning === 1,
+    batsman1: '', batsman2: '', bowler: '',
+    batters: [], bowlers: [],
+    tossDetails: lf.tossDetails,
+    result: lf.result || '',
+    currentOver: [],
+  };
+}
+
 export function parseLiveFromPageProps(pp: Record<string, unknown>): Omit<LiveScoreData, 'lastUpdated'> | null {
   try {
+    // ── PRIMARY now: API-sourced liveFeed from our edge function ──────────────
+    const lf = pp?.liveFeed as LiveFeed | null | undefined;
+    if (lf) {
+      const parsed = parseFromLiveFeed(lf);
+      if (parsed && (parsed.score || parsed.result)) return parsed;
+    }
     // ── PRIMARY: miniScorecard.data is what CricHeroes populates during a live
     // match (ball-by-ball). Their `scorecard` array stays empty until the match
     // is over, so we MUST read miniScorecard first to show live data.
