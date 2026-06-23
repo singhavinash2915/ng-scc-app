@@ -13,64 +13,80 @@ Notes:
     (so MOM/score corrections trickle in automatically).
   - Skips matches without ch_match_id (manual entries).
 """
-import json, urllib.request, urllib.error, urllib.parse, datetime, sys, time, argparse, re
+import json, urllib.request, urllib.error, urllib.parse, datetime, sys, time, argparse, gzip
 
 # ── Supabase config ───────────────────────────────────────────────────────────
 SUPABASE_URL = "https://zrrmpaatydhlkntfpcmw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1wYWF0eWRobGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4Mjc4ODM0N30.kHot4i6MNPjt2neNzJ_tMAplJi_9CiYNgFzAzmEgdeg"
 
-WEB_HEADERS = {
-    'accept': 'application/json',
-    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-}
+# ── CricHeroes API (site scraping died when CricHeroes moved to App Router; the
+#    authenticated API is the reliable source). Update CH_AUTH if it expires.
+CH_API_KEY = "cr!CkH3r0s"
+CH_AUTH    = "db1df8c0-35c5-11f1-acbe-2f500bd24aef"
+CH_UDID    = "3833274f1b23ae81b995ebfdfb7f948b"
 
-# Cached Next.js buildId — refreshed at startup
-_BUILD_ID = None
-
-def get_build_id():
-    """Scrape the Next.js buildId from cricheroes.com home page."""
-    global _BUILD_ID
-    if _BUILD_ID:
-        return _BUILD_ID
-    req = urllib.request.Request('https://cricheroes.com/', headers=WEB_HEADERS)
-    html = urllib.request.urlopen(req, timeout=15).read().decode()
-    m = re.search(r'"buildId":"([^"]+)"', html)
-    if not m:
-        raise RuntimeError('Could not find Next.js buildId on cricheroes.com home page')
-    _BUILD_ID = m.group(1)
-    return _BUILD_ID
+def ch_api_headers():
+    return {
+        'api-key': CH_API_KEY, 'authorization': CH_AUTH, 'udid': CH_UDID,
+        'device-type': 'Chrome: 146.0.0.0', 'accept': 'application/json',
+        'origin': 'https://cricheroes.com', 'referer': 'https://cricheroes.com/',
+        'user-agent': 'Mozilla/5.0', 'accept-encoding': 'gzip',
+    }
 
 def fetch_scorecard(ch_match_id, max_retries=3):
-    """Returns the parsed pageProps.scorecard list, or None if not found / no data.
+    """Fetch the full scorecard from the CricHeroes API and return a list of
+    innings dicts in the legacy shape ({team_id, teamName, inning{...}, batting,
+    bowling, extras}), or None if not found, or 'ERROR' on repeated failure.
 
-    Retries transient network errors (e.g. ConnectionResetError [Errno 54])
-    with exponential backoff so a single flaky connection doesn't crash the
-    entire batch sync.
+    Source: /api/v1/scorecard/v2/get-scorecard/{matchId}
     """
-    build_id = get_build_id()
-    url = f'https://cricheroes.com/_next/data/{build_id}/scorecard/{ch_match_id}/x/x/scorecard.json'
-
+    url = f'https://api.cricheroes.in/api/v1/scorecard/v2/get-scorecard/{ch_match_id}'
     last_err = None
     for attempt in range(max_retries):
-        req = urllib.request.Request(url, headers=WEB_HEADERS)
         try:
-            data = json.loads(urllib.request.urlopen(req, timeout=20).read())
-            pp = data.get('pageProps', {})
-            sc = pp.get('scorecard', [])
-            return sc if sc else None
+            req = urllib.request.Request(url, headers=ch_api_headers())
+            r = urllib.request.urlopen(req, timeout=20)
+            raw = r.read()
+            if r.headers.get('content-encoding') == 'gzip':
+                raw = gzip.decompress(raw)
+            data = (json.loads(raw) or {}).get('data') or {}
+
+            innings = []
+            for side in ('team_a', 'team_b'):
+                team = data.get(side) or {}
+                meta_by_num = {i.get('inning'): i for i in (team.get('innings') or [])}
+                for sc in (team.get('scorecard') or []):
+                    num = sc.get('inning')
+                    meta = meta_by_num.get(num, {})
+                    innings.append({
+                        'team_id':  team.get('id'),
+                        'teamName': team.get('name', ''),
+                        'inning': {
+                            'summary':      meta.get('summary') or {},
+                            'total_run':    meta.get('total_run'),
+                            'total_wicket': meta.get('total_wicket'),
+                            'total_extra':  meta.get('total_extra'),
+                            'overs_played': meta.get('overs_played'),
+                            'is_allout':    meta.get('is_allout'),
+                            'inning_num':   num,
+                        },
+                        'batting': sc.get('batting', []),
+                        'bowling': sc.get('bowling', []),
+                        'extras':  sc.get('extras', {}),
+                    })
+            innings.sort(key=lambda x: x['inning'].get('inning_num') or 0)
+            return innings if innings else None
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 return None  # match doesn't exist on CH — don't retry
             last_err = e
         except (ConnectionResetError, urllib.error.URLError, TimeoutError, OSError) as e:
-            # Transient network issue → back off and retry
             last_err = e
             time.sleep(1.5 * (attempt + 1))  # 1.5s, 3s, 4.5s
             continue
 
-    # Exhausted all retries — log but don't crash the whole batch
     print(f"    ⚠️  ch={ch_match_id} failed after {max_retries} retries: {type(last_err).__name__}")
-    return 'ERROR'  # sentinel so main loop knows to count it as error, not "no-data"
+    return 'ERROR'
 
 def sb(method, path, body=None, params=""):
     url = f"{SUPABASE_URL}/rest/v1/{path}{('?' + params) if params else ''}"
@@ -197,15 +213,7 @@ def main():
     args = parser.parse_args()
 
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-    print(f"[{now}] Detailed scorecard sync (CricHeroes → Supabase)\n")
-
-    # Verify build_id is reachable up-front
-    try:
-        bid = get_build_id()
-        print(f"✓ Found Next.js buildId: {bid}\n")
-    except Exception as e:
-        print(f"❌ Could not get CricHeroes buildId: {e}")
-        sys.exit(1)
+    print(f"[{now}] Detailed scorecard sync (CricHeroes API → Supabase)\n")
 
     matches = get_matches_to_sync(args.past_days, args.match_id)
     print(f"Eligible matches: {len(matches)}\n")

@@ -85,6 +85,40 @@ function normalizeLive(m: any) {
   };
 }
 
+// Full per-innings scorecard (batting + bowling tables) in the legacy shape the
+// app's useFullScorecard / useStatSync expect: [{ teamName, inning{...},
+// batting[], bowling[], extras }]. Source: scorecard/v2/get-scorecard.
+async function buildScorecardArray(matchId: string) {
+  const resp = await chApiGet(`api/v1/scorecard/v2/get-scorecard/${matchId}`);
+  const data = resp?.data ?? {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const innings: any[] = [];
+  for (const side of ['team_a', 'team_b']) {
+    const team = data[side] ?? {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const metaByNum: Record<number, any> = {};
+    for (const i of (team.innings ?? [])) metaByNum[i.inning] = i;
+    for (const sc of (team.scorecard ?? [])) {
+      const meta = metaByNum[sc.inning] ?? {};
+      innings.push({
+        team_id: team.id,
+        teamName: team.name ?? '',
+        inning: {
+          summary: meta.summary ?? {},
+          total_run: meta.total_run, total_wicket: meta.total_wicket,
+          total_extra: meta.total_extra, overs_played: meta.overs_played,
+          is_allout: meta.is_allout, inning_num: sc.inning,
+        },
+        batting: sc.batting ?? [],
+        bowling: sc.bowling ?? [],
+        extras: sc.extras ?? {},
+      });
+    }
+  }
+  innings.sort((a, b) => (a.inning.inning_num ?? 0) - (b.inning.inning_num ?? 0));
+  return innings;
+}
+
 // Find a match across the relevant team feeds and return normalized live data.
 async function findLive(matchId: string) {
   for (const tid of FEED_TEAM_IDS) {
@@ -142,9 +176,15 @@ Deno.serve(async (req) => {
     // ── 1) Full live ball-by-ball via the CricHeroes API (mini-scorecard) ─────
     //    Returns the same shape the app's parseFromMini expects (batsmen,
     //    bowlers, recent over, partnership, both teams' innings, result).
+    //    For type=scorecard we also include the full innings tables.
     try {
       const mini = await chApiGet(`api/v1/scorecard/get-mini-scorecard/${matchId}`);
-      if (mini?.data) return json({ miniScorecard: { status: mini.status, data: mini.data } });
+      const miniScorecard = mini?.data ? { status: mini.status, data: mini.data } : null;
+      let scorecard: unknown = undefined;
+      if (type === 'scorecard') {
+        try { scorecard = await buildScorecardArray(matchId); } catch (_e) { /* keep mini only */ }
+      }
+      if (miniScorecard || scorecard) return json({ miniScorecard, scorecard });
     } catch (_e) { /* fall through */ }
 
     // ── 2) Fallback: score line from the team-match feed ─────────────────────
