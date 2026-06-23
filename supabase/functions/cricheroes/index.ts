@@ -48,6 +48,13 @@ function chApiHeaders() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function chApiGet(path: string): Promise<any> {
+  const res = await fetch(`https://api.cricheroes.in/${path}`, { headers: chApiHeaders() });
+  if (!res.ok) throw new Error(`ch-api ${path} -> ${res.status}`);
+  return res.json();
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function chTeamFeed(teamId: number): Promise<any[]> {
   const ms = Date.now();
   const url = `https://api.cricheroes.in/api/v1/team/get-team-match/${teamId}?pagesize=12&teamId=${teamId}&pageno=1&datetime=${ms}`;
@@ -132,19 +139,28 @@ Deno.serve(async (req) => {
 
     if (!matchId) return json({ error: 'matchId query param required' }, 400);
 
-    // ── Live / scorecard: API first, scrape as last resort ───────────────────
+    // ── 1) Full live ball-by-ball via the CricHeroes API (mini-scorecard) ─────
+    //    Returns the same shape the app's parseFromMini expects (batsmen,
+    //    bowlers, recent over, partnership, both teams' innings, result).
+    try {
+      const mini = await chApiGet(`api/v1/scorecard/get-mini-scorecard/${matchId}`);
+      if (mini?.data) return json({ miniScorecard: { status: mini.status, data: mini.data } });
+    } catch (_e) { /* fall through */ }
+
+    // ── 2) Fallback: score line from the team-match feed ─────────────────────
     const liveFeed = await findLive(matchId);
-    let pageProps: Record<string, unknown> = {};
-    if (!liveFeed) {
-      // The old website scrape (now usually fails, but harmless to attempt).
-      try {
-        pageProps = await tryUrls([
-          `https://cricheroes.com/scorecard/${matchId}/x/x/${type}`,
-          `https://cricheroes.in/scorecard/${matchId}/x/x/${type}`,
-        ]);
-      } catch (_e) { /* ignore — return whatever we have */ }
+    if (liveFeed) return json({ liveFeed });
+
+    // ── 3) Last resort: the old website scrape (usually fails now) ───────────
+    try {
+      const pageProps = await tryUrls([
+        `https://cricheroes.com/scorecard/${matchId}/x/x/${type}`,
+        `https://cricheroes.in/scorecard/${matchId}/x/x/${type}`,
+      ]);
+      return json(pageProps);
+    } catch (_e) {
+      return json({ liveFeed: null });
     }
-    return json({ liveFeed, ...pageProps });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
