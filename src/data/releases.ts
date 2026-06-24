@@ -20,6 +20,21 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.06.24',
+    date: '24 June 2026',
+    title: 'Season Finale & Going Public 🌟',
+    subtitle: 'Team of the Season · Club Wrapped · Live links & Scouting for rival clubs',
+    notes: [
+      // ── Season Finale ────────────────────────────────────────────────────
+      { emoji: '🏆', title: 'Season Finale',             tag: 'new', desc: 'A brand-new /season page to close out the year: Team of the Season (Best XI), Season Awards Night, Player Report Cards (A+ to C), and a tap-through Club Wrapped story. Find it as "Season Finale" in the menu.' },
+
+      // ── Public growth features ───────────────────────────────────────────
+      { emoji: '📡', title: 'Public Live-Match Link',    tag: 'new', desc: 'Every match now has a shareable, no-login live page — drop the link in any WhatsApp group and anyone can follow our score ball-by-ball, no app needed.' },
+      { emoji: '🆚', title: 'Scouting Report',           tag: 'new', desc: 'A public report for teams about to face us — our record, current form, players to watch, and a searchable head-to-head so any rival captain can look up their team\'s record vs SCC.' },
+      { emoji: '🖼️', title: 'Result Posters — Shareable', tag: 'improved', desc: 'Match result posters now carry a subtle "Want this for your club?" footer — so every result we share doubles as a showcase of our app.' },
+    ],
+  },
+  {
     version: '2026.06.12',
     date: '12 June 2026',
     title: 'Match Centre & Rankings Week 🏏',
