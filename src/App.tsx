@@ -41,6 +41,9 @@ const WhatsNew  = lazy(() => import('./pages/WhatsNew').then(m => ({ default: m.
 const EngagementHub = lazy(() => import('./pages/EngagementHub').then(m => ({ default: m.EngagementHub })));
 const Rankings = lazy(() => import('./pages/Rankings').then(m => ({ default: m.Rankings })));
 const Fantasy = lazy(() => import('./pages/Fantasy').then(m => ({ default: m.Fantasy })));
+const SeasonFinale = lazy(() => import('./pages/SeasonFinale').then(m => ({ default: m.SeasonFinale })));
+const LiveMatch = lazy(() => import('./pages/LiveMatch').then(m => ({ default: m.LiveMatch })));
+const Scout = lazy(() => import('./pages/Scout').then(m => ({ default: m.Scout })));
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -90,6 +93,7 @@ const AppRoutes = () => (
       {/* Standalone pages — no sidebar/layout */}
       <Route path="/poll/:matchId" element={<MatchPoll />} />
       <Route path="/book-match" element={<Suspense fallback={<PageLoader />}><BookMatch /></Suspense>} />
+      <Route path="/live/:chMatchId" element={<Suspense fallback={<PageLoader />}><LiveMatch /></Suspense>} />
 
       {/* All other pages — with full layout */}
       <Route element={<LayoutWrapper />}>
@@ -121,6 +125,8 @@ const AppRoutes = () => (
         <Route path="/hub"           element={<Suspense fallback={<PageLoader />}><EngagementHub /></Suspense>} />
         <Route path="/rankings"      element={<Suspense fallback={<PageLoader />}><Rankings /></Suspense>} />
         <Route path="/fantasy"       element={<Suspense fallback={<PageLoader />}><Fantasy /></Suspense>} />
+        <Route path="/season"        element={<Suspense fallback={<PageLoader />}><SeasonFinale /></Suspense>} />
+        <Route path="/scout"         element={<Suspense fallback={<PageLoader />}><Scout /></Suspense>} />
       </Route>
     </Routes>
   </>

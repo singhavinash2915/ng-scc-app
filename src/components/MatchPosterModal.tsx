@@ -6,6 +6,7 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { useMatchScorecard, type BatterRow, type BowlerRow } from '../hooks/useMatchScorecard';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
+import { APP_URL, GET_APP_CTA, CLUB_NAME, CLUB_TAGLINE } from '../data/appMeta';
 import type { Match } from '../types';
 
 // SCC's CricHeroes team ID — used to identify SCC's innings vs opponent's
@@ -585,7 +586,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <img src={SCC_LOGO_DATA_URL} alt="" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
                     <p style={{ fontSize: 11, fontWeight: 900, color: '#fff', margin: 0 }}>
-                      Sangria Cricket Club <span style={{ color: '#9ca3af', fontWeight: 500 }}>· Pune · Est 2024</span>
+                      {CLUB_NAME} <span style={{ color: '#9ca3af', fontWeight: 500 }}>· {CLUB_TAGLINE}</span>
                     </p>
                   </div>
                   {cricheroesUrl && (
@@ -593,6 +594,20 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
                       Full scorecard: <span style={{ color: '#34d399', fontWeight: 700 }}>cricheroes.in/scorecard/{match.ch_match_id}</span>
                     </p>
                   )}
+                </div>
+
+                {/* GROWTH CTA — turns every shared poster into an ad for the app */}
+                <div style={{
+                  marginTop: 12, padding: '10px 16px', borderRadius: 12,
+                  background: 'linear-gradient(110deg, #7c3aed, #2563eb 65%, #0a1019)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                }}>
+                  <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', margin: 0 }}>
+                    📱 Built with our own club app — live scores, stats &amp; more.
+                  </p>
+                  <p style={{ fontSize: 13, fontWeight: 900, color: '#a7f3d0', margin: 0, whiteSpace: 'nowrap' }}>
+                    {GET_APP_CTA} {APP_URL} 👈
+                  </p>
                 </div>
               </>
             )}
