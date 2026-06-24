@@ -4,7 +4,7 @@
 // think "we want this for our club".
 
 // Public deployed URL of the app. Update this once the custom domain is live.
-export const APP_URL = 'sangriacricketclub.in';
+export const APP_URL = 'sangriacricket.club';
 
 // Marketing one-liner shown on shareables to pull other clubs in.
 export const GET_APP_CTA = 'Want this for your club?';
