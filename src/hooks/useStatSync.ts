@@ -296,21 +296,56 @@ export function useStatSync() {
     const unmatchedSet = new Set<string>();
     let errors = 0;
 
+    // ── Preload detailed scorecards from the DB ──────────────────────────────
+    // The match_scorecards table is populated reliably by the server-side
+    // scripts/sync_scorecards.py (the daily sync). Reading from it — instead of
+    // re-fetching every match live from the CricHeroes edge function — is both
+    // far faster (one query vs 50+ sequential network calls) and far more
+    // reliable: a single transient edge-function failure used to silently drop
+    // a match's wickets/runs, undercounting the season leaderboard. We only
+    // fall back to the live edge fetch for matches not yet in the table
+    // (e.g. one that just finished and hasn't been scorecard-synced yet).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scByChId = new Map<string, Record<string, any>>();
+    const chIds = eligible.map(m => String(m.ch_match_id)).filter(Boolean);
+    if (chIds.length) {
+      const { data: scRows } = await supabase
+        .from('match_scorecards')
+        .select('ch_match_id, innings1_team_name, innings1_batting, innings1_bowling, innings2_team_name, innings2_batting, innings2_bowling')
+        .in('ch_match_id', chIds);
+      for (const r of scRows ?? []) scByChId.set(String(r.ch_match_id), r);
+    }
+
+    // Build the [{ teamName, batting, bowling }] shape the aggregator expects
+    // from a stored match_scorecards row.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buildScorecard = (r: Record<string, any>) => [
+      { teamName: r.innings1_team_name, batting: r.innings1_batting ?? [], bowling: r.innings1_bowling ?? [] },
+      { teamName: r.innings2_team_name, batting: r.innings2_batting ?? [], bowling: r.innings2_bowling ?? [] },
+    ].filter(inn => inn.teamName);
+
     for (let i = 0; i < eligible.length; i++) {
       const match = eligible[i];
       setProgress(p => ({ ...p, done: i, message: `Processing ${i + 1} / ${eligible.length} matches…` }));
 
       try {
-        const res = await fetch(
-          `${supabaseUrl}/functions/v1/cricheroes?matchId=${match.ch_match_id}&type=scorecard`,
-          { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let scorecard: Array<Record<string, any>> | undefined;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pp = await res.json() as Record<string, any>;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const scorecard = pp?.scorecard as Array<Record<string, any>> | undefined;
+        const stored = scByChId.get(String(match.ch_match_id));
+        if (stored) {
+          scorecard = buildScorecard(stored);
+        } else {
+          // Fallback: match not yet in match_scorecards — fetch it live.
+          const res = await fetch(
+            `${supabaseUrl}/functions/v1/cricheroes?matchId=${match.ch_match_id}&type=scorecard`,
+            { headers: { Authorization: `Bearer ${supabaseAnonKey}`, apikey: supabaseAnonKey } }
+          );
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pp = await res.json() as Record<string, any>;
+          scorecard = pp?.scorecard as Array<Record<string, any>> | undefined;
+        }
         if (!scorecard?.length) continue;
 
         for (const raw of scorecard) {
@@ -406,8 +441,11 @@ export function useStatSync() {
         errors++;
       }
 
-      // Polite delay to avoid hammering CricHeroes / the edge function
-      if (i < eligible.length - 1) await new Promise(r => setTimeout(r, 400));
+      // Polite delay only when we hit the live edge-function fallback —
+      // DB reads from match_scorecards don't need throttling.
+      if (!scByChId.has(String(match.ch_match_id)) && i < eligible.length - 1) {
+        await new Promise(r => setTimeout(r, 400));
+      }
     }
 
     // ── Compute derived stats + upsert ────────────────────────────────────────
