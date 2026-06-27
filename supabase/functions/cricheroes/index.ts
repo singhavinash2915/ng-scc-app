@@ -54,6 +54,90 @@ async function chApiGet(path: string): Promise<any> {
   return res.json();
 }
 
+// ── Heroes of the Match ──────────────────────────────────────────────────────
+// Pulls CricHeroes' own player_of_the_match + best_performances (batting &
+// bowling) + insight one-liners straight from the summary-scorecard endpoint.
+async function buildHeroes(matchId: string) {
+  const resp = await chApiGet(`api/v1/scorecard/get-summary-scorecard/${matchId}`);
+  const d = resp?.data ?? {};
+  // Strip CricHeroes' <font> markup from the insight statements.
+  const insights = Array.isArray(d.insight_statements)
+    ? d.insight_statements.map((s: string) => String(s).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()).filter(Boolean)
+    : [];
+  return {
+    player_of_the_match: d.player_of_the_match ?? null,
+    best_performances: d.best_performances ?? { batting: [], bowling: [] },
+    insight_statements: insights,
+    match_summary: d.match_summary?.summary ?? null,
+  };
+}
+
+// ── Match Insights (phases of play + turning points) ─────────────────────────
+// Aggregates the ball-by-ball commentary into compact per-over rows so the
+// client can build phase splits and turning-point overs without shipping every
+// ball. Each over: { inning, over, team_id, runs, wickets, dots, boundaryRuns,
+// legalBalls, seq[] }.
+async function buildInsights(matchId: string) {
+  // Authoritative innings totals + insight one-liners from the summary scorecard
+  // (the ball-by-ball commentary can be incomplete on quick-scored matches, so
+  // the client reconciles totals/wickets against these).
+  let innTotals: Array<{ inning: number; team_id: number; team_name: string; runs: number; wickets: number; balls: number; runRate: number }> = [];
+  let insightStatements: string[] = [];
+  try {
+    const sresp = await chApiGet(`api/v1/scorecard/get-summary-scorecard/${matchId}`);
+    const sd = sresp?.data ?? {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const tk of ['team_a', 'team_b'] as const) {
+      const t = sd[tk] ?? {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const inn of (t.innings ?? [])) {
+        innTotals.push({
+          inning: Number(inn.inning), team_id: t.id, team_name: t.name,
+          runs: Number(inn.total_run ?? 0), wickets: Number(inn.total_wicket ?? 0),
+          balls: Number(inn.balls_played ?? 0),
+          runRate: Number(inn.summary?.rr ?? 0),
+        });
+      }
+    }
+    insightStatements = Array.isArray(sd.insight_statements)
+      ? sd.insight_statements.map((s: string) => String(s).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()).filter(Boolean)
+      : [];
+  } catch (_e) { /* totals optional */ }
+
+  const resp = await chApiGet(`api/v1/scorecard/get-commentary/${matchId}`);
+  const groups = resp?.data?.commentary_with_over_summary ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const balls: any[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const g of groups) for (const b of (g?.match_over_balls ?? [])) balls.push(b);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const byOver = new Map<string, any>();
+  for (const b of balls) {
+    const key = `${b.inning}-${b.current_over}`;
+    let o = byOver.get(key);
+    if (!o) {
+      o = { inning: Number(b.inning), over: Number(b.current_over), team_id: b.team_id,
+            runs: 0, wickets: 0, dots: 0, boundaryRuns: 0, legalBalls: 0, seq: [] as string[] };
+      byOver.set(key, o);
+    }
+    const run = Number(b.run ?? 0);
+    const extra = Number(b.extra_run ?? 0);
+    const isWide = String(b.extra_type_code ?? '').toLowerCase() === 'wd';
+    const isNoball = String(b.extra_type_code ?? '').toLowerCase() === 'nb';
+    o.runs += run + extra;
+    if (b.is_out) o.wickets += 1;
+    if (b.is_boundry) o.boundaryRuns += run;
+    if (!isWide && !isNoball) o.legalBalls += 1;
+    if (run === 0 && extra === 0 && !b.is_out) o.dots += 1;
+    o.seq.push(b.is_out ? 'W' : isWide ? 'wd' : isNoball ? 'nb' : String(run));
+  }
+  // Balls come newest-first → reverse seq so each over reads chronologically.
+  const overs = [...byOver.values()].map(o => ({ ...o, seq: o.seq.reverse() }))
+    .sort((a, b) => a.inning - b.inning || a.over - b.over);
+  return { overs, innTotals, insightStatements };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function chTeamFeed(teamId: number): Promise<any[]> {
   const ms = Date.now();
@@ -174,6 +258,18 @@ Deno.serve(async (req) => {
     }
 
     if (!matchId) return json({ error: 'matchId query param required' }, 400);
+
+    // ── Heroes of the Match (PoM, best batter/bowler, insights) ──────────────
+    if (type === 'heroes') {
+      try { return json({ heroes: await buildHeroes(matchId) }); }
+      catch (e) { return json({ heroes: null, error: String(e) }, 200); }
+    }
+
+    // ── Match Insights (phases of play + turning-point overs) ─────────────────
+    if (type === 'insights') {
+      try { return json({ insights: await buildInsights(matchId) }); }
+      catch (e) { return json({ insights: null, error: String(e) }, 200); }
+    }
 
     // ── 1) Full live ball-by-ball via the CricHeroes API (mini-scorecard) ─────
     //    Returns the same shape the app's parseFromMini expects (batsmen,

@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { MapPin, Trophy, Loader2, WifiOff, ExternalLink } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { useFullScorecard, type InningsData, type BatterRow, type BowlerRow } from '../hooks/useFullScorecard';
+import { MatchHeroes } from './MatchHeroes';
+import { MatchInsights } from './MatchInsights';
+
+type ModalView = 'heroes' | 'scorecard' | 'insights';
 
 interface Props {
   isOpen:    boolean;
@@ -165,15 +169,45 @@ function InningsTab({ innings, label }: { innings: InningsData; label: string })
 export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, matchDate }: Props) {
   const { data, loading, error } = useFullScorecard(chMatchId, isOpen);
   const [activeTab, setActiveTab] = useState(0);
+  const [view, setView] = useState<ModalView>('heroes');
 
   const chUrl = `https://cricheroes.in/scorecard/${chMatchId}/x/x/scorecard`;
+  const inn1Name = data?.innings[0]?.teamName;
+  const inn2Name = data?.innings[1]?.teamName;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Full Scorecard" size="xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="Match Centre" size="xl">
       <div
         className="rounded-xl overflow-hidden"
         style={{ background: 'linear-gradient(180deg, #0b0b0b 0%, #0f0f0f 100%)' }}
       >
+        {/* Top-level view tabs — Heroes · Scorecard · Insights */}
+        <div className="flex gap-1 p-1 m-3 mb-0 bg-white/5 rounded-xl">
+          {([['heroes', '🏆 Heroes'], ['scorecard', '📋 Scorecard'], ['insights', '📊 Insights']] as [ModalView, string][]).map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                view === v ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Heroes panel */}
+        {view === 'heroes' && (
+          <div className="p-4"><MatchHeroes chMatchId={chMatchId} /></div>
+        )}
+
+        {/* Insights panel */}
+        {view === 'insights' && (
+          <div className="p-4"><MatchInsights chMatchId={chMatchId} innings1Name={inn1Name} innings2Name={inn2Name} /></div>
+        )}
+
+        {/* Scorecard panel */}
+        {view === 'scorecard' && (<>
         {/* Loading */}
         {loading && (
           <div className="flex flex-col items-center gap-3 py-12">
@@ -266,6 +300,7 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
             )}
           </div>
         )}
+        </>)}
       </div>
     </Modal>
   );
