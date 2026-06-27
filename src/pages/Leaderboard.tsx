@@ -237,7 +237,14 @@ export function Leaderboard() {
     { id: 'overall',  label: 'Overall',  icon: Trophy,     color: 'text-yellow-500' },
   ];
 
-  const activeStats = tab === 'overall' ? overallSorted : sorted;
+  // Best Fielder = outfielders only. Wicket-keepers (anyone with stumpings)
+  // are excluded — their caught-behind dismissals inflate the catch count and
+  // otherwise dominate the fielding board.
+  const activeStats = tab === 'overall'
+    ? overallSorted
+    : tab === 'fielding'
+      ? sorted.filter(s => (s.fielding_stumpings ?? 0) === 0)
+      : sorted;
 
   // ── Rank-change tracking ─────────────────────────────────────────────────
   // Two keys per tab:
@@ -347,7 +354,7 @@ export function Leaderboard() {
             const score = tab === 'overall' ? overallScore(player) :
               tab === 'batting' ? player.batting_runs :
               tab === 'bowling' ? player.bowling_wickets :
-              player.fielding_catches + player.fielding_stumpings + player.fielding_run_outs;
+              player.fielding_catches + player.fielding_run_outs;
             const scoreLabel = tab === 'batting' ? 'runs' : tab === 'bowling' ? 'wkts' : tab === 'overall' ? 'pts' : 'dismissals';
             const avatarUrl = (player.member as { avatar_url?: string } | undefined)?.avatar_url;
             const name = (player.member as { name?: string } | undefined)?.name || 'Player';
@@ -438,7 +445,7 @@ export function Leaderboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {sorted.map((player, idx) => {
+                  {activeStats.map((player, idx) => {
                     const name = (player.member as { name?: string } | undefined)?.name || 'Unknown';
                     const avatarUrl = (player.member as { avatar_url?: string } | undefined)?.avatar_url;
                     const isTopRow = idx < 3;

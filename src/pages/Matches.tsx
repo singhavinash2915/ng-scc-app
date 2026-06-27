@@ -43,6 +43,7 @@ import { PollManageModal } from '../components/PollManageModal';
 import { SquadGraphicModal } from '../components/SquadGraphicModal';
 import { MatchPosterModal } from '../components/MatchPosterModal';
 import { PreMatchPosterModal } from '../components/PreMatchPosterModal';
+import { MatchScorecardModal } from '../components/MatchScorecardModal';
 import { SquadSelectorModal } from '../components/SquadSelectorModal';
 import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
 import { useReactions, type ReactionEmoji } from '../hooks/useReactions';
@@ -224,6 +225,7 @@ export function Matches() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [matchCentre, setMatchCentre] = useState<Match | null>(null);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -966,6 +968,18 @@ export function Matches() {
                       </div>
                     )}
 
+                    {/* Match Centre — Heroes · Scorecard · Insights (played matches) */}
+                    {match.ch_match_id && ['won', 'lost', 'draw'].includes(match.result) && (
+                      <div className="mt-2">
+                        <button
+                          onClick={() => setMatchCentre(match)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-bold shadow-sm hover:from-purple-700 hover:to-blue-700 transition-colors"
+                        >
+                          📊 Match Centre
+                        </button>
+                      </div>
+                    )}
+
                     {/* CricHeroes live link */}
                     {match.ch_match_id && (
                       <div className="mt-2">
@@ -1031,7 +1045,10 @@ export function Matches() {
                         <MoreVertical className="w-5 h-5 text-gray-500" />
                       </button>
                       {menuOpen === match.id && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                        <>
+                          {/* Backdrop — closes the menu; also dims on mobile bottom-sheet */}
+                          <div className="fixed inset-0 z-40 bg-black/30 sm:bg-transparent" onClick={() => setMenuOpen(null)} />
+                          <div className="fixed sm:absolute left-0 right-0 bottom-0 sm:left-auto sm:right-0 sm:bottom-auto sm:mt-2 w-full sm:w-48 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-50 max-h-[75vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
                           <button
                             onClick={() => openEditModal(match)}
                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -1125,7 +1142,8 @@ export function Matches() {
                           >
                             <Trash2 className="w-4 h-4" /> Delete
                           </button>
-                        </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   )}
@@ -2345,6 +2363,17 @@ export function Matches() {
           isOpen={showPreMatchPosterModal}
           onClose={() => { setShowPreMatchPosterModal(false); setPreMatchPosterMatch(null); }}
           match={preMatchPosterMatch}
+        />
+      )}
+
+      {/* Match Centre — Heroes · Scorecard · Insights */}
+      {matchCentre?.ch_match_id && (
+        <MatchScorecardModal
+          isOpen={!!matchCentre}
+          onClose={() => setMatchCentre(null)}
+          chMatchId={String(matchCentre.ch_match_id)}
+          matchLabel={`SCC vs ${matchCentre.opponent || 'Opponent'}`}
+          matchDate={matchCentre.date}
         />
       )}
 

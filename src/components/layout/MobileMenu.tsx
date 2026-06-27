@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Gamepad2 } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Gamepad2, Swords } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -80,7 +80,9 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/hub', icon: Gamepad2, label: 'Club Hub' },
               { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
               { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
+              { to: '/season', icon: Sparkles, label: 'Season Finale' },
               { to: '/records', icon: Award, label: 'Hall of Fame' },
+              { to: '/scout', icon: Swords, label: 'Scouting Report' },
               { to: '/predictions', icon: Sparkles, label: 'Predictions' },
               { to: '/finance', icon: Wallet, label: 'Finance' },
               { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },

@@ -20,6 +20,19 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.06.27',
+    date: '27 June 2026',
+    title: 'Match Centre 🏟️',
+    subtitle: 'Heroes of the Match · Match Insights · CricHeroes-style analysis',
+    notes: [
+      { emoji: '🏆', title: 'Heroes of the Match', tag: 'new', desc: 'Every played match now has a Match Centre with Player of the Match, Best Batter, Best Bowler and a top All-Rounder — with our own player photos and links to their profiles.' },
+      { emoji: '📊', title: 'Match Insights', tag: 'new', desc: 'See how the game was won: runs, wickets, dots, boundary runs and run rate side-by-side, phases won, plus turning-point overs with ball-by-ball pills.' },
+      { emoji: '🎯', title: 'Open from anywhere', tag: 'improved', desc: 'A new "📊 Match Centre" button on the Dashboard and on every match card opens the full analysis.' },
+      { emoji: '🧤', title: 'Best Fielder fixed', tag: 'fixed', desc: 'Wicket-keepers no longer dominate the Best Fielder board — keepers are now excluded so it reflects true outfielding.' },
+      { emoji: '📱', title: 'Mobile fixes', tag: 'fixed', desc: 'Season Finale & Scouting Report now appear in the mobile menu, and the match options (⋮) menu is now an easy-to-tap bottom sheet.' },
+    ],
+  },
+  {
     version: '2026.06.24',
     date: '24 June 2026',
     title: 'Season Finale & Going Public 🌟',

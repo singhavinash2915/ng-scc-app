@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { BarChart3, Loader2, Zap } from 'lucide-react';
 import { useMatchInsights, type InningInsight, type PhaseStat } from '../hooks/useMatchAnalysis';
 
@@ -27,7 +27,6 @@ interface Props {
 export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) {
   const { data, loading, error } = useMatchInsights(chMatchId);
   const innings = data?.innings ?? null;
-  const [phaseIdx, setPhaseIdx] = useState<number | 'all'>('all');
 
   // Identify SCC innings vs opponent innings.
   const { scc, opp } = useMemo(() => {
@@ -40,12 +39,6 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
   const nameFor = (inn: InningInsight | null) =>
     !inn ? '' : inn.teamName || (inn.teamId === SCC_TEAM_ID ? 'Sangria Cricket Club'
       : (inn.inning === 1 ? innings1Name : innings2Name) || 'Opponent');
-
-  // Phase labels come from whichever innings has the most phases.
-  const phaseLabels = useMemo(() => {
-    const a = scc?.phases ?? [], b = opp?.phases ?? [];
-    return (a.length >= b.length ? a : b).map(p => p.label);
-  }, [scc, opp]);
 
   // Phases won (by runs scored in each phase). Computed before any early return
   // so hook order stays stable.
@@ -66,29 +59,18 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
     return <p className="text-center text-sm text-gray-500 py-8">Insights unavailable for this match.</p>;
   }
 
-  const statFor = (inn: InningInsight | null): PhaseStat | null => {
-    if (!inn) return null;
-    return phaseIdx === 'all' ? inn.total : (inn.phases[phaseIdx] ?? null);
-  };
-  const sStat = statFor(scc), oStat = statFor(opp);
+  // We only show whole-innings totals (reconciled to the authoritative
+  // scorecard). Per-over phase splits were dropped — the ball-by-ball feed is
+  // unreliable on quick-scored matches.
+  const sStat = scc?.total ?? null, oStat = opp?.total ?? null;
 
-  const isAll = phaseIdx === 'all';
-  // Per-phase wickets come from ball-by-ball, which can be incomplete; only the
-  // innings total (authoritative) is trustworthy. Hide per-phase wickets when
-  // the ball data missed dismissals.
-  const wktCell = (inn: InningInsight | null, s: PhaseStat | null) => {
-    if (!s) return '–';
-    if (isAll) return s.wickets;                 // reconciled to scorecard
-    return inn?.wicketsReliable ? s.wickets : '–';
-  };
-  const rows: Array<{ label: string; get: (inn: InningInsight | null, s: PhaseStat) => string | number }> = [
-    { label: 'Runs scored',   get: (_i, s) => s.runs },
-    { label: 'Wickets lost',  get: (i, s) => wktCell(i, s) },
-    { label: 'Dots played',   get: (_i, s) => s.dots },
-    { label: 'Runs in 4s/6s', get: (_i, s) => s.boundaryRuns },
-    { label: 'Run rate',      get: (_i, s) => s.runRate.toFixed(2) },
+  const rows: Array<{ label: string; get: (s: PhaseStat) => string | number }> = [
+    { label: 'Runs scored',   get: s => s.runs },
+    { label: 'Wickets lost',  get: s => s.wickets },
+    { label: 'Dots played',   get: s => s.dots },
+    { label: 'Runs in 4s/6s', get: s => s.boundaryRuns },
+    { label: 'Run rate',      get: s => s.runRate.toFixed(2) },
   ];
-  const approxPhase = !isAll && (!!scc && !scc.wicketsReliable || (!!opp && !opp.wicketsReliable));
 
   return (
     <div className="space-y-4">
@@ -96,21 +78,7 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
         <BarChart3 className="w-4 h-4 text-purple-400" /> Phases of Play
       </h3>
 
-      {/* Phase chips */}
-      <div className="flex flex-wrap gap-1.5">
-        {phaseLabels.map((lbl, i) => (
-          <button key={lbl} onClick={() => setPhaseIdx(i)}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition ${phaseIdx === i ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-300'}`}>
-            {lbl} Ov
-          </button>
-        ))}
-        <button onClick={() => setPhaseIdx('all')}
-          className={`px-3 py-1 rounded-full text-xs font-bold transition ${phaseIdx === 'all' ? 'bg-emerald-500 text-white' : 'bg-white/10 text-gray-300'}`}>
-          All
-        </button>
-      </div>
-
-      {/* Comparison table */}
+      {/* Comparison table — whole-innings totals */}
       <div className="rounded-xl border border-white/10 overflow-hidden">
         <div className="grid grid-cols-3 px-3 py-2 bg-white/5 text-center">
           <p className="text-xs font-black text-emerald-400 truncate">{teamShort(nameFor(scc))}</p>
@@ -119,15 +87,12 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
         </div>
         {sStat && rows.map(({ label, get }) => (
           <div key={label} className="grid grid-cols-3 px-3 py-2 text-center border-t border-white/5 items-center">
-            <p className="text-sm font-black text-white tabular-nums">{get(scc, sStat)}</p>
+            <p className="text-sm font-black text-white tabular-nums">{get(sStat)}</p>
             <p className="text-[11px] text-gray-500">{label}</p>
-            <p className="text-sm font-black text-white tabular-nums">{oStat ? get(opp, oStat) : '–'}</p>
+            <p className="text-sm font-black text-white tabular-nums">{oStat ? get(oStat) : '–'}</p>
           </div>
         ))}
       </div>
-      {approxPhase && (
-        <p className="text-[10px] text-gray-500 -mt-2">Per-phase splits are from ball-by-ball and may be approximate for this match. Innings totals are exact.</p>
-      )}
 
       {/* CricHeroes insight one-liners (accurate) */}
       {data && data.insightStatements.length > 0 && (

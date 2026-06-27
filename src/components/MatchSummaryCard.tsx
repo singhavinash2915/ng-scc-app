@@ -219,10 +219,11 @@ export function MatchSummaryCard({ match }: Props) {
             <div className="mt-3 pt-2.5 border-t border-white/8">
               <button
                 onClick={() => setShowScorecard(true)}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-300 text-xs font-bold hover:bg-purple-600/35 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-extrabold shadow-lg shadow-purple-900/30 hover:from-purple-700 hover:to-blue-700 transition-colors"
               >
-                <BarChart2 className="w-3.5 h-3.5" />
-                View Full Scorecard
+                <BarChart2 className="w-4 h-4" />
+                📊 Match Centre
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/20 text-[9px] font-black uppercase tracking-wide">Heroes · Insights</span>
               </button>
             </div>
             <MatchScorecardModal
