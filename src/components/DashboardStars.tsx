@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ChevronRight, Crown, TrendingUp, Zap, Shield } from 'lucide-react';
 import { useCricketStats } from '../hooks/useCricketStats';
+import { outfieldDismissals, outfieldersOnly } from '../utils/fielding';
 
 interface DashboardStarsProps {
   momCounts?: Record<string, number>;
@@ -22,11 +23,10 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
     const byRuns = [...cricketStats].sort((a, b) => b.batting_runs - a.batting_runs);
     const byWkts = [...cricketStats].filter(s => s.bowling_wickets > 0)
       .sort((a, b) => b.bowling_wickets - a.bowling_wickets);
-    const byField = [...cricketStats].sort((a, b) =>
-      (b.fielding_catches + b.fielding_stumpings + b.fielding_run_outs) -
-      (a.fielding_catches + a.fielding_stumpings + a.fielding_run_outs));
-    const fieldTotal = (s: typeof cricketStats[0]) =>
-      s.fielding_catches + s.fielding_stumpings + s.fielding_run_outs;
+    // Best Fielder = outfielders only (keepers excluded; catches + run-outs).
+    const byField = outfieldersOnly(cricketStats)
+      .sort((a, b) => outfieldDismissals(b) - outfieldDismissals(a));
+    const fieldTotal = outfieldDismissals;
 
     return {
       mvp: byMVP[0] ? { player: byMVP[0], points: score(byMVP[0]) } : null,

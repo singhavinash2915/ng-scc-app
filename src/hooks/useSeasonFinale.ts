@@ -5,6 +5,7 @@ import { useMembers } from './useMembers';
 import { useMatches } from './useMatches';
 import { useMOMCounts } from './useMOMCounts';
 import { useFantasyPoints } from './useFantasyPoints';
+import { outfieldDismissals, outfieldersOnly } from '../utils/fielding';
 
 export interface XIPlayer {
   member: Member;
@@ -116,7 +117,10 @@ export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): Sea
 
     const bestBat = maxBy(s => s.batting_runs);
     const bestBowl = maxBy(s => s.bowling_wickets);
-    const bestField = maxBy(dismissals);
+    // Best Fielder = outfielders only (keepers excluded; catches + run-outs).
+    const bestField = outfieldersOnly(withMember)
+      .filter(s => (s.batting_matches || 0) >= 1)
+      .sort((a, b) => outfieldDismissals(b) - outfieldDismissals(a))[0];
     const mvpF = fantasy[0];
     const sixMachine = maxBy(s => s.batting_sixes);
     const reliable = [...withMember].filter(s => (s.batting_innings || 0) >= 5)
@@ -135,7 +139,7 @@ export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): Sea
       { key: 'mvp', title: 'Player of the Season', emoji: '👑', member: mvpF?.member ?? null, value: mvpF ? `${Math.round(mvpF.total).toLocaleString('en-IN')} pts` : '—', blurb: 'Most valuable across bat, ball & field' },
       { key: 'bat', title: 'Best Batter', emoji: '🏏', member: bestBat ? mOf(bestBat.member_id) : null, value: bestBat ? `${bestBat.batting_runs} runs` : '—', blurb: bestBat ? `HS ${bestBat.batting_highest_score} · avg ${bestBat.batting_average?.toFixed(1)}` : '' },
       { key: 'bowl', title: 'Best Bowler', emoji: '🎯', member: bestBowl ? mOf(bestBowl.member_id) : null, value: bestBowl ? `${bestBowl.bowling_wickets} wkts` : '—', blurb: bestBowl ? `best ${bestBowl.bowling_best_figures} · econ ${bestBowl.bowling_economy?.toFixed(1)}` : '' },
-      { key: 'field', title: 'Best Fielder', emoji: '🧤', member: bestField ? mOf(bestField.member_id) : null, value: bestField ? `${dismissals(bestField)} dismissals` : '—', blurb: bestField ? `${bestField.fielding_catches} ct · ${bestField.fielding_run_outs} ro` : '' },
+      { key: 'field', title: 'Best Fielder', emoji: '🧤', member: bestField ? mOf(bestField.member_id) : null, value: bestField ? `${outfieldDismissals(bestField)} dismissals` : '—', blurb: bestField ? `${bestField.fielding_catches} ct · ${bestField.fielding_run_outs} ro` : '' },
       { key: 'improved', title: 'Most Improved', emoji: '📈', member: improved ? mOf(improved.s.member_id) : null, value: improved ? `+${improved.delta}` : '—', blurb: 'Biggest leap from last season' },
       { key: 'six', title: 'Six Machine', emoji: '💥', member: sixMachine ? mOf(sixMachine.member_id) : null, value: sixMachine ? `${sixMachine.batting_sixes} sixes` : '—', blurb: 'Most maximums this season' },
       { key: 'reliable', title: 'Mr. Reliable', emoji: '🧱', member: reliable ? mOf(reliable.member_id) : null, value: reliable ? `avg ${reliable.batting_average?.toFixed(1)}` : '—', blurb: 'Best average (5+ innings)' },

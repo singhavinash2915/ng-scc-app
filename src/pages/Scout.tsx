@@ -4,6 +4,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useHeadToHead } from '../hooks/useHeadToHead';
+import { outfieldDismissals, outfieldersOnly } from '../utils/fielding';
 
 const HOME_GROUND = 'Four Star Cricket Ground, Hinjawadi Phase 2, Pune';
 
@@ -53,9 +54,9 @@ export function Scout() {
     const withName = stats.filter(s => byId[s.member_id]);
     const topBat = [...withName].sort((a, b) => b.batting_runs - a.batting_runs)[0];
     const topBowl = [...withName].sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0];
-    const topField = [...withName].sort((a, b) =>
-      (b.fielding_catches + b.fielding_stumpings + b.fielding_run_outs) -
-      (a.fielding_catches + a.fielding_stumpings + a.fielding_run_outs))[0];
+    // Best Fielder = outfielders only (keepers excluded; catches + run-outs).
+    const topField = outfieldersOnly(withName)
+      .sort((a, b) => outfieldDismissals(b) - outfieldDismissals(a))[0];
     return {
       bat: topBat && topBat.batting_runs > 0
         ? { ...byId[topBat.member_id], stat: `${topBat.batting_runs} runs`, sub: topBat.batting_highest_score ? `HS ${topBat.batting_highest_score}` : '', role: 'Top Batter' }
@@ -63,8 +64,8 @@ export function Scout() {
       bowl: topBowl && topBowl.bowling_wickets > 0
         ? { ...byId[topBowl.member_id], stat: `${topBowl.bowling_wickets} wkts`, sub: topBowl.bowling_best_figures ? `Best ${topBowl.bowling_best_figures}` : '', role: 'Top Bowler' }
         : null,
-      field: topField && (topField.fielding_catches + topField.fielding_stumpings + topField.fielding_run_outs) > 0
-        ? { ...byId[topField.member_id], stat: `${topField.fielding_catches + topField.fielding_stumpings + topField.fielding_run_outs} dismissals`, sub: 'Fielding', role: 'Best Fielder' }
+      field: topField && outfieldDismissals(topField) > 0
+        ? { ...byId[topField.member_id], stat: `${outfieldDismissals(topField)} dismissals`, sub: 'Fielding', role: 'Best Fielder' }
         : null,
     };
   }, [stats, members]);
