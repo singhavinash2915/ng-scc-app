@@ -24,6 +24,21 @@ export function useCricketStats(season: string = '2025-26') {
     try {
       setLoading(true);
 
+      // Authoritative fielding comes from CricHeroes' team fielding leaderboard
+      // (stored in the 'all-time' row by sync_cricheroes.py). The per-match
+      // dismissal-text parse used for season rows badly overcounts catches
+      // (it can't reliably attribute a catch to the right fielder), so we
+      // overwrite every row's fielding with these career-accurate numbers.
+      const { data: ftRows } = await supabase
+        .from('member_cricket_stats')
+        .select('member_id, fielding_catches, fielding_stumpings, fielding_run_outs')
+        .eq('season', 'all-time');
+      const fieldMap = new Map((ftRows || []).map(r => [r.member_id, r]));
+      const applyField = (arr: MemberCricketStats[]) => arr.map(s => {
+        const f = fieldMap.get(s.member_id);
+        return f ? { ...s, fielding_catches: f.fielding_catches, fielding_stumpings: f.fielding_stumpings, fielding_run_outs: f.fielding_run_outs } : s;
+      });
+
       if (season === 'all') {
         // Overall (career): sum each season row per member.
         // Each season row contains only that season's stats (isolated sync with date filter),
@@ -86,7 +101,7 @@ export function useCricketStats(season: string = '2025-26') {
             season:                'all',
           };
         }
-        setStats(Object.values(byMember).sort((a, b) => b.batting_runs - a.batting_runs));
+        setStats(applyField(Object.values(byMember).sort((a, b) => b.batting_runs - a.batting_runs)));
       } else {
         // Season-specific: each row is isolated to that season, use directly.
         const { data, error } = await supabase
@@ -95,7 +110,7 @@ export function useCricketStats(season: string = '2025-26') {
           .eq('season', season)
           .order('batting_runs', { ascending: false });
         if (error) throw error;
-        setStats(data || []);
+        setStats(applyField(data || []));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch stats');

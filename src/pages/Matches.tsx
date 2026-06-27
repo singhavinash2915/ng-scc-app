@@ -1047,8 +1047,8 @@ export function Matches() {
                       {menuOpen === match.id && (
                         <>
                           {/* Backdrop — closes the menu; also dims on mobile bottom-sheet */}
-                          <div className="fixed inset-0 z-40 bg-black/30 sm:bg-transparent" onClick={() => setMenuOpen(null)} />
-                          <div className="fixed sm:absolute left-0 right-0 bottom-0 sm:left-auto sm:right-0 sm:bottom-auto sm:mt-2 w-full sm:w-48 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-50 max-h-[75vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+                          <div className="fixed inset-0 z-[60] bg-black/40 sm:bg-transparent sm:z-40" onClick={() => setMenuOpen(null)} />
+                          <div className="fixed sm:absolute left-0 right-0 bottom-0 sm:left-auto sm:right-0 sm:bottom-auto sm:mt-2 w-full sm:w-48 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-[70] sm:z-50 max-h-[80vh] overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-1">
                           <button
                             onClick={() => openEditModal(match)}
                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"

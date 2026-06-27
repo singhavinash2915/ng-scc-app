@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { BarChart3, Loader2, Zap } from 'lucide-react';
 import { useMatchInsights, type InningInsight, type PhaseStat } from '../hooks/useMatchAnalysis';
 
@@ -27,6 +27,7 @@ interface Props {
 export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) {
   const { data, loading, error } = useMatchInsights(chMatchId);
   const innings = data?.innings ?? null;
+  const [tpView, setTpView] = useState<'batting' | 'bowling'>('batting');
 
   // Identify SCC innings vs opponent innings.
   const { scc, opp } = useMemo(() => {
@@ -119,29 +120,49 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
         </div>
       )}
 
-      {/* Turning-point overs */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-black text-white flex items-center gap-2">
-          <Zap className="w-4 h-4 text-yellow-400" /> Turning-Point Overs
-        </h3>
-        {[scc, opp].filter(Boolean).map((inn) => (
-          <div key={inn!.inning} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-            <p className="text-[11px] font-bold text-gray-400 mb-2">{teamShort(nameFor(inn))} — batting</p>
-            <div className="space-y-2">
-              {inn!.turning.slice(0, 2).map((t) => (
-                <div key={t.over} className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] text-gray-500 w-16 shrink-0">Over {t.over} · {t.runs}r{t.wickets ? `/${t.wickets}w` : ''}</span>
-                  <div className="flex gap-1 flex-wrap">
-                    {t.seq.map((b, i) => (
-                      <span key={i} className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center ${ballStyle(b)}`}>{b}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
+      {/* Turning-point overs — Batting (SCC's innings) / Bowling (opp innings) */}
+      {(() => {
+        // Batting = SCC's own innings; Bowling = the innings SCC bowled (opponent's).
+        const inn = tpView === 'batting' ? scc : opp;
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                <Zap className="w-4 h-4 text-yellow-400" /> Turning-Point Overs
+              </h3>
+              <div className="flex rounded-full bg-white/10 p-0.5 text-[11px] font-bold">
+                {(['batting', 'bowling'] as const).map(v => (
+                  <button key={v} onClick={() => setTpView(v)}
+                    className={`px-3 py-1 rounded-full capitalize transition ${tpView === v ? 'bg-emerald-500 text-white' : 'text-gray-300'}`}>
+                    {v}
+                  </button>
+                ))}
+              </div>
             </div>
+            {inn ? (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="text-[11px] font-bold text-gray-400 mb-2">
+                  Sangria Cricket Club — {tpView}{tpView === 'bowling' ? ` (vs ${teamShort(nameFor(opp))})` : ''}
+                </p>
+                <div className="space-y-2">
+                  {inn.turning.slice(0, 3).map((t) => (
+                    <div key={t.over} className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] text-gray-500 w-16 shrink-0">Over {t.over} · {t.runs}r{t.wickets ? `/${t.wickets}w` : ''}</span>
+                      <div className="flex gap-1 flex-wrap">
+                        {t.seq.map((b, i) => (
+                          <span key={i} className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center ${ballStyle(b)}`}>{b}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11px] text-gray-500">No {tpView} data for this match.</p>
+            )}
           </div>
-        ))}
-      </div>
+        );
+      })()}
     </div>
   );
 }
