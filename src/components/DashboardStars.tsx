@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ChevronRight, Crown, TrendingUp, Zap, Shield } from 'lucide-react';
 import { useCricketStats } from '../hooks/useCricketStats';
-import { outfieldDismissals, outfieldersOnly } from '../utils/fielding';
+import { outfieldDismissals, keeperDismissals, hasKept } from '../utils/fielding';
 
 interface DashboardStarsProps {
   momCounts?: Record<string, number>;
@@ -11,9 +11,9 @@ interface DashboardStarsProps {
 export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
   const { stats: cricketStats } = useCricketStats('2025-26');
 
-  const { mvp, topBatsman, topBowler, bestFielder } = useMemo(() => {
+  const { mvp, topBatsman, topBowler, bestFielder, bestKeeper } = useMemo(() => {
     if (!cricketStats.length) {
-      return { mvp: null, topBatsman: null, topBowler: null, bestFielder: null };
+      return { mvp: null, topBatsman: null, topBowler: null, bestFielder: null, bestKeeper: null };
     }
     const score = (s: typeof cricketStats[0]) =>
       s.batting_runs + s.bowling_wickets * 20 +
@@ -23,17 +23,18 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
     const byRuns = [...cricketStats].sort((a, b) => b.batting_runs - a.batting_runs);
     const byWkts = [...cricketStats].filter(s => s.bowling_wickets > 0)
       .sort((a, b) => b.bowling_wickets - a.bowling_wickets);
-    // Best Fielder = outfielders only (keepers excluded; catches + run-outs).
-    const byField = outfieldersOnly(cricketStats)
-      .sort((a, b) => outfieldDismissals(b) - outfieldDismissals(a));
-    const fieldTotal = outfieldDismissals;
+    // Best Fielder = outfield catches + run-outs (keepers included fairly —
+    // their behind-the-stumps catches don't count here).
+    const byField = [...cricketStats].sort((a, b) => outfieldDismissals(b) - outfieldDismissals(a));
+    const byKeeper = cricketStats.filter(hasKept).sort((a, b) => keeperDismissals(b) - keeperDismissals(a));
 
     return {
       mvp: byMVP[0] ? { player: byMVP[0], points: score(byMVP[0]) } : null,
       topBatsman: byRuns[0] ? { player: byRuns[0] } : null,
       topBowler: byWkts[0] ? { player: byWkts[0] } : null,
-      bestFielder: byField[0] && fieldTotal(byField[0]) > 0
-        ? { player: byField[0], total: fieldTotal(byField[0]) } : null,
+      bestFielder: byField[0] && outfieldDismissals(byField[0]) > 0
+        ? { player: byField[0], total: outfieldDismissals(byField[0]) } : null,
+      bestKeeper: byKeeper[0] ? { player: byKeeper[0], total: keeperDismissals(byKeeper[0]) } : null,
     };
   }, [cricketStats]);
 
@@ -251,9 +252,27 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
                 numText: 'linear-gradient(180deg, #fff 30%, #6ee7b7 100%)',
               }}
               number={bestFielder.total}
-              subtitle={`Dismissals · ${bestFielder.player.fielding_catches}c${bestFielder.player.fielding_stumpings > 0 ? ` · ${bestFielder.player.fielding_stumpings}st` : ''}${bestFielder.player.fielding_run_outs > 0 ? ` · ${bestFielder.player.fielding_run_outs}ro` : ''}`}
+              subtitle={`Dismissals · ${bestFielder.player.fielding_catches}c${bestFielder.player.fielding_run_outs > 0 ? ` · ${bestFielder.player.fielding_run_outs}ro` : ''}`}
               player={bestFielder.player}
               moms={momCounts[bestFielder.player.member_id] || 0}
+            />
+          )}
+
+          {bestKeeper && (
+            <Specialist
+              label="Best Wicket-Keeper"
+              icon={<Shield className="w-3.5 h-3.5 text-amber-300" />}
+              color={{
+                bg: 'linear-gradient(135deg, #78350f 0%, #0a1019 100%)',
+                border: 'rgba(245, 158, 11, 0.3)',
+                accent: 'text-amber-300/80',
+                glow: 'rgba(245, 158, 11, 0.25)',
+                numText: 'linear-gradient(180deg, #fff 30%, #fcd34d 100%)',
+              }}
+              number={bestKeeper.total}
+              subtitle={`Dismissals · ${bestKeeper.player.fielding_caught_behind ?? 0}cb${bestKeeper.player.fielding_stumpings > 0 ? ` · ${bestKeeper.player.fielding_stumpings}st` : ''}`}
+              player={bestKeeper.player}
+              moms={momCounts[bestKeeper.player.member_id] || 0}
             />
           )}
         </div>

@@ -18,6 +18,7 @@ import { useCricketStats } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useFormGuide, type FormResult } from '../hooks/useFormGuide';
 import type { MemberCricketStats } from '../types';
+import { keeperDismissals, hasKept } from '../utils/fielding';
 
 // MOM count pill shown next to a player name
 function MOMBadge({ count }: { count: number }) {
@@ -237,14 +238,15 @@ export function Leaderboard() {
     { id: 'overall',  label: 'Overall',  icon: Trophy,     color: 'text-yellow-500' },
   ];
 
-  // Best Fielder = outfielders only. Wicket-keepers (anyone with stumpings)
-  // are excluded — their caught-behind dismissals inflate the catch count and
-  // otherwise dominate the fielding board.
-  const activeStats = tab === 'overall'
-    ? overallSorted
-    : tab === 'fielding'
-      ? sorted.filter(s => (s.fielding_stumpings ?? 0) === 0)
-      : sorted;
+  // No keeper exclusion: fielding_catches is outfield-only (keeper catches live
+  // in fielding_caught_behind), so everyone competes fairly on outfielding.
+  const activeStats = tab === 'overall' ? overallSorted : sorted;
+
+  // Best Wicket-Keeper highlight — shown above the fielding board.
+  const topKeeper = useMemo(() => {
+    const k = [...stats].filter(hasKept).sort((a, b) => keeperDismissals(b) - keeperDismissals(a))[0];
+    return k ? { player: k, total: keeperDismissals(k) } : null;
+  }, [stats]);
 
   // ── Rank-change tracking ─────────────────────────────────────────────────
   // Two keys per tab:
@@ -345,6 +347,26 @@ export function Leaderboard() {
           );
         })}
       </div>
+
+      {/* Best Wicket-Keeper highlight (fielding tab only) */}
+      {tab === 'fielding' && topKeeper && (
+        <div className="mx-4 sm:mx-0 flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/15 px-4 py-3">
+          {(topKeeper.player.member as { avatar_url?: string } | undefined)?.avatar_url ? (
+            <img src={(topKeeper.player.member as { avatar_url?: string }).avatar_url} alt="" className="w-11 h-11 rounded-full object-cover" />
+          ) : (
+            <div className="w-11 h-11 rounded-full bg-amber-500 text-white flex items-center justify-center font-black">
+              {((topKeeper.player.member as { name?: string } | undefined)?.name || '?').charAt(0)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">🧤 Best Wicket-Keeper</p>
+            <p className="font-bold text-gray-900 dark:text-white truncate">{(topKeeper.player.member as { name?: string } | undefined)?.name || 'Player'}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {topKeeper.total} dismissals · {topKeeper.player.fielding_caught_behind ?? 0} ct behind · {topKeeper.player.fielding_stumpings} st
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Top 3 spotlight */}
       {!loading && activeStats.length >= 3 && (

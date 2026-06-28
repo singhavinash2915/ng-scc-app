@@ -31,12 +31,18 @@ export function useCricketStats(season: string = '2025-26') {
       // overwrite every row's fielding with these career-accurate numbers.
       const { data: ftRows } = await supabase
         .from('member_cricket_stats')
-        .select('member_id, fielding_catches, fielding_stumpings, fielding_run_outs')
+        .select('*')
         .eq('season', 'all-time');
-      const fieldMap = new Map((ftRows || []).map(r => [r.member_id, r]));
+      const fieldMap = new Map((ftRows || []).map(r => [r.member_id, r as MemberCricketStats]));
       const applyField = (arr: MemberCricketStats[]) => arr.map(s => {
         const f = fieldMap.get(s.member_id);
-        return f ? { ...s, fielding_catches: f.fielding_catches, fielding_stumpings: f.fielding_stumpings, fielding_run_outs: f.fielding_run_outs } : s;
+        return f ? {
+          ...s,
+          fielding_catches: f.fielding_catches,
+          fielding_caught_behind: f.fielding_caught_behind ?? 0,
+          fielding_stumpings: f.fielding_stumpings,
+          fielding_run_outs: f.fielding_run_outs,
+        } : s;
       });
 
       if (season === 'all') {

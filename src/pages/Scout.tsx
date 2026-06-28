@@ -4,7 +4,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useHeadToHead } from '../hooks/useHeadToHead';
-import { outfieldDismissals, outfieldersOnly } from '../utils/fielding';
+import { outfieldDismissals } from '../utils/fielding';
 
 const HOME_GROUND = 'Four Star Cricket Ground, Hinjawadi Phase 2, Pune';
 
@@ -54,9 +54,8 @@ export function Scout() {
     const withName = stats.filter(s => byId[s.member_id]);
     const topBat = [...withName].sort((a, b) => b.batting_runs - a.batting_runs)[0];
     const topBowl = [...withName].sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0];
-    // Best Fielder = outfielders only (keepers excluded; catches + run-outs).
-    const topField = outfieldersOnly(withName)
-      .sort((a, b) => outfieldDismissals(b) - outfieldDismissals(a))[0];
+    // Best Fielder = outfield catches + run-outs (keepers included fairly).
+    const topField = [...withName].sort((a, b) => outfieldDismissals(b) - outfieldDismissals(a))[0];
     return {
       bat: topBat && topBat.batting_runs > 0
         ? { ...byId[topBat.member_id], stat: `${topBat.batting_runs} runs`, sub: topBat.batting_highest_score ? `HS ${topBat.batting_highest_score}` : '', role: 'Top Batter' }

@@ -202,7 +202,7 @@ def main():
         'bowling_matches':0, 'bowling_innings':0, 'bowling_overs':0.0, 'bowling_wickets':0,
         'bowling_runs_conceded':0, 'bowling_economy':0.0, 'bowling_average':0.0,
         'bowling_strike_rate':0.0, 'bowling_best_figures':'0/0', 'bowling_five_wickets':0,
-        'fielding_catches':0, 'fielding_stumpings':0, 'fielding_run_outs':0,
+        'fielding_catches':0, 'fielding_caught_behind':0, 'fielding_stumpings':0, 'fielding_run_outs':0,
         'last_synced_at': datetime.datetime.utcnow().isoformat() + 'Z',
     }
 
@@ -263,8 +263,9 @@ def main():
             continue
         matched_uuids.add(uid)
         s = stats.setdefault(uid, {**DEFAULTS, 'member_id': uid})
-        s.update({'fielding_catches':si(row.get('catches')), 'fielding_stumpings':si(row.get('stumpings')),
-                  'fielding_run_outs':si(row.get('run_outs'))})
+        # catches = OUTFIELD catches only; caught_behind = keeper catches (kept separate)
+        s.update({'fielding_catches':si(row.get('catches')), 'fielding_caught_behind':si(row.get('caught_behind')),
+                  'fielding_stumpings':si(row.get('stumpings')), 'fielding_run_outs':si(row.get('run_outs'))})
 
     # ── Ensure every mapped SCC member has a row, even if CricHeroes returned
     # ── no leaderboard data (so they still appear in the app with zeros
@@ -297,8 +298,8 @@ def main():
         if catches is not None: s['fielding_catches'] = si(catches)
         print(f"  ↳ Fallback fetch for {ch_id}: runs={runs} wkts={wkts} catches={catches}")
         s = stats.setdefault(uid, {**DEFAULTS, 'member_id': uid})
-        s.update({'fielding_catches':si(row.get('catches')), 'fielding_stumpings':si(row.get('stumpings')),
-                  'fielding_run_outs':si(row.get('run_outs'))})
+        s.update({'fielding_catches':si(row.get('catches')), 'fielding_caught_behind':si(row.get('caught_behind')),
+                  'fielding_stumpings':si(row.get('stumpings')), 'fielding_run_outs':si(row.get('run_outs'))})
 
     rows = list(stats.values())
 
@@ -342,6 +343,13 @@ def main():
     if err: print(f"  Delete warning: {err[:100]}")
 
     code, err = sb_call("POST", "member_cricket_stats", rows)
+    if err and b'fielding_caught_behind' in (err or b''):
+        # Column not added yet (migration add_fielding_caught_behind.sql not run).
+        # Degrade gracefully so the rest of the sync still lands.
+        print("  ⚠️  fielding_caught_behind column missing — run the migration. Retrying without it.")
+        for r in rows:
+            r.pop('fielding_caught_behind', None)
+        code, err = sb_call("POST", "member_cricket_stats", rows)
     if err:
         print(f"  ❌ Insert failed ({code}): {err[:200]}")
         sys.exit(1)

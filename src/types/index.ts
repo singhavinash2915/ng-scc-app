@@ -306,7 +306,8 @@ export interface MemberCricketStats {
   bowling_best_figures: string;
   bowling_five_wickets: number;
   // Fielding
-  fielding_catches: number;
+  fielding_catches: number;          // outfield catches only
+  fielding_caught_behind?: number;   // wicket-keeper catches (behind the stumps)
   fielding_stumpings: number;
   fielding_run_outs: number;
   // Meta
