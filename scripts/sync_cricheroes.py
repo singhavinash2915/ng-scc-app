@@ -313,12 +313,13 @@ def main():
     total_runs    = sum(r['batting_runs']     for r in rows)
     total_wickets = sum(r['bowling_wickets']  for r in rows)
     total_catches = sum(r['fielding_catches'] for r in rows)
+    total_cb      = sum(r.get('fielding_caught_behind', 0) for r in rows)
     total_matches = sum(r['batting_matches']  for r in rows)
     # Per-player runs string captures changes even when the total is unchanged
     # (e.g. one player loses runs while another gains the same amount).
-    per_player = '|'.join(f"{r['member_id']}:{r['batting_runs']}/{r['bowling_wickets']}/{r['fielding_catches']}/{r['batting_matches']}"
+    per_player = '|'.join(f"{r['member_id']}:{r['batting_runs']}/{r['bowling_wickets']}/{r['fielding_catches']}/{r.get('fielding_caught_behind',0)}/{r['batting_matches']}"
                           for r in sorted(rows, key=lambda r: r['member_id']))
-    fingerprint_input = f"{SEASON}|R{total_runs}|W{total_wickets}|C{total_catches}|M{total_matches}|{per_player}"
+    fingerprint_input = f"{SEASON}|R{total_runs}|W{total_wickets}|C{total_catches}|CB{total_cb}|M{total_matches}|{per_player}"
     fingerprint = hashlib.sha256(fingerprint_input.encode()).hexdigest()
 
     last_fingerprint = ''
