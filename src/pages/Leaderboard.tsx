@@ -18,7 +18,7 @@ import { useCricketStats } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useFormGuide, type FormResult } from '../hooks/useFormGuide';
 import type { MemberCricketStats } from '../types';
-import { keeperDismissals, hasKept } from '../utils/fielding';
+import { outfieldDismissals, keeperDismissals, hasKept } from '../utils/fielding';
 
 // MOM count pill shown next to a player name
 function MOMBadge({ count }: { count: number }) {
@@ -200,6 +200,13 @@ export function Leaderboard() {
   };
 
   const sorted = useMemo(() => {
+    // Fielding board ranks by cumulative outfield dismissals (catches + run-outs),
+    // not catches alone — unless the user explicitly sorts by another column.
+    if (tab === 'fielding' && sortKey === 'fielding_catches') {
+      return [...stats].sort((a, b) =>
+        sortDir === 'desc' ? outfieldDismissals(b) - outfieldDismissals(a)
+                           : outfieldDismissals(a) - outfieldDismissals(b));
+    }
     return [...stats].sort((a, b) => {
       const av = a[sortKey] as number | string;
       const bv = b[sortKey] as number | string;
@@ -208,7 +215,7 @@ export function Leaderboard() {
         : (av as number) - (bv as number);
       return sortDir === 'desc' ? -diff : diff;
     });
-  }, [stats, sortKey, sortDir]);
+  }, [stats, sortKey, sortDir, tab]);
 
   // Overall sorted by composite score
   const overallSorted = useMemo(() => {
