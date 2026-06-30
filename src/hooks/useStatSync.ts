@@ -94,7 +94,8 @@ interface Acc {
   bestRuns:       number;
   fiveWickets:    number;
   // fielding
-  catches:        number;
+  catches:        number;   // OUTFIELD catches only
+  caughtBehind:   number;   // wicket-keeper catches (marked with † in CricHeroes)
   stumpings:      number;
   runOuts:        number;
 }
@@ -106,7 +107,7 @@ function emptyAcc(): Acc {
     highest: 0, highestNotOut: false, ducks: 0, fifties: 0, hundreds: 0, dismissals: 0, battingRunOuts: 0,
     bowlInnings: 0, totalBalls: 0, wickets: 0, runsConceded: 0,
     bestWkts: 0, bestRuns: 9999, fiveWickets: 0,
-    catches: 0, stumpings: 0, runOuts: 0,
+    catches: 0, caughtBehind: 0, stumpings: 0, runOuts: 0,
   };
 }
 
@@ -131,12 +132,20 @@ function parseFielding(
     if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].catches++; acc[m.id].matchSet.add(matchId); }
 
   } else if (dl.startsWith('c ')) {
-    // Caught: "c FielderName b BowlerName"
+    // Caught: "c FielderName b BowlerName". A leading † marks a wicket-keeper
+    // catch (caught behind) — credit it separately from outfield catches so
+    // keepers don't inflate the fielding board.
     const inner = d.slice(2);                           // "FielderName b BowlerName"
     const bIdx = inner.search(/\s+b\s+/i);
-    const fielderName = bIdx >= 0 ? inner.slice(0, bIdx).trim() : inner.trim();
+    let fielderName = bIdx >= 0 ? inner.slice(0, bIdx).trim() : inner.trim();
+    const isKeeperCatch = fielderName.includes('†');
+    fielderName = fielderName.replace(/†/g, '').trim();
     const m = resolve(fielderName);
-    if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].catches++; acc[m.id].matchSet.add(matchId); }
+    if (m) {
+      if (!acc[m.id]) acc[m.id] = emptyAcc();
+      if (isKeeperCatch) acc[m.id].caughtBehind++; else acc[m.id].catches++;
+      acc[m.id].matchSet.add(matchId);
+    }
 
   } else if (dl.startsWith('st ')) {
     // Stumped: "st KeeperName b BowlerName"
@@ -489,6 +498,7 @@ export function useStatSync() {
           bowling_best_figures:  bestFigures,
           bowling_five_wickets:  s.fiveWickets,
           fielding_catches:      s.catches,
+          fielding_caught_behind: s.caughtBehind,
           fielding_stumpings:    s.stumpings,
           fielding_run_outs:     s.runOuts,
           updated_at:            new Date().toISOString(),

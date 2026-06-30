@@ -220,6 +220,13 @@ def main():
     fielding = ch_fetch_all("get-team-fielding-leaderboard")
     print(f"{len(fielding)} rows")
 
+    # Safety guard: if CricHeroes returned nothing (expired auth token, network
+    # error), abort BEFORE the delete+insert so we never wipe the all-time row
+    # and leave it empty.
+    if not batting and not bowling and not fielding:
+        print("❌ CricHeroes returned no data (auth token expired?). Aborting — DB left untouched.")
+        sys.exit(1)
+
     stats = {}
     # Track which mapped UUIDs actually got data — helps spot players whose
     # CricHeroes player_id is wrong / has changed (e.g. they renamed account).
