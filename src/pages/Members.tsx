@@ -11,6 +11,7 @@ import { Badge } from '../components/ui/Badge';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { MyProfileModal } from '../components/MyProfileModal';
 import { useMembers } from '../hooks/useMembers';
+import { useCricketStats } from '../hooks/useCricketStats';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
 import { useMemberActivity } from '../hooks/useMemberActivity';
@@ -33,17 +34,22 @@ const ROLE_ICON: Record<string, string> = {
 const ROLE_LABEL: Record<string, string> = {
   batsman: 'Batsman', bowler: 'Bowler', all_rounder: 'All-rounder', wicket_keeper: 'Keeper',
 };
-const BAT_ABBR: Record<string, string> = { right_hand: 'RHB', left_hand: 'LHB' };
-const BOWL_ABBR: Record<string, string> = {
-  right_arm_fast: 'RF', right_arm_medium: 'RM', off_spin: 'OS', leg_spin: 'LS',
-  left_arm_fast: 'LF', left_arm_spin: 'LS', none: '',
-};
 
 export function Members() {
   const { members, loading, addMember, updateMember, deleteMember, addFunds, adjustBalance, uploadAvatar, removeAvatar } = useMembers();
   const { matches } = useMatches();
   const { transactions } = useTransactions();
   const { isActive } = useMemberActivity(members, matches);
+  const { stats: cricketStats } = useCricketStats('all');
+  const statMap = useMemo(() => {
+    const m: Record<string, { runs: number; wkts: number; ovr: number }> = {};
+    cricketStats.forEach(s => {
+      const dis = (s.fielding_catches ?? 0) + (s.fielding_run_outs ?? 0);
+      const ovr = Math.max(62, Math.min(99, Math.round(60 + s.batting_runs / 180 + s.bowling_wickets * 0.22 + dis * 0.18)));
+      m[s.member_id] = { runs: s.batting_runs, wkts: s.bowling_wickets, ovr };
+    });
+    return m;
+  }, [cricketStats]);
   const { seasons, payments, fetchPayments } = useSeasonFund();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
@@ -550,8 +556,15 @@ export function Members() {
           {filteredMembers.map(member => (
             <Card key={member.id} className="relative">
               <CardContent className="p-6">
+                {/* OVR badge (top-right) */}
+                {statMap[member.id] && (
+                  <div className="absolute top-3 right-4 text-right leading-none">
+                    <span className="font-display text-2xl font-extrabold text-gray-900 dark:text-white tabular-nums">{statMap[member.id].ovr}</span>
+                    <span className="text-[9px] font-bold text-gray-400 align-top ml-0.5">OVR</span>
+                  </div>
+                )}
                 {isAdmin && (
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute top-3 left-3 z-20">
                     <button
                       onClick={() => setMenuOpen(menuOpen === member.id ? null : member.id)}
                       className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -559,7 +572,7 @@ export function Members() {
                       <MoreVertical className="w-5 h-5 text-gray-500" />
                     </button>
                     {menuOpen === member.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                      <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-30">
                         <button
                           onClick={() => openEditModal(member)}
                           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -601,49 +614,48 @@ export function Members() {
                   </div>
                 )}
 
-                <Link to={`/profile/${member.id}`} className="flex items-center gap-4 mb-4 group">
+                <Link to={`/profile/${member.id}`} className="block text-center group pt-5">
                   {member.avatar_url ? (
                     <img
                       src={member.avatar_url}
                       alt={member.name}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-primary-200 dark:border-primary-800 group-hover:scale-105 transition-transform"
+                      className="w-20 h-20 rounded-full object-cover border-2 border-primary-200 dark:border-primary-800 mx-auto group-hover:scale-105 transition-transform shadow-md"
                     />
                   ) : (
-                    <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <User className="w-7 h-7 text-primary-600 dark:text-primary-400" />
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto group-hover:scale-105 transition-transform shadow-md">
+                      <span className="text-2xl font-black text-white">{member.name.split(' ').map(w => w[0]).join('').slice(0, 2)}</span>
                     </div>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{member.name}</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <Badge variant={isActive(member.id) ? 'success' : 'default'} size="sm">
-                        {isActive(member.id) ? 'active' : 'inactive'}
-                      </Badge>
-                      {member.jersey_number != null && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 tabular-nums">
-                          #{member.jersey_number}
-                        </span>
-                      )}
-                    </div>
-                    {(member.role || member.batting_style || member.bowling_style) && (
-                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                        {member.role && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
-                            <span>{ROLE_ICON[member.role]}</span>
-                            {ROLE_LABEL[member.role]}
-                          </span>
-                        )}
-                        {(member.batting_style || (member.bowling_style && member.bowling_style !== 'none')) && (
-                          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
-                            {member.batting_style && BAT_ABBR[member.batting_style]}
-                            {member.batting_style && member.bowling_style && member.bowling_style !== 'none' && ' · '}
-                            {member.bowling_style && member.bowling_style !== 'none' && BOWL_ABBR[member.bowling_style]}
-                          </span>
-                        )}
-                      </div>
+                  <h3 className="font-bold text-gray-900 dark:text-white truncate mt-3 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{member.name}</h3>
+                  <div className="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
+                    <Badge variant={isActive(member.id) ? 'success' : 'default'} size="sm">
+                      {isActive(member.id) ? 'active' : 'inactive'}
+                    </Badge>
+                    {member.role && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                        <span>{ROLE_ICON[member.role]}</span>{ROLE_LABEL[member.role]}
+                      </span>
+                    )}
+                    {member.jersey_number != null && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 tabular-nums">#{member.jersey_number}</span>
                     )}
                   </div>
                 </Link>
+
+                {/* Premium player-stat strip */}
+                {statMap[member.id] && (statMap[member.id].runs > 0 || statMap[member.id].wkts > 0) && (
+                  <div className="mt-4 mb-4 flex items-center justify-center gap-8">
+                    <div className="text-center">
+                      <p className="font-display text-xl font-extrabold text-gray-900 dark:text-white tabular-nums leading-none">{statMap[member.id].runs.toLocaleString()}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mt-1">Runs</p>
+                    </div>
+                    <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
+                    <div className="text-center">
+                      <p className="font-display text-xl font-extrabold text-gray-900 dark:text-white tabular-nums leading-none">{statMap[member.id].wkts}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mt-1">Wkts</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2 text-sm">
                   {member.phone && (

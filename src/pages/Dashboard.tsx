@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import {
   Users, Calendar, TrendingUp, Trophy, AlertCircle, ChevronRight,
   IndianRupee, UserPlus, Swords,
-  MessageCircle, Flame, MapPin, Activity, Crown, Radio, Target,
+  MessageCircle, Flame, MapPin, Activity, Crown, Radio,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
+import { AccentSwitcher } from '../components/AccentSwitcher';
+import { PremiumHero } from '../components/PremiumHero';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
-import { MyStatsButton } from '../components/MyStatsButton';
 import { BirthdayBanner } from '../components/BirthdayBanner';
 import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
 import { AnnouncementWall } from '../components/AnnouncementWall';
@@ -256,15 +257,11 @@ export function Dashboard() {
   const myMember = useMemo(() => members.find(m => m.id === myMemberId) ?? null, [members, myMemberId]);
   const myStats  = useMemo(() => cricketStats.find(s => s.member_id === myMemberId) ?? null, [cricketStats, myMemberId]);
   const myMoms   = myMemberId ? (momCounts[myMemberId] || 0) : 0;
-
-  // Next milestone hint (SCC season runs)
   const myNextMilestone = useMemo(() => {
     if (!myStats) return null;
     const runs = myStats.batting_runs;
-    const steps = [100, 250, 500, 1000, 2000, 5000];
-    const next = steps.find(s => runs < s);
-    if (!next) return null;
-    return { away: next - runs, label: `${next} SCC runs` };
+    const next = [100, 250, 500, 1000, 2000, 5000].find(s => runs < s);
+    return next ? { away: next - runs, label: `${next} SCC runs` } : null;
   }, [myStats]);
 
   const loading = membersLoading || matchesLoading;
@@ -284,20 +281,46 @@ export function Dashboard() {
   }
 
   return (
-    <div className="dark aurora-bg min-h-screen">
+    <div className="aurora-bg min-h-screen">
       <Header title="Dashboard" subtitle="Sangria Cricket Club" />
 
+      {/* ── LIVE SCORECARD — pinned to the very top while a match is live ── */}
+      {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result) && (
+        <div className="px-4 lg:px-8 pt-4">
+          <LiveScorecardWidget match={liveMatchToday} />
+        </div>
+      )}
+
+      {/* ── PREMIUM HERO (theme-aware: light + dark) ──────────────────── */}
+      <div className="px-4 lg:px-8 pt-4 space-y-3">
+        <div className="flex justify-end"><AccentSwitcher /></div>
+        <PremiumHero
+          firstName={myMember?.name.split(' ')[0] ?? null}
+          profileId={myMember?.id ?? null}
+          avatarUrl={myMember?.avatar_url ?? null}
+          winRate={Math.round(stats.winRate)}
+          won={stats.won}
+          lost={stats.lost}
+          matchesPlayed={stats.matchesPlayed}
+          upcomingCount={stats.upcomingCount}
+          nextOpponent={nextUpcomingMatch?.opponent ?? null}
+          nextDate={nextUpcomingMatch?.date ?? null}
+          activeMembers={stats.activeMembers}
+          totalMembers={stats.totalMembers}
+          streak={streak}
+          lastFive={lastFiveResults}
+          myRuns={myStats?.batting_runs ?? null}
+          myWkts={myStats?.bowling_wickets ?? null}
+          myMoms={myMoms}
+          milestone={myNextMilestone}
+        />
+      </div>
+
+      {/* ── Remaining sections keep the Stadium-Night dark styling for now ── */}
       <div className="p-4 lg:p-8 space-y-4">
 
         {/* ── EL CLÁSICO CHAMPIONS — 24h heroic victory showcase ────────── */}
         <ElClasicoChampionBanner matches={matches} />
-
-        {/* ── LIVE SCORECARD — pinned to the very top on match day ───────── */}
-        {/* Shown only while today's match is in-progress (admin hasn't set the */}
-        {/* final result yet). Hides once the result is marked won/lost/draw. */}
-        {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result) && (
-          <LiveScorecardWidget match={liveMatchToday} />
-        )}
 
         {/* ── ALERTS ─────────────────────────────────────────────────────── */}
         <BirthdayBanner members={members} />
@@ -308,132 +331,16 @@ export function Dashboard() {
           href="/book-match"
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/8 border border-white/10 hover:border-emerald-500/30 transition-colors"
+          className="group flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-white/8 border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-colors"
         >
           <span className="text-[14px] flex-shrink-0">📣</span>
-          <span className="flex-1 text-[11px] text-gray-400 group-hover:text-gray-300">
+          <span className="flex-1 text-[11px] text-slate-500 dark:text-gray-400 group-hover:text-slate-600 dark:text-gray-300">
             Got a team that wants to play SCC? <span className="text-emerald-400/90 font-semibold">Share the booking link</span>
           </span>
-          <ChevronRight className="w-3 h-3 text-gray-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+          <ChevronRight className="w-3 h-3 text-slate-400 dark:text-gray-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
         </a>
 
 
-        {/* ── PREMIUM HERO ──────────────────────────────────────────────── */}
-        <div className="glass relative overflow-hidden rounded-3xl p-5 lg:p-7">
-          {/* aurora glows inside the panel */}
-          <div className="absolute -top-24 -right-12 w-72 h-72 bg-emerald-500/25 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-12 w-72 h-72 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
-
-          {/* ── Identity row ── */}
-          <div className="relative flex items-center gap-4 mb-5">
-            <div className="relative flex-shrink-0">
-              <div className="absolute -inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/45 to-teal-400/10 blur-lg" />
-              <img src="/scc-logo.jpg" alt="SCC"
-                   className="relative w-14 h-14 lg:w-16 lg:h-16 rounded-2xl object-cover border border-white/25 shadow-2xl" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="font-display text-2xl lg:text-4xl font-extrabold leading-none tracking-tight bg-gradient-to-r from-white via-emerald-100 to-teal-200 bg-clip-text text-transparent">
-                Sangria Cricket Club
-              </h1>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-400/35 text-emerald-200 text-[9px] font-black rounded-full uppercase tracking-[2px]">
-                  Season 2025–26
-                </span>
-                <span className="text-gray-400 text-[11px]">{stats.activeMembers} active</span>
-              </div>
-            </div>
-            {myMember && (
-              <Link to={`/profile/${myMember.id}`} className="flex-shrink-0">
-                {myMember.avatar_url ? (
-                  <img src={myMember.avatar_url} alt={myMember.name}
-                       className="w-11 h-11 rounded-full object-cover border-2 border-emerald-400/60 ring-2 ring-emerald-400/15 shadow-lg" />
-                ) : (
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-600/50 to-teal-600/40 border-2 border-emerald-400/60 flex items-center justify-center shadow-lg">
-                    <span className="text-emerald-200 font-black text-sm">{myMember.name[0]}</span>
-                  </div>
-                )}
-              </Link>
-            )}
-          </div>
-
-          {/* ── My-stats switcher (own row, avoids crowding the title) ── */}
-          <div className="relative flex justify-start mb-4">
-            <MyStatsButton compact />
-          </div>
-
-          {/* ── Form strip + streak ── */}
-          {lastFiveResults.length > 0 && (
-            <div className="relative flex items-center gap-1.5 mb-4">
-              <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest flex-shrink-0">Form</span>
-              {lastFiveResults.map(m => (
-                <div key={m.id} className={`w-6 h-6 flex-shrink-0 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-md ${
-                  m.result === 'won'  ? 'bg-gradient-to-br from-emerald-400 to-emerald-600'
-                : m.result === 'lost' ? 'bg-gradient-to-br from-rose-400 to-red-600'
-                : 'bg-gradient-to-br from-amber-400 to-amber-600'
-                }`}>
-                  {m.result === 'won' ? 'W' : m.result === 'lost' ? 'L' : 'D'}
-                </div>
-              ))}
-              {streak && streak.count >= 2 && (
-                <span className={`whitespace-nowrap flex-shrink-0 inline-flex items-center gap-0.5 px-2.5 py-1 rounded-full text-[10px] font-black ml-1 ${
-                  streak.result === 'won'
-                    ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30'
-                    : 'bg-red-500/20 text-red-200 border border-red-500/30'
-                }`}>
-                  {streak.result === 'won' ? '🔥' : '😤'} {streak.count} streak
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* ── Stat tiles ── */}
-          <div className="relative grid grid-cols-4 gap-2.5">
-            {[
-              { label: 'Matches',  value: stats.matchesPlayed,   numColor: 'text-white',       bar: 'bg-white/40' },
-              { label: 'Won',      value: animatedWon,           numColor: 'text-emerald-300', bar: 'bg-emerald-400' },
-              { label: 'Win %',    value: `${animatedWinRate}%`, numColor: 'text-amber-300',   bar: 'bg-amber-400' },
-              { label: 'Upcoming', value: stats.upcomingCount,   numColor: 'text-sky-300',     bar: 'bg-sky-400' },
-            ].map(({ label, value, numColor, bar }) => (
-              <div key={label} className="relative rounded-2xl pt-3.5 pb-3 px-1 text-center overflow-hidden bg-white/[0.04] border border-white/10">
-                <div className={`absolute top-0 left-1/4 right-1/4 h-0.5 ${bar} rounded-full`} />
-                <div className={`font-display text-2xl lg:text-3xl font-extrabold tabular-nums leading-tight ${numColor}`}>{value}</div>
-                <div className="text-gray-400 text-[8px] lg:text-[9px] uppercase tracking-widest mt-1 font-bold">{label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* ── Personal greeting ── */}
-          {myMember && (
-            <div className="relative mt-5 pt-4 border-t border-white/10">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-display font-bold text-white text-base leading-tight">
-                    Hey, {myMember.name.split(' ')[0]}! 🏏
-                  </p>
-                  <p className="text-[11px] mt-1">
-                    <span className="text-gray-300">{myStats?.batting_runs ?? 0} runs · {myStats?.bowling_wickets ?? 0} wkts</span>
-                    {myMoms > 0 && <><span className="text-gray-600"> · </span><span className="text-amber-300 font-bold">{myMoms} MOM</span></>}
-                    <span className="text-gray-500"> this season</span>
-                  </p>
-                </div>
-                <Link
-                  to={`/profile/${myMember.id}`}
-                  className="flex-shrink-0 px-4 py-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[11px] font-bold hover:brightness-110 transition-all whitespace-nowrap shadow-lg shadow-emerald-900/40"
-                >
-                  My Profile →
-                </Link>
-              </div>
-              {myNextMilestone && (
-                <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/15 border border-purple-500/25">
-                  <Target className="w-3 h-3 text-purple-300 flex-shrink-0" />
-                  <span className="text-purple-200 text-[10px] font-bold">
-                    {myNextMilestone.away} more to {myNextMilestone.label}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
 
         {/* ── LIVE TICKER ──────────────────────────────────────────────── */}
         {tickerItems.length > 0 && (
@@ -442,7 +349,7 @@ export function Dashboard() {
               <Radio className="w-2.5 h-2.5 animate-pulse" />
               Live
             </span>
-            <div className="flex items-center gap-6 text-xs text-gray-400 whitespace-nowrap">
+            <div className="flex items-center gap-6 text-xs text-slate-500 dark:text-gray-400 whitespace-nowrap">
               {tickerItems.map((item, i) => (
                 <span key={i} className="flex items-center gap-2">
                   {i > 0 && <span className="w-1 h-1 rounded-full bg-gray-700" />}
@@ -469,10 +376,7 @@ export function Dashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 auto-rows-[minmax(120px,auto)]">
 
           {/* FEATURED — Next Match (4x2 on lg, full width on mobile) */}
-          <div className="col-span-2 lg:col-span-4 lg:row-span-2 relative overflow-hidden rounded-2xl p-6 lg:p-7 shadow-2xl"
-               style={{
-                 background: 'radial-gradient(800px circle at 0% 0%, rgba(16,185,129,0.35), transparent 50%), radial-gradient(600px circle at 100% 100%, rgba(20,184,166,0.25), transparent 60%), linear-gradient(180deg, #061122, #0a1019)',
-               }}>
+          <div className="feature-pitch col-span-2 lg:col-span-4 lg:row-span-2 relative overflow-hidden rounded-2xl p-6 lg:p-7 shadow-2xl">
             <div className="absolute inset-0 border border-emerald-500/25 rounded-2xl pointer-events-none" />
             {nextUpcomingMatch ? (
               <>
@@ -483,13 +387,13 @@ export function Dashboard() {
                     <span className="bg-yellow-400/20 text-yellow-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-yellow-400/30">INTERNAL</span>
                   )}
                 </div>
-                <h2 className="text-white text-3xl lg:text-4xl font-black tracking-tight leading-[1.05] relative">
+                <h2 className="text-slate-900 dark:text-white text-3xl lg:text-4xl font-black tracking-tight leading-[1.05] relative">
                   {nextUpcomingMatch.match_type === 'internal'
-                    ? <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">{nextUpcomingMatch.opponent || 'Internal Match'}</span>
-                    : <>vs <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">{nextUpcomingMatch.opponent || 'TBD'}</span></>
+                    ? <span className="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-300 dark:to-teal-300 bg-clip-text text-transparent">{nextUpcomingMatch.opponent || 'Internal Match'}</span>
+                    : <>vs <span className="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-300 dark:to-teal-300 bg-clip-text text-transparent">{nextUpcomingMatch.opponent || 'TBD'}</span></>
                   }
                 </h2>
-                <div className="flex items-center gap-4 text-gray-400 text-xs mt-3 flex-wrap relative">
+                <div className="flex items-center gap-4 text-slate-500 dark:text-gray-400 text-xs mt-3 flex-wrap relative">
                   {nextUpcomingMatch.venue && (
                     <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{nextUpcomingMatch.venue}</span>
                   )}
@@ -497,7 +401,7 @@ export function Dashboard() {
                     {new Date(nextUpcomingMatch.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                   {matchWeather && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/8 border border-white/15 text-white"
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/8 border border-slate-200 dark:border-white/15 text-slate-700 dark:text-white"
                           title={`${matchWeather.label} · ${matchWeather.precipitation}% rain probability`}>
                       <span>{matchWeather.emoji}</span>
                       <span className="font-semibold tabular-nums">{matchWeather.tempMax}°/{matchWeather.tempMin}°</span>
@@ -509,16 +413,16 @@ export function Dashboard() {
                 </div>
                 <div className="flex gap-2 mt-5 relative">
                   {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
-                    <div key={l} className="flex flex-col items-center bg-white/5 backdrop-blur-sm rounded-xl px-3 py-2.5 min-w-[56px] border border-white/8">
-                      <span className="text-xl lg:text-2xl font-black text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
-                      <span className="text-gray-500 text-[9px] font-semibold uppercase tracking-[1.5px] mt-1">{l}</span>
+                    <div key={l} className="flex flex-col items-center bg-slate-100 dark:bg-white/5 backdrop-blur-sm rounded-xl px-3 py-2.5 min-w-[56px] border border-slate-200 dark:border-white/8">
+                      <span className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
+                      <span className="text-slate-400 dark:text-gray-500 text-[9px] font-semibold uppercase tracking-[1.5px] mt-1">{l}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Last MOM pinned to the bottom */}
                 {showManOfMatch?.man_of_match && (
-                  <div className="relative mt-6 pt-5 border-t border-white/8 flex items-center gap-3">
+                  <div className="relative mt-6 pt-5 border-t border-slate-200 dark:border-white/8 flex items-center gap-3">
                     {showManOfMatch.man_of_match.avatar_url ? (
                       <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-10 h-10 rounded-xl object-cover border border-yellow-400/40" />
                     ) : (
@@ -528,8 +432,8 @@ export function Dashboard() {
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-yellow-400 text-[9px] font-bold uppercase tracking-[1.5px]">⭐ Last Man of the Match</p>
-                      <h3 className="text-sm font-black text-white truncate">{showManOfMatch.man_of_match.name}
-                        <span className="text-gray-400 font-semibold ml-2">vs {showManOfMatch.opponent}</span>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">{showManOfMatch.man_of_match.name}
+                        <span className="text-slate-500 dark:text-gray-400 font-semibold ml-2">vs {showManOfMatch.opponent}</span>
                       </h3>
                     </div>
                   </div>
@@ -540,7 +444,7 @@ export function Dashboard() {
                 {[{ v: stats.matchesPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-emerald-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
                   <div key={l} className="text-center">
                     <div className={`text-4xl font-black tabular-nums ${c}`}>{v}</div>
-                    <div className="text-gray-500 text-xs mt-0.5 uppercase tracking-wider">{l}</div>
+                    <div className="text-slate-400 dark:text-gray-500 text-xs mt-0.5 uppercase tracking-wider">{l}</div>
                   </div>
                 ))}
               </div>
@@ -554,8 +458,8 @@ export function Dashboard() {
               <Users className="w-3.5 h-3.5 text-blue-400" />
               <span className="text-blue-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Members</span>
             </div>
-            <p className="font-display text-4xl lg:text-5xl font-extrabold text-white tabular-nums relative leading-none">{animatedMembers}</p>
-            <p className="text-gray-400 text-[11px] mt-2 relative">of {stats.totalMembers} · <span className="text-blue-300">active</span></p>
+            <p className="font-display text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">{animatedMembers}</p>
+            <p className="text-slate-500 dark:text-gray-400 text-[11px] mt-2 relative">of {stats.totalMembers} · <span className="text-blue-300">active</span></p>
           </div>
 
           {/* Club Funds (2x1) */}
@@ -565,7 +469,7 @@ export function Dashboard() {
               <IndianRupee className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Club Funds</span>
             </div>
-            <p className="font-display text-4xl lg:text-5xl font-extrabold text-white tabular-nums relative leading-none">
+            <p className="font-display text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">
               ₹{animatedFunds >= 1000 ? `${(animatedFunds / 1000).toFixed(1)}k` : animatedFunds.toLocaleString('en-IN')}
             </p>
             {/* Season growth trend pill */}
@@ -574,7 +478,7 @@ export function Dashboard() {
               const starting = stats.totalFunds - seasonNet;
               const pct = starting > 0 ? Math.round((seasonNet / starting) * 100) : 0;
               if (seasonNet === 0 || monthSummary.loading) {
-                return <p className="text-gray-400 text-[11px] mt-2 relative">Avg ₹{avgBalance >= 1000 ? `${(avgBalance / 1000).toFixed(1)}k` : avgBalance} / member</p>;
+                return <p className="text-slate-500 dark:text-gray-400 text-[11px] mt-2 relative">Avg ₹{avgBalance >= 1000 ? `${(avgBalance / 1000).toFixed(1)}k` : avgBalance} / member</p>;
               }
               const up = seasonNet > 0;
               return (
@@ -595,30 +499,30 @@ export function Dashboard() {
           <div className="glass col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5">
             <div className="absolute top-0 left-5 right-5 h-0.5 bg-amber-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-3 relative">
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Win Rate</span>
+              <Trophy className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+              <span className="text-amber-600 dark:text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Win Rate</span>
             </div>
             <div className="flex items-center gap-5 relative">
               <svg width="110" height="110" viewBox="0 0 42 42" className="flex-shrink-0">
-                <circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+                <circle cx="21" cy="21" r="15.9" fill="none" className="stroke-slate-200 dark:stroke-white/10" strokeWidth="3" />
                 <circle cx="21" cy="21" r="15.9" fill="none" stroke="#f59e0b" strokeWidth="3"
                   strokeDasharray={`${stats.winRate} 100`} transform="rotate(-90 21 21)" strokeLinecap="round" />
-                <text x="21" y="23.5" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="900">{animatedWinRate}%</text>
+                <text x="21" y="23.5" textAnchor="middle" className="fill-slate-900 dark:fill-white" fontSize="9" fontWeight="900">{animatedWinRate}%</text>
               </svg>
               <div className="flex-1 min-w-0">
                 <div className="flex gap-4">
                   <div>
-                    <div className="text-2xl font-black text-emerald-400 tabular-nums">{animatedWon}</div>
-                    <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Won</div>
+                    <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{animatedWon}</div>
+                    <div className="text-[9px] text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold">Won</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-black text-red-400 tabular-nums">{animatedLost}</div>
-                    <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Lost</div>
+                    <div className="text-2xl font-black text-red-500 dark:text-red-400 tabular-nums">{animatedLost}</div>
+                    <div className="text-[9px] text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold">Lost</div>
                   </div>
                 </div>
                 {lastFiveResults.length > 0 && (
                   <div className="mt-3">
-                    <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">Last 5</div>
+                    <div className="text-[9px] text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold mb-1.5">Last 5</div>
                     <div className="flex gap-1.5">
                       {lastFiveResults.map(m => (
                         <div key={m.id}
@@ -665,16 +569,16 @@ export function Dashboard() {
                       idx === 0 ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-yellow-950 shadow-lg shadow-amber-500/30' :
                       idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-900' :
                       idx === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-500 text-orange-950' :
-                      'bg-white/5 text-gray-400'
+                      'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-gray-400'
                     }`}>{idx + 1}</div>
                     {entry.member!.avatar_url ? (
-                      <img src={entry.member!.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-white/10" />
+                      <img src={entry.member!.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-slate-200 dark:border-white/10" />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-[10px] font-black text-yellow-950">{entry.member!.name.charAt(0)}</span>
                       </div>
                     )}
-                    <span className="text-xs font-semibold text-white truncate flex-1">{entry.member!.name.split(' ').slice(0, 2).join(' ')}</span>
+                    <span className="text-xs font-semibold text-slate-800 dark:text-white truncate flex-1">{entry.member!.name.split(' ').slice(0, 2).join(' ')}</span>
                     <span className="flex items-center gap-0.5 text-amber-300 text-xs font-black tabular-nums">
                       {entry.count}
                       {idx === 0 && <span className="text-[10px]">🏆</span>}
@@ -693,7 +597,7 @@ export function Dashboard() {
               <div className="flex items-center justify-between mb-2 relative">
                 <div className="flex items-center gap-1.5">
                   <Crown className="w-3.5 h-3.5 text-pink-300" fill="currentColor" />
-                  <span className="text-pink-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">{featuredLabel}</span>
+                  <span className="text-pink-600 dark:text-pink-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">{featuredLabel}</span>
                 </div>
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-pink-400/15 border border-pink-400/30 text-pink-200 text-[10px] font-black">
                   <Crown className="w-2.5 h-2.5" fill="currentColor" />
@@ -709,10 +613,10 @@ export function Dashboard() {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="text-lg font-black text-white truncate leading-tight">{featuredPlayer.member.name}</div>
-                  <div className="text-[10px] text-pink-200/60 mt-0.5 font-semibold">{featuredPlayer.periodLabel}</div>
+                  <div className="text-lg font-black text-slate-900 dark:text-white truncate leading-tight">{featuredPlayer.member.name}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-pink-200/60 mt-0.5 font-semibold">{featuredPlayer.periodLabel}</div>
                   {featuredPlayer.tieBroken && (
-                    <div className="text-[9px] text-pink-300/40 mt-0.5">tie-broken by season MVP score</div>
+                    <div className="text-[9px] text-slate-400 dark:text-pink-300/40 mt-0.5">tie-broken by season MVP score</div>
                   )}
                 </div>
               </div>
@@ -726,14 +630,14 @@ export function Dashboard() {
               <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">This Month</span>
             </div>
-            <p className="font-display text-3xl lg:text-4xl font-extrabold text-white tabular-nums relative leading-none">
+            <p className="font-display text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">
               <span className={monthSummary.deposits - monthSummary.expenses >= 0 ? 'text-emerald-300' : 'text-red-300'}>
                 {monthSummary.deposits - monthSummary.expenses >= 0 ? '+' : '−'}₹{Math.abs(monthSummary.deposits - monthSummary.expenses).toLocaleString('en-IN')}
               </span>
             </p>
-            <p className="text-gray-400 text-[11px] mt-2 relative">
+            <p className="text-slate-500 dark:text-gray-400 text-[11px] mt-2 relative">
               <span className="text-emerald-400">₹{monthSummary.deposits.toLocaleString('en-IN')} in</span>
-              <span className="mx-1.5 text-gray-600">·</span>
+              <span className="mx-1.5 text-slate-300 dark:text-gray-600">·</span>
               <span className="text-red-400">₹{monthSummary.expenses.toLocaleString('en-IN')} out</span>
             </p>
           </div>
@@ -774,10 +678,10 @@ export function Dashboard() {
                 <div className="space-y-2.5">
                   {memories.slice(0, 2).map(m => (
                     <div key={m.match.id} className="border-l-2 border-pink-500/30 pl-3">
-                      <p className="text-[10px] text-gray-600 uppercase font-bold tracking-wider mb-0.5">
+                      <p className="text-[10px] text-slate-300 dark:text-gray-600 uppercase font-bold tracking-wider mb-0.5">
                         {m.yearsAgo === 1 ? '1 year ago' : `${m.yearsAgo} years ago`}
                       </p>
-                      <p className="text-sm text-gray-300 font-medium leading-snug">
+                      <p className="text-sm text-slate-600 dark:text-gray-300 font-medium leading-snug">
                         {m.match.match_type === 'internal' ? 'Dhurandars vs Bazigars' : `vs ${m.match.opponent || 'TBD'}`}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -787,7 +691,7 @@ export function Dashboard() {
                           : 'bg-amber-500/15 text-amber-400'
                         }`}>{m.match.result}</span>
                         {m.match.our_score && (
-                          <span className="text-[10px] text-gray-600">{m.match.our_score} vs {m.match.opponent_score}</span>
+                          <span className="text-[10px] text-slate-300 dark:text-gray-600">{m.match.our_score} vs {m.match.opponent_score}</span>
                         )}
                       </div>
                     </div>
@@ -808,13 +712,13 @@ export function Dashboard() {
 
         {/* ── INTERNAL BATTLE ─────────────────────── */}
         {internalMatchStats.total > 0 && (
-          <div className="glass relative overflow-hidden rounded-2xl shadow-xl">
+          <div className="dark relative overflow-hidden rounded-2xl shadow-xl bg-[#0c1322] border border-white/10">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600/25 via-transparent to-purple-600/25" />
             <div className="absolute inset-0 opacity-[0.08]" style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='20' x2='40' y2='20' stroke='white' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='20' y2='40' stroke='white' stroke-width='0.5'/%3E%3C/svg%3E")`,
               backgroundSize: '40px 40px',
             }} />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-white/5" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-slate-100 dark:bg-white/5" />
             <div className="relative p-5 lg:p-6">
 
               {/* Header row */}
@@ -891,7 +795,7 @@ export function Dashboard() {
               </div>
 
               {/* Last match + next match footer */}
-              <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3 flex-wrap">
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 flex-wrap">
                 {internalMatchStats.lastMatch && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-white/30 text-[10px] uppercase tracking-wider font-bold">Last:</span>
@@ -939,17 +843,17 @@ export function Dashboard() {
 
           {/* Recent Matches */}
           <div className="glass rounded-2xl overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-white/8 flex items-center justify-between">
-              <h3 className="font-bold text-white flex items-center gap-2 text-sm">
+            <div className="px-4 py-3.5 border-b border-slate-200 dark:border-white/8 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
                 <Calendar className="w-3.5 h-3.5 text-emerald-400" />
                 Recent Matches
               </h3>
-              <Link to="/matches" className="text-[11px] text-gray-500 hover:text-gray-300 flex items-center gap-0.5 font-semibold transition-colors group">
+              <Link to="/matches" className="text-[11px] text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:text-gray-300 flex items-center gap-0.5 font-semibold transition-colors group">
                 All <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
             {recentMatches.length === 0 ? (
-              <p className="p-6 text-center text-gray-600 text-sm">No matches yet</p>
+              <p className="p-6 text-center text-slate-300 dark:text-gray-600 text-sm">No matches yet</p>
             ) : (
               <div className="divide-y divide-white/5">
                 {recentMatches.map(match => (
@@ -962,16 +866,16 @@ export function Dashboard() {
                       {match.result === 'upcoming' ? '⏳' : match.result === 'won' ? 'W' : match.result === 'lost' ? 'L' : 'D'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-white text-sm truncate">
+                      <p className="font-semibold text-slate-800 dark:text-white text-sm truncate">
                         {match.match_type === 'internal' ? 'Dhurandars vs Bazigars' : `vs ${match.opponent || 'TBD'}`}
                       </p>
-                      <p className="text-[11px] text-gray-600 truncate">
+                      <p className="text-[11px] text-slate-300 dark:text-gray-600 truncate">
                         {match.venue && `${match.venue} · `}
                         {new Date(match.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </p>
                     </div>
                     {match.our_score && (
-                      <span className="text-xs font-semibold text-gray-500 flex-shrink-0 tabular-nums">{match.our_score}</span>
+                      <span className="text-xs font-semibold text-slate-400 dark:text-gray-500 flex-shrink-0 tabular-nums">{match.our_score}</span>
                     )}
                   </div>
                 ))}
@@ -981,8 +885,8 @@ export function Dashboard() {
 
           {/* Low Balance Alert */}
           <div className="glass rounded-2xl overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-white/8 flex items-center justify-between">
-              <h3 className="font-bold text-white flex items-center gap-2 text-sm">
+            <div className="px-4 py-3.5 border-b border-slate-200 dark:border-white/8 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
                 <AlertCircle className="w-3.5 h-3.5 text-yellow-500" />
                 Low Balance
                 {allLowBalanceMembers.length > 0 && (
@@ -995,7 +899,7 @@ export function Dashboard() {
                     <MessageCircle className="w-4 h-4" />
                   </button>
                 )}
-                <Link to="/members" className="text-[11px] text-gray-500 hover:text-gray-300 flex items-center gap-0.5 font-semibold transition-colors group">
+                <Link to="/members" className="text-[11px] text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:text-gray-300 flex items-center gap-0.5 font-semibold transition-colors group">
                   All <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
@@ -1005,20 +909,20 @@ export function Dashboard() {
                 <div className="w-10 h-10 rounded-full bg-emerald-900/30 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2">
                   <TrendingUp className="w-5 h-5 text-emerald-500" />
                 </div>
-                <p className="text-sm text-gray-600">All members have sufficient balance 🎉</p>
+                <p className="text-sm text-slate-300 dark:text-gray-600">All members have sufficient balance 🎉</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5">
                 {lowBalanceMembers.map(member => (
                   <div key={member.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors">
                     {member.avatar_url ? (
-                      <img src={member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-white/10" />
+                      <img src={member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-slate-200 dark:border-white/10" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-800 border border-white/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-gray-400">{member.name.charAt(0)}</span>
+                      <div className="w-8 h-8 rounded-full bg-gray-800 border border-slate-200 dark:border-white/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-slate-500 dark:text-gray-400">{member.name.charAt(0)}</span>
                       </div>
                     )}
-                    <p className="font-medium text-white text-sm flex-1 truncate">{member.name}</p>
+                    <p className="font-medium text-slate-800 dark:text-white text-sm flex-1 truncate">{member.name}</p>
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${
                       member.balance < 0
                         ? 'bg-red-500/15 text-red-400 border border-red-500/20'
@@ -1042,7 +946,7 @@ export function Dashboard() {
         {matches.length > 0 && (
           <div className="glass rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px]">Ground & Opponent Insights</p>
+              <p className="text-[11px] font-bold text-gray-400 dark:text-slate-400 dark:text-gray-500 uppercase tracking-[2px]">Ground & Opponent Insights</p>
               <a href="/analytics" className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:underline">Full analysis →</a>
             </div>
             <GroundOpponentInsights matches={matches} compact />

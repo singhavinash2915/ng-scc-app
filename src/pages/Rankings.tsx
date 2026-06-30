@@ -54,20 +54,22 @@ export function Rankings() {
       <Header title="SCC Rankings" subtitle={`ICC-style player ratings · ${modeLabel}`} />
 
       <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-4">
-        {/* ── Title bar with info button ─────────────────────────────────── */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-500" />
-            <h1 className="text-base lg:text-lg font-black text-gray-900 dark:text-white">Player Rankings</h1>
+        {/* ── Premium hero banner ────────────────────────────────────────── */}
+        <div className="relative overflow-hidden rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, var(--a1), var(--a3) 130%)' }}>
+          <div className="absolute -top-10 -right-8 w-44 h-44 rounded-full bg-white/15 blur-3xl pointer-events-none" />
+          <div className="relative flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[2px] opacity-85">🏆 SCC Player Rankings</p>
+              <h1 className="font-display text-2xl lg:text-3xl font-extrabold mt-1 leading-tight">ICC-style ratings</h1>
+              <p className="text-[12px] opacity-90 mt-1">{list.length} players rated · weighted by opposition, result &amp; form</p>
+            </div>
+            <button
+              onClick={() => setShowInfo(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition"
+            >
+              <Info className="w-3.5 h-3.5" /> How it works
+            </button>
           </div>
-          <button
-            onClick={() => setShowInfo(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-bold hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
-            title="How are ratings calculated?"
-          >
-            <Info className="w-3.5 h-3.5" />
-            How it works
-          </button>
         </div>
 
         {/* ── Mode selector (Overall / Season) ───────────────────────────── */}
@@ -227,28 +229,43 @@ function RunnerUpCard({ player, gradient, icon }: { player: RankedPlayer; gradie
   );
 }
 
+function tierOf(rating: number) {
+  if (rating >= 850) return { label: 'ELITE', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' };
+  if (rating >= 700) return { label: 'GOLD',  cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-300' };
+  if (rating >= 550) return { label: 'SILVER', cls: 'bg-slate-200 text-slate-600 dark:bg-white/10 dark:text-gray-300' };
+  return { label: 'RISING', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' };
+}
+
 function RankRow({ player, tab }: { player: RankedPlayer; tab: Tab }) {
   const sub = tab === 'batting' ? `Bat ${player.battingTotal}`
             : tab === 'bowling' ? `Bowl ${player.bowlingTotal}`
             : `Bat ${player.battingTotal} · Bowl ${player.bowlingTotal}`;
+  const tier = tierOf(player.rating);
   return (
     <Link to={`/profile/${player.member.id}`}>
       <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b last:border-b-0 border-gray-100 dark:border-gray-800">
-        <span className="w-6 text-center text-xs font-black text-gray-400 flex-shrink-0">{player.rank}</span>
+        <span className="w-6 text-center text-sm font-black text-gray-400 flex-shrink-0 tabular-nums">{player.rank}</span>
         {player.member.avatar_url ? (
-          <img src={player.member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+          <img src={player.member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
             <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{player.member.name.charAt(0)}</span>
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{player.member.name}</p>
-          <p className="text-[10px] text-gray-500 truncate">{sub} · {player.matchesCounted} matches{player.momBonus ? ` · ⭐${Math.round((player.momBonus || 0) / 50)} MOM` : ''}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{player.member.name}</p>
+            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0 ${tier.cls}`}>{tier.label}</span>
+          </div>
+          {/* Rating bar (0–1000) */}
+          <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${Math.min(100, player.rating / 10)}%`, background: 'linear-gradient(90deg, var(--a1), var(--a3))' }} />
+          </div>
+          <p className="text-[10px] text-gray-500 truncate mt-1">{sub} · {player.matchesCounted} matches{player.momBonus ? ` · ⭐${Math.round((player.momBonus || 0) / 50)} MOM` : ''}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-base font-black text-gray-900 dark:text-white tabular-nums">{player.rating}</p>
-          <p className="text-[9px] text-gray-400 uppercase tracking-wider">rating</p>
+          <p className="font-display text-lg font-black text-gray-900 dark:text-white tabular-nums leading-none">{player.rating}</p>
+          <p className="text-[9px] text-gray-400 uppercase tracking-wider mt-0.5">rating</p>
         </div>
       </div>
     </Link>

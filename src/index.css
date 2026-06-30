@@ -7,10 +7,33 @@
 /* ── "Stadium Night" premium design foundation ──────────────────────────────
    Shared utilities for the premium UI direction: a display font for big
    numerals, frosted-glass surfaces, and an aurora glow page background. */
+/* ── Accent palette system (user-switchable) ────────────────────────────────
+   data-accent on <html> swaps these vars; everything accent-tinted reads them. */
+:root { --a1:#10b981; --a2:#34d399; --a3:#2dd4bf; --a-soft:rgba(16,185,129,.16); --a-glow:rgba(16,185,129,.30); --a-on:#04140e; }
+:root[data-accent="aurora"] { --a1:#8b5cf6; --a2:#6366f1; --a3:#38bdf8; --a-soft:rgba(139,92,246,.18); --a-glow:rgba(139,92,246,.32); --a-on:#fff; }
+:root[data-accent="sunset"] { --a1:#f59e0b; --a2:#fb7185; --a3:#f43f5e; --a-soft:rgba(244,114,114,.16); --a-glow:rgba(245,158,11,.30); --a-on:#2a0d0d; }
+:root[data-accent="ocean"]  { --a1:#06b6d4; --a2:#3b82f6; --a3:#6366f1; --a-soft:rgba(56,189,248,.16); --a-glow:rgba(56,189,248,.30); --a-on:#fff; }
+
 @layer utilities {
   .font-display { font-family: 'Sora', system-ui, sans-serif; letter-spacing: -0.02em; }
 
+  /* Accent helpers */
+  .accent-grad { background:linear-gradient(120deg,var(--a1),var(--a3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .accent-wordmark { background:linear-gradient(120deg,#fff,var(--a2) 55%,var(--a3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .bg-accent-grad { background:linear-gradient(120deg,var(--a1),var(--a2)); color:var(--a-on); }
+  .accent-soft { background:var(--a-soft); }
+  .accent-glow { background:var(--a-glow); }
+  .text-accent { color:var(--a1); }
+  .border-accent { border-color:var(--a1); }
+  .shadow-accent { box-shadow:0 14px 30px -12px var(--a1); }
+
+  /* Light by default, dark variant under .dark — so the whole app can theme. */
   .glass {
+    background: #ffffff;
+    border: 1px solid rgba(15,23,42,0.08);
+    box-shadow: 0 18px 44px -22px rgba(20,33,61,0.22);
+  }
+  .dark .glass {
     background: linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035));
     border: 1px solid rgba(255,255,255,0.12);
     backdrop-filter: blur(16px);
@@ -20,9 +43,34 @@
 
   .aurora-bg {
     background:
-      radial-gradient(1000px circle at 6% -8%, rgba(16,185,129,0.30), transparent 46%),
-      radial-gradient(900px circle at 106% 2%, rgba(139,92,246,0.28), transparent 44%),
-      radial-gradient(820px circle at 50% 116%, rgba(37,99,235,0.20), transparent 55%),
+      radial-gradient(1000px circle at 8% -10%, var(--a-soft), transparent 42%),
+      radial-gradient(900px circle at 104% 0%, rgba(99,102,241,0.10), transparent 44%),
+      #eef1f6;
+  }
+
+  /* Theme-aware live scorecard surface */
+  .live-card { background:#ffffff; border:1px solid rgba(15,23,42,0.08); }
+  .dark .live-card { background:linear-gradient(155deg,#0c0820 0%,#06121f 60%,#050f1a 100%); border:1px solid rgba(255,255,255,0.10); }
+  .live-inner { background: rgba(15,23,42,0.03); }
+  .dark .live-inner { background: rgba(0,0,0,0.30); }
+
+  /* Theme-aware "pitch" feature card (next match): light tint vs dark gradient */
+  .feature-pitch {
+    background:
+      radial-gradient(700px circle at 0% 0%, var(--a-soft), transparent 55%),
+      #ffffff;
+  }
+  .dark .feature-pitch {
+    background:
+      radial-gradient(800px circle at 0% 0%, rgba(16,185,129,0.35), transparent 50%),
+      radial-gradient(600px circle at 100% 100%, rgba(20,184,166,0.25), transparent 60%),
+      linear-gradient(180deg, #061122, #0a1019);
+  }
+  .dark .aurora-bg {
+    background:
+      radial-gradient(1000px circle at 6% -8%, var(--a-glow), transparent 46%),
+      radial-gradient(900px circle at 106% 2%, rgba(139,92,246,0.24), transparent 44%),
+      radial-gradient(820px circle at 50% 116%, rgba(37,99,235,0.18), transparent 55%),
       #070b14;
   }
 }

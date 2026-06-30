@@ -16,9 +16,10 @@ export function useMonthSummary(seasonStart = '2025-09-01') {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      const monthStartDate = monthStart.toISOString().split('T')[0];
+      // First of the current month in LOCAL time (toISOString would shift to
+      // the previous day in IST and wrongly include last month's final day).
+      const now = new Date();
+      const monthStartDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
       // Fetch all season transactions once (covers both this month and season)
       const { data: txns } = await supabase

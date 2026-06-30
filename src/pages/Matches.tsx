@@ -304,6 +304,16 @@ export function Matches() {
     }
   }, [searchParams, isAdmin, setSearchParams]);
 
+  const nextMatchHero = useMemo(() => {
+    const up = matches.filter(m => m.result === 'upcoming').sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return up[0] ?? null;
+  }, [matches]);
+  const nextMatchDaysAway = useMemo(() => {
+    if (!nextMatchHero) return 0;
+    const diff = new Date(nextMatchHero.date).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / 86400000));
+  }, [nextMatchHero]);
+
   const filteredMatches = useMemo(() => {
     return matches.filter(match => {
       // Filter by result status
@@ -700,6 +710,29 @@ export function Matches() {
       <Header title="Matches" subtitle={`${matches.length} total matches`} />
 
       <div className="p-4 lg:p-8 space-y-6">
+        {/* ── Premium next-match hero ──────────────────────────────────── */}
+        {nextMatchHero && (
+          <div className="relative overflow-hidden rounded-2xl p-5 lg:p-6 text-white" style={{ background: 'linear-gradient(135deg, var(--a1), var(--a3) 130%)' }}>
+            <div className="absolute -top-10 -right-8 w-44 h-44 rounded-full bg-white/15 blur-3xl pointer-events-none" />
+            <div className="relative flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20">● Next match</span>
+                <h2 className="font-display text-2xl lg:text-3xl font-extrabold mt-2 leading-tight">
+                  {nextMatchHero.match_type === 'internal' ? (nextMatchHero.opponent || 'Internal Match') : <>vs {nextMatchHero.opponent || 'TBD'}</>}
+                </h2>
+                <p className="text-[13px] text-white/90 mt-1 flex items-center gap-3 flex-wrap">
+                  {nextMatchHero.venue && <span>📍 {nextMatchHero.venue}</span>}
+                  <span>🗓️ {new Date(nextMatchHero.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                </p>
+              </div>
+              <div className="text-center bg-white/15 rounded-2xl px-5 py-3">
+                <p className="font-display text-3xl lg:text-4xl font-extrabold tabular-nums leading-none">{nextMatchDaysAway}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mt-1 text-white/85">{nextMatchDaysAway === 1 ? 'day to go' : 'days to go'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Filters */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row gap-4">

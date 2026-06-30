@@ -20,6 +20,20 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.06.30',
+    date: '30 June 2026',
+    title: 'Premium UI Redesign ✨',
+    subtitle: 'Full light & dark themes · pick your colour · a more beautiful app',
+    notes: [
+      { emoji: '🌗', title: 'Light & Dark themes', tag: 'new', desc: 'The whole app now has a polished light theme and a refined dark "Stadium Night" theme — switch any time from the header.' },
+      { emoji: '🎨', title: 'Choose your colour', tag: 'new', desc: 'Pick the club accent palette — Emerald, Aurora, Sunset or Ocean — right from the Dashboard. The whole app re-skins instantly.' },
+      { emoji: '🏠', title: 'Redesigned Dashboard', tag: 'improved', desc: 'A premium hero with your personal stats, win-rate ring, milestones, and a live scorecard pinned to the very top on match day.' },
+      { emoji: '🏆', title: 'Leaderboard "Your Rank"', tag: 'new', desc: 'See exactly where you rank and how far to the next spot — "12 runs to overtake Saurabh".' },
+      { emoji: '🧍', title: 'Player cards & Rankings', tag: 'improved', desc: 'Members now show FIFA-style cards (OVR, role, runs/wkts) and SCC Rankings got a premium makeover with tiers and rating bars.' },
+      { emoji: '📊', title: 'Fixes', tag: 'fixed', desc: 'Live scorecard, Season Finale and chart colours now render correctly in light mode; "This Month" finance now uses the correct month boundary.' },
+    ],
+  },
+  {
     version: '2026.06.27',
     date: '27 June 2026',
     title: 'Match Centre 🏟️',

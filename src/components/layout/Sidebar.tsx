@@ -22,8 +22,6 @@ import {
   Trophy,
   BookOpen,
   ExternalLink,
-  Gamepad2,
-  Swords,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -37,12 +35,10 @@ const publicNavItems = [
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
-  { to: '/hub', icon: Gamepad2, label: 'Club Hub' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
   { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
   { to: '/season', icon: Sparkles, label: 'Season Finale' },
   { to: '/records', icon: Award, label: 'Hall of Fame' },
-  { to: '/scout', icon: Swords, label: 'Scouting Report' },
   { to: '/predictions', icon: Sparkles, label: 'Predictions' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },

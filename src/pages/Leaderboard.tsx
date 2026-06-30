@@ -255,6 +255,26 @@ export function Leaderboard() {
     return k ? { player: k, total: keeperDismissals(k) } : null;
   }, [stats]);
 
+  // ── "Your rank" — the member-magnet hook ─────────────────────────────────
+  const metricOf = (s: MemberCricketStats) =>
+    tab === 'batting' ? s.batting_runs
+    : tab === 'bowling' ? s.bowling_wickets
+    : tab === 'fielding' ? outfieldDismissals(s)
+    : Math.round(overallScore(s));
+  const metricUnit = tab === 'batting' ? 'runs' : tab === 'bowling' ? 'wkts' : tab === 'fielding' ? 'dismissals' : 'pts';
+  const myMemberId = typeof window !== 'undefined' ? localStorage.getItem('scc-my-profile-id') : null;
+  const myRank = useMemo(() => {
+    if (!myMemberId) return null;
+    const idx = activeStats.findIndex(s => s.member_id === myMemberId);
+    if (idx < 0) return null;
+    const me = activeStats[idx];
+    const above = idx > 0 ? activeStats[idx - 1] : null;
+    const gap = above ? metricOf(above) - metricOf(me) : 0;
+    const aboveName = (above?.member as { name?: string } | undefined)?.name?.split(' ')[0] ?? null;
+    return { rank: idx + 1, value: metricOf(me), gap, aboveName, name: (me.member as { name?: string } | undefined)?.name ?? 'You' };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStats, myMemberId, tab]);
+
   // ── Rank-change tracking ─────────────────────────────────────────────────
   // Two keys per tab:
   //   scc-lb-prev-{tab}  → yesterday's (or last-match-day's) ranks — STABLE all day
@@ -332,6 +352,21 @@ export function Leaderboard() {
           </button>
         </div>
       </div>
+
+      {/* ── Your Rank — personal hook ──────────────────────────────────── */}
+      {myRank && (
+        <div className="mx-4 sm:mx-0 rounded-2xl bg-accent-grad p-4 sm:px-5 flex items-center justify-between gap-3 flex-wrap shadow-accent">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">Your rank · {tabs.find(t => t.id === tab)?.label}</p>
+            <p className="font-display text-2xl sm:text-[26px] font-extrabold tabular-nums">#{myRank.rank} · {myRank.value.toLocaleString()} {metricUnit}</p>
+          </div>
+          <div className="text-right text-[13px] font-bold leading-tight">
+            {myRank.gap > 0 && myRank.aboveName
+              ? <>Just <span className="tabular-nums">{myRank.gap.toLocaleString()}</span> {metricUnit} to overtake<br /><span className="opacity-85 font-semibold">{myRank.aboveName} ↑</span></>
+              : <>🏆 You're #1 — top of the board!</>}
+          </div>
+        </div>
+      )}
 
       {/* Tab bar */}
       <div className="mx-4 sm:mx-0 flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
