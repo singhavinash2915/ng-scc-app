@@ -47,31 +47,22 @@ export function PremiumHero({ firstName, profileId, avatarUrl, winRate, won, los
         bg-white border border-slate-200/80 shadow-[0_18px_44px_-22px_rgba(20,33,61,0.28)]
         dark:bg-white/[0.055] dark:border-white/10 dark:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.7)] dark:backdrop-blur-xl">
         <div className="absolute -top-12 -right-8 w-56 h-56 rounded-full accent-glow blur-3xl opacity-50 pointer-events-none" />
-        <div className="relative flex items-start justify-between gap-5 flex-wrap">
-          <div className="min-w-0">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full accent-soft text-accent">
+        <div className="relative flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full accent-soft text-accent">
               <span className="w-2 h-2 rounded-full" style={{ background: 'var(--a1)' }} />
               Season 2025–26 · live
             </span>
-            <h1 className="font-display text-[28px] lg:text-[34px] font-extrabold leading-[1.05] mt-3.5 text-slate-900 dark:text-white">
-              {greeting()}, <span className="accent-grad">{firstName || 'Skipper'}</span> 🏏
+            <h1 className="font-display text-[22px] sm:text-[28px] lg:text-[34px] font-extrabold leading-[1.08] mt-2.5 sm:mt-3.5 text-slate-900 dark:text-white">
+              {greeting()},<br className="sm:hidden" /> <span className="accent-grad">{firstName || 'Skipper'}</span> 🏏
             </h1>
-            <p className="text-slate-500 dark:text-gray-400 text-sm lg:text-[15px] mt-1.5 max-w-md">
-              Your club at a glance — {activeMembers} active members
-              {streak && streak.count >= 2 ? `, a ${streak.count}-match ${streak.result === 'won' ? 'win' : 'losing'} streak` : ''}.
-            </p>
-            <div className="flex items-center gap-2 mt-4 flex-wrap">
-              <Link to="/matches" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold bg-accent-grad shadow-accent">
-                Open Match Centre <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
           </div>
 
-          {/* Win-rate donut */}
-          <div className="rounded-[16px] px-5 py-4 text-center min-w-[160px]
+          {/* Win-rate donut — compact, inline on every screen */}
+          <div className="shrink-0 text-center rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3
             bg-slate-50 border border-slate-200/70 dark:bg-white/[0.04] dark:border-white/10">
-            <div className="relative w-[120px] h-[120px] mx-auto">
-              <svg width="120" height="120" viewBox="0 0 120 120" className="-rotate-90">
+            <div className="relative w-[78px] h-[78px] sm:w-[104px] sm:h-[104px] mx-auto">
+              <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
                 <circle cx="60" cy="60" r="50" fill="none" strokeWidth="11" className="stroke-slate-200 dark:stroke-white/10" />
                 <circle cx="60" cy="60" r="50" fill="none" strokeWidth="11" strokeLinecap="round" stroke="url(#hg)"
                   strokeDasharray={circ} strokeDashoffset={offset} />
@@ -79,10 +70,20 @@ export function PremiumHero({ firstName, profileId, avatarUrl, winRate, won, los
                   <stop offset="0" stopColor="var(--a1)" /><stop offset="1" stopColor="var(--a3)" />
                 </linearGradient></defs>
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center font-display text-[26px] font-extrabold text-slate-900 dark:text-white">{winRate}%</div>
+              <div className="absolute inset-0 flex items-center justify-center font-display text-xl sm:text-[26px] font-extrabold text-slate-900 dark:text-white">{winRate}%</div>
             </div>
-            <div className="text-xs text-slate-400 dark:text-gray-500 font-semibold mt-1">Win rate · {won}W–{lost}L</div>
+            <div className="text-[10px] sm:text-xs text-slate-400 dark:text-gray-500 font-semibold mt-0.5 sm:mt-1 whitespace-nowrap">Win · {won}W–{lost}L</div>
           </div>
+        </div>
+
+        <p className="relative text-slate-500 dark:text-gray-400 text-[13px] sm:text-[15px] mt-3 max-w-md">
+          Your club at a glance — {activeMembers} active members
+          {streak && streak.count >= 2 ? `, a ${streak.count}-match ${streak.result === 'won' ? 'win' : 'losing'} streak` : ''}.
+        </p>
+        <div className="relative flex items-center gap-2 mt-4 flex-wrap">
+          <Link to="/matches" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold bg-accent-grad shadow-accent">
+            Open Match Centre <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* ── Personal strip ── */}

@@ -21,11 +21,16 @@ export function useMonthSummary(seasonStart = '2025-09-01') {
       const now = new Date();
       const monthStartDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-      // Fetch all season transactions once (covers both this month and season)
+      // Fetch season deposit + expense transactions (covers this month + season).
+      // We filter to these two types because match_fee/refund rows are the bulk
+      // and would push the result past Supabase's 1000-row cap, silently
+      // truncating the data (which made "This Month" under-count expenses).
       const { data: txns } = await supabase
         .from('transactions')
         .select('type, amount, date')
-        .gte('date', seasonStart);
+        .in('type', ['deposit', 'expense'])
+        .gte('date', seasonStart)
+        .limit(5000);
 
       if (cancelled) return;
 
