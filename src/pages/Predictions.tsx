@@ -362,8 +362,8 @@ export function Predictions() {
               <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
               Season Predictor Leaderboard
             </h3>
-            <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
-              <table className="w-full">
+            <div className="rounded-2xl overflow-x-auto border border-gray-200 dark:border-gray-700">
+              <table className="w-full min-w-[480px]">
                 <thead className="bg-gray-50 dark:bg-gray-800 text-xs uppercase tracking-widest text-gray-500">
                   <tr>
                     <th className="text-left px-4 py-3 w-12">#</th>
@@ -374,23 +374,23 @@ export function Predictions() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-                  {leaderboard.map((row, i) => {
+                  {leaderboard.map((row) => {
                     const m = memberById[row.member_id];
                     if (!m) return null;
                     return (
-                      <tr key={row.member_id} className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${i === 0 ? 'bg-amber-50/40 dark:bg-amber-900/10' : ''}`}>
+                      <tr key={row.member_id} className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${row.rank === 1 ? 'bg-amber-50/40 dark:bg-amber-900/10' : ''}`}>
                         <td className="px-4 py-3">
-                          {i === 0 ? <span className="text-lg">👑</span>
-                          : i === 1 ? <Medal className="w-5 h-5 text-gray-400" />
-                          : i === 2 ? <Medal className="w-5 h-5 text-orange-400" />
-                          : <span className="text-sm font-bold text-gray-400">{i + 1}</span>}
+                          {row.rank === 1 ? <span className="text-lg">👑</span>
+                          : row.rank === 2 ? <Medal className="w-5 h-5 text-gray-400" />
+                          : row.rank === 3 ? <Medal className="w-5 h-5 text-orange-400" />
+                          : <span className="text-sm font-bold text-gray-400">{row.rank}</span>}
                         </td>
                         <td className="px-4 py-3">
-                          <Link to={`/profile/${m.id}`} className="flex items-center gap-2.5 hover:text-primary-600">
+                          <Link to={`/profile/${m.id}`} className="flex items-center gap-2.5 hover:text-primary-600 whitespace-nowrap">
                             {m.avatar_url ? (
-                              <img src={m.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                              <img src={m.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                             ) : (
-                              <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                              <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
                                 <span className="text-xs font-bold text-primary-600 dark:text-primary-400">{m.name.charAt(0)}</span>
                               </div>
                             )}
@@ -406,6 +406,7 @@ export function Predictions() {
                 </tbody>
               </table>
             </div>
+            <p className="text-[10px] text-gray-400 mt-1.5 px-1">Ties are broken by most correct picks, then fewest matches needed — equal on both share the same rank.</p>
           </div>
         )}
 

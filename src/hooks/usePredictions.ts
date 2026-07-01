@@ -175,9 +175,29 @@ export function usePredictionLeaderboard() {
       tally[p.member_id].matches += 1;
       if (p.points_earned > 0) tally[p.member_id].correct += 1;
     }
-    return Object.entries(tally)
+    // Tie-break order: points desc → correct predictions desc (rewards accuracy
+    // over volume) → fewer matches needed to get there (efficiency) → member_id
+    // for a stable final order. Members tied on points+correct+matches share
+    // the same displayed rank (standard "1224" competition ranking) — see rank
+    // computation below, driven off this sort.
+    const sorted = Object.entries(tally)
       .map(([member_id, t]) => ({ member_id, ...t }))
-      .sort((a, b) => b.points - a.points);
+      .sort((a, b) =>
+        b.points - a.points ||
+        b.correct - a.correct ||
+        a.matches - b.matches ||
+        a.member_id.localeCompare(b.member_id));
+
+    // Assign competition ranks: ties (equal points+correct+matches) share a
+    // rank; the next distinct entry's rank accounts for how many were tied
+    // above it (e.g. two people tied at #3 → next rank is #5, not #4).
+    let rank = 0;
+    return sorted.map((row, i) => {
+      const prev = sorted[i - 1];
+      const tiedWithPrev = prev && prev.points === row.points && prev.correct === row.correct && prev.matches === row.matches;
+      if (!tiedWithPrev) rank = i + 1;
+      return { ...row, rank };
+    });
   }, [predictions]);
 
   return { leaderboard, loading };
