@@ -79,7 +79,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
               { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
               { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
-              { to: '/season', icon: Sparkles, label: 'Season Finale' },
+              // Season Finale hidden from nav until Awards Night work is finished (still reachable via direct URL)
               { to: '/records', icon: Award, label: 'Hall of Fame' },
               { to: '/predictions', icon: Sparkles, label: 'Predictions' },
               { to: '/finance', icon: Wallet, label: 'Finance' },
