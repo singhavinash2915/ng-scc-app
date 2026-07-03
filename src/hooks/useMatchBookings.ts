@@ -235,6 +235,105 @@ export function useMatchBookings() {
     }
   };
 
+  // ─── Admin: book a slot on behalf of a team ───────────────────────────────
+  // For teams that contact the admin directly (phone / WhatsApp) instead of
+  // using the public booking page. Skips the payment-screenshot flow and the
+  // monthly-limit guard (admin is making the call deliberately). Can optionally
+  // confirm + create the match in the same step.
+  const createAdminBooking = async (params: {
+    slotId: string;
+    slotDate: string;
+    amount: number;
+    teamName: string;
+    contactName: string;
+    contactPhone: string;
+    chTeamId?: string;
+    paymentStatus: 'pending' | 'paid' | 'verified';
+    confirmNow: boolean;   // confirm + create match immediately
+    venue?: string;
+    adminNotes?: string;
+  }): Promise<{ success: boolean; bookingId?: string; matchId?: string; error?: string }> => {
+    try {
+      // Verify slot is still available
+      const { data: slot } = await supabase
+        .from('match_slots')
+        .select('id, is_available')
+        .eq('id', params.slotId)
+        .single();
+
+      if (!slot?.is_available) {
+        return { success: false, error: 'This slot is no longer available. Please choose another date.' };
+      }
+
+      const notePrefix = 'Booked by admin (team contacted directly).';
+      const fullNote = params.adminNotes ? `${notePrefix} ${params.adminNotes}` : notePrefix;
+
+      // Insert the booking
+      const { data: booking, error: bookErr } = await supabase
+        .from('match_bookings')
+        .insert([{
+          slot_id: params.slotId,
+          team_name: params.teamName,
+          contact_name: params.contactName,
+          contact_phone: params.contactPhone,
+          cricheroes_team_id: params.chTeamId || null,
+          payment_method: 'upi',
+          payment_screenshot_url: null,
+          payment_status: params.paymentStatus,
+          status: params.confirmNow ? 'confirmed' : 'pending',
+          amount: params.amount,
+          admin_notes: fullNote,
+          confirmed_at: params.confirmNow ? new Date().toISOString() : null,
+        }])
+        .select()
+        .single();
+
+      if (bookErr) throw bookErr;
+
+      // Reserve the slot
+      await supabase
+        .from('match_slots')
+        .update({ is_available: false })
+        .eq('id', params.slotId);
+
+      let matchId: string | undefined;
+
+      // Optionally create the upcoming match right away
+      if (params.confirmNow) {
+        const { data: match, error: matchErr } = await supabase
+          .from('matches')
+          .insert([{
+            date: params.slotDate,
+            opponent: params.teamName,
+            venue: params.venue?.trim() || 'TBD',
+            result: 'upcoming',
+            match_type: 'external',
+            match_fee: 0,
+            ground_cost: params.amount,
+            other_expenses: 0,
+            deduct_from_balance: false,
+            notes: `${fullNote} Contact: ${params.contactName} (${params.contactPhone})${params.chTeamId ? ` · CricHeroes: ${params.chTeamId}` : ''}`,
+            polling_enabled: false,
+          }])
+          .select()
+          .single();
+
+        if (matchErr) throw matchErr;
+        matchId = match.id;
+
+        await supabase
+          .from('match_bookings')
+          .update({ match_id: match.id })
+          .eq('id', booking.id);
+      }
+
+      await fetchBookings();
+      return { success: true, bookingId: booking.id, matchId };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to create booking' };
+    }
+  };
+
   // ─── Admin: update booking status ─────────────────────────────────────────
   const updateBookingStatus = async (
     bookingId: string,
@@ -368,6 +467,7 @@ export function useMatchBookings() {
     fetchSlots,
     fetchBookings,
     createBooking,
+    createAdminBooking,
     updateBookingStatus,
     confirmBookingAndCreateMatch,
     deleteBooking,

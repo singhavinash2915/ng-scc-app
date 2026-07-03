@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMatchBookings } from '../hooks/useMatchBookings';
 import { useAuth } from '../context/AuthContext';
-import type { MatchBooking, MatchBookingStatus } from '../types';
+import type { MatchBooking, MatchBookingStatus, MatchSlot } from '../types';
 import {
   CalendarDays,
   CheckCircle2,
@@ -20,6 +20,7 @@ import {
   CheckCheck,
   AlertCircle,
   Trash2,
+  Plus,
 } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
@@ -51,8 +52,10 @@ function paymentStatusBadge(status: string) {
 export function Bookings() {
   const { isAdmin } = useAuth();
   const {
-    bookings, loading, error,
+    bookings, slots, loading, error,
     fetchBookings,
+    fetchSlots,
+    createAdminBooking,
     updateBookingStatus,
     confirmBookingAndCreateMatch,
     deleteBooking,
@@ -65,10 +68,20 @@ export function Bookings() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [showScreenshot, setShowScreenshot] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
 
   useEffect(() => {
     fetchBookings();
-  }, [fetchBookings]);
+    fetchSlots();
+  }, [fetchBookings, fetchSlots]);
+
+  // Available slots (today onward), for the manual admin-booking dropdown.
+  const availableSlots = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return slots
+      .filter(s => s.is_available && s.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [slots]);
 
   const filtered = bookings.filter(b =>
     statusFilter === 'all' ? true : b.status === statusFilter
@@ -152,13 +165,17 @@ export function Bookings() {
             href="/book-match"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-sm text-primary-600 dark:text-primary-400 hover:underline"
+            className="hidden sm:flex items-center gap-1.5 text-sm text-primary-600 dark:text-primary-400 hover:underline"
           >
             <ExternalLink className="w-4 h-4" />
             Public Booking Page
           </a>
+          <Button onClick={() => setShowManualModal(true)} className="!py-2">
+            <Plus className="w-4 h-4" />
+            Book for a Team
+          </Button>
           <button
-            onClick={fetchBookings}
+            onClick={() => { fetchBookings(); fetchSlots(); }}
             className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             title="Refresh"
           >
@@ -561,6 +578,214 @@ export function Bookings() {
           </div>
         )}
       </Modal>
+
+      {/* ── Manual (admin) booking modal ──────────────────────────────────── */}
+      <ManualBookingModal
+        isOpen={showManualModal}
+        onClose={() => setShowManualModal(false)}
+        slots={availableSlots}
+        onCreate={createAdminBooking}
+        onDone={() => { fetchBookings(); fetchSlots(); }}
+      />
     </div>
+  );
+}
+
+// ─── Manual Booking Modal ──────────────────────────────────────────────────────
+function ManualBookingModal({
+  isOpen,
+  onClose,
+  slots,
+  onCreate,
+  onDone,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  slots: MatchSlot[];
+  onCreate: ReturnType<typeof useMatchBookings>['createAdminBooking'];
+  onDone: () => void;
+}) {
+  const [slotId, setSlotId] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [chTeamId, setChTeamId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [venue, setVenue] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'verified'>('verified');
+  const [confirmNow, setConfirmNow] = useState(true);
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState<{ matchCreated: boolean } | null>(null);
+
+  const selectedSlot = slots.find(s => s.id === slotId);
+
+  // Default the amount to the chosen slot's price (admin can still override after)
+  function handleSlotChange(id: string) {
+    setSlotId(id);
+    const slot = slots.find(s => s.id === id);
+    if (slot) setAmount(String(slot.price));
+  }
+
+  function reset() {
+    setSlotId(''); setTeamName(''); setContactName(''); setContactPhone('');
+    setChTeamId(''); setAmount(''); setVenue(''); setPaymentStatus('verified');
+    setConfirmNow(true); setNotes(''); setErr(null); setDone(null);
+  }
+
+  function handleClose() {
+    if (done) onDone();
+    reset();
+    onClose();
+  }
+
+  async function handleSubmit() {
+    setErr(null);
+    if (!selectedSlot) { setErr('Please choose a match date/slot.'); return; }
+    if (!teamName.trim()) { setErr('Team name is required.'); return; }
+    if (!contactName.trim() || !contactPhone.trim()) { setErr('Contact name and phone are required.'); return; }
+    const amt = parseFloat(amount);
+    if (isNaN(amt) || amt < 0) { setErr('Enter a valid amount.'); return; }
+
+    setSaving(true);
+    const res = await onCreate({
+      slotId: selectedSlot.id,
+      slotDate: selectedSlot.date,
+      amount: amt,
+      teamName: teamName.trim(),
+      contactName: contactName.trim(),
+      contactPhone: contactPhone.trim(),
+      chTeamId: chTeamId.trim() || undefined,
+      paymentStatus,
+      confirmNow,
+      venue: venue.trim() || undefined,
+      adminNotes: notes.trim() || undefined,
+    });
+    setSaving(false);
+    if (res.success) {
+      setDone({ matchCreated: !!res.matchId });
+    } else {
+      setErr(res.error ?? 'Failed to create booking');
+    }
+  }
+
+  const inputCls = 'w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50';
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="Book a Slot for a Team" size="lg">
+      {done ? (
+        <div className="flex flex-col items-center text-center gap-3 py-6">
+          <CheckCircle2 className="w-14 h-14 text-green-500" />
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">Booking created!</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+            {done.matchCreated
+              ? 'The booking is confirmed and an upcoming match has been added to the Matches page.'
+              : 'The booking has been saved as pending. Review it in the list to confirm and create the match.'}
+          </p>
+          <Button onClick={handleClose} className="mt-2">Done</Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Use this when a team contacts you directly (phone / WhatsApp). It reserves the slot and records the booking without the public payment step.
+          </p>
+
+          {/* Slot */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Match Date / Slot *</label>
+            {slots.length === 0 ? (
+              <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-3 py-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0" /> No available slots. Open new slots first.
+              </div>
+            ) : (
+              <select value={slotId} onChange={e => handleSlotChange(e.target.value)} className={inputCls}>
+                <option value="">Choose an available date…</option>
+                {slots.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {formatDate(s.date)} · {s.day_type === 'saturday' ? 'Saturday' : 'Weekday'} · ₹{s.price.toLocaleString('en-IN')}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Team + contact */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Team Name *</label>
+              <input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="e.g. Royal Strikers" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CricHeroes ID / Link</label>
+              <input value={chTeamId} onChange={e => setChTeamId(e.target.value)} placeholder="Optional" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Contact Person *</label>
+              <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Captain / manager" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Contact Phone *</label>
+              <input value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="10-digit number" inputMode="tel" className={inputCls} />
+            </div>
+          </div>
+
+          {/* Amount + payment status */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Amount (₹) *</label>
+              <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="Slot price" inputMode="numeric" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Payment Status</label>
+              <select value={paymentStatus} onChange={e => setPaymentStatus(e.target.value as 'pending' | 'paid' | 'verified')} className={inputCls}>
+                <option value="verified">Received (verified)</option>
+                <option value="paid">Paid — to verify</option>
+                <option value="pending">Not paid yet</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Venue */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Venue <span className="text-gray-400 text-xs">(optional — used when creating the match)</span>
+            </label>
+            <input value={venue} onChange={e => setVenue(e.target.value)} placeholder="Four Star Cricket Ground" className={inputCls} />
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes <span className="text-gray-400 text-xs">(optional)</span></label>
+            <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Paid ₹3,500 cash. Bringing own umpire." className={`${inputCls} resize-none`} />
+          </div>
+
+          {/* Confirm + create match toggle */}
+          <label className="flex items-start gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 cursor-pointer">
+            <input type="checkbox" checked={confirmNow} onChange={e => setConfirmNow(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary-500" />
+            <span className="text-sm">
+              <span className="font-medium text-gray-900 dark:text-white">Confirm now & create the match</span>
+              <span className="block text-xs text-gray-500 dark:text-gray-400">
+                Adds an upcoming match immediately. Uncheck to save as pending and review later.
+              </span>
+            </span>
+          </label>
+
+          {err && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /> {err}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <Button variant="secondary" onClick={handleClose} className="flex-1" disabled={saving}>Cancel</Button>
+            <Button onClick={handleSubmit} className="flex-1" disabled={saving || slots.length === 0}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {confirmNow ? 'Book + Create Match' : 'Save Booking'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
