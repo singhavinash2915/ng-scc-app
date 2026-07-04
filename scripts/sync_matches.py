@@ -29,7 +29,11 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 # Defaults: only sync upcoming matches. Use --past-days N to backfill past matches
 # (safe: script only fills missing fields, never overwrites manual edits).
 SYNC_PAST_DAYS = 0
-SYNC_FUTURE_DAYS = 60
+# A full season is booked in advance (e.g. Sept 2026 → June 2027), so look a
+# year ahead — otherwise matches beyond the horizon never sync. The fetch loop
+# still stops at cutoff_past, so a wider future window only costs a few extra
+# API pages on the daily run.
+SYNC_FUTURE_DAYS = 365
 
 # ── CricHeroes player_id → SCC member name (for MOM mapping) ──────────────────
 CH_PLAYER_NAMES = {

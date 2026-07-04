@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, PartyPopper } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -76,6 +76,8 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
               { to: '/members', icon: Users, label: 'Members' },
               { to: '/matches', icon: Calendar, label: 'Matches' },
+              { to: '/outing', icon: PartyPopper, label: 'Team Outing' },
+              { to: '/season', icon: Sparkles, label: 'Season Finale' },
               { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
               { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
               { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
@@ -84,6 +86,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/predictions', icon: Sparkles, label: 'Predictions' },
               { to: '/finance', icon: Wallet, label: 'Finance' },
               { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
+              { to: '/league', icon: Trophy, label: 'Season League' },
               { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
               { to: '/about', icon: Info, label: 'About' },
             ].map((item) => (

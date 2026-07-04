@@ -5,6 +5,8 @@ import { useMembers } from './useMembers';
 import { useMatches } from './useMatches';
 import { useMOMCounts } from './useMOMCounts';
 import { useFantasyPoints } from './useFantasyPoints';
+import { useAllScorecards } from './useAllScorecards';
+import { useSccRankings, type RankingMode } from './useSccRankings';
 import { outfieldDismissals, keeperDismissals, hasKept } from '../utils/fielding';
 
 export interface XIPlayer {
@@ -24,12 +26,6 @@ export interface Award {
   blurb: string;
 }
 
-export interface ReportCard {
-  member: Member;
-  batting: string; bowling: string; fielding: string; impact: string; overall: string;
-  note: string;
-}
-
 export interface ClubWrapped {
   season: string;
   played: number; won: number; lost: number; nr: number; winPct: number;
@@ -45,28 +41,12 @@ export interface ClubWrapped {
 export interface SeasonFinale {
   bestXI: XIPlayer[];
   awards: Award[];
-  reportCards: ReportCard[];
   clubWrapped: ClubWrapped;
 }
 
 const num = (s: string | null | undefined): number | null => {
   if (!s) return null; const m = s.match(/(\d+)/); return m ? parseInt(m[1], 10) : null;
 };
-const dismissals = (s: MemberCricketStats) => s.fielding_catches + s.fielding_stumpings + s.fielding_run_outs;
-
-// Percentile of a value within a sorted-desc list of values → grade.
-function grade(value: number, all: number[]): string {
-  const sorted = [...all].filter(v => v > 0).sort((a, b) => a - b);
-  if (sorted.length === 0 || value <= 0) return 'C';
-  const below = sorted.filter(v => v < value).length;
-  const pct = (below / sorted.length) * 100;
-  if (pct >= 90) return 'A+';
-  if (pct >= 75) return 'A';
-  if (pct >= 60) return 'B+';
-  if (pct >= 40) return 'B';
-  if (pct >= 20) return 'C+';
-  return 'C';
-}
 
 export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): SeasonFinale {
   const { members } = useMembers();
@@ -75,14 +55,18 @@ export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): Sea
   const { stats: prevStats } = useCricketStats(prevSeason);
   const { counts: momCounts } = useMOMCounts();
   const fantasy = useFantasyPoints(stats, members, momCounts);
+  // Player of the Season uses the same ICC-style, opposition-adjusted rating
+  // as the SCC Rankings page (geometric mean of bat+bowl, so a player needs to
+  // be genuinely good at BOTH — not just accumulate raw runs/wickets like the
+  // simple Fantasy Points total used for Team of the Season selection below).
+  const { scorecards } = useAllScorecards();
+  const sccRankings = useSccRankings(matches, members, scorecards, season as RankingMode);
 
   return useMemo(() => {
     const memberById: Record<string, Member> = {};
     members.forEach(m => { memberById[m.id] = m; });
     const withMember = stats.filter(s => memberById[s.member_id]);
     const mOf = (id: string) => memberById[id] || null;
-    const fanTotal: Record<string, number> = {};
-    fantasy.forEach(f => { fanTotal[f.member.id] = f.total; });
 
     // ── Best XI ───────────────────────────────────────────────────────────────
     const ranked = [...fantasy].filter(f => (f.stats.batting_matches || 0) >= 1);
@@ -124,6 +108,14 @@ export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): Sea
     const bestKeeper = withMember.filter(hasKept)
       .sort((a, b) => keeperDismissals(b) - keeperDismissals(a))[0];
     const mvpF = fantasy[0];
+    // Player of the Season: prefer the ICC-style all-rounder rating (fair to
+    // both disciplines via a geometric mean, opposition-adjusted) — falls back
+    // to the simple Fantasy Points leader only if rankings aren't available yet
+    // (e.g. scorecards still loading) or nobody qualifies as an all-rounder.
+    const topAllRounder = sccRankings.allRounders[0] ?? null;
+    const mvpMember = topAllRounder?.member ?? mvpF?.member ?? null;
+    const mvpValue = topAllRounder ? `${topAllRounder.rating} rating` : (mvpF ? `${Math.round(mvpF.total).toLocaleString('en-IN')} pts` : '—');
+    const mvpBlurb = topAllRounder ? 'ICC-style rating — bat + bowl + field, opposition-adjusted' : 'Most valuable across bat, ball & field';
     const sixMachine = maxBy(s => s.batting_sixes);
     const reliable = [...withMember].filter(s => (s.batting_innings || 0) >= 5)
       .sort((a, b) => (b.batting_average || 0) - (a.batting_average || 0))[0];
@@ -138,7 +130,7 @@ export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): Sea
     }).filter(x => x.delta > 0).sort((a, b) => b.delta - a.delta)[0];
 
     const awards: Award[] = [
-      { key: 'mvp', title: 'Player of the Season', emoji: '👑', member: mvpF?.member ?? null, value: mvpF ? `${Math.round(mvpF.total).toLocaleString('en-IN')} pts` : '—', blurb: 'Most valuable across bat, ball & field' },
+      { key: 'mvp', title: 'Player of the Season', emoji: '👑', member: mvpMember, value: mvpValue, blurb: mvpBlurb },
       { key: 'bat', title: 'Best Batter', emoji: '🏏', member: bestBat ? mOf(bestBat.member_id) : null, value: bestBat ? `${bestBat.batting_runs} runs` : '—', blurb: bestBat ? `HS ${bestBat.batting_highest_score} · avg ${bestBat.batting_average?.toFixed(1)}` : '' },
       { key: 'bowl', title: 'Best Bowler', emoji: '🎯', member: bestBowl ? mOf(bestBowl.member_id) : null, value: bestBowl ? `${bestBowl.bowling_wickets} wkts` : '—', blurb: bestBowl ? `best ${bestBowl.bowling_best_figures} · econ ${bestBowl.bowling_economy?.toFixed(1)}` : '' },
       { key: 'field', title: 'Best Fielder', emoji: '🧤', member: bestField ? mOf(bestField.member_id) : null, value: bestField ? `${outfieldDismissals(bestField)} dismissals` : '—', blurb: bestField ? `${bestField.fielding_catches} ct · ${bestField.fielding_run_outs} ro` : '' },
@@ -147,29 +139,6 @@ export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): Sea
       { key: 'six', title: 'Six Machine', emoji: '💥', member: sixMachine ? mOf(sixMachine.member_id) : null, value: sixMachine ? `${sixMachine.batting_sixes} sixes` : '—', blurb: 'Most maximums this season' },
       { key: 'reliable', title: 'Mr. Reliable', emoji: '🧱', member: reliable ? mOf(reliable.member_id) : null, value: reliable ? `avg ${reliable.batting_average?.toFixed(1)}` : '—', blurb: 'Best average (5+ innings)' },
     ].filter(a => a.member);
-
-    // ── Report cards ────────────────────────────────────────────────────────
-    const allRuns = withMember.map(s => s.batting_runs);
-    const allWkts = withMember.map(s => s.bowling_wickets);
-    const allField = withMember.map(dismissals);
-    const allImpact = withMember.map(s => fanTotal[s.member_id] || 0);
-    const order = ['A+', 'A', 'B+', 'B', 'C+', 'C'];
-    const reportCards: ReportCard[] = withMember
-      .filter(s => (s.batting_matches || 0) >= 3)
-      .map(s => {
-        const batting = grade(s.batting_runs, allRuns);
-        const bowling = grade(s.bowling_wickets, allWkts);
-        const fielding = grade(dismissals(s), allField);
-        const impact = grade(fanTotal[s.member_id] || 0, allImpact);
-        const overall = [batting, bowling, fielding, impact].sort((a, b) => order.indexOf(a) - order.indexOf(b))[0];
-        const facets = [['batting', batting], ['bowling', bowling], ['fielding', fielding]] as const;
-        const best = facets.slice().sort((a, b) => order.indexOf(a[1]) - order.indexOf(b[1]))[0];
-        const note = order.indexOf(best[1]) <= order.indexOf('B')
-          ? `Standout with the ${best[0] === 'batting' ? 'bat' : best[0] === 'bowling' ? 'ball' : 'gloves/in the field'} this season.`
-          : 'Solid all-round contributor — room to push next season.';
-        return { member: memberById[s.member_id], batting, bowling, fielding, impact, overall, note };
-      })
-      .sort((a, b) => order.indexOf(a.overall) - order.indexOf(b.overall));
 
     // ── Club wrapped (external season matches) ────────────────────────────────
     // Season window: '2025-26' → 2025-09-01 .. 2026-08-31
@@ -210,9 +179,9 @@ export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): Sea
       topWicket: bestBowl ? { name: mOf(bestBowl.member_id)?.name ?? '—', wkts: bestBowl.bowling_wickets } : null,
       mostMom: momLeader ? { name: mOf(momLeader[0])?.name ?? '—', count: momLeader[1] } : null,
       elClasico: internal.length ? { dhur, baz, verdict: dhur === baz ? 'Honours even' : dhur > baz ? 'Dhurandhars on top' : 'Baazigars on top' } : null,
-      mvp: mvpF ? { name: mvpF.member.name, points: Math.round(mvpF.total) } : null,
+      mvp: mvpMember ? { name: mvpMember.name, points: topAllRounder ? topAllRounder.rating : Math.round(mvpF?.total ?? 0) } : null,
     };
 
-    return { bestXI, awards, reportCards, clubWrapped };
-  }, [members, matches, stats, prevStats, momCounts, fantasy, season]);
+    return { bestXI, awards, clubWrapped };
+  }, [members, matches, stats, prevStats, fantasy, season, sccRankings]);
 }

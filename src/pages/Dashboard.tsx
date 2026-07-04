@@ -24,6 +24,7 @@ import { LiveScorecard } from '../components/LiveScorecard';
 import { MatchSummaryCard } from '../components/MatchSummaryCard';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
+import { useSeasonLeague } from '../hooks/useSeasonLeague';
 import { useRequests } from '../hooks/useRequests';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
@@ -82,6 +83,8 @@ export function Dashboard() {
   const { members, loading: membersLoading } = useMembers();
   const { matches, loading: matchesLoading, fetchMatches } = useMatches();
   const { activeCount, isActive } = useMemberActivity(members, matches);
+  const league = useSeasonLeague();
+  const nextLeagueFixture = league.upcoming[0] ?? null;
   const { counts: momCounts } = useMOMCounts();
   const monthSummary = useMonthSummary();
   const { stats: cricketStats } = useCricketStats('2025-26');
@@ -836,6 +839,39 @@ export function Dashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ── TEAM OUTING banner ──────────────────────────────────────── */}
+        <Link to="/outing" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+          style={{ background: 'linear-gradient(110deg,#7c3aed,#db2777 55%,#f59e0b)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 text-xl">🎉</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-black text-base leading-tight truncate">SCC Team Outing — 18 July 🎉</p>
+              <p className="text-white/80 text-xs font-medium">Barguje Farms · RSVP, plan & vote — tap for details</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </Link>
+
+        {/* ── SEASON LEAGUE banner ────────────────────────────────────── */}
+        {league.totalFixtures > 0 && (
+          <Link to="/league" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            style={{ background: 'linear-gradient(110deg,#78350f,#b45309 55%,#f59e0b)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 text-xl">🏆</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-base leading-tight truncate">{league.name}</p>
+                <p className="text-white/80 text-xs font-medium">
+                  {league.played.length > 0
+                    ? `${league.won}W · ${league.lost}L · ${league.winPct}% win · ${league.points} pts`
+                    : `${league.totalFixtures} fixtures this season`}
+                  {nextLeagueFixture && ` · Next: vs ${nextLeagueFixture.opponent || 'TBD'}`}
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
         )}
 
         {/* ── RECENT MATCHES + LOW BALANCE ────────────────────────────── */}

@@ -294,17 +294,24 @@ Player B: ${JSON.stringify(data.playerB)}
 Compare: (1) Overall who has better numbers, (2) Batting comparison, (3) Fielding comparison, (4) Team contribution, (5) The verdict - who's currently SCC's more valuable player and why.`;
         break;
 
-      case 'club_chat':
+      case 'club_chat': {
         prompt = data.question;
+        // Club finances are member-only. When the asker isn't a member the
+        // client strips all financial data from the payload; we ALSO instruct
+        // the model to decline money questions so it never guesses/hallucinates.
+        const financeAccess = data.financeAccess !== false;
+        const financeRule = financeAccess
+          ? `- wallet_balance is the member's current club wallet balance; total_deposited is how much they've paid in total; total_fees_paid is match fees deducted
+- For financial questions, use recentTransactions and clubFinancials`
+          : `- FINANCES ARE PRIVATE: This user is not a logged-in member. You must NOT reveal or estimate any money figures — club funds, wallet balances, deposits, expenses, match fees, or transactions. If asked anything about money/funds/balances/payments, politely reply that financial details are visible to club members only and suggest they log in with the member PIN. Never guess amounts.`;
         systemPrompt = `You are SCC's AI assistant — an expert on Sangria Cricket Club (SCC). Answer ONLY from the data below.
 
 IMPORTANT RULES:
 - Match member names approximately/fuzzily (e.g. "Aditya Jaiswal" matches "Aaditya Jaiswal", "Shubham" could be any of the Shubhams — list all matches)
 - If a stat field is null/zero for a member, it means their CricHeroes stats haven't been imported yet — say "stats not yet available"
-- wallet_balance is the member's current club wallet balance; total_deposited is how much they've paid in total; total_fees_paid is match fees deducted
+${financeRule}
 - Be conversational and concise (under 200 words unless the question needs more detail)
 - Use actual numbers from the data, never make up stats
-- For financial questions, use recentTransactions and clubFinancials
 - For match history, use allMatches (internal SCC records) or chMatches (full CricHeroes history)
 - For SEASON cricket stats (totals over the season), use allMembers[*].cricketStats
 - For PER-MATCH stats (e.g. "what did Avinash score on May 7?"), use matchHighlights — each entry has the date, scores, best_batter and best_bowler for that match
@@ -343,6 +350,7 @@ ${JSON.stringify(data.recentTransactions)}
 TOURNAMENTS:
 ${JSON.stringify(data.tournaments)}`;
         break;
+      }
 
       default:
         return new Response(JSON.stringify({ error: 'Unknown insight type' }), {

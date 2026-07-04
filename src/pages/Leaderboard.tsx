@@ -17,6 +17,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useFormGuide, type FormResult } from '../hooks/useFormGuide';
+import { usePlayerBallStats } from '../hooks/usePlayerBallStats';
 import type { MemberCricketStats } from '../types';
 import { outfieldDismissals, keeperDismissals, hasKept } from '../utils/fielding';
 
@@ -57,11 +58,20 @@ type Tab = 'batting' | 'bowling' | 'fielding' | 'overall';
 type SortDir = 'asc' | 'desc';
 
 interface ColDef {
-  key: keyof MemberCricketStats;
+  key: string;              // a real stat key, or a synthetic id for computed cols
   label: string;
   tooltip: string;          // full description shown on hover
   format?: (v: number | string) => string;
   highlight?: boolean;
+  // Derived columns (e.g. balls faced) that aren't stored on the stats row.
+  // When present, the value is computed from the row (and, optionally, all rows).
+  compute?: (s: MemberCricketStats, all: MemberCricketStats[]) => number;
+  noSort?: boolean;         // columns with a bespoke renderer aren't sortable
+}
+
+// Balls faced isn't stored, but it's exact from runs & strike rate: SR = runs/balls*100.
+function ballsFaced(s: MemberCricketStats): number {
+  return s.batting_strike_rate > 0 ? Math.round((s.batting_runs * 100) / s.batting_strike_rate) : 0;
 }
 
 const BATTING_COLS: ColDef[] = [
@@ -70,6 +80,9 @@ const BATTING_COLS: ColDef[] = [
   { key: 'batting_highest_score',label: 'HS',    tooltip: 'Highest score in a single innings' },
   { key: 'batting_average',      label: 'Avg',   tooltip: 'Batting average (runs per dismissal)', format: v => Number(v).toFixed(1), highlight: true },
   { key: 'batting_strike_rate',  label: 'SR',    tooltip: 'Strike rate — runs per 100 balls', format: v => Number(v).toFixed(1) },
+  { key: 'balls_faced',          label: 'BF',    tooltip: 'Balls faced (from runs & strike rate)', compute: s => ballsFaced(s) },
+  { key: 'ball_dot',             label: 'Ball%·Dot%', noSort: true,
+    tooltip: "Left = share of the team's total balls faced this season. Right = dot-ball % (deliveries faced without scoring), from ball-by-ball commentary." },
   { key: 'batting_fifties',      label: '50s',   tooltip: 'Fifties scored (50–99 runs in an innings)' },
   { key: 'batting_hundreds',     label: '100s',  tooltip: 'Centuries scored (100+ runs in an innings)' },
   { key: 'batting_fours',        label: '4s',    tooltip: 'Fours hit' },
@@ -166,6 +179,7 @@ export function Leaderboard() {
   const { stats, loading, error, fetchStats } = useCricketStats(season);
   const { counts: momCounts } = useMOMCounts();
   const { formByMember } = useFormGuide();
+  const { byMember: ballStats } = usePlayerBallStats(season);
   const [tab, setTab] = useState<Tab>('batting');
   const [sortKey, setSortKey] = useState<keyof MemberCricketStats>('batting_runs');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -229,8 +243,9 @@ export function Leaderboard() {
     const tv: Partial<Record<keyof MemberCricketStats, number | string>> = {};
     cols.forEach(col => {
       if (col.highlight) {
-        const vals = stats.map(s => s[col.key] as number);
-        tv[col.key] = col.key === 'bowling_economy'
+        const k = col.key as keyof MemberCricketStats;
+        const vals = stats.map(s => s[k] as number);
+        tv[k] = col.key === 'bowling_economy'
           ? Math.min(...vals.filter(v => v > 0))
           : Math.max(...vals);
       }
@@ -489,18 +504,20 @@ export function Leaderboard() {
               <table className="w-full min-w-max text-sm">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                    <th className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">#</th>
-                    <th className="sticky left-10 z-10 bg-gray-50 dark:bg-gray-700/50 px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-32">Player</th>
+                    <th className="sm:sticky sm:left-0 z-10 bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">#</th>
+                    <th className="sm:sticky sm:left-10 z-10 bg-gray-50 dark:bg-gray-700/50 px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-32">Player</th>
                     {cols.map(col => (
                       <th
                         key={col.key}
-                        onClick={() => handleSort(col.key)}
+                        onClick={() => !col.compute && !col.noSort && handleSort(col.key as keyof MemberCricketStats)}
                         title={col.tooltip}
-                        className="px-3 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
+                        className={`px-3 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider transition-colors whitespace-nowrap ${
+                          col.compute || col.noSort ? '' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
                       >
                         <span className="flex items-center justify-center gap-1" title={col.tooltip}>
                           {col.label}
-                          {sortKey === col.key ? (
+                          {!col.compute && !col.noSort && sortKey === col.key ? (
                             sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />
                           ) : null}
                         </span>
@@ -520,13 +537,13 @@ export function Leaderboard() {
                           idx === 0 ? 'bg-yellow-50/50 dark:bg-yellow-900/10' : ''
                         }`}
                       >
-                        <td className="sticky left-0 z-10 bg-white dark:bg-gray-800 px-4 py-3">
+                        <td className="sm:sticky sm:left-0 z-10 bg-white dark:bg-gray-800 px-4 py-3">
                           <div className="flex flex-col items-center gap-0.5">
                             <RankBadge rank={idx + 1} />
                             <RankChangeBadge change={prevRanks[player.member_id] !== undefined ? prevRanks[player.member_id] - (idx + 1) : 0} />
                           </div>
                         </td>
-                        <td className="sticky left-10 z-10 bg-white dark:bg-gray-800 px-3 py-3">
+                        <td className="sm:sticky sm:left-10 z-10 bg-white dark:bg-gray-800 px-3 py-3">
                           <div className="flex items-center gap-2">
                             {avatarUrl ? (
                               <img src={avatarUrl} alt={name}
@@ -549,9 +566,24 @@ export function Leaderboard() {
                           </div>
                         </td>
                         {cols.map(col => {
-                          const raw = player[col.key];
+                          // Combined "Ball% · Dot%" cell — ball% from stats, dot% from ball-by-ball
+                          if (col.key === 'ball_dot') {
+                            const totBalls = activeStats.reduce((sum, x) => sum + ballsFaced(x), 0);
+                            const ballPct = totBalls > 0 ? (ballsFaced(player) / totBalls) * 100 : 0;
+                            const dot = ballStats[player.member_id];
+                            return (
+                              <td key={col.key} className="px-3 py-3 text-center whitespace-nowrap">
+                                <span className="text-gray-600 dark:text-gray-300">{ballPct.toFixed(1)}%</span>
+                                <span className="text-gray-300 dark:text-gray-600 mx-1">·</span>
+                                <span className={dot ? 'text-gray-600 dark:text-gray-300' : 'text-gray-300 dark:text-gray-600'}>
+                                  {dot ? `${dot.dot_pct.toFixed(0)}%` : '—'}
+                                </span>
+                              </td>
+                            );
+                          }
+                          const raw = col.compute ? col.compute(player, activeStats) : player[col.key as keyof MemberCricketStats];
                           const display = col.format ? col.format(raw as number) : String(raw ?? '—');
-                          const isTopVal = col.highlight && raw === topValues[col.key] && (raw as number) > 0;
+                          const isTopVal = col.highlight && raw === topValues[col.key as keyof MemberCricketStats] && (raw as number) > 0;
                           return (
                             <td key={col.key} className="px-3 py-3 text-center text-gray-600 dark:text-gray-300">
                               <StatCell value={display} highlight={col.highlight} isTop={isTopVal && isTopRow} />

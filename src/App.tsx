@@ -18,6 +18,9 @@ const Members      = lazy(() => import('./pages/Members').then(m => ({ default: 
 const Matches      = lazy(() => import('./pages/Matches').then(m => ({ default: m.Matches })));
 const Calendar     = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
 const Tournaments  = lazy(() => import('./pages/Tournaments').then(m => ({ default: m.Tournaments })));
+const SeasonLeague = lazy(() => import('./pages/SeasonLeague').then(m => ({ default: m.SeasonLeague })));
+const SeasonAwardsVote = lazy(() => import('./pages/SeasonAwardsVote').then(m => ({ default: m.SeasonAwardsVote })));
+const TeamOuting = lazy(() => import('./pages/TeamOuting').then(m => ({ default: m.TeamOuting })));
 const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
 const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
 const Requests     = lazy(() => import('./pages/Requests').then(m => ({ default: m.Requests })));
@@ -92,6 +95,8 @@ const AppRoutes = () => (
     <Routes>
       {/* Standalone pages — no sidebar/layout */}
       <Route path="/poll/:matchId" element={<MatchPoll />} />
+      <Route path="/vote" element={<Suspense fallback={<PageLoader />}><SeasonAwardsVote /></Suspense>} />
+      <Route path="/outing" element={<Suspense fallback={<PageLoader />}><TeamOuting /></Suspense>} />
       <Route path="/book-match" element={<Suspense fallback={<PageLoader />}><BookMatch /></Suspense>} />
       <Route path="/live/:chMatchId" element={<Suspense fallback={<PageLoader />}><LiveMatch /></Suspense>} />
 
@@ -102,6 +107,7 @@ const AppRoutes = () => (
         <Route path="/matches"       element={<Suspense fallback={<PageLoader />}><Matches /></Suspense>} />
         <Route path="/calendar"      element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />
         <Route path="/tournaments"   element={<Suspense fallback={<PageLoader />}><Tournaments /></Suspense>} />
+        <Route path="/league"        element={<Suspense fallback={<PageLoader />}><SeasonLeague /></Suspense>} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />
         <Route path="/match-day-tools" element={<Suspense fallback={<PageLoader />}><MatchDayTools /></Suspense>} />

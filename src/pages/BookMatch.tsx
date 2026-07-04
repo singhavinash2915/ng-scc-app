@@ -767,7 +767,8 @@ export function BookMatch() {
             {/* Legend */}
             <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap px-5 py-3 border-b border-gray-100 text-xs text-gray-600 bg-gray-50/50">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-primary-500 ring-2 ring-primary-100"/>Available</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100"/>Pending</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-400 ring-2 ring-rose-100"/>Pending</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100"/>Saturday (peak)</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300 ring-2 ring-gray-100"/>Booked</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500 ring-2 ring-violet-100"/>SCC Internal</span>
             </div>
@@ -796,7 +797,7 @@ export function BookMatch() {
                               ? 'bg-gradient-to-br from-amber-50 to-white border-amber-200 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
                               : 'bg-gradient-to-br from-primary-50 to-white border-primary-200 hover:border-primary-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
                             : status==='reserved' ? 'bg-gradient-to-br from-violet-50 to-white border-violet-200 cursor-not-allowed' :
-                              status==='pending' ? 'bg-amber-50/60 border-amber-200 cursor-not-allowed opacity-70' :
+                              status==='pending' ? 'bg-rose-50/70 border-rose-200 cursor-not-allowed opacity-80' :
                                                    'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
                         }`}>
                         {avail && isSat && (
@@ -809,7 +810,7 @@ export function BookMatch() {
                           avail
                             ? isSat ? 'text-amber-600' : 'text-primary-600'
                             : status==='reserved' ? 'text-violet-500' :
-                              status==='pending' ? 'text-amber-600' : 'text-gray-400'
+                              status==='pending' ? 'text-rose-500' : 'text-gray-400'
                         }`}>
                           {getDayName(slot.date)}
                         </div>
@@ -821,7 +822,7 @@ export function BookMatch() {
                             ₹{slot.price.toLocaleString('en-IN')}
                           </div>
                         )}
-                        {status==='pending' && <div className="text-[10px] text-amber-600 font-bold mt-0.5">Pending</div>}
+                        {status==='pending' && <div className="text-[10px] text-rose-500 font-bold mt-0.5">Pending</div>}
                         {(status==='booked'||status==='blocked') && <div className="text-[10px] text-gray-400 font-bold mt-0.5">Booked</div>}
                       </button>
                     );

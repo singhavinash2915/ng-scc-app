@@ -22,6 +22,7 @@ import {
   Trophy,
   BookOpen,
   ExternalLink,
+  PartyPopper,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -34,6 +35,8 @@ const publicNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
+  { to: '/outing', icon: PartyPopper, label: 'Team Outing' },
+  { to: '/season', icon: Sparkles, label: 'Season Finale' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
   { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
@@ -42,6 +45,7 @@ const publicNavItems = [
   { to: '/predictions', icon: Sparkles, label: 'Predictions' },
   { to: '/finance', icon: Wallet, label: 'Finance' },
   { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
+  { to: '/league', icon: Trophy, label: 'Season League' },
   { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
   { to: '/about', icon: Info, label: 'About' },
   { to: '/whats-new', icon: Sparkles, label: "What's New" },

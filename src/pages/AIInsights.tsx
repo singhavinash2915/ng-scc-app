@@ -7,6 +7,7 @@ import { useTournaments } from '../hooks/useTournaments';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useAIInsight } from '../hooks/useAIInsight';
 import { useScorecardHighlights } from '../hooks/useScorecardHighlights';
+import { useAuth } from '../context/AuthContext';
 import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 
 const SCC_TEAM_ID = 7927431;
@@ -73,6 +74,14 @@ export function AIInsights() {
   const { stats, getLeaderboard } = useCricketStats();
   const { generateInsight, error: aiError } = useAIInsight();
   const { matchHighlights, seasonRecords, playerCareerBests } = useScorecardHighlights();
+  const { isAdmin } = useAuth();
+
+  // Club finances (wallet balances, deposits, expenses, transactions) are
+  // member-only — same gate as the Finance & Members pages. Outside/public
+  // users must NOT be able to pull fund details out of the AI chat, so we
+  // strip all financial data from the payload before it ever leaves the
+  // browser (see handleChat). The AI literally never receives it.
+  const financeAccess = isAdmin || localStorage.getItem('scc-member-access') === 'true';
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [selectedMember, setSelectedMember] = useState<string>('');
@@ -306,9 +315,11 @@ export function AIInsights() {
     const wons = completedMatches.filter(m => m.result === 'won').length;
 
     // ── 1. Members — full profile with balance + cricket stats ──────────────
+    // Financial fields (wallet_balance, deposits, fees) are only included for
+    // members/admins — for public users they're omitted entirely.
     const allMemberProfiles = members.map(m => {
       const s = stats.find(st => st.member_id === m.id);
-      // Per-member transaction summary
+      // Per-member transaction summary (member-only)
       const memberTxns = transactions.filter(t => t.member_id === m.id);
       const totalDeposited = memberTxns.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
       const totalFeesPaid  = memberTxns.filter(t => t.type === 'match_fee').reduce((sum, t) => sum + Math.abs(t.amount), 0);
@@ -316,9 +327,11 @@ export function AIInsights() {
         name: m.name,
         status: m.status,
         matches_played: m.matches_played,
-        wallet_balance: m.balance,
-        total_deposited: totalDeposited,
-        total_fees_paid: totalFeesPaid,
+        ...(financeAccess ? {
+          wallet_balance: m.balance,
+          total_deposited: totalDeposited,
+          total_fees_paid: totalFeesPaid,
+        } : {}),
         // CricHeroes stats (null = not imported yet)
         batting_runs: s?.batting_runs ?? null,
         batting_innings: s?.batting_innings ?? null,
@@ -408,10 +421,13 @@ export function AIInsights() {
       losses: completedMatches.filter(m => m.result === 'lost').length,
       draws: completedMatches.filter(m => m.result === 'draw').length,
       winRate: completedMatches.length > 0 ? `${Math.round(wons / completedMatches.length * 100)}%` : 'N/A',
-      clubFunds: `₹${totalFunds.toLocaleString('en-IN')}`,
-      totalDepositsEver: `₹${totalDepositsEver.toLocaleString('en-IN')}`,
-      totalExpensesEver: `₹${totalExpensesEver.toLocaleString('en-IN')}`,
-      totalMatchFeesCollected: `₹${totalMatchFeesEver.toLocaleString('en-IN')}`,
+      // Financial totals are member-only — omitted for public users
+      ...(financeAccess ? {
+        clubFunds: `₹${totalFunds.toLocaleString('en-IN')}`,
+        totalDepositsEver: `₹${totalDepositsEver.toLocaleString('en-IN')}`,
+        totalExpensesEver: `₹${totalExpensesEver.toLocaleString('en-IN')}`,
+        totalMatchFeesCollected: `₹${totalMatchFeesEver.toLocaleString('en-IN')}`,
+      } : {}),
       topRunScorer: topRunScorer ? `${topRunScorer.member?.name} — ${topRunScorer.batting_runs} runs (avg ${topRunScorer.batting_average})` : 'N/A',
       topWicketTaker: topWicketTaker ? `${topWicketTaker.member?.name} — ${topWicketTaker.bowling_wickets} wkts (eco ${topWicketTaker.bowling_economy})` : 'N/A',
       mvp: mvpPlayer ? `${mvpPlayer.member?.name} (${mvpPlayer.batting_runs}R · ${mvpPlayer.bowling_wickets}W)` : 'N/A',
@@ -427,12 +443,16 @@ export function AIInsights() {
 
     const result = await generateInsight('club_chat', {
       question: userMsg,
+      // Signals to the edge function whether the asker may see club finances.
+      // When false, no financial data is included and the AI is instructed to
+      // politely decline money/fund/balance questions.
+      financeAccess,
       clubSummary,
       allMembers: allMemberProfiles,
       allMatches: allMatchesData,
       chMatches: allMatchesData, // same source — populated by CricHeroes sync
       momLeaderboard,
-      recentTransactions: recentTxns,
+      recentTransactions: financeAccess ? recentTxns : [],
       tournaments: tournamentsData,
       // ── NEW: detailed scorecard data (synced from CricHeroes per match) ──
       // Use these to answer questions about specific matches, individual

@@ -5,6 +5,10 @@ import { supabase } from '../lib/supabase';
  * Returns a map of { member_id → MOM count } for completed matches in the given
  * season (defaults to the current 2025-26 season: Sept 1 2025 → Aug 31 2026).
  * Only matches where result is won/lost/draw and man_of_match_id is set are counted.
+ *
+ * Internal matches (Dhurandhars vs Baazigars) are excluded — same convention as
+ * season batting/bowling stats — so an El Clásico MOM doesn't inflate a player's
+ * season MOM tally, MVP fantasy bonus, or records against real opposition.
  */
 export function useMOMCounts(seasonStart = '2025-09-01', seasonEnd = '2026-08-31') {
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -19,6 +23,7 @@ export function useMOMCounts(seasonStart = '2025-09-01', seasonEnd = '2026-08-31
         .select('man_of_match_id')
         .not('man_of_match_id', 'is', null)
         .in('result', ['won', 'lost', 'draw'])
+        .neq('match_type', 'internal')
         .gte('date', seasonStart)
         .lte('date', seasonEnd);
 

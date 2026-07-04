@@ -22,6 +22,7 @@ import { useMatchHighlights } from '../hooks/useMatchHighlights';
 import { useMatchChat } from '../hooks/useMatchChat';
 import { useClubPolls } from '../hooks/useClubPolls';
 import { useSeasonAwards } from '../hooks/useSeasonAwards';
+import { AWARDS_NIGHT, awardsRevealed, isAdminPreview } from '../config/awardsNight';
 
 type Tab = 'fantasy' | 'rankings' | 'milestones' | 'highlights' | 'chat' | 'cards' | 'polls' | 'awards';
 
@@ -35,7 +36,8 @@ function computeOVR(s: { batting_runs: number; bowling_wickets: number; fielding
 }
 
 export function EngagementHub() {
-  const [tab, setTab] = useState<Tab>('fantasy');
+  const initialTab = (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab')) as Tab | null;
+  const [tab, setTab] = useState<Tab>(initialTab || 'fantasy');
   const { matches } = useMatches();
   const { members } = useMembers();
   const { stats } = useCricketStats('2025-26');
@@ -547,17 +549,28 @@ function PollsTab({ isAdmin }: { members: ReturnType<typeof useMembers>['members
 function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers>['members']; isAdmin: boolean }) {
   const { categories, votes, createCategory, vote, deleteCategory, getResults } = useSeasonAwards();
   const [showCreate, setShowCreate] = useState(false);
-  const [myId] = useState<string>(() => localStorage.getItem('scc-chat-member-id') || '');
+  // Same identity key used app-wide ('scc-my-profile-id', set from Dashboard →
+  // My Stats). Previously this tab checked a different, rarely-set key
+  // ('scc-chat-member-id') so the vote picker never appeared for most members.
+  const [myId, setMyId] = useState<string>(() => localStorage.getItem('scc-my-profile-id') || '');
   const [form, setForm] = useState({ name: '', emoji: '🏆' });
+  const [copied, setCopied] = useState(false);
   const memberById = useMemo(() => Object.fromEntries(members.map(m => [m.id, m])), [members]);
+  // Results stay sealed until Awards Night — only admins can peek early.
+  const revealed = awardsRevealed(isAdmin);
+  const voteUrl = `${window.location.origin}/vote`;
 
   const defaultCategories = [
-    { name: 'Best Batsman', emoji: '🏏' },
-    { name: 'Best Bowler', emoji: '⚡' },
-    { name: 'Best Fielder', emoji: '🧤' },
-    { name: 'Most Improved', emoji: '📈' },
+    { name: "People's Champion (Fan MVP)", emoji: '👑' },
+    { name: 'Funniest Player in the Squad', emoji: '😂' },
+    { name: 'Loudest Appealer', emoji: '🎤' },
+    { name: 'Best Celebration / Victory Dance', emoji: '🕺' },
+    { name: 'Best Sledger (Friendly Trash Talk)', emoji: '🦴' },
+    { name: 'Golden Duck Award (Best Sport About Getting Out)', emoji: '🦆' },
+    { name: 'Most Fashionably Late', emoji: '⏰' },
+    { name: 'Best Company Post-Match (Snacks & Stories MVP)', emoji: '🍕' },
     { name: 'Spirit of Cricket', emoji: '🤝' },
-    { name: 'Most Valuable Player', emoji: '👑' },
+    { name: 'Main Character of the Season', emoji: '🎬' },
   ];
 
   return (
@@ -573,7 +586,50 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
         )}
       </div>
 
-      <p className="text-xs text-gray-500">Vote for who you think deserves each award this season</p>
+      <p className="text-xs text-gray-500">The People's Awards — vote for who you think deserves each one. Have fun, keep it kind! 🏏</p>
+
+      {/* Shareable public voting link — open to everyone, no login */}
+      <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-amber-800 dark:text-amber-200">📣 Share the voting link — open to all</p>
+          <p className="text-[11px] text-amber-700/80 dark:text-amber-300/70 truncate">{voteUrl}</p>
+        </div>
+        <button
+          onClick={() => { navigator.clipboard?.writeText(voteUrl); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+          className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 text-white shrink-0"
+        >
+          {copied ? 'Copied!' : 'Copy link'}
+        </button>
+      </div>
+
+      {/* Reveal status */}
+      <div className={`rounded-xl p-2.5 text-center text-[11px] font-semibold ${
+        revealed
+          ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+      }`}>
+        {revealed
+          ? (isAdminPreview(isAdmin)
+              ? `🔓 Admin preview — results hidden from everyone else until Awards Night (${AWARDS_NIGHT.label})`
+              : '🎉 Results are live!')
+          : `🔒 Results are sealed until Awards Night · ${AWARDS_NIGHT.label}. Voting stays open till then!`}
+      </div>
+
+      {/* Identity picker — same flow as "My Stats"; shown until the member is known */}
+      {!myId && (
+        <div className="rounded-xl border border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 p-3">
+          <select
+            value=""
+            onChange={e => { if (e.target.value) { setMyId(e.target.value); localStorage.setItem('scc-my-profile-id', e.target.value); } }}
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm"
+          >
+            <option value="">👋 Select your name to vote</option>
+            {members.slice().sort((a, b) => a.name.localeCompare(b.name)).map(m => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {categories.length === 0 && isAdmin && (
         <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
@@ -598,7 +654,9 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
                 <h3 className="font-bold text-gray-800 dark:text-white text-sm">{cat.name}</h3>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-gray-500 font-medium">{totalVotes} votes</span>
+                <span className="text-[10px] text-gray-500 font-medium">
+                  {revealed ? `${totalVotes} votes` : '🔒 sealed'}
+                </span>
                 {isAdmin && (
                   <button onClick={() => deleteCategory(cat.id)} className="p-1 text-red-400 hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
                 )}
@@ -619,8 +677,12 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
                 </select>
               )}
 
-              {/* Results */}
-              {topNominees.length > 0 && (
+              {/* Results — sealed until Awards Night (admins can preview) */}
+              {!revealed ? (
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center py-1">
+                  {myVote ? '✓ Your vote is locked in. ' : ''}Winners revealed on Awards Night 🎉
+                </p>
+              ) : topNominees.length > 0 && (
                 <div className="space-y-1.5">
                   {topNominees.map((r, i) => {
                     const m = memberById[r.nominee_id];
