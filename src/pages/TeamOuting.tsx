@@ -45,7 +45,23 @@ function Avatar({ member, name, size = 36 }: { member?: Member; name: string; si
 
 export function TeamOuting() {
   const { members } = useMembers();
-  const { myRsvp, loading, tableMissing, submit, going, maybe, food, drinks, needRide, canDrive } = useTeamOuting();
+  const { rsvps, myRsvp, loading, tableMissing, submit, going, maybe, needRide, canDrive } = useTeamOuting();
+
+  // Who picked what (names, not just counts)
+  const namesWhere = (pred: (r: typeof rsvps[number]) => boolean) =>
+    rsvps.filter(r => r.status !== 'out' && pred(r)).map(r => r.name);
+  const foodGroups = [
+    { key: 'veg', label: '🥗 Veg', names: namesWhere(r => r.food_pref === 'veg') },
+    { key: 'nonveg', label: '🍗 Non-veg', names: namesWhere(r => r.food_pref === 'nonveg') },
+    { key: 'either', label: '😋 Either', names: namesWhere(r => r.food_pref === 'either') },
+  ];
+  const drinkGroups = [
+    { key: 'beer', label: '🍺 Beer', names: namesWhere(r => r.drink_pref === 'beer') },
+    { key: 'whisky', label: '🥃 Whisky', names: namesWhere(r => r.drink_pref === 'whisky') },
+    { key: 'soft', label: '🥤 Soft drink', names: namesWhere(r => r.drink_pref === 'soft') },
+    { key: 'none', label: '🚫 None', names: namesWhere(r => r.drink_pref === 'none') },
+  ];
+  const noPrefsYet = rsvps.every(r => !r.food_pref && !r.drink_pref && !r.needs_ride && !r.can_drive);
 
   // Before the table exists, show the 23 confirmed names so the page looks alive.
   const goingList = going.length > 0
@@ -91,8 +107,6 @@ export function TeamOuting() {
     if (navigator.share) navigator.share({ title: TEAM_OUTING.title, text }).catch(() => {});
     else { navigator.clipboard?.writeText(text); }
   }
-
-  const foodTotal = Math.max(1, food.veg + food.nonveg + food.either);
 
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(160deg,#0f172a 0%,#3b0764 40%,#831843 75%,#7c2d12 100%)' }}>
@@ -253,39 +267,61 @@ export function TeamOuting() {
           </div>
         </div>
 
-        {/* ── FOOD TALLY + CARPOOL ─────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-3xl bg-white/10 backdrop-blur p-5">
-            <h2 className="font-black text-base flex items-center gap-2 mb-3"><Utensils className="w-4 h-4 text-amber-300" /> Food count</h2>
-            {([['🥗 Veg', food.veg, 'bg-emerald-400'], ['🍗 Non-veg', food.nonveg, 'bg-rose-400'], ['😋 Either', food.either, 'bg-amber-400']] as const).map(([label, n, cls]) => (
-              <div key={label} className="mb-2">
-                <div className="flex justify-between text-xs font-semibold mb-1"><span>{label}</span><span>{n}</span></div>
-                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                  <div className={`h-full rounded-full ${cls}`} style={{ width: `${(n / foodTotal) * 100}%` }} />
+        {/* ── PREFERENCES (who picked what) ────────────────────────────────── */}
+        {noPrefsYet ? (
+          <div className="rounded-3xl bg-white/10 backdrop-blur p-5 text-center text-white/60 text-sm">
+            🍽️ Food, drink & carpool picks show up here once folks RSVP with their prefs.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Food */}
+            <div className="rounded-3xl bg-white/10 backdrop-blur p-5">
+              <h2 className="font-black text-base flex items-center gap-2 mb-3"><Utensils className="w-4 h-4 text-amber-300" /> Food</h2>
+              <div className="space-y-2.5">
+                {foodGroups.map(g => (
+                  <div key={g.key}>
+                    <p className="text-xs font-bold">{g.label} <span className="text-white/50">· {g.names.length}</span></p>
+                    {g.names.length > 0 && <p className="text-[11px] text-white/60 mt-0.5 leading-relaxed">{g.names.join(', ')}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Drinks */}
+            <div className="rounded-3xl bg-white/10 backdrop-blur p-5">
+              <h2 className="font-black text-base flex items-center gap-2 mb-3">🍻 Drinks</h2>
+              <div className="space-y-2.5">
+                {drinkGroups.map(g => (
+                  <div key={g.key}>
+                    <p className="text-xs font-bold">{g.label} <span className="text-white/50">· {g.names.length}</span></p>
+                    {g.names.length > 0 && <p className="text-[11px] text-white/60 mt-0.5 leading-relaxed">{g.names.join(', ')}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Carpool */}
+            <div className="rounded-3xl bg-white/10 backdrop-blur p-5 sm:col-span-2">
+              <h2 className="font-black text-base flex items-center gap-2 mb-3"><Car className="w-4 h-4 text-sky-300" /> Carpool</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs font-bold text-sky-300">🚗 Can drive · {canDrive.length}</p>
+                  {canDrive.length > 0
+                    ? <p className="text-[11px] text-white/60 mt-0.5">{canDrive.map(r => r.name).join(', ')}</p>
+                    : <p className="text-[11px] text-white/40 mt-0.5">Nobody yet</p>}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-300">🙋 Need a ride · {needRide.length}</p>
+                  {needRide.length > 0
+                    ? <p className="text-[11px] text-white/60 mt-0.5">{needRide.map(r => r.name).join(', ')}</p>
+                    : <p className="text-[11px] text-white/40 mt-0.5">Nobody yet</p>}
                 </div>
               </div>
-            ))}
-          </div>
-          <div className="rounded-3xl bg-white/10 backdrop-blur p-5">
-            <h2 className="font-black text-base flex items-center gap-2 mb-3">🍻 Drinks</h2>
-            <div className="flex flex-wrap gap-2 text-xs font-semibold">
-              <span className="bg-white/10 rounded-full px-2.5 py-1">🍺 Beer {drinks.beer}</span>
-              <span className="bg-white/10 rounded-full px-2.5 py-1">🥃 Whisky {drinks.whisky}</span>
-              <span className="bg-white/10 rounded-full px-2.5 py-1">🥤 Soft {drinks.soft}</span>
-              <span className="bg-white/10 rounded-full px-2.5 py-1">🚫 None {drinks.none}</span>
+              <a href={`https://wa.me/${TEAM_OUTING.whatsappNumber}`} target="_blank" rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 bg-emerald-500 text-white font-bold text-xs rounded-full px-3 py-2">
+                💬 Coordinate on WhatsApp
+              </a>
             </div>
           </div>
-          <div className="rounded-3xl bg-white/10 backdrop-blur p-5 sm:col-span-2">
-            <h2 className="font-black text-base flex items-center gap-2 mb-3"><Car className="w-4 h-4 text-sky-300" /> Carpool</h2>
-            <p className="text-sm"><span className="font-black text-sky-300">{canDrive.length}</span> can drive · <span className="font-black text-amber-300">{needRide.length}</span> need a ride</p>
-            {canDrive.length > 0 && <p className="text-[11px] text-white/60 mt-2">🚗 {canDrive.map(r => r.name).join(', ')}</p>}
-            {needRide.length > 0 && <p className="text-[11px] text-white/60 mt-1">🙋 {needRide.map(r => r.name).join(', ')}</p>}
-            <a href={`https://wa.me/${TEAM_OUTING.whatsappNumber}`} target="_blank" rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 bg-emerald-500 text-white font-bold text-xs rounded-full px-3 py-2">
-              💬 Coordinate on WhatsApp
-            </a>
-          </div>
-        </div>
+        )}
 
         {/* ── PACKING ──────────────────────────────────────────────────────── */}
         <div className="rounded-3xl bg-white/10 backdrop-blur p-5">
