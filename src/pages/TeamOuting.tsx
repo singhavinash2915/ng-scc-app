@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   MapPin, Navigation, PartyPopper, Car, Utensils, Trophy, Check,
-  Clock, Backpack, Users, Share2, Sparkles,
+  Clock, Backpack, Users, Share2, Sparkles, ArrowLeft,
 } from 'lucide-react';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 import { TEAM_OUTING, SEED_ATTENDEES } from '../config/outing';
@@ -96,7 +96,12 @@ export function TeamOuting() {
 
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(160deg,#0f172a 0%,#3b0764 40%,#831843 75%,#7c2d12 100%)' }}>
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-4">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+
+        {/* Back to app */}
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/70 hover:text-white transition">
+          <ArrowLeft className="w-4 h-4" /> Back to app
+        </Link>
 
         {/* ── HERO ─────────────────────────────────────────────────────────── */}
         <div className="relative rounded-3xl p-6 text-center overflow-hidden"

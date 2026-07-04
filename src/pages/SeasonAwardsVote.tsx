@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Trophy, Check, Lock, PartyPopper } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Trophy, Check, Lock, PartyPopper, ArrowLeft } from 'lucide-react';
 import { useSeasonAwards } from '../hooks/useSeasonAwards';
 import { useMembers } from '../hooks/useMembers';
 import { AWARDS_NIGHT } from '../config/awardsNight';
@@ -59,7 +60,12 @@ export function SeasonAwardsVote() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a0f3d] via-[#2d1550] to-[#3d1a3d] text-white">
-      <div className="max-w-lg mx-auto px-4 py-8">
+      <div className="max-w-lg mx-auto px-4 py-6">
+
+        {/* Back to app */}
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/70 hover:text-white transition mb-2">
+          <ArrowLeft className="w-4 h-4" /> Back to app
+        </Link>
 
         {/* Header */}
         <div className="text-center">
