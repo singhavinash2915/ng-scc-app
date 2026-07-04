@@ -3,8 +3,9 @@
 
 export const TEAM_OUTING = {
   title: 'SCC Team Outing 2026',
-  date: '2026-07-18T09:00:00',          // Sat 18 July 2026
+  date: '2026-07-18T08:00:00',          // Sat 18 July 2026 — day outing
   dateLabel: 'Saturday, 18 July 2026',
+  timeRange: '8 AM – 6 PM',
   venue: 'Barguje Farms',
   venueAddress: 'Shirvali Gaon, Pune 412108',
   mapsUrl: 'https://maps.app.goo.gl/Qfsh9j2qMdoNJaiF8',
@@ -14,12 +15,11 @@ export const TEAM_OUTING = {
 
   // Day plan — kept light and fun; edit freely.
   itinerary: [
-    { time: '9:00 AM',  emoji: '🚗', title: 'Depart from Sangria',   desc: 'Carpools roll out — 40 km, ~1 hr drive.' },
-    { time: '10:30 AM', emoji: '🏏', title: 'Gully cricket + games',  desc: 'Farm-ground cricket, box cricket & fun games.' },
-    { time: '1:00 PM',  emoji: '🍛', title: 'Lunch',                  desc: 'Farm-style feast — veg & non-veg.' },
-    { time: '3:00 PM',  emoji: '🏊', title: 'Pool + chill',           desc: 'Swim, music, cards & masti.' },
-    { time: '6:00 PM',  emoji: '🏆', title: 'SCC Awards Night',       desc: 'Season awards + People’s Awards reveal!' },
-    { time: '8:00 PM',  emoji: '🔥', title: 'BBQ, DJ & dinner',       desc: 'Bonfire vibes, music and dinner.' },
+    { time: '7:00 AM',  emoji: '🚗', title: 'Depart from Sangria',    desc: 'Carpools roll out — 40 km, ~1 hr drive.' },
+    { time: '10:00 AM', emoji: '🏏', title: 'Gully cricket + games',   desc: 'Farm-ground cricket, box cricket & fun games.' },
+    { time: '1:00 PM',  emoji: '🍛', title: 'Lunch',                   desc: 'BBQ, DJ, farm-style feast — veg & non-veg.' },
+    { time: '3:00 PM',  emoji: '🏊', title: 'Riverside beer + chill',  desc: 'Swim, music, cards & masti.' },
+    { time: '5:00 PM',  emoji: '🏆', title: 'SCC Awards Night',        desc: 'Season awards + People’s Awards reveal!' },
   ],
 
   // What to bring

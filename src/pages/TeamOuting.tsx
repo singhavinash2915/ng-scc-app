@@ -7,7 +7,7 @@ import {
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 import { TEAM_OUTING, SEED_ATTENDEES } from '../config/outing';
 import { AWARDS_NIGHT } from '../config/awardsNight';
-import { useTeamOuting, type OutingStatus, type FoodPref } from '../hooks/useTeamOuting';
+import { useTeamOuting, type OutingStatus, type FoodPref, type DrinkPref } from '../hooks/useTeamOuting';
 import { useMembers } from '../hooks/useMembers';
 import type { Member } from '../types';
 
@@ -45,7 +45,7 @@ function Avatar({ member, name, size = 36 }: { member?: Member; name: string; si
 
 export function TeamOuting() {
   const { members } = useMembers();
-  const { myRsvp, loading, tableMissing, submit, going, maybe, food, needRide, canDrive } = useTeamOuting();
+  const { myRsvp, loading, tableMissing, submit, going, maybe, food, drinks, needRide, canDrive } = useTeamOuting();
 
   // Before the table exists, show the 23 confirmed names so the page looks alive.
   const goingList = going.length > 0
@@ -63,6 +63,7 @@ export function TeamOuting() {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<OutingStatus>('going');
   const [foodPref, setFoodPref] = useState<FoodPref>('either');
+  const [drinkPref, setDrinkPref] = useState<DrinkPref>('none');
   const [needsRide, setNeedsRide] = useState(false);
   const [canDriveMe, setCanDriveMe] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -72,6 +73,7 @@ export function TeamOuting() {
     if (myRsvp) {
       setName(myRsvp.name); setStatus(myRsvp.status);
       setFoodPref(myRsvp.food_pref ?? 'either');
+      setDrinkPref(myRsvp.drink_pref ?? 'none');
       setNeedsRide(myRsvp.needs_ride); setCanDriveMe(myRsvp.can_drive);
     }
   }, [myRsvp]);
@@ -79,7 +81,7 @@ export function TeamOuting() {
   async function handleSubmit() {
     if (!name.trim()) return;
     setSaving(true);
-    const res = await submit({ name, status, food_pref: foodPref, needs_ride: needsRide, can_drive: canDriveMe });
+    const res = await submit({ name, status, food_pref: foodPref, drink_pref: drinkPref, needs_ride: needsRide, can_drive: canDriveMe });
     setSaving(false);
     if (res.success) { setSaved(true); setTimeout(() => setSaved(false), 2500); }
   }
@@ -106,7 +108,7 @@ export function TeamOuting() {
             <PartyPopper className="w-3.5 h-3.5" /> Team Outing
           </div>
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold mt-2 drop-shadow">Sangria Day Out 🎉</h1>
-          <p className="text-white/90 font-semibold mt-1">{TEAM_OUTING.dateLabel}</p>
+          <p className="text-white/90 font-semibold mt-1">{TEAM_OUTING.dateLabel} · {TEAM_OUTING.timeRange}</p>
           <p className="text-white/70 text-sm">📍 {TEAM_OUTING.venue} · {TEAM_OUTING.distanceKm} km from {TEAM_OUTING.distanceFrom}</p>
           <div className="mt-5"><Countdown target={TEAM_OUTING.date} /></div>
           <button onClick={share} className="mt-5 inline-flex items-center gap-1.5 bg-white text-slate-900 font-black text-sm rounded-full px-4 py-2">
@@ -152,9 +154,17 @@ export function TeamOuting() {
         {/* ── RSVP ─────────────────────────────────────────────────────────── */}
         <div className="rounded-3xl bg-white/10 backdrop-blur p-5">
           <h2 className="font-black text-lg mb-1">{myRsvp ? 'Update your RSVP' : 'Are you in? 🙌'}</h2>
-          <p className="text-white/60 text-sm mb-4">Tell the squad you're coming — and your preferences.</p>
+          <p className="text-white/60 text-sm mb-4">Already on the list? Pick your name to set your prefs — or add yourself.</p>
 
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name"
+          {!myRsvp && goingList.length > 0 && (
+            <select value="" onChange={e => e.target.value && setName(e.target.value)}
+              className="w-full rounded-xl bg-white/90 text-slate-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 mb-2">
+              <option value="">👋 On the list? Pick your name…</option>
+              {goingList.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+            </select>
+          )}
+
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="…or type your name"
             className="w-full rounded-xl bg-white/90 text-slate-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 mb-3" />
 
           <div className="grid grid-cols-3 gap-2 mb-3">
@@ -177,6 +187,17 @@ export function TeamOuting() {
                   </button>
                 ))}
               </div>
+              <p className="text-[11px] uppercase tracking-wide text-white/50 font-bold mb-1.5">Drink preference</p>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {([['beer', '🍺 Beer'], ['whisky', '🥃 Whisky'], ['soft', '🥤 Soft'], ['none', '🚫 None']] as const).map(([v, label]) => (
+                  <button key={v} onClick={() => setDrinkPref(v)}
+                    className={`rounded-xl py-2 text-[11px] font-bold transition ${drinkPref === v ? 'bg-amber-400 text-slate-900' : 'bg-white/10 text-white/70'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-[11px] uppercase tracking-wide text-white/50 font-bold mb-1.5">Carpool</p>
               <div className="flex gap-2 mb-4">
                 <button onClick={() => setNeedsRide(!needsRide)}
                   className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${needsRide ? 'bg-sky-400 text-slate-900' : 'bg-white/10 text-white/70'}`}>
@@ -241,6 +262,15 @@ export function TeamOuting() {
             ))}
           </div>
           <div className="rounded-3xl bg-white/10 backdrop-blur p-5">
+            <h2 className="font-black text-base flex items-center gap-2 mb-3">🍻 Drinks</h2>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold">
+              <span className="bg-white/10 rounded-full px-2.5 py-1">🍺 Beer {drinks.beer}</span>
+              <span className="bg-white/10 rounded-full px-2.5 py-1">🥃 Whisky {drinks.whisky}</span>
+              <span className="bg-white/10 rounded-full px-2.5 py-1">🥤 Soft {drinks.soft}</span>
+              <span className="bg-white/10 rounded-full px-2.5 py-1">🚫 None {drinks.none}</span>
+            </div>
+          </div>
+          <div className="rounded-3xl bg-white/10 backdrop-blur p-5 sm:col-span-2">
             <h2 className="font-black text-base flex items-center gap-2 mb-3"><Car className="w-4 h-4 text-sky-300" /> Carpool</h2>
             <p className="text-sm"><span className="font-black text-sky-300">{canDrive.length}</span> can drive · <span className="font-black text-amber-300">{needRide.length}</span> need a ride</p>
             {canDrive.length > 0 && <p className="text-[11px] text-white/60 mt-2">🚗 {canDrive.map(r => r.name).join(', ')}</p>}

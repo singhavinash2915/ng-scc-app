@@ -7,8 +7,8 @@
 
 export const AWARDS_NIGHT = {
   season: '2025-26',
-  // Confirmed: Sat 18 July 2026, at the Barguje Farms team outing.
-  date: '2026-07-18T18:00:00',
+  // Confirmed: Sat 18 July 2026, 5 PM — Awards Night at the Barguje Farms outing.
+  date: '2026-07-18T17:00:00',
   get label() {
     return new Date(this.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
   },

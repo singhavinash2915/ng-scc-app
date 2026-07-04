@@ -14,12 +14,16 @@ CREATE TABLE IF NOT EXISTS outing_rsvps (
   member_id   UUID REFERENCES members(id) ON DELETE SET NULL,
   status      TEXT NOT NULL DEFAULT 'going',     -- 'going' | 'maybe' | 'out'
   food_pref   TEXT,                              -- 'veg' | 'nonveg' | 'either' | NULL
+  drink_pref  TEXT,                              -- 'beer' | 'whisky' | 'soft' | 'none' | NULL
   needs_ride  BOOLEAN DEFAULT false,
   can_drive   BOOLEAN DEFAULT false,             -- offering seats in their car
   note        TEXT,
   created_at  TIMESTAMPTZ DEFAULT now(),
   updated_at  TIMESTAMPTZ DEFAULT now()
 );
+
+-- Safe if the table already existed from an earlier run without this column.
+ALTER TABLE outing_rsvps ADD COLUMN IF NOT EXISTS drink_pref TEXT;
 
 ALTER TABLE outing_rsvps ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "outing_rsvps_select" ON outing_rsvps FOR SELECT USING (true);

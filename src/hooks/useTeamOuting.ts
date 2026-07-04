@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 
 export type OutingStatus = 'going' | 'maybe' | 'out';
 export type FoodPref = 'veg' | 'nonveg' | 'either';
+export type DrinkPref = 'beer' | 'whisky' | 'soft' | 'none';
 
 export interface OutingRsvp {
   id: string;
@@ -11,10 +12,13 @@ export interface OutingRsvp {
   member_id: string | null;
   status: OutingStatus;
   food_pref: FoodPref | null;
+  drink_pref: DrinkPref | null;
   needs_ride: boolean;
   can_drive: boolean;
   note: string | null;
 }
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, '');
 
 const DEVICE_KEY = 'scc-outing-device-id';
 
@@ -49,22 +53,32 @@ export function useTeamOuting() {
   const myRsvp = useMemo(() => rsvps.find(r => r.device_id === myDevice) ?? null, [rsvps, myDevice]);
 
   const submit = async (input: {
-    name: string; status: OutingStatus; food_pref?: FoodPref | null;
+    name: string; status: OutingStatus; food_pref?: FoodPref | null; drink_pref?: DrinkPref | null;
     needs_ride?: boolean; can_drive?: boolean; note?: string | null;
   }) => {
-    const row = {
+    const name = input.name.trim();
+    const fields = {
       device_id: myDevice,
-      name: input.name.trim(),
+      name,
       status: input.status,
       food_pref: input.food_pref ?? null,
+      drink_pref: input.drink_pref ?? null,
       needs_ride: input.needs_ride ?? false,
       can_drive: input.can_drive ?? false,
       note: input.note?.trim() || null,
       updated_at: new Date().toISOString(),
     };
-    const { error } = await supabase
-      .from('outing_rsvps')
-      .upsert(row, { onConflict: 'device_id' });
+
+    // Claim an existing row: my own device row, else a seeded (device-less) row
+    // whose name matches — so the 23 confirmed members update their own entry
+    // instead of creating a duplicate.
+    const nn = norm(name), first = norm(name.split(' ')[0]);
+    const target = rsvps.find(r => r.device_id === myDevice)
+      ?? rsvps.find(r => !r.device_id && (norm(r.name) === nn || norm(r.name) === first));
+
+    const { error } = target
+      ? await supabase.from('outing_rsvps').update(fields).eq('id', target.id)
+      : await supabase.from('outing_rsvps').insert(fields);
     if (error) return { success: false, error: error.message };
     await fetch();
     return { success: true };
@@ -79,9 +93,15 @@ export function useTeamOuting() {
     nonveg: rsvps.filter(r => r.status !== 'out' && r.food_pref === 'nonveg').length,
     either: rsvps.filter(r => r.status !== 'out' && r.food_pref === 'either').length,
   };
+  const drinks = {
+    beer: rsvps.filter(r => r.status !== 'out' && r.drink_pref === 'beer').length,
+    whisky: rsvps.filter(r => r.status !== 'out' && r.drink_pref === 'whisky').length,
+    soft: rsvps.filter(r => r.status !== 'out' && r.drink_pref === 'soft').length,
+    none: rsvps.filter(r => r.status !== 'out' && r.drink_pref === 'none').length,
+  };
   const needRide = rsvps.filter(r => r.status !== 'out' && r.needs_ride);
   const canDrive = rsvps.filter(r => r.status !== 'out' && r.can_drive);
 
   return { rsvps, myRsvp, loading, tableMissing, submit, refetch: fetch,
-    going, maybe, out, food, needRide, canDrive };
+    going, maybe, out, food, drinks, needRide, canDrive };
 }
