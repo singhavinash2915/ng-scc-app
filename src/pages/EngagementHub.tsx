@@ -555,6 +555,7 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
   const [myId, setMyId] = useState<string>(() => localStorage.getItem('scc-my-profile-id') || '');
   const [form, setForm] = useState({ name: '', emoji: '🏆' });
   const [copied, setCopied] = useState(false);
+  const [ballotsOpen, setBallotsOpen] = useState<Set<string>>(new Set());
   const memberById = useMemo(() => Object.fromEntries(members.map(m => [m.id, m])), [members]);
   // Results stay sealed until Awards Night — only admins can peek early.
   const revealed = awardsRevealed(isAdmin);
@@ -710,6 +711,37 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
                   })}
                 </div>
               )}
+
+              {/* Admin: full ballot — who voted for whom (for credibility) */}
+              {isAdmin && (() => {
+                const ballots = votes.filter(v => v.category_id === cat.id);
+                const open = ballotsOpen.has(cat.id);
+                return (
+                  <div className="border-t border-gray-100 dark:border-gray-700 pt-2">
+                    <button
+                      onClick={() => setBallotsOpen(s => { const n = new Set(s); n.has(cat.id) ? n.delete(cat.id) : n.add(cat.id); return n; })}
+                      className="text-[11px] font-bold text-primary-600 dark:text-primary-400"
+                    >
+                      🔎 {open ? 'Hide' : 'Show'} who voted ({ballots.length})
+                    </button>
+                    {open && (
+                      ballots.length === 0 ? (
+                        <p className="text-[11px] text-gray-400 mt-1">No votes yet.</p>
+                      ) : (
+                        <div className="mt-2 space-y-1">
+                          {ballots.map(v => (
+                            <div key={v.id} className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-300">
+                              <span className="font-semibold">{memberById[v.voter_id]?.name ?? 'Unknown voter'}</span>
+                              <span className="text-gray-400">→</span>
+                              <span className="text-amber-600 dark:text-amber-400 font-medium">{memberById[v.nominee_id]?.name ?? '—'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         );

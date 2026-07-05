@@ -9,6 +9,7 @@ import { TEAM_OUTING, SEED_ATTENDEES } from '../config/outing';
 import { AWARDS_NIGHT } from '../config/awardsNight';
 import { useTeamOuting, type OutingStatus, type FoodPref, type DrinkPref } from '../hooks/useTeamOuting';
 import { useMembers } from '../hooks/useMembers';
+import { useAuth } from '../context/AuthContext';
 import type { Member } from '../types';
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, '');
@@ -45,7 +46,10 @@ function Avatar({ member, name, size = 36 }: { member?: Member; name: string; si
 
 export function TeamOuting() {
   const { members } = useMembers();
-  const { rsvps, myRsvp, loading, tableMissing, submit, going, maybe, needRide, canDrive } = useTeamOuting();
+  const { isAdmin } = useAuth();
+  const { rsvps, myRsvp, loading, tableMissing, submit, addPeople, going, maybe, needRide, canDrive } = useTeamOuting();
+  const [addNames, setAddNames] = useState('');
+  const [adding, setAdding] = useState(false);
 
   // Who picked what (names, not just counts)
   const namesWhere = (pred: (r: typeof rsvps[number]) => boolean) =>
@@ -166,6 +170,24 @@ export function TeamOuting() {
                   <span className="text-xs font-semibold">{r.name} <span className="text-amber-300">· maybe</span></span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Admin: quickly add more people who confirmed offline */}
+          {isAdmin && !tableMissing && (
+            <div className="mt-4 border-t border-white/10 pt-3">
+              <p className="text-[11px] uppercase tracking-wide text-white/50 font-bold mb-1.5">➕ Add people (admin)</p>
+              <div className="flex gap-2">
+                <input value={addNames} onChange={e => setAddNames(e.target.value)}
+                  placeholder="Names, comma-separated"
+                  className="flex-1 rounded-xl bg-white/90 text-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                <button
+                  onClick={async () => { setAdding(true); const res = await addPeople(addNames); setAdding(false); if (res.success) setAddNames(''); }}
+                  disabled={adding || !addNames.trim()}
+                  className="rounded-xl bg-emerald-500 text-white font-black text-sm px-4 disabled:opacity-40">
+                  {adding ? '…' : 'Add'}
+                </button>
+              </div>
             </div>
           )}
         </div>
