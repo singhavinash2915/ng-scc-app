@@ -6,11 +6,12 @@ import { useMembers } from '../hooks/useMembers';
 import { AWARDS_NIGHT } from '../config/awardsNight';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 
-// Public, no-login voting for the People's Awards. Open to anyone with the link
-// (guests included). Each device gets a stable random voter id so it's one vote
-// per category per device. Results stay hidden here — revealed on Awards Night.
+// Squad-only voting for the People's Awards. You vote AS a specific SCC member
+// (picked from the squad list), so it's strictly one vote per member. Your phone
+// is then bound to that member — you can't switch names to stuff extra votes,
+// and a member already claimed by another phone can't be voted for again.
 const DEVICE_KEY = 'scc-vote-device-id';
-const NAME_KEY = 'scc-vote-name';
+const MEMBER_KEY = 'scc-vote-member-id';
 
 function getDeviceId(): string {
   let id = localStorage.getItem(DEVICE_KEY);
@@ -26,36 +27,49 @@ export function SeasonAwardsVote() {
   const { members } = useMembers();
 
   const [deviceId] = useState(getDeviceId);
-  const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || '');
-  const [nameEntered, setNameEntered] = useState(() => !!localStorage.getItem(NAME_KEY));
+  const [myMemberId, setMyMemberId] = useState<string>(() => localStorage.getItem(MEMBER_KEY) || '');
   const [saving, setSaving] = useState<string | null>(null);
+  const [claimError, setClaimError] = useState('');
 
   const nominees = useMemo(
     () => members.filter(m => m.status === 'active' || m.matches_played > 0)
       .sort((a, b) => a.name.localeCompare(b.name)),
     [members],
   );
+  const myName = members.find(m => m.id === myMemberId)?.name || '';
+
+  // Members already claimed by a DIFFERENT device — can't be voted for again.
+  const claimedByOthers = useMemo(() => {
+    const s = new Set<string>();
+    votes.forEach(v => { if (v.device_id && v.device_id !== deviceId) s.add(v.voter_id); });
+    return s;
+  }, [votes, deviceId]);
+
   const myVotes = useMemo(
-    () => new Map(votes.filter(v => v.voter_id === deviceId).map(v => [v.category_id, v.nominee_id])),
-    [votes, deviceId],
+    () => new Map(votes.filter(v => v.voter_id === myMemberId).map(v => [v.category_id, v.nominee_id])),
+    [votes, myMemberId],
   );
   const votedCount = categories.filter(c => myVotes.has(c.id)).length;
 
   async function cast(categoryId: string, nomineeId: string) {
-    if (!nomineeId) return;
+    if (!nomineeId || !myMemberId) return;
     setSaving(categoryId);
     try {
-      await vote(categoryId, deviceId, nomineeId);
+      await vote(categoryId, myMemberId, nomineeId, deviceId);
     } finally {
       setSaving(null);
     }
   }
 
-  function confirmName() {
-    const n = name.trim();
-    if (!n) return;
-    localStorage.setItem(NAME_KEY, n);
-    setNameEntered(true);
+  function pickMe(id: string) {
+    if (!id) return;
+    if (claimedByOthers.has(id)) {
+      setClaimError('That member has already voted from another phone.');
+      return;
+    }
+    setClaimError('');
+    localStorage.setItem(MEMBER_KEY, id);
+    setMyMemberId(id);
   }
 
   return (
@@ -81,25 +95,24 @@ export function SeasonAwardsVote() {
           </div>
         </div>
 
-        {/* Name gate */}
-        {!nameEntered ? (
+        {/* Identity gate — pick yourself from the squad (one vote per member) */}
+        {!myMemberId ? (
           <div className="mt-8 bg-white/10 rounded-2xl p-5 backdrop-blur">
-            <label className="block text-sm font-semibold mb-2">👋 What's your name?</label>
-            <p className="text-white/60 text-xs mb-3">So we know who's voting. No login needed — anyone can join in.</p>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && confirmName()}
-              placeholder="Your name"
+            <label className="block text-sm font-semibold mb-2">👋 Who are you?</label>
+            <p className="text-white/60 text-xs mb-3">Pick your name from the squad. You get <b>one vote per member</b>, and this phone locks to your name — so no one can vote twice.</p>
+            <select
+              value=""
+              onChange={e => pickMe(e.target.value)}
               className="w-full rounded-xl bg-white/90 text-slate-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-            <button
-              onClick={confirmName}
-              disabled={!name.trim()}
-              className="w-full mt-3 rounded-xl bg-amber-400 text-slate-900 font-black py-3 text-sm disabled:opacity-40"
             >
-              Start voting →
-            </button>
+              <option value="">Select your name…</option>
+              {nominees.map(m => (
+                <option key={m.id} value={m.id} disabled={claimedByOthers.has(m.id)}>
+                  {m.name}{claimedByOthers.has(m.id) ? ' · already voted' : ''}
+                </option>
+              ))}
+            </select>
+            {claimError && <p className="text-rose-300 text-xs mt-2">🔒 {claimError}</p>}
           </div>
         ) : loading ? (
           <p className="text-center text-white/50 mt-10">Loading awards…</p>
@@ -112,7 +125,7 @@ export function SeasonAwardsVote() {
           <>
             {/* Progress */}
             <div className="mt-6 flex items-center justify-between text-xs text-white/70">
-              <span>Hi <span className="font-bold text-white">{name}</span> 👋</span>
+              <span>Voting as <span className="font-bold text-white">{myName}</span> 👋</span>
               <span>{votedCount}/{categories.length} voted</span>
             </div>
             <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mt-1.5">

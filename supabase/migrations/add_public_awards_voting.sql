@@ -3,17 +3,20 @@
 -- Run once in Supabase Dashboard → SQL Editor.
 --
 -- What this does:
---   1. Lets ANYONE vote (guests included) — voter_id is now a device id, not a
---      member FK. Tallies are by nominee (still a member), so results are safe.
+--   1. Squad-only voting: voter_id is the voting MEMBER's id (so UNIQUE
+--      (category_id, voter_id) = one vote per member). device_id records which
+--      phone cast it, so a member's identity is bound to one device (no cycling
+--      through names to stuff votes).
 --   2. Clears all existing (test) votes so the party starts from zero.
 --   3. Replaces the award categories with a fresh funny + spicy set.
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 1. Allow guest voters: drop the voter_id → members(id) foreign key.
---    voter_id stays a UUID column (the client sends a random per-device UUID),
---    the UNIQUE(category_id, voter_id) still enforces one vote per device.
+-- 1. Drop the old voter_id → members(id) FK (we manage identity in-app) and add
+--    a device_id column used to bind a member's vote to a single device.
 ALTER TABLE season_award_votes
   DROP CONSTRAINT IF EXISTS season_award_votes_voter_id_fkey;
+ALTER TABLE season_award_votes
+  ADD COLUMN IF NOT EXISTS device_id TEXT;
 
 -- 2. Wipe existing votes (fresh start for the party).
 DELETE FROM season_award_votes;

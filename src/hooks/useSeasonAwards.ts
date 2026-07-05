@@ -82,20 +82,25 @@ export function useSeasonAwards(season: string = '2025-26') {
     }
   };
 
-  const vote = async (categoryId: string, voterId: string, nomineeId: string) => {
+  const vote = async (categoryId: string, voterId: string, nomineeId: string, deviceId?: string) => {
     try {
-      const { data, error } = await supabase
+      const base = { category_id: categoryId, voter_id: voterId, nominee_id: nomineeId };
+      let res = await supabase
         .from('season_award_votes')
-        .upsert(
-          {
-            category_id: categoryId,
-            voter_id: voterId,
-            nominee_id: nomineeId,
-          },
-          { onConflict: 'category_id,voter_id' }
-        )
+        .upsert(deviceId ? { ...base, device_id: deviceId } : base, { onConflict: 'category_id,voter_id' })
         .select()
         .single();
+
+      // Gracefully handle the case where the device_id column hasn't been added
+      // yet (migration not re-run) — vote without it so voting still works.
+      if (res.error && deviceId && /device_id/.test(res.error.message)) {
+        res = await supabase
+          .from('season_award_votes')
+          .upsert(base, { onConflict: 'category_id,voter_id' })
+          .select()
+          .single();
+      }
+      const { data, error } = res;
 
       if (error) throw error;
 

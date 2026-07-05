@@ -15,11 +15,8 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('scc-theme');
-    if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
+  // Theme is locked to light — dark mode is disabled app-wide.
+  const theme: Theme = 'light';
 
   const [accent, setAccentState] = useState<Accent>(() => {
     const saved = localStorage.getItem('scc-accent') as Accent | null;
@@ -28,19 +25,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    localStorage.setItem('scc-theme', theme);
-  }, [theme]);
+    root.classList.remove('dark');
+    root.classList.add('light');
+    localStorage.setItem('scc-theme', 'light');
+  }, []);
 
   useEffect(() => {
     window.document.documentElement.setAttribute('data-accent', accent);
     localStorage.setItem('scc-accent', accent);
   }, [accent]);
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
+  // No-op: theme is fixed to light.
+  const toggleTheme = () => {};
 
   const setAccent = (a: Accent) => setAccentState(a);
 

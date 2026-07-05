@@ -406,8 +406,9 @@ export interface SeasonAwardCategory {
 export interface SeasonAwardVote {
   id: string;
   category_id: string;
-  voter_id: string;
+  voter_id: string;          // the voting member's id (one vote per member)
   nominee_id: string;
+  device_id?: string | null; // binds a member's vote to one device
   created_at: string;
 }
 
