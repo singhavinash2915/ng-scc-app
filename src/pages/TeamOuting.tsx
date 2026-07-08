@@ -47,7 +47,7 @@ function Avatar({ member, name, size = 36 }: { member?: Member; name: string; si
 export function TeamOuting() {
   const { members } = useMembers();
   const { isAdmin } = useAuth();
-  const { rsvps, myRsvp, loading, tableMissing, submit, addPeople, going, maybe, needRide, canDrive } = useTeamOuting();
+  const { rsvps, myRsvp, loading, tableMissing, submit, addPeople, removeAttendee, going, maybe, needRide, canDrive } = useTeamOuting();
   const [addNames, setAddNames] = useState('');
   const [adding, setAdding] = useState(false);
 
@@ -159,15 +159,23 @@ export function TeamOuting() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {goingList.map(r => (
-                <div key={r.id} className="flex items-center gap-1.5 bg-white/10 rounded-full pl-1 pr-3 py-1">
+                <div key={r.id} className="flex items-center gap-1.5 bg-white/10 rounded-full pl-1 pr-2 py-1">
                   <Avatar member={findMember(r.name)} name={r.name} size={26} />
                   <span className="text-xs font-semibold">{r.name}</span>
+                  {isAdmin && !tableMissing && (
+                    <button onClick={() => removeAttendee(r.id)} title="Remove"
+                      className="w-4 h-4 rounded-full bg-white/15 hover:bg-rose-500 text-white/70 hover:text-white flex items-center justify-center text-[11px] leading-none">×</button>
+                  )}
                 </div>
               ))}
               {maybe.map(r => (
-                <div key={r.id} className="flex items-center gap-1.5 bg-white/5 rounded-full pl-1 pr-3 py-1 opacity-70">
+                <div key={r.id} className="flex items-center gap-1.5 bg-white/5 rounded-full pl-1 pr-2 py-1 opacity-70">
                   <Avatar member={findMember(r.name)} name={r.name} size={26} />
                   <span className="text-xs font-semibold">{r.name} <span className="text-amber-300">· maybe</span></span>
+                  {isAdmin && !tableMissing && (
+                    <button onClick={() => removeAttendee(r.id)} title="Remove"
+                      className="w-4 h-4 rounded-full bg-white/15 hover:bg-rose-500 text-white/70 hover:text-white flex items-center justify-center text-[11px] leading-none">×</button>
+                  )}
                 </div>
               ))}
             </div>

@@ -95,6 +95,14 @@ export function useTeamOuting() {
     return { success: true, count: names.length };
   };
 
+  // Remove an attendee (admin).
+  const removeAttendee = async (id: string) => {
+    const { error } = await supabase.from('outing_rsvps').delete().eq('id', id);
+    if (error) return { success: false, error: error.message };
+    await fetch();
+    return { success: true };
+  };
+
   // Tallies
   const going = rsvps.filter(r => r.status === 'going');
   const maybe = rsvps.filter(r => r.status === 'maybe');
@@ -113,6 +121,6 @@ export function useTeamOuting() {
   const needRide = rsvps.filter(r => r.status !== 'out' && r.needs_ride);
   const canDrive = rsvps.filter(r => r.status !== 'out' && r.can_drive);
 
-  return { rsvps, myRsvp, loading, tableMissing, submit, addPeople, refetch: fetch,
+  return { rsvps, myRsvp, loading, tableMissing, submit, addPeople, removeAttendee, refetch: fetch,
     going, maybe, out, food, drinks, needRide, canDrive };
 }
