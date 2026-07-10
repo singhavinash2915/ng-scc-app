@@ -23,6 +23,7 @@ import {
   BookOpen,
   ExternalLink,
   PartyPopper,
+  Flame,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -40,6 +41,7 @@ const publicNavItems = [
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
   { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
+  { to: '/pressure', icon: Flame, label: 'Pressure Index' },
   // Season Finale hidden from nav until Awards Night work is finished (still reachable via direct URL)
   { to: '/records', icon: Award, label: 'Hall of Fame' },
   { to: '/predictions', icon: Sparkles, label: 'Predictions' },

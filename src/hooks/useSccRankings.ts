@@ -3,7 +3,7 @@ import type { Match, Member } from '../types';
 import type { MatchScorecard, BatterRow, BowlerRow } from './useMatchScorecard';
 import { CH_PLAYER_TO_MEMBER } from './useStatSync';
 
-const SCC_TEAM_ID = 7927431;
+export const SCC_TEAM_ID = 7927431;
 
 // ─── Tunable constants (the "ICC-style" knobs) ─────────────────────────────
 const FIFTY_BONUS       = 25;
@@ -92,7 +92,7 @@ const normalizeName = (s: string) => (s || '').toLowerCase().replace(/[^a-z]/g, 
 //                                null so the row is skipped — better to lose
 //                                one row than misattribute it.
 //   4. Substring fallback      → only if no other Aditya/etc exists
-function buildNameMatcher(members: Member[]) {
+export function buildNameMatcher(members: Member[]) {
   // Build indexes:
   //   exactByNorm[normalised full name]  = memberId
   //   byFirstName[normalised first word] = memberId[]   (can be multiple)

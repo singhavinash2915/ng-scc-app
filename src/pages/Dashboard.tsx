@@ -12,6 +12,7 @@ import { CalendarWidget } from '../components/CalendarWidget';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
 import { BirthdayBanner } from '../components/BirthdayBanner';
+import { BirthdayBoard } from '../components/BirthdayBoard';
 import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
 import { AnnouncementWall } from '../components/AnnouncementWall';
 import { GroundOpponentInsights } from '../components/GroundOpponentInsights';
@@ -675,14 +676,16 @@ export function Dashboard() {
             {memories.length > 0 && (
               <div className="glass rounded-2xl p-4 flex flex-col justify-center">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">🗓️</span>
-                  <span className="text-pink-400 text-[10px] font-bold uppercase tracking-[2px]">On This Day</span>
+                  <span className="text-lg">{memories[0]?.archive ? '📼' : '🗓️'}</span>
+                  <span className="text-pink-400 text-[10px] font-bold uppercase tracking-[2px]">{memories[0]?.archive ? 'From the Archives' : 'On This Day'}</span>
                 </div>
                 <div className="space-y-2.5">
                   {memories.slice(0, 2).map(m => (
                     <div key={m.match.id} className="border-l-2 border-pink-500/30 pl-3">
                       <p className="text-[10px] text-slate-300 dark:text-gray-600 uppercase font-bold tracking-wider mb-0.5">
-                        {m.yearsAgo === 1 ? '1 year ago' : `${m.yearsAgo} years ago`}
+                        {m.exact
+                          ? (m.yearsAgo === 1 ? '1 year ago today' : `${m.yearsAgo} years ago today`)
+                          : `${new Date(m.match.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · ${m.yearsAgo}y ago`}
                       </p>
                       <p className="text-sm text-slate-600 dark:text-gray-300 font-medium leading-snug">
                         {m.match.match_type === 'internal' ? 'Dhurandars vs Bazigars' : `vs ${m.match.opponent || 'TBD'}`}
@@ -705,6 +708,9 @@ export function Dashboard() {
 
           </div>
         )}
+
+        {/* ── BIRTHDAYS ─────────────────────────────────────────────────── */}
+        <BirthdayBoard members={members} />
 
         {/* ── SEASON STARS (lazy — loads cricketStats on demand) ────────── */}
         {showDeferred && (

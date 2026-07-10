@@ -19,6 +19,7 @@ const Matches      = lazy(() => import('./pages/Matches').then(m => ({ default: 
 const Calendar     = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
 const Tournaments  = lazy(() => import('./pages/Tournaments').then(m => ({ default: m.Tournaments })));
 const SeasonLeague = lazy(() => import('./pages/SeasonLeague').then(m => ({ default: m.SeasonLeague })));
+const PressureIndex = lazy(() => import('./pages/PressureIndex').then(m => ({ default: m.PressureIndex })));
 const SeasonAwardsVote = lazy(() => import('./pages/SeasonAwardsVote').then(m => ({ default: m.SeasonAwardsVote })));
 const TeamOuting = lazy(() => import('./pages/TeamOuting').then(m => ({ default: m.TeamOuting })));
 const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
@@ -108,6 +109,7 @@ const AppRoutes = () => (
         <Route path="/calendar"      element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />
         <Route path="/tournaments"   element={<Suspense fallback={<PageLoader />}><Tournaments /></Suspense>} />
         <Route path="/league"        element={<Suspense fallback={<PageLoader />}><SeasonLeague /></Suspense>} />
+        <Route path="/pressure"      element={<Suspense fallback={<PageLoader />}><PressureIndex /></Suspense>} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />
         <Route path="/match-day-tools" element={<Suspense fallback={<PageLoader />}><MatchDayTools /></Suspense>} />
