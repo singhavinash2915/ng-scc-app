@@ -241,7 +241,7 @@ function bowlingPoints(b: BowlerRow): number {
 }
 
 // Determine opposition multiplier from SCC's historical record vs the opponent.
-function buildOppositionMultiplier(matches: Match[]): (opponent: string | null) => number {
+export function buildOppositionMultiplier(matches: Match[]): (opponent: string | null) => number {
   const record: Record<string, { wins: number; losses: number }> = {};
   for (const m of matches) {
     if (!m.opponent) continue;

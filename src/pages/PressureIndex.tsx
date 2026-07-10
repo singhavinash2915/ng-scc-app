@@ -55,8 +55,8 @@ export function PressureIndex() {
           <Flame className="w-9 h-9 drop-shadow" />
           <h2 className="font-display text-2xl font-extrabold mt-2">Pressure Performance Index 🔥</h2>
           <p className="text-white/85 text-sm mt-1">
-            Runs and wickets in <b>tight, low-scoring, knockout & losing games</b> — weighted by how much heat the moment carried.
-            Anyone can score in a stroll; this is who stands up when it's hard.
+            Runs and wickets in <b>tight, low-scoring, knockout & losing games</b> — weighted by the heat of the moment
+            <b> and how strong the opponent was</b>. Anyone can score in a stroll; this is who stands up when it's hard.
           </p>
           <p className="text-white/70 text-xs mt-2">Based on {pressureMatchCount} high-pressure matches this club has played.</p>
         </div>
@@ -77,7 +77,8 @@ export function PressureIndex() {
                 <li>🏆 <b>Knockout stage</b> — final / semi / eliminator</li>
                 <li>💪 <b>You stood up in a defeat</b> — the team fell short, you didn't</li>
               </ul>
-              <p>Your <b>pressure runs / wickets</b> = actual runs &amp; wickets × that match's weight, summed over every pressure game. The index scales the squad to 0–1000.</p>
+              <p>That weight is then <b>multiplied by opponent strength</b> (0.8×–1.25×): teams with a better head-to-head record against us count for more, so runs &amp; wickets against a bogey side are worth more than against a soft one.</p>
+              <p>Your <b>pressure runs / wickets</b> = actual runs &amp; wickets × match weight × opponent strength, summed over every pressure game. The index scales the squad to 0–1000.</p>
               <p className="text-slate-500 dark:text-white/60">Only genuinely tense matches count — routine wins are excluded.</p>
             </div>
           )}

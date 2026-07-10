@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { Match, Member } from '../types';
 import type { MatchScorecard, BatterRow, BowlerRow } from './useMatchScorecard';
-import { SCC_TEAM_ID, buildNameMatcher } from './useSccRankings';
+import { SCC_TEAM_ID, buildNameMatcher, buildOppositionMultiplier } from './useSccRankings';
 import { CH_PLAYER_TO_MEMBER } from './useStatSync';
 
 // ─── Pressure Performance Index ────────────────────────────────────────────────
@@ -15,6 +15,10 @@ import { CH_PLAYER_TO_MEMBER } from './useStatSync';
 //   • Low-scoring game (every run counts)
 //   • Knockout stage (final / semi)
 //   • Performing in a defeat (team failed, you stood up)
+//
+// That situational weight then gets multiplied by an OPPONENT-STRENGTH factor
+// (0.80×–1.25×): teams with a better win record against us are worth more, so
+// performing against a bogey side counts for more than against a soft one.
 
 const num = (s: string | null | undefined): number | null => {
   if (!s) return null;
@@ -92,6 +96,7 @@ export function usePressureIndex(
     members.forEach(m => { memberById[m.id] = m; });
 
     const resolveName = buildNameMatcher(members);
+    const oppMult = buildOppositionMultiplier(matches);
     const memberIdSet = new Set(members.map(m => m.id));
     const resolveRow = (row: BatterRow | BowlerRow): string | null => {
       const byId = CH_PLAYER_TO_MEMBER[row.player_id];
@@ -109,10 +114,12 @@ export function usePressureIndex(
       if (!match || match.match_type === 'internal') continue;
       if (!['won', 'lost', 'draw'].includes(match.result)) continue;
 
-      const P = matchPressure(match);
-      // Only matches that carry real pressure count towards the index.
-      if (P < 1.25) continue;
+      const base = matchPressure(match);
+      // Only situationally-tense matches count towards the index…
+      if (base < 1.25) continue;
       pressureMatches.add(match.id);
+      // …and the points they're worth scale with how strong the opponent was.
+      const P = base * oppMult(match.opponent);
 
       const sccBatting = sc.innings1_team_id === SCC_TEAM_ID ? sc.innings1_batting
                        : sc.innings2_team_id === SCC_TEAM_ID ? sc.innings2_batting : null;
