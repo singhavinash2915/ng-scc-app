@@ -847,14 +847,14 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* ── TEAM OUTING banner ──────────────────────────────────────── */}
-        <Link to="/outing" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
-          style={{ background: 'linear-gradient(110deg,#7c3aed,#db2777 55%,#f59e0b)' }}>
+        {/* ── SEASON CHAMPIONS banner ─────────────────────────────────── */}
+        <Link to="/awards" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+          style={{ background: 'linear-gradient(110deg,#b45309,#f59e0b 55%,#fde68a)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 text-xl">🎉</div>
+            <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl">🏆</div>
             <div className="flex-1 min-w-0">
-              <p className="text-white font-black text-base leading-tight truncate">SCC Team Outing — 18 July 🎉</p>
-              <p className="text-white/80 text-xs font-medium">Barguje Farms · RSVP, plan & vote — tap for details</p>
+              <p className="text-white font-black text-base leading-tight truncate">Season 2025-26 Champions 🏆</p>
+              <p className="text-white/90 text-xs font-medium">The Awards Night winners are in — tap to celebrate</p>
             </div>
             <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
           </div>

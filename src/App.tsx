@@ -21,7 +21,7 @@ const Tournaments  = lazy(() => import('./pages/Tournaments').then(m => ({ defau
 const SeasonLeague = lazy(() => import('./pages/SeasonLeague').then(m => ({ default: m.SeasonLeague })));
 const PressureIndex = lazy(() => import('./pages/PressureIndex').then(m => ({ default: m.PressureIndex })));
 const SeasonAwardsVote = lazy(() => import('./pages/SeasonAwardsVote').then(m => ({ default: m.SeasonAwardsVote })));
-const TeamOuting = lazy(() => import('./pages/TeamOuting').then(m => ({ default: m.TeamOuting })));
+const SeasonAwards = lazy(() => import('./pages/SeasonAwards').then(m => ({ default: m.SeasonAwards })));
 const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
 const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
 const Requests     = lazy(() => import('./pages/Requests').then(m => ({ default: m.Requests })));
@@ -97,7 +97,6 @@ const AppRoutes = () => (
       {/* Standalone pages — no sidebar/layout */}
       <Route path="/poll/:matchId" element={<MatchPoll />} />
       <Route path="/vote" element={<Suspense fallback={<PageLoader />}><SeasonAwardsVote /></Suspense>} />
-      <Route path="/outing" element={<Suspense fallback={<PageLoader />}><TeamOuting /></Suspense>} />
       <Route path="/book-match" element={<Suspense fallback={<PageLoader />}><BookMatch /></Suspense>} />
       <Route path="/live/:chMatchId" element={<Suspense fallback={<PageLoader />}><LiveMatch /></Suspense>} />
 
@@ -109,6 +108,7 @@ const AppRoutes = () => (
         <Route path="/calendar"      element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />
         <Route path="/tournaments"   element={<Suspense fallback={<PageLoader />}><Tournaments /></Suspense>} />
         <Route path="/league"        element={<Suspense fallback={<PageLoader />}><SeasonLeague /></Suspense>} />
+        <Route path="/awards"        element={<Suspense fallback={<PageLoader />}><SeasonAwards /></Suspense>} />
         <Route path="/pressure"      element={<Suspense fallback={<PageLoader />}><PressureIndex /></Suspense>} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />

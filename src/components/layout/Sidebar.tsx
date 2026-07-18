@@ -22,7 +22,6 @@ import {
   Trophy,
   BookOpen,
   ExternalLink,
-  PartyPopper,
   Flame,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -36,7 +35,7 @@ const publicNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
-  { to: '/outing', icon: PartyPopper, label: 'Team Outing' },
+  { to: '/awards', icon: Award, label: 'Season Awards' },
   { to: '/season', icon: Sparkles, label: 'Season Finale' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
