@@ -22,7 +22,7 @@ import { useMatchHighlights } from '../hooks/useMatchHighlights';
 import { useMatchChat } from '../hooks/useMatchChat';
 import { useClubPolls } from '../hooks/useClubPolls';
 import { useSeasonAwards } from '../hooks/useSeasonAwards';
-import { AWARDS_NIGHT, awardsRevealed, isAdminPreview } from '../config/awardsNight';
+import { AWARDS_NIGHT, peoplesAwardsVisible } from '../config/awardsNight';
 
 type Tab = 'fantasy' | 'rankings' | 'milestones' | 'highlights' | 'chat' | 'cards' | 'polls' | 'awards';
 
@@ -557,8 +557,9 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
   const [copied, setCopied] = useState(false);
   const [ballotsOpen, setBallotsOpen] = useState<Set<string>>(new Set());
   const memberById = useMemo(() => Object.fromEntries(members.map(m => [m.id, m])), [members]);
-  // Results stay sealed until Awards Night — only admins can peek early.
-  const revealed = awardsRevealed(isAdmin);
+  // People's Award results are admin-only — never auto-revealed to the crowd.
+  const revealed = peoplesAwardsVisible(isAdmin);
+  const votingOpen = AWARDS_NIGHT.votingOpen;
   const voteUrl = `${window.location.origin}/vote`;
 
   const defaultCategories = [
@@ -603,17 +604,17 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
         </button>
       </div>
 
-      {/* Reveal status */}
+      {/* Voting + reveal status */}
       <div className={`rounded-xl p-2.5 text-center text-[11px] font-semibold ${
-        revealed
+        isAdmin
           ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
           : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
       }`}>
-        {revealed
-          ? (isAdminPreview(isAdmin)
-              ? `🔓 Admin preview — results hidden from everyone else until Awards Night (${AWARDS_NIGHT.label})`
-              : '🎉 Results are live!')
-          : `🔒 Results are sealed until Awards Night · ${AWARDS_NIGHT.label}. Voting stays open till then!`}
+        {isAdmin
+          ? `🔓 Admin-only view — vote counts below. Results are NOT shown to members; you reveal them at Awards Night (${AWARDS_NIGHT.label}).`
+          : votingOpen
+            ? '🗳️ Vote away! Winners are revealed at Awards Night.'
+            : '🔒 Voting has closed. Winners are revealed live at Awards Night. 🏆'}
       </div>
 
       {/* Identity picker — same flow as "My Stats"; shown until the member is known */}
@@ -664,8 +665,8 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
               </div>
             </div>
             <div className="p-4 bg-white dark:bg-gray-900 space-y-3">
-              {/* Vote selector */}
-              {myId && (
+              {/* Vote selector — only while voting is open */}
+              {myId && votingOpen && (
                 <select
                   value={myVote?.nominee_id || ''}
                   onChange={e => e.target.value && vote(cat.id, myId, e.target.value)}
@@ -678,10 +679,10 @@ function AwardsTab({ members, isAdmin }: { members: ReturnType<typeof useMembers
                 </select>
               )}
 
-              {/* Results — sealed until Awards Night (admins can preview) */}
+              {/* Results — admin-only (never shown to members) */}
               {!revealed ? (
                 <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center py-1">
-                  {myVote ? '✓ Your vote is locked in. ' : ''}Winners revealed on Awards Night 🎉
+                  {myVote ? '✓ Your vote is locked in. ' : ''}Winners revealed at Awards Night 🎉
                 </p>
               ) : topNominees.length > 0 && (
                 <div className="space-y-1.5">

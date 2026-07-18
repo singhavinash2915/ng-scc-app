@@ -52,7 +52,7 @@ export function SeasonAwardsVote() {
   const votedCount = categories.filter(c => myVotes.has(c.id)).length;
 
   async function cast(categoryId: string, nomineeId: string) {
-    if (!nomineeId || !myMemberId) return;
+    if (!nomineeId || !myMemberId || !AWARDS_NIGHT.votingOpen) return;
     setSaving(categoryId);
     try {
       await vote(categoryId, myMemberId, nomineeId, deviceId);
@@ -95,8 +95,15 @@ export function SeasonAwardsVote() {
           </div>
         </div>
 
-        {/* Identity gate — pick yourself from the squad (one vote per member) */}
-        {!myMemberId ? (
+        {/* Voting closed — no more votes accepted */}
+        {!AWARDS_NIGHT.votingOpen ? (
+          <div className="mt-8 bg-white/10 rounded-2xl p-6 text-center backdrop-blur">
+            <Lock className="w-10 h-10 mx-auto text-amber-300" />
+            <p className="font-display text-xl font-extrabold mt-3">Voting has closed 🔒</p>
+            <p className="text-white/60 text-sm mt-2">Thanks to everyone who voted! 🙌<br />The winners are revealed live at Awards Night · {AWARDS_NIGHT.label}. 🏆</p>
+          </div>
+        ) : /* Identity gate — pick yourself from the squad (one vote per member) */
+        !myMemberId ? (
           <div className="mt-8 bg-white/10 rounded-2xl p-5 backdrop-blur">
             <label className="block text-sm font-semibold mb-2">👋 Who are you?</label>
             <p className="text-white/60 text-xs mb-3">Pick your name from the squad. You get <b>one vote per member</b>, and this phone locks to your name — so no one can vote twice.</p>

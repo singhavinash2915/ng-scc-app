@@ -226,6 +226,17 @@ export function SeasonFinale() {
     .filter(a => a.member),
   [awardCategories, getAwardResults, memberById]);
 
+  // Full ranked vote counts per category (admin-only view — counts, no ballots).
+  const peoplesResults = useMemo(() => awardCategories.map(cat => {
+    const rows = getAwardResults(cat.id);
+    const total = rows.reduce((s, r) => s + r.count, 0);
+    return {
+      cat,
+      total,
+      rows: rows.map(r => ({ name: memberById[r.nominee_id]?.name ?? 'Unknown', count: r.count })),
+    };
+  }), [awardCategories, getAwardResults, memberById]);
+
   return (
     <div className="aurora-bg min-h-screen">
       <Header title="Season Finale" subtitle={`Sangria Cricket Club · ${SEASON}`} />
@@ -299,14 +310,50 @@ export function SeasonFinale() {
               <p className="font-black text-sm mt-1 leading-tight">People's Awards</p>
               <p className="text-white/80 text-[11px]">Open voting — share with everyone!</p>
             </Link>
-            <button onClick={() => revealUnlocked && setPeoplesPresentOpen(true)} disabled={!revealUnlocked || peoplesAwards.length === 0}
+            <button onClick={() => isAdmin && setPeoplesPresentOpen(true)} disabled={!isAdmin || peoplesAwards.length === 0}
               className="rounded-xl p-3 text-left text-white shadow-md disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#ec4899,#f43f5e)' }}>
-              <p className="text-2xl">{revealUnlocked ? '🏅' : '🔒'}</p>
+              <p className="text-2xl">{isAdmin ? '🏅' : '🔒'}</p>
               <p className="font-black text-sm mt-1 leading-tight">Reveal People's Picks</p>
-              <p className="text-white/80 text-[11px]">{!revealUnlocked ? `Unlocks ${AWARDS_NIGHT.label}` : peoplesAwards.length > 0 ? 'Big-screen reveal of the crowd\'s winners' : 'No votes yet'}</p>
+              <p className="text-white/80 text-[11px]">{!isAdmin ? 'Admin only — revealed live at the party' : peoplesAwards.length > 0 ? 'Big-screen reveal of the crowd\'s winners' : 'No votes yet'}</p>
             </button>
           </div>
         </div>
+
+        {/* People's Awards — vote counts (ADMIN ONLY; not revealed to the crowd) */}
+        {isAdmin && (
+          <div className="glass rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-black uppercase tracking-[2px] text-pink-600 dark:text-pink-300">🗳️ People's Awards — Results</span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-white/50 mb-3">Admin-only vote counts. Members can't see these — reveal them live at the party.</p>
+            <div className="space-y-4">
+              {peoplesResults.map(({ cat, total, rows }) => (
+                <div key={cat.id}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5"><span>{cat.emoji || '🏆'}</span> {cat.name}</p>
+                    <span className="text-[10px] text-slate-400 dark:text-white/50">{total} vote{total === 1 ? '' : 's'}</span>
+                  </div>
+                  {rows.length === 0 ? (
+                    <p className="text-[11px] text-slate-400 mt-1">No votes yet.</p>
+                  ) : (
+                    <div className="mt-1.5 space-y-1">
+                      {rows.map((r, i) => (
+                        <div key={r.name + i} className="flex items-center gap-2">
+                          <span className={`text-[11px] font-bold w-4 ${i === 0 ? 'text-pink-500' : 'text-slate-400'}`}>{i + 1}</span>
+                          <span className="text-xs text-slate-700 dark:text-white/80 flex-1 truncate">{r.name}</span>
+                          <div className="w-24 h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+                            <div className="h-full bg-pink-400 rounded-full" style={{ width: `${total > 0 ? (r.count / total) * 100 : 0}%` }} />
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-white/60 w-6 text-right tabular-nums">{r.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Team of the Season */}
         <BestXISection xi={bestXI} />
@@ -354,7 +401,7 @@ export function SeasonFinale() {
 
       {wrappedOpen && <ClubWrappedStory data={clubWrapped} onClose={() => setWrappedOpen(false)} />}
       {revealUnlocked && presentOpen && <AwardsPresentation awards={awards} season={SEASON} onClose={() => setPresentOpen(false)} />}
-      {revealUnlocked && peoplesPresentOpen && <AwardsPresentation awards={peoplesAwards} season={SEASON} onClose={() => setPeoplesPresentOpen(false)} />}
+      {isAdmin && peoplesPresentOpen && <AwardsPresentation awards={peoplesAwards} season={SEASON} onClose={() => setPeoplesPresentOpen(false)} />}
       {quizOpen && <SeasonQuiz awards={awards} clubWrapped={clubWrapped} members={members} season={SEASON} onClose={() => setQuizOpen(false)} />}
       {certAward && <AwardCertificateModal isOpen={!!certAward} onClose={() => setCertAward(null)} award={certAward} season={SEASON} />}
       <style>{`@keyframes awardPop{0%{opacity:0;transform:scale(0.85)}100%{opacity:1;transform:none}}`}</style>
