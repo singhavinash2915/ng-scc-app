@@ -3,19 +3,28 @@ import { Trophy, Coins, Crown, Check, Users, Info, AlertTriangle } from 'lucide-
 import { Header } from '../components/layout/Header';
 import { MyStatsButton } from '../components/MyStatsButton';
 import { useMembers } from '../hooks/useMembers';
+import { useMatches } from '../hooks/useMatches';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useFantasyDraft, SQUAD_SIZE, BUDGET } from '../hooks/useFantasyDraft';
+import { SEASON_NEW, SEASON_PREV, SEASON_NEW_START, SEASON_NEW_END } from '../config/season2';
 
 const PROFILE_KEY = 'scc-my-profile-id';
-const SEASON = '2025-26';
+const SEASON = SEASON_NEW;
 
 export function Fantasy() {
   const { members } = useMembers();
-  const { stats } = useCricketStats(SEASON);
-  const { counts: momCounts } = useMOMCounts();
+  const { matches } = useMatches();
+  const { stats: prevStats } = useCricketStats(SEASON_PREV);   // prices: last season's form
+  const { stats: newStats } = useCricketStats(SEASON_NEW);      // points: this season's deeds
+  const { counts: momCounts } = useMOMCounts(SEASON_NEW_START, SEASON_NEW_END);
   const { draftPlayers, priceById, leaderboard, myTeam, saveTeam, loading, tableMissing } =
-    useFantasyDraft(SEASON, stats, members, momCounts);
+    useFantasyDraft(SEASON, prevStats, newStats, members, momCounts);
+
+  // The draft locks the moment the season's first ball is bowled.
+  const seasonStarted = useMemo(() => matches.some(m =>
+    m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result)
+    && m.date >= SEASON_NEW_START && m.date <= SEASON_NEW_END), [matches]);
 
   const [myId, setMyId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -43,6 +52,7 @@ export function Fantasy() {
   const valid = selected.size === SQUAD_SIZE && remaining >= 0 && captain && selected.has(captain);
 
   const toggle = (id: string) => {
+    if (seasonStarted) { setMsg('Squads are locked — the season has started.'); return; }
     setMsg(null);
     setSelected(prev => {
       const next = new Set(prev);
@@ -59,7 +69,7 @@ export function Fantasy() {
   };
 
   const save = async () => {
-    if (!myId || !valid) return;
+    if (!myId || !valid || seasonStarted) return;
     setSaving(true); setMsg(null);
     try {
       await saveTeam(myId, teamName || 'My XI', [...selected], captain);
@@ -79,9 +89,16 @@ export function Fantasy() {
         {/* Hero / rules */}
         <div className="relative overflow-hidden rounded-2xl p-5 text-white shadow-lg"
           style={{ background: 'linear-gradient(120deg,#7c3aed,#2563eb 55%,#0a1019)' }}>
-          <div className="flex items-center gap-2 mb-1"><Trophy className="w-5 h-5" /><span className="font-black text-lg">Fantasy Draft League</span></div>
-          <p className="text-white/85 text-sm">Pick {SQUAD_SIZE} players within {BUDGET} credits, name your team and choose a captain (scores 2×). Your points update automatically from real CricHeroes performances.</p>
+          <div className="flex items-center gap-2 mb-1"><Trophy className="w-5 h-5" /><span className="font-black text-lg">Fantasy Draft · Season {SEASON}</span></div>
+          <p className="text-white/85 text-sm">Pick {SQUAD_SIZE} players within {BUDGET} credits, name your team and choose a captain (scores 2×). Prices are set by <b>last season's form</b>; points come from <b>this season's real performances</b> — and the draft locks at the first ball of the season.</p>
         </div>
+
+        {seasonStarted && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-sm">
+            <Info className="w-4 h-4 flex-shrink-0" />
+            The season is underway — squads are locked. Points now update automatically after every match. 🏏
+          </div>
+        )}
 
         {tableMissing && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-sm">
@@ -125,10 +142,10 @@ export function Fantasy() {
               {msg && <p className={`text-xs font-semibold ${msg.startsWith('✓') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>{msg}</p>}
               <button
                 onClick={save}
-                disabled={!valid || saving}
+                disabled={!valid || saving || seasonStarted}
                 className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white font-bold text-sm transition-colors"
               >
-                {saving ? 'Saving…' : existing ? 'Update my team' : 'Save my team'}
+                {seasonStarted ? '🔒 Squads locked' : saving ? 'Saving…' : existing ? 'Update my team' : 'Save my team'}
               </button>
               {!valid && (
                 <p className="text-[11px] text-gray-400 flex items-center gap-1"><Info className="w-3 h-3" /> Pick exactly {SQUAD_SIZE} players within budget and tap a star to set your captain.</p>
@@ -139,7 +156,7 @@ export function Fantasy() {
             <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                 <span className="text-[11px] font-black uppercase tracking-[2px] text-gray-600 dark:text-gray-300">Player pool</span>
-                <span className="text-[10px] text-gray-400 font-semibold">price · pts</span>
+                <span className="text-[10px] text-gray-400 font-semibold">price · last-season pts</span>
               </div>
               <div className="divide-y divide-gray-50 dark:divide-gray-800 max-h-[480px] overflow-y-auto">
                 {pool.map(p => {
@@ -167,7 +184,7 @@ export function Fantasy() {
                       <span className="flex-shrink-0 inline-flex items-center gap-0.5 text-xs font-black text-amber-600 dark:text-amber-400 tabular-nums w-9 justify-end">
                         <Coins className="w-3 h-3" />{p.price}
                       </span>
-                      <span className="flex-shrink-0 text-[11px] text-gray-400 font-semibold tabular-nums w-12 text-right">{Math.round(p.points).toLocaleString('en-IN')}</span>
+                      <span className="flex-shrink-0 text-[11px] text-gray-400 font-semibold tabular-nums w-12 text-right">{Math.round(p.lastSeasonPoints).toLocaleString('en-IN')}</span>
                     </div>
                   );
                 })}

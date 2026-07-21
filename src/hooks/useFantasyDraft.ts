@@ -17,8 +17,9 @@ export interface FantasyTeamRow {
 
 export interface DraftPlayer {
   member: Member;
-  price: number;   // credits (4–15), derived from fantasy points
-  points: number;  // season fantasy points
+  price: number;            // credits (4–15), derived from LAST season's form
+  points: number;           // THIS season's fantasy points (0 until it starts)
+  lastSeasonPoints: number; // last season's total — the form guide behind the price
 }
 
 export interface LeagueEntry {
@@ -32,30 +33,34 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 export function useFantasyDraft(
   season: string,
-  stats: MemberCricketStats[],
+  pricingStats: MemberCricketStats[],   // LAST season — sets the auction prices
+  scoringStats: MemberCricketStats[],   // THIS season — earns the points
   members: Member[],
-  momCounts: Record<string, number>,
+  momCounts: Record<string, number>,    // THIS season's MOM bonuses
 ) {
-  const fantasy = useFantasyPoints(stats, members, momCounts);
+  // Real-fantasy split: you pay for past form, you score on new-season deeds.
+  const pricingFantasy = useFantasyPoints(pricingStats, members, {});
+  const scoringFantasy = useFantasyPoints(scoringStats, members, momCounts);
   const [teams, setTeams] = useState<FantasyTeamRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tableMissing, setTableMissing] = useState(false);
 
   const pointsById = useMemo(() => {
     const m: Record<string, number> = {};
-    fantasy.forEach(f => { m[f.member.id] = f.total; });
+    scoringFantasy.forEach(f => { m[f.member.id] = f.total; });
     return m;
-  }, [fantasy]);
+  }, [scoringFantasy]);
 
-  // Player pool with derived prices (relative to the top scorer).
+  // Player pool with prices relative to last season's top scorer.
   const draftPlayers: DraftPlayer[] = useMemo(() => {
-    const maxTotal = Math.max(1, ...fantasy.map(f => f.total));
-    return fantasy.map(f => ({
+    const maxTotal = Math.max(1, ...pricingFantasy.map(f => f.total));
+    return pricingFantasy.map(f => ({
       member: f.member,
-      points: f.total,
+      points: pointsById[f.member.id] || 0,
+      lastSeasonPoints: f.total,
       price: clamp(Math.round(4 + 11 * (f.total / maxTotal)), 4, 15),
     }));
-  }, [fantasy]);
+  }, [pricingFantasy, pointsById]);
 
   const priceById = useMemo(() => {
     const m: Record<string, number> = {};

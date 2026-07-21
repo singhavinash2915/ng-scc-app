@@ -23,6 +23,8 @@ import {
   BookOpen,
   ExternalLink,
   Flame,
+  Rocket,
+  Gamepad2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -35,6 +37,8 @@ const publicNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
+  { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
+  { to: '/fantasy', icon: Gamepad2, label: 'Fantasy Draft' },
   { to: '/awards', icon: Award, label: 'Season Awards' },
   { to: '/season', icon: Sparkles, label: 'Season Finale' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },

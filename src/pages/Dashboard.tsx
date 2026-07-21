@@ -86,6 +86,17 @@ export function Dashboard() {
   const { activeCount, isActive } = useMemberActivity(members, matches);
   const league = useSeasonLeague();
   const nextLeagueFixture = league.upcoming[0] ?? null;
+  // Match Day mode — an upcoming match dated today takes over the top banner
+  const { todaysMatch, daysToKickoff } = useMemo(() => {
+    const now = new Date();
+    const today = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+    const tm = matches.find(m => m.result === 'upcoming' && m.date === today) ?? null;
+    const next = league.upcoming[0];
+    const days = next
+      ? Math.max(0, Math.ceil((new Date(next.date + 'T00:00:00').getTime() - now.getTime()) / 86400000))
+      : null;
+    return { todaysMatch: tm, daysToKickoff: days };
+  }, [matches, league.upcoming]);
   const { counts: momCounts } = useMOMCounts();
   const monthSummary = useMonthSummary();
   const { stats: cricketStats } = useCricketStats('2025-26');
@@ -845,6 +856,38 @@ export function Dashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ── MATCH DAY banner — takes over when we play today ────────── */}
+        {todaysMatch && (
+          <Link to="/matches" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            style={{ background: 'linear-gradient(110deg,#991b1b,#dc2626 55%,#f97316)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl animate-pulse">🔴</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-base leading-tight truncate">MATCH DAY — vs {todaysMatch.opponent || 'TBD'} 🏏</p>
+                <p className="text-white/90 text-xs font-medium truncate">{todaysMatch.venue || 'Venue TBD'} · squad up, predictions in — let's go!</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
+        )}
+
+        {/* ── SEASON KICKOFF banner ───────────────────────────────────── */}
+        {nextLeagueFixture && !todaysMatch && (
+          <Link to="/kickoff" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            style={{ background: 'linear-gradient(110deg,#065f46,#059669 55%,#0ea5e9)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl">🚀</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-base leading-tight truncate">
+                  Season 2026-27 kicks off in {daysToKickoff} days 🚀
+                </p>
+                <p className="text-white/90 text-xs font-medium">Predictions, fantasy draft, goals & market values — get season-ready</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
         )}
 
         {/* ── SEASON CHAMPIONS banner ─────────────────────────────────── */}
