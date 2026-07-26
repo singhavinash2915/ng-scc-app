@@ -308,6 +308,30 @@ export function Dashboard() {
         </div>
       )}
 
+      {/* ── WE'RE LIVE — pinned to the very top whenever a stream is on ── */}
+      {liveStream.isLive && (
+        <div className="px-4 lg:px-8 pt-4">
+          <Link
+            to={liveStream.stream.ch_match_id ? `/live/${liveStream.stream.ch_match_id}` : '/watch'}
+            className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            style={{ background: 'linear-gradient(110deg,#991b1b,#e11d48 55%,#f97316)' }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0">
+                <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-base leading-tight truncate">
+                  🔴 WE'RE LIVE {liveStream.stream.title ? `— ${liveStream.stream.title}` : ''}
+                </p>
+                <p className="text-white/90 text-xs font-medium">Tap to watch the stream + live scorecard</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
+        </div>
+      )}
+
       {/* ── PREMIUM HERO (theme-aware: light + dark) ──────────────────── */}
       <div className="px-4 lg:px-8 pt-4 space-y-3">
         <div className="flex justify-end"><AccentSwitcher /></div>
@@ -858,28 +882,6 @@ export function Dashboard() {
               </div>
             </div>
           </div>
-        )}
-
-        {/* ── WE'RE LIVE banner — top priority whenever a stream is on ── */}
-        {liveStream.isLive && (
-          <Link
-            to={liveStream.stream.ch_match_id ? `/live/${liveStream.stream.ch_match_id}` : '/watch'}
-            className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
-            style={{ background: 'linear-gradient(110deg,#991b1b,#e11d48 55%,#f97316)' }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0">
-                <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-base leading-tight truncate">
-                  🔴 WE'RE LIVE {liveStream.stream.title ? `— ${liveStream.stream.title}` : ''}
-                </p>
-                <p className="text-white/90 text-xs font-medium">Tap to watch the stream + live scorecard</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </Link>
         )}
 
         {/* ── MATCH DAY banner — takes over when we play today ────────── */}

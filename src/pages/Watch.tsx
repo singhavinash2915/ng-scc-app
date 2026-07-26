@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Radio, Youtube, Tv } from 'lucide-react';
 import { useLiveStream } from '../hooks/useLiveStream';
 import { LiveStreamPlayer } from '../components/LiveStreamPlayer';
+import { DemoScorecard } from '../components/DemoScorecard';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 
 /**
@@ -48,6 +49,12 @@ export function Watch() {
                 {stream.title && <span className="text-sm font-bold text-white truncate">{stream.title}</span>}
               </div>
               <LiveStreamPlayer videoId={videoId} title={stream.title} />
+
+              {/* No CricHeroes match paired → show a demo scorecard so members
+                  (and we, while testing) can see the full video + score layout. */}
+              <div className="mt-4">
+                <DemoScorecard />
+              </div>
             </>
           ) : (
             <div className="rounded-2xl bg-white/5 border border-white/10 p-8 text-center">
