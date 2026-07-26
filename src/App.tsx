@@ -23,6 +23,7 @@ const PressureIndex = lazy(() => import('./pages/PressureIndex').then(m => ({ de
 const SeasonAwardsVote = lazy(() => import('./pages/SeasonAwardsVote').then(m => ({ default: m.SeasonAwardsVote })));
 const SeasonAwards = lazy(() => import('./pages/SeasonAwards').then(m => ({ default: m.SeasonAwards })));
 const SeasonKickoff = lazy(() => import('./pages/SeasonKickoff').then(m => ({ default: m.SeasonKickoff })));
+const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
 const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
 const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
 const Requests     = lazy(() => import('./pages/Requests').then(m => ({ default: m.Requests })));
@@ -98,6 +99,7 @@ const AppRoutes = () => (
       {/* Standalone pages — no sidebar/layout */}
       <Route path="/poll/:matchId" element={<MatchPoll />} />
       <Route path="/vote" element={<Suspense fallback={<PageLoader />}><SeasonAwardsVote /></Suspense>} />
+      <Route path="/watch" element={<Suspense fallback={<PageLoader />}><Watch /></Suspense>} />
       <Route path="/book-match" element={<Suspense fallback={<PageLoader />}><BookMatch /></Suspense>} />
       <Route path="/live/:chMatchId" element={<Suspense fallback={<PageLoader />}><LiveMatch /></Suspense>} />
 

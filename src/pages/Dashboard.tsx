@@ -26,6 +26,7 @@ import { MatchSummaryCard } from '../components/MatchSummaryCard';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useSeasonLeague } from '../hooks/useSeasonLeague';
+import { useLiveStream } from '../hooks/useLiveStream';
 import { useRequests } from '../hooks/useRequests';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
@@ -85,6 +86,7 @@ export function Dashboard() {
   const { matches, loading: matchesLoading, fetchMatches } = useMatches();
   const { activeCount, isActive } = useMemberActivity(members, matches);
   const league = useSeasonLeague();
+  const liveStream = useLiveStream();
   const nextLeagueFixture = league.upcoming[0] ?? null;
   // Match Day mode — an upcoming match dated today takes over the top banner
   const { todaysMatch, daysToKickoff } = useMemo(() => {
@@ -858,8 +860,30 @@ export function Dashboard() {
           </div>
         )}
 
+        {/* ── WE'RE LIVE banner — top priority whenever a stream is on ── */}
+        {liveStream.isLive && (
+          <Link
+            to={liveStream.stream.ch_match_id ? `/live/${liveStream.stream.ch_match_id}` : '/watch'}
+            className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            style={{ background: 'linear-gradient(110deg,#991b1b,#e11d48 55%,#f97316)' }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0">
+                <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-base leading-tight truncate">
+                  🔴 WE'RE LIVE {liveStream.stream.title ? `— ${liveStream.stream.title}` : ''}
+                </p>
+                <p className="text-white/90 text-xs font-medium">Tap to watch the stream + live scorecard</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
+        )}
+
         {/* ── MATCH DAY banner — takes over when we play today ────────── */}
-        {todaysMatch && (
+        {todaysMatch && !liveStream.isLive && (
           <Link to="/matches" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
             style={{ background: 'linear-gradient(110deg,#991b1b,#dc2626 55%,#f97316)' }}>
             <div className="flex items-center gap-3">

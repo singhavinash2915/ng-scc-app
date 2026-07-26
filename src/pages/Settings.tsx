@@ -23,8 +23,10 @@ import {
   Plus,
   QrCode,
   Camera,
+  Radio,
 } from 'lucide-react';
 import { useGroundSettings } from '../hooks/useGroundSettings';
+import { useLiveStream, youtubeVideoId } from '../hooks/useLiveStream';
 import { useTeamGallery } from '../hooks/useTeamGallery';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
@@ -54,6 +56,22 @@ export function Settings() {
   const { tournaments } = useTournaments();
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
+
+  // ── Live stream (YouTube) admin controls ────────────────────────────────
+  const { stream, saveStream, saving: streamSaving } = useLiveStream();
+  const [liveStreamOn, setLiveStreamOn] = useState(false);
+  const [liveStreamUrl, setLiveStreamUrl] = useState('');
+  const [liveStreamTitle, setLiveStreamTitle] = useState('');
+  const [liveStreamMatchId, setLiveStreamMatchId] = useState('');
+  const [liveStreamChannel, setLiveStreamChannel] = useState('');
+  const [liveStreamMsg, setLiveStreamMsg] = useState<string | null>(null);
+  useEffect(() => {
+    setLiveStreamOn(stream.is_live);
+    setLiveStreamUrl(stream.youtube_url);
+    setLiveStreamTitle(stream.title);
+    setLiveStreamMatchId(stream.ch_match_id);
+    setLiveStreamChannel(stream.channel_url);
+  }, [stream]);
   const { progress: syncProgress, sync: syncStats, reset: resetSync } = useStatSync();
   const { state: teamSyncState, fetchTeamMatches, applyLinks, createMissingMatches, reset: resetTeamSync } = useCHTeamSync();
   const [chTeamId, setChTeamId] = useState(() => localStorage.getItem('scc-ch-team-id') ?? '');
@@ -819,6 +837,126 @@ export function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Live Stream (Admin Only) */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Radio className={`w-5 h-5 ${liveStreamOn ? 'text-red-500 animate-pulse' : 'text-gray-400'}`} />
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Live Stream {liveStreamOn && <span className="text-red-500 text-xs font-black">● LIVE NOW</span>}
+                </h3>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Go live on YouTube from your phone, then paste the video link here and flip the switch.
+                A red <b>WE'RE LIVE</b> banner appears on everyone's dashboard, and the stream shows above the live scorecard.
+              </p>
+
+              <Input
+                label="YouTube link"
+                placeholder="https://youtube.com/watch?v=… or youtu.be/…"
+                value={liveStreamUrl}
+                onChange={e => setLiveStreamUrl(e.target.value)}
+              />
+              {liveStreamUrl.trim() && !youtubeVideoId(liveStreamUrl) && (
+                <p className="text-xs text-red-500 font-semibold">⚠️ Couldn't read a video ID from that link — double-check it.</p>
+              )}
+
+              <Input
+                label="Title (optional)"
+                placeholder="SCC vs Tinsel County"
+                value={liveStreamTitle}
+                onChange={e => setLiveStreamTitle(e.target.value)}
+              />
+
+              <Select
+                label="Pair with a match (optional — shows the stream above that live scorecard)"
+                value={liveStreamMatchId}
+                onChange={e => setLiveStreamMatchId(e.target.value)}
+                options={[
+                  { value: '', label: 'Not paired' },
+                  ...matches
+                    .filter(m => m.ch_match_id)
+                    .slice(0, 25)
+                    .map(m => ({
+                      value: String(m.ch_match_id),
+                      label: `${new Date(m.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · vs ${m.opponent || 'TBD'}`,
+                    })),
+                ]}
+              />
+
+              <Input
+                label="Channel URL (optional — for the replays link)"
+                placeholder="https://youtube.com/@yourchannel"
+                value={liveStreamChannel}
+                onChange={e => setLiveStreamChannel(e.target.value)}
+              />
+
+              <label className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={liveStreamOn}
+                  onChange={e => setLiveStreamOn(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-red-500"
+                />
+                <span className="text-sm">
+                  <span className="font-bold text-gray-900 dark:text-white">🔴 We're live right now</span>
+                  <span className="block text-xs text-gray-500 dark:text-gray-400">
+                    Turn this off the moment the match ends so the banner disappears.
+                  </span>
+                </span>
+              </label>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={async () => {
+                    setLiveStreamMsg(null);
+                    const res = await saveStream({
+                      is_live: liveStreamOn,
+                      youtube_url: liveStreamUrl.trim(),
+                      title: liveStreamTitle.trim(),
+                      ch_match_id: liveStreamMatchId,
+                      channel_url: liveStreamChannel.trim(),
+                    });
+                    setLiveStreamMsg(res.success ? '✓ Saved!' : `Could not save: ${res.error}`);
+                    setTimeout(() => setLiveStreamMsg(null), 3000);
+                  }}
+                  disabled={streamSaving}
+                  className="flex-1"
+                >
+                  {streamSaving ? 'Saving…' : 'Save stream settings'}
+                </Button>
+                {liveStreamOn && (
+                  <Button
+                    variant="danger"
+                    onClick={async () => {
+                      setLiveStreamOn(false);
+                      await saveStream({
+                        is_live: false,
+                        youtube_url: liveStreamUrl.trim(),
+                        title: liveStreamTitle.trim(),
+                        ch_match_id: liveStreamMatchId,
+                        channel_url: liveStreamChannel.trim(),
+                      });
+                      setLiveStreamMsg('✓ Stream ended — banner removed.');
+                      setTimeout(() => setLiveStreamMsg(null), 3000);
+                    }}
+                  >
+                    End stream
+                  </Button>
+                )}
+              </div>
+              {liveStreamMsg && (
+                <p className={`text-xs font-semibold ${liveStreamMsg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>
+                  {liveStreamMsg}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Sponsor Management (Admin Only) */}
         {isAdmin && (

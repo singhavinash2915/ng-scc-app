@@ -3,7 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Radio } from 'lucide-react';
 import { useMatches } from '../hooks/useMatches';
 import { useLiveScore } from '../hooks/useLiveScore';
+import { useLiveStream } from '../hooks/useLiveStream';
 import { LiveScorecard } from '../components/LiveScorecard';
+import { LiveStreamPlayer } from '../components/LiveStreamPlayer';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 import { APP_URL, CLUB_NAME, GET_APP_CTA, INSTAGRAM } from '../data/appMeta';
 
@@ -30,6 +32,12 @@ export function LiveMatch() {
   const { data, loading, error, countdown, refetch } = useLiveScore(chMatchId);
   const isOver = !!data?.result;
 
+  // Live YouTube stream — show it here when it's for THIS match (or when the
+  // admin hasn't paired it with a specific CricHeroes id).
+  const { stream, videoId: streamVideoId, isLive: streamIsLive } = useLiveStream();
+  const showStream = streamIsLive
+    && (!stream.ch_match_id || String(stream.ch_match_id) === String(chMatchId));
+
   return (
     <div className="dark min-h-screen bg-[#070b14] text-gray-100">
       <div
@@ -53,6 +61,20 @@ export function LiveMatch() {
               {isOver ? 'FULL TIME' : 'LIVE'}
             </span>
           </Link>
+
+          {/* Live video stream — shown above the scorecard when we're streaming
+              this match (paired by CricHeroes id, or a stream with no pairing). */}
+          {showStream && streamVideoId && (
+            <div className="mb-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1.5 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">
+                  <Radio className="w-3 h-3 animate-pulse" /> Live stream
+                </span>
+                {stream.title && <span className="text-xs font-bold text-gray-300 truncate">{stream.title}</span>}
+              </div>
+              <LiveStreamPlayer videoId={streamVideoId} title={stream.title} />
+            </div>
+          )}
 
           {/* Live scorecard */}
           {chMatchId ? (
