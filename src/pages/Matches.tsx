@@ -36,6 +36,8 @@ import { Badge } from '../components/ui/Badge';
 import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
+import { useMatchVideos } from '../hooks/useMatchVideos';
+import { MatchVideos } from '../components/MatchVideos';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
 import { PollSummaryBadge } from '../components/PollSummaryBadge';
@@ -208,6 +210,7 @@ export function Matches() {
   const { uploadPhoto, deletePhoto, getPhotosByMatch } = useMatchPhotos();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
+  const matchVideos = useMatchVideos();
 
   // My member identity (for reactions + comments)
   const myMemberId = useMemo(() => {
@@ -1026,6 +1029,16 @@ export function Matches() {
                           {match.result === 'upcoming' ? 'Watch Live on CricHeroes' : 'Scorecard on CricHeroes'}
                         </a>
                       </div>
+                    )}
+
+                    {/* Replay + highlight clips (played matches) */}
+                    {match.result !== 'upcoming' && (
+                      <MatchVideos
+                        matchId={match.id}
+                        isAdmin={isAdmin}
+                        members={members}
+                        api={matchVideos}
+                      />
                     )}
 
                     {/* Predict quick-link for upcoming matches */}

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Trophy, Crown, Star, ChevronLeft, Camera, Calendar as CalIcon,
   Cake, Award, TrendingUp, Zap, Sparkles, Lock,
-  CheckCircle2, Target, Wallet, CreditCard, ArrowLeftRight,
+  CheckCircle2, Target, Wallet, CreditCard, ArrowLeftRight, Film, Play,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
@@ -15,6 +15,7 @@ import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useFormGuide, type FormResult } from '../hooks/useFormGuide';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useAchievements, type Achievement } from '../hooks/useAchievements';
+import { useMatchVideos, videoThumb, videoWatchUrl } from '../hooks/useMatchVideos';
 import { useMatchMemories } from '../hooks/useMatchMemories';
 import { usePlayerScorecards } from '../hooks/usePlayerScorecards';
 import { useTransactions } from '../hooks/useTransactions';
@@ -168,6 +169,9 @@ export function MemberProfile() {
   }, [matches, id]);
   const memories = useMatchMemories(matches, id);
   const achievements = useAchievements(memberStats, moms, matchesPlayed.length);
+  // Highlight clips tagged to this member
+  const { forMember } = useMatchVideos();
+  const myClips = useMemo(() => (id ? forMember(id) : []), [forMember, id]);
 
   // Per-match knocks & spells for the Top 3 sections
   const { topKnocks, topSpells } = usePlayerScorecards(member?.name);
@@ -503,6 +507,38 @@ export function MemberProfile() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                   {achievements.filter(a => a.unlocked).slice(0, 4).map(a => (
                     <AchievementCard key={a.id} a={a} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* My highlight clips */}
+            {myClips.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 flex items-center gap-1.5">
+                  <Film className="w-3.5 h-3.5 text-violet-400" />
+                  My highlights
+                </h3>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {myClips.map(c => (
+                    <a
+                      key={c.id}
+                      href={videoWatchUrl(c)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative flex-shrink-0 w-36 rounded-lg overflow-hidden bg-gray-900"
+                    >
+                      <img src={videoThumb(c.video_id)} alt="" loading="lazy"
+                        className="w-full h-[80px] object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                          <Play className="w-4 h-4 text-gray-900 ml-0.5" fill="currentColor" />
+                        </span>
+                      </span>
+                      <span className="block px-1.5 py-1 text-[10px] font-semibold text-gray-200 bg-gray-900 truncate">
+                        {c.title || 'Highlight'}
+                      </span>
+                    </a>
                   ))}
                 </div>
               </div>
