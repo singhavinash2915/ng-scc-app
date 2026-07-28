@@ -1,8 +1,11 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Radio, Youtube, Tv } from 'lucide-react';
 import { useLiveStream } from '../hooks/useLiveStream';
+import { useMembers } from '../hooks/useMembers';
 import { LiveStreamPlayer } from '../components/LiveStreamPlayer';
 import { DemoScorecard } from '../components/DemoScorecard';
+import { LiveAddons } from '../components/LiveAddons';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 
 /**
@@ -14,6 +17,11 @@ import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
  */
 export function Watch() {
   const { stream, videoId, isLive, loading } = useLiveStream();
+  const { members } = useMembers();
+  const myName = useMemo(() => {
+    const id = localStorage.getItem('scc-my-profile-id');
+    return members.find(m => m.id === id)?.name;
+  }, [members]);
 
   return (
     <div className="min-h-screen bg-[#070b14] text-gray-100">
@@ -49,6 +57,11 @@ export function Watch() {
                 {stream.title && <span className="text-sm font-bold text-white truncate">{stream.title}</span>}
               </div>
               <LiveStreamPlayer videoId={videoId} title={stream.title} />
+
+              {/* Watching now · Clip that! · live chat */}
+              <div className="mt-3">
+                <LiveAddons videoId={videoId} name={myName} />
+              </div>
 
               {/* No CricHeroes match paired → show a demo scorecard so members
                   (and we, while testing) can see the full video + score layout. */}

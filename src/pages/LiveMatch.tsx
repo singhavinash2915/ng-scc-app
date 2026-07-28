@@ -6,6 +6,7 @@ import { useLiveScore } from '../hooks/useLiveScore';
 import { useLiveStream } from '../hooks/useLiveStream';
 import { LiveScorecard } from '../components/LiveScorecard';
 import { LiveStreamPlayer } from '../components/LiveStreamPlayer';
+import { LiveAddons } from '../components/LiveAddons';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 import { APP_URL, CLUB_NAME, GET_APP_CTA, INSTAGRAM } from '../data/appMeta';
 
@@ -73,6 +74,9 @@ export function LiveMatch() {
                 {stream.title && <span className="text-xs font-bold text-gray-300 truncate">{stream.title}</span>}
               </div>
               <LiveStreamPlayer videoId={streamVideoId} title={stream.title} />
+              <div className="mt-3">
+                <LiveAddons videoId={streamVideoId} matchId={match?.id ?? null} />
+              </div>
             </div>
           )}
 
