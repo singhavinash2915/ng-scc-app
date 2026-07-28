@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Flame, Rocket, Gamepad2 } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Rocket } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -77,15 +77,10 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/members', icon: Users, label: 'Members' },
               { to: '/matches', icon: Calendar, label: 'Matches' },
               { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
-              { to: '/fantasy', icon: Gamepad2, label: 'Fantasy Draft' },
               { to: '/awards', icon: Award, label: 'Season Awards' },
-              { to: '/season', icon: Sparkles, label: 'Season Finale' },
               { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
               { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
-              { to: '/rankings', icon: Trophy, label: 'SCC Rankings' },
-              { to: '/pressure', icon: Flame, label: 'Pressure Index' },
-              // Season Finale hidden from nav until Awards Night work is finished (still reachable via direct URL)
-              { to: '/records', icon: Award, label: 'Hall of Fame' },
+              { to: '/honours', icon: Trophy, label: 'Honours' },
               { to: '/predictions', icon: Sparkles, label: 'Predictions' },
               { to: '/finance', icon: Wallet, label: 'Finance' },
               { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },

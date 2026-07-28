@@ -66,7 +66,7 @@ function RecordCard({ icon, label, value, subtitle, gradient, border }: RecordCa
   );
 }
 
-export function Records() {
+export function Records({ embedded = false }: { embedded?: boolean } = {}) {
   const { matches } = useMatches();
   const { members } = useMembers();
   const { stats } = useCricketStats('2025-26');
@@ -196,7 +196,7 @@ export function Records() {
 
   return (
     <div>
-      <Header title="Club Records" subtitle="Hall of fame · Season 2025–26" />
+      {!embedded && <Header title="Club Records" subtitle="Hall of fame · Season 2025–26" />}
 
       <div className="p-4 lg:p-8 space-y-6">
 

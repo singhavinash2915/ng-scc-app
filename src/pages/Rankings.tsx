@@ -25,7 +25,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode; color: string }[] =
   { id: 'allrounder', label: 'All-Rounder', icon: <Sparkles className="w-3.5 h-3.5" />,   color: 'from-amber-500 to-orange-600' },
 ];
 
-export function Rankings() {
+export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
   const { matches, loading: matchesLoading } = useMatches();
   const { members, loading: membersLoading } = useMembers();
   const { scorecards, loading: scLoading } = useAllScorecards();
@@ -51,7 +51,7 @@ export function Rankings() {
 
   return (
     <div>
-      <Header title="SCC Rankings" subtitle={`ICC-style player ratings · ${modeLabel}`} />
+      {!embedded && <Header title="SCC Rankings" subtitle={`ICC-style player ratings · ${modeLabel}`} />}
 
       <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-4">
         {/* ── Premium hero banner ────────────────────────────────────────── */}

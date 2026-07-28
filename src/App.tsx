@@ -1,10 +1,11 @@
 import { useEffect, useRef, lazy, Suspense } from 'react';
-import { BrowserRouter, MemoryRouter, Routes, Route, Outlet, useNavigate } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter, Routes, Route, Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/layout/Layout';
+import { FEATURES } from './config/features';
 
 // Critical pages — loaded immediately (small, no heavy deps)
 import { MatchPoll } from './pages/MatchPoll';
@@ -19,10 +20,10 @@ const Matches      = lazy(() => import('./pages/Matches').then(m => ({ default: 
 const Calendar     = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
 const Tournaments  = lazy(() => import('./pages/Tournaments').then(m => ({ default: m.Tournaments })));
 const SeasonLeague = lazy(() => import('./pages/SeasonLeague').then(m => ({ default: m.SeasonLeague })));
-const PressureIndex = lazy(() => import('./pages/PressureIndex').then(m => ({ default: m.PressureIndex })));
 const SeasonAwardsVote = lazy(() => import('./pages/SeasonAwardsVote').then(m => ({ default: m.SeasonAwardsVote })));
 const SeasonAwards = lazy(() => import('./pages/SeasonAwards').then(m => ({ default: m.SeasonAwards })));
 const SeasonKickoff = lazy(() => import('./pages/SeasonKickoff').then(m => ({ default: m.SeasonKickoff })));
+const Honours = lazy(() => import('./pages/Honours').then(m => ({ default: m.Honours })));
 const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
 const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
 const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
@@ -36,7 +37,6 @@ const MatchDayTools= lazy(() => import('./pages/MatchDayTools').then(m => ({ def
 const SeasonFund   = lazy(() => import('./pages/SeasonFund').then(m => ({ default: m.SeasonFund })));
 const AIInsights   = lazy(() => import('./pages/AIInsights').then(m => ({ default: m.AIInsights })));
 const Leaderboard  = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
-const Records      = lazy(() => import('./pages/Records').then(m => ({ default: m.Records })));
 const Auction      = lazy(() => import('./pages/Auction').then(m => ({ default: m.Auction })));
 const Predictions  = lazy(() => import('./pages/Predictions').then(m => ({ default: m.Predictions })));
 const MemberProfile = lazy(() => import('./pages/MemberProfile').then(m => ({ default: m.MemberProfile })));
@@ -45,7 +45,6 @@ const Compare   = lazy(() => import('./pages/Compare').then(m => ({ default: m.C
 const Bookings  = lazy(() => import('./pages/Bookings').then(m => ({ default: m.Bookings })));
 const WhatsNew  = lazy(() => import('./pages/WhatsNew').then(m => ({ default: m.WhatsNew })));
 const EngagementHub = lazy(() => import('./pages/EngagementHub').then(m => ({ default: m.EngagementHub })));
-const Rankings = lazy(() => import('./pages/Rankings').then(m => ({ default: m.Rankings })));
 const Fantasy = lazy(() => import('./pages/Fantasy').then(m => ({ default: m.Fantasy })));
 const SeasonFinale = lazy(() => import('./pages/SeasonFinale').then(m => ({ default: m.SeasonFinale })));
 const LiveMatch = lazy(() => import('./pages/LiveMatch').then(m => ({ default: m.LiveMatch })));
@@ -113,14 +112,14 @@ const AppRoutes = () => (
         <Route path="/league"        element={<Suspense fallback={<PageLoader />}><SeasonLeague /></Suspense>} />
         <Route path="/awards"        element={<Suspense fallback={<PageLoader />}><SeasonAwards /></Suspense>} />
         <Route path="/kickoff"       element={<Suspense fallback={<PageLoader />}><SeasonKickoff /></Suspense>} />
-        <Route path="/pressure"      element={<Suspense fallback={<PageLoader />}><PressureIndex /></Suspense>} />
+        <Route path="/pressure"      element={<Navigate to="/honours?tab=pressure" replace />} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />
         <Route path="/match-day-tools" element={<Suspense fallback={<PageLoader />}><MatchDayTools /></Suspense>} />
         <Route path="/ground-booking" element={<Suspense fallback={<PageLoader />}><SeasonFund /></Suspense>} />
         <Route path="/ai-insights"   element={<Suspense fallback={<PageLoader />}><AIInsights /></Suspense>} />
         <Route path="/leaderboard"   element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
-        <Route path="/records"       element={<Suspense fallback={<PageLoader />}><Records /></Suspense>} />
+        <Route path="/records"       element={<Navigate to="/honours?tab=records" replace />} />
         <Route path="/auction"       element={<Suspense fallback={<PageLoader />}><Auction /></Suspense>} />
         <Route path="/predictions"   element={<Suspense fallback={<PageLoader />}><Predictions /></Suspense>} />
         <Route path="/profile/:id"   element={<Suspense fallback={<PageLoader />}><MemberProfile /></Suspense>} />
@@ -135,9 +134,10 @@ const AppRoutes = () => (
         <Route path="/about"         element={<Suspense fallback={<PageLoader />}><About /></Suspense>} />
         <Route path="/whats-new"     element={<Suspense fallback={<PageLoader />}><WhatsNew /></Suspense>} />
         <Route path="/hub"           element={<Suspense fallback={<PageLoader />}><EngagementHub /></Suspense>} />
-        <Route path="/rankings"      element={<Suspense fallback={<PageLoader />}><Rankings /></Suspense>} />
-        <Route path="/fantasy"       element={<Suspense fallback={<PageLoader />}><Fantasy /></Suspense>} />
-        <Route path="/season"        element={<Suspense fallback={<PageLoader />}><SeasonFinale /></Suspense>} />
+        <Route path="/honours"       element={<Suspense fallback={<PageLoader />}><Honours /></Suspense>} />
+        <Route path="/rankings"      element={<Navigate to="/honours" replace />} />
+        <Route path="/fantasy"       element={FEATURES.fantasy ? <Suspense fallback={<PageLoader />}><Fantasy /></Suspense> : <Navigate to="/" replace />} />
+        <Route path="/season"        element={FEATURES.seasonFinale ? <Suspense fallback={<PageLoader />}><SeasonFinale /></Suspense> : <Navigate to="/awards" replace />} />
         <Route path="/scout"         element={<Suspense fallback={<PageLoader />}><Scout /></Suspense>} />
       </Route>
     </Routes>

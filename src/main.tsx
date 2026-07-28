@@ -28,7 +28,31 @@ async function init() {
     }
 
     const { registerSW } = await import('virtual:pwa-register');
-    registerSW({ immediate: true });
+    // Silent auto-update. Members should never have to "refresh twice" to see
+    // something we just shipped — critical for the LIVE banner reaching phones
+    // mid-match. We poll for a new build and reload as soon as one is ready.
+    const UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    const updateSW = registerSW({
+      immediate: true,
+      onRegisteredSW(_url, registration) {
+        if (!registration) return;
+        const check = () => {
+          // Don't fight the network while offline or while the tab is hidden.
+          if (navigator.onLine && document.visibilityState === 'visible') {
+            registration.update().catch(() => { /* best-effort */ });
+          }
+        };
+        setInterval(check, UPDATE_INTERVAL);
+        // Also check the moment someone returns to the tab.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') check();
+        });
+      },
+      onNeedRefresh() {
+        // A new build is waiting — activate and reload straight away.
+        updateSW(true).catch(() => { /* best-effort */ });
+      },
+    });
   }
 
   // Native-only: status bar + Android back button

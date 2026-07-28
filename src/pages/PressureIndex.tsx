@@ -18,7 +18,7 @@ function Avatar({ member, size = 40 }: { member: Member; size?: number }) {
   );
 }
 
-export function PressureIndex() {
+export function PressureIndex({ embedded = false }: { embedded?: boolean } = {}) {
   const { matches } = useMatches();
   const { members } = useMembers();
   const { scorecards } = useAllScorecards();
@@ -46,7 +46,7 @@ export function PressureIndex() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Pressure Index" subtitle="Who delivers when it matters most" />
+      {!embedded && <Header title="Pressure Index" subtitle="Who delivers when it matters most" />}
       <div className="p-4 lg:p-6 space-y-4 max-w-2xl mx-auto">
 
         {/* Hero */}
