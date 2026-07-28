@@ -24,9 +24,11 @@ import {
   QrCode,
   Camera,
   Radio,
+  Bell,
 } from 'lucide-react';
 import { useGroundSettings } from '../hooks/useGroundSettings';
 import { useLiveStream, youtubeVideoId } from '../hooks/useLiveStream';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useTeamGallery } from '../hooks/useTeamGallery';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
@@ -56,6 +58,12 @@ export function Settings() {
   const { tournaments } = useTournaments();
 
   const { sponsors, saveSponsor, uploadLogo, removeLogo, removeSponsor } = useSponsor();
+
+  // ── Push notifications ──────────────────────────────────────────────────
+  const push = usePushNotifications();
+  const [pushTitle, setPushTitle] = useState('');
+  const [pushBody, setPushBody] = useState('');
+  const [pushMsg, setPushMsg] = useState<string | null>(null);
 
   // ── Live stream (YouTube) admin controls ────────────────────────────────
   const { stream, saveStream, saving: streamSaving } = useLiveStream();
@@ -835,6 +843,80 @@ export function Settings() {
                 spreadsheet-compatible for easy viewing in Excel or Google Sheets.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Notifications — everyone */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Bell className={`w-5 h-5 ${push.status === 'granted' ? 'text-primary-500' : 'text-gray-400'}`} />
+              <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {push.status === 'granted' ? (
+              <>
+                <p className="text-sm text-green-600 dark:text-green-400 font-semibold">
+                  ✓ You'll get alerts when we go live, and match reminders.
+                </p>
+                <Button variant="secondary" onClick={() => push.unsubscribe()} disabled={push.busy}>
+                  Turn off notifications
+                </Button>
+              </>
+            ) : push.status === 'needs-install' ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                📲 On iPhone, notifications need the app installed: tap <b>Share</b> → <b>Add to Home Screen</b>,
+                open it from the icon, then come back here.
+              </p>
+            ) : push.status === 'denied' ? (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                ⚠️ Notifications are blocked in your browser settings. Allow them for this site, then reload.
+              </p>
+            ) : push.status === 'unsupported' ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                This browser doesn't support notifications.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Get a ping when we go <b>LIVE</b> 🔴, plus match-day reminders. No spam.
+                </p>
+                <Button
+                  onClick={() => push.subscribe({ memberId: localStorage.getItem('scc-my-profile-id') })}
+                  disabled={push.busy}
+                >
+                  <Bell className="w-4 h-4" /> {push.busy ? 'Enabling…' : 'Enable notifications'}
+                </Button>
+              </>
+            )}
+            {push.error && <p className="text-xs text-red-500 font-semibold">{push.error}</p>}
+
+            {/* Admin: broadcast */}
+            {isAdmin && (
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                <p className="text-xs font-bold text-gray-600 dark:text-gray-300">📣 Send to everyone (admin)</p>
+                <Input placeholder="Title — e.g. 🔴 SCC is LIVE!" value={pushTitle} onChange={e => setPushTitle(e.target.value)} />
+                <Input placeholder="Message — e.g. vs Tinsel County, tap to watch" value={pushBody} onChange={e => setPushBody(e.target.value)} />
+                <div className="flex gap-2">
+                  <Button
+                    onClick={async () => {
+                      setPushMsg(null);
+                      const res = await push.sendToAll({ title: pushTitle, body: pushBody, url: '/watch' });
+                      setPushMsg(res.success ? `✓ Sent to ${res.result?.sent ?? 0} devices` : `Failed: ${res.error}`);
+                      setTimeout(() => setPushMsg(null), 4000);
+                    }}
+                    disabled={!pushTitle.trim()}
+                    className="flex-1"
+                  >
+                    Send notification
+                  </Button>
+                </div>
+                {pushMsg && (
+                  <p className={`text-xs font-semibold ${pushMsg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>{pushMsg}</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

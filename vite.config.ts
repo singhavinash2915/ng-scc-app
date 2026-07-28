@@ -49,6 +49,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff2}'],
+        // Our own push / notificationclick handlers, layered onto the generated SW
+        importScripts: ['/push-sw.js'],
         // Force new SW to take over immediately — no more "close all tabs" dance
         skipWaiting: true,
         clientsClaim: true,
