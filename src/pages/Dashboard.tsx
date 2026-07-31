@@ -27,6 +27,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useSeasonLeague } from '../hooks/useSeasonLeague';
 import { useLiveStream } from '../hooks/useLiveStream';
+import { FEATURES } from '../config/features';
 import { useRequests } from '../hooks/useRequests';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
@@ -910,6 +911,21 @@ export function Dashboard() {
                   Season 2026-27 kicks off in {daysToKickoff} days 🚀
                 </p>
                 <p className="text-white/90 text-xs font-medium">Predictions, fantasy draft, goals & market values — get season-ready</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
+        )}
+
+        {/* ── SPL AUCTION banner — registration drive ─────────────────── */}
+        {FEATURES.spl && (
+          <Link to="/spl" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            style={{ background: 'linear-gradient(110deg,#4c1d95,#7c3aed 55%,#db2777)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl">🔨</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-base leading-tight truncate">Sangria Premier League — register now! 🔥</p>
+                <p className="text-white/90 text-xs font-medium">Two squads · one auction · a match every month. Are you in?</p>
               </div>
               <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
             </div>

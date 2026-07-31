@@ -23,6 +23,7 @@ import {
   BookOpen,
   ExternalLink,
   Rocket,
+  Gavel,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -36,6 +37,7 @@ const publicNavItems = [
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
   { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
+  { to: '/spl', icon: Gavel, label: 'SPL Auction' },
   { to: '/awards', icon: Award, label: 'Season Awards' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },

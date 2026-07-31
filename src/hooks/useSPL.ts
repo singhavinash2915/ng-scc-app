@@ -1,0 +1,149 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { supabase } from '../lib/supabase';
+
+// ─── Sangria Premier League: registration + captain elections ──────────────────
+
+export type SplStatus = 'in' | 'maybe' | 'out';
+export type SplRole = 'batter' | 'bowler' | 'allrounder' | 'keeper';
+
+export interface SplRegistration {
+  id: string;
+  season: string;
+  member_id: string;
+  status: SplStatus;
+  role: SplRole | null;
+  base_price: number;
+  pitch: string | null;
+  can_commit: boolean;
+}
+
+export interface SplVote {
+  id: string;
+  season: string;
+  voter_id: string;
+  captain_id: string | null;
+  vice_id: string | null;
+}
+
+export const ROLE_LABELS: Record<SplRole, string> = {
+  batter: '🏏 Batter',
+  bowler: '🎯 Bowler',
+  allrounder: '⚡ All-rounder',
+  keeper: '🧤 Keeper',
+};
+
+/** Two XIs need this many committed players before an auction makes sense. */
+export const SQUAD_TARGET = 22;
+
+const isMissingTable = (e: { code?: string; message: string }) =>
+  e.code === '42P01' || e.code === 'PGRST205' || /does not exist|could not find the table/i.test(e.message);
+
+export function useSPL(season: string) {
+  const [registrations, setRegistrations] = useState<SplRegistration[]>([]);
+  const [votes, setVotes] = useState<SplVote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tableMissing, setTableMissing] = useState(false);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    const [regRes, voteRes] = await Promise.all([
+      supabase.from('spl_registrations').select('*').eq('season', season),
+      supabase.from('spl_captain_votes').select('*').eq('season', season),
+    ]);
+    if (regRes.error) {
+      if (isMissingTable(regRes.error)) setTableMissing(true);
+      setRegistrations([]);
+    } else {
+      setTableMissing(false);
+      setRegistrations((regRes.data as SplRegistration[]) || []);
+    }
+    setVotes(voteRes.error ? [] : ((voteRes.data as SplVote[]) || []));
+    setLoading(false);
+  }, [season]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // ── Registration ────────────────────────────────────────────────────────
+  const register = useCallback(async (input: {
+    memberId: string;
+    status: SplStatus;
+    role: SplRole | null;
+    basePrice: number;
+    pitch: string;
+    canCommit: boolean;
+  }) => {
+    const { error } = await supabase.from('spl_registrations').upsert({
+      season,
+      member_id: input.memberId,
+      status: input.status,
+      role: input.role,
+      base_price: input.basePrice,
+      pitch: input.pitch.trim() || null,
+      can_commit: input.canCommit,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'season,member_id' });
+    if (error) return { success: false, error: error.message };
+    await fetchAll();
+    return { success: true };
+  }, [season, fetchAll]);
+
+  const myRegistration = useCallback(
+    (memberId: string | null) => (memberId ? registrations.find(r => r.member_id === memberId) ?? null : null),
+    [registrations],
+  );
+
+  // ── Captain election ────────────────────────────────────────────────────
+  const castVote = useCallback(async (voterId: string, captainId: string | null, viceId: string | null) => {
+    const { error } = await supabase.from('spl_captain_votes').upsert({
+      season, voter_id: voterId, captain_id: captainId, vice_id: viceId,
+    }, { onConflict: 'season,voter_id' });
+    if (error) return { success: false, error: error.message };
+    await fetchAll();
+    return { success: true };
+  }, [season, fetchAll]);
+
+  const myVote = useCallback(
+    (memberId: string | null) => (memberId ? votes.find(v => v.voter_id === memberId) ?? null : null),
+    [votes],
+  );
+
+  // ── Derived ─────────────────────────────────────────────────────────────
+  const going = useMemo(() => registrations.filter(r => r.status === 'in'), [registrations]);
+  const maybe = useMemo(() => registrations.filter(r => r.status === 'maybe'), [registrations]);
+
+  const roleCounts = useMemo(() => {
+    const c: Record<string, number> = { batter: 0, bowler: 0, allrounder: 0, keeper: 0 };
+    going.forEach(r => { if (r.role) c[r.role] = (c[r.role] || 0) + 1; });
+    return c;
+  }, [going]);
+
+  /** Tally of captain / vice votes, most-voted first. */
+  const tally = useMemo(() => {
+    const count = (key: 'captain_id' | 'vice_id') => {
+      const m = new Map<string, number>();
+      votes.forEach(v => { const id = v[key]; if (id) m.set(id, (m.get(id) || 0) + 1); });
+      return [...m.entries()]
+        .map(([id, n]) => ({ id, n }))
+        .sort((a, b) => b.n - a.n || a.id.localeCompare(b.id));
+    };
+    return { captains: count('captain_id'), vices: count('vice_id'), ballots: votes.length };
+  }, [votes]);
+
+  /**
+   * Provisional leadership: the two most-voted become the captains of the two
+   * teams; the two most-voted vice picks (who aren't already captains) are
+   * their deputies.
+   */
+  const leadership = useMemo(() => {
+    const captains = tally.captains.slice(0, 2).map(c => c.id);
+    const vices = tally.vices.filter(v => !captains.includes(v.id)).slice(0, 2).map(v => v.id);
+    return { captains, vices };
+  }, [tally]);
+
+  return {
+    registrations, votes, loading, tableMissing,
+    register, myRegistration, castVote, myVote,
+    going, maybe, roleCounts, tally, leadership,
+    refetch: fetchAll,
+  };
+}

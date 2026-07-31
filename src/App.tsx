@@ -24,6 +24,7 @@ const SeasonAwardsVote = lazy(() => import('./pages/SeasonAwardsVote').then(m =>
 const SeasonAwards = lazy(() => import('./pages/SeasonAwards').then(m => ({ default: m.SeasonAwards })));
 const SeasonKickoff = lazy(() => import('./pages/SeasonKickoff').then(m => ({ default: m.SeasonKickoff })));
 const Honours = lazy(() => import('./pages/Honours').then(m => ({ default: m.Honours })));
+const SPL = lazy(() => import('./pages/SPL').then(m => ({ default: m.SPL })));
 const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
 const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
 const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
@@ -112,6 +113,7 @@ const AppRoutes = () => (
         <Route path="/league"        element={<Suspense fallback={<PageLoader />}><SeasonLeague /></Suspense>} />
         <Route path="/awards"        element={<Suspense fallback={<PageLoader />}><SeasonAwards /></Suspense>} />
         <Route path="/kickoff"       element={<Suspense fallback={<PageLoader />}><SeasonKickoff /></Suspense>} />
+        <Route path="/spl"           element={FEATURES.spl ? <Suspense fallback={<PageLoader />}><SPL /></Suspense> : <Navigate to="/" replace />} />
         <Route path="/pressure"      element={<Navigate to="/honours?tab=pressure" replace />} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />

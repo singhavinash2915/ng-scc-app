@@ -17,6 +17,8 @@ export const FEATURES = {
   seasonKickoff: true,
   /** Season Awards champions showcase. */
   seasonAwards: true,
+  /** Sangria Premier League — auction-based internal rivalry league. */
+  spl: true,
 
   // ── Core cricket ─────────────────────────────────────────────────────────
   honours: true,        // combined Rankings + Pressure Index + Hall of Fame
