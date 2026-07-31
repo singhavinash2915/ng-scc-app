@@ -1,16 +1,17 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Sangria Premier League (SPL) — registration + captain elections
+-- SCC League — registration + captain elections
 -- Run once in Supabase Dashboard → SQL Editor.
 --
--- Flow: members register their interest → the squad votes for captains and
--- vice-captains → the top vote-getters lead the two teams at the auction.
+-- The internal two-team rivalry: members confirm they're in → the squad votes
+-- for captains and vice-captains → an auction splits everyone into two teams
+-- → one match a month.
 -- ─────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE IF NOT EXISTS spl_registrations (
+CREATE TABLE IF NOT EXISTS scc_league_registrations (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   season        TEXT NOT NULL,                       -- '2026-27'
   member_id     UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-  status        TEXT NOT NULL DEFAULT 'in',          -- 'in' | 'maybe' | 'out'
+  status        TEXT NOT NULL DEFAULT 'in',          -- 'in' | 'out'  (no maybes!)
   role          TEXT,                                -- 'batter'|'bowler'|'allrounder'|'keeper'
   base_price    INT DEFAULT 100,                     -- self-declared base price
   pitch         TEXT,                                -- one-line sell, read out at the auction
@@ -20,13 +21,13 @@ CREATE TABLE IF NOT EXISTS spl_registrations (
   UNIQUE(season, member_id)
 );
 
-ALTER TABLE spl_registrations ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "spl_reg_select" ON spl_registrations FOR SELECT USING (true);
-CREATE POLICY "spl_reg_all"    ON spl_registrations FOR ALL    USING (true);
+ALTER TABLE scc_league_registrations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "scc_league_reg_select" ON scc_league_registrations FOR SELECT USING (true);
+CREATE POLICY "scc_league_reg_all"    ON scc_league_registrations FOR ALL    USING (true);
 
 -- One ballot per member per season: a captain pick and a vice-captain pick.
 -- Top 2 captain vote-getters lead the two teams; top 2 vice picks are their #2s.
-CREATE TABLE IF NOT EXISTS spl_captain_votes (
+CREATE TABLE IF NOT EXISTS scc_league_captain_votes (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   season       TEXT NOT NULL,
   voter_id     UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
@@ -36,6 +37,6 @@ CREATE TABLE IF NOT EXISTS spl_captain_votes (
   UNIQUE(season, voter_id)
 );
 
-ALTER TABLE spl_captain_votes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "spl_votes_select" ON spl_captain_votes FOR SELECT USING (true);
-CREATE POLICY "spl_votes_all"    ON spl_captain_votes FOR ALL    USING (true);
+ALTER TABLE scc_league_captain_votes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "scc_league_votes_select" ON scc_league_captain_votes FOR SELECT USING (true);
+CREATE POLICY "scc_league_votes_all"    ON scc_league_captain_votes FOR ALL    USING (true);

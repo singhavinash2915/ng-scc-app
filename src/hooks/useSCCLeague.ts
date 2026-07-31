@@ -1,23 +1,23 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 
-// ─── Sangria Premier League: registration + captain elections ──────────────────
+// ─── SCC League: registration + captain elections ──────────────────────────────
 
-export type SplStatus = 'in' | 'maybe' | 'out';
-export type SplRole = 'batter' | 'bowler' | 'allrounder' | 'keeper';
+export type LeagueStatus = 'in' | 'out';   // confirmed players only — no maybes
+export type LeagueRole = 'batter' | 'bowler' | 'allrounder' | 'keeper';
 
-export interface SplRegistration {
+export interface LeagueRegistration {
   id: string;
   season: string;
   member_id: string;
-  status: SplStatus;
-  role: SplRole | null;
+  status: LeagueStatus;
+  role: LeagueRole | null;
   base_price: number;
   pitch: string | null;
   can_commit: boolean;
 }
 
-export interface SplVote {
+export interface LeagueVote {
   id: string;
   season: string;
   voter_id: string;
@@ -25,7 +25,7 @@ export interface SplVote {
   vice_id: string | null;
 }
 
-export const ROLE_LABELS: Record<SplRole, string> = {
+export const ROLE_LABELS: Record<LeagueRole, string> = {
   batter: '🏏 Batter',
   bowler: '🎯 Bowler',
   allrounder: '⚡ All-rounder',
@@ -38,26 +38,26 @@ export const SQUAD_TARGET = 22;
 const isMissingTable = (e: { code?: string; message: string }) =>
   e.code === '42P01' || e.code === 'PGRST205' || /does not exist|could not find the table/i.test(e.message);
 
-export function useSPL(season: string) {
-  const [registrations, setRegistrations] = useState<SplRegistration[]>([]);
-  const [votes, setVotes] = useState<SplVote[]>([]);
+export function useSCCLeague(season: string) {
+  const [registrations, setRegistrations] = useState<LeagueRegistration[]>([]);
+  const [votes, setVotes] = useState<LeagueVote[]>([]);
   const [loading, setLoading] = useState(true);
   const [tableMissing, setTableMissing] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [regRes, voteRes] = await Promise.all([
-      supabase.from('spl_registrations').select('*').eq('season', season),
-      supabase.from('spl_captain_votes').select('*').eq('season', season),
+      supabase.from('scc_league_registrations').select('*').eq('season', season),
+      supabase.from('scc_league_captain_votes').select('*').eq('season', season),
     ]);
     if (regRes.error) {
       if (isMissingTable(regRes.error)) setTableMissing(true);
       setRegistrations([]);
     } else {
       setTableMissing(false);
-      setRegistrations((regRes.data as SplRegistration[]) || []);
+      setRegistrations((regRes.data as LeagueRegistration[]) || []);
     }
-    setVotes(voteRes.error ? [] : ((voteRes.data as SplVote[]) || []));
+    setVotes(voteRes.error ? [] : ((voteRes.data as LeagueVote[]) || []));
     setLoading(false);
   }, [season]);
 
@@ -66,13 +66,13 @@ export function useSPL(season: string) {
   // ── Registration ────────────────────────────────────────────────────────
   const register = useCallback(async (input: {
     memberId: string;
-    status: SplStatus;
-    role: SplRole | null;
+    status: LeagueStatus;
+    role: LeagueRole | null;
     basePrice: number;
     pitch: string;
     canCommit: boolean;
   }) => {
-    const { error } = await supabase.from('spl_registrations').upsert({
+    const { error } = await supabase.from('scc_league_registrations').upsert({
       season,
       member_id: input.memberId,
       status: input.status,
@@ -94,7 +94,7 @@ export function useSPL(season: string) {
 
   // ── Captain election ────────────────────────────────────────────────────
   const castVote = useCallback(async (voterId: string, captainId: string | null, viceId: string | null) => {
-    const { error } = await supabase.from('spl_captain_votes').upsert({
+    const { error } = await supabase.from('scc_league_captain_votes').upsert({
       season, voter_id: voterId, captain_id: captainId, vice_id: viceId,
     }, { onConflict: 'season,voter_id' });
     if (error) return { success: false, error: error.message };
@@ -109,7 +109,6 @@ export function useSPL(season: string) {
 
   // ── Derived ─────────────────────────────────────────────────────────────
   const going = useMemo(() => registrations.filter(r => r.status === 'in'), [registrations]);
-  const maybe = useMemo(() => registrations.filter(r => r.status === 'maybe'), [registrations]);
 
   const roleCounts = useMemo(() => {
     const c: Record<string, number> = { batter: 0, bowler: 0, allrounder: 0, keeper: 0 };
@@ -143,7 +142,7 @@ export function useSPL(season: string) {
   return {
     registrations, votes, loading, tableMissing,
     register, myRegistration, castVote, myVote,
-    going, maybe, roleCounts, tally, leadership,
+    going, roleCounts, tally, leadership,
     refetch: fetchAll,
   };
 }
