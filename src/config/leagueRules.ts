@@ -1,4 +1,4 @@
-import { PURSE_LAKH, PRICE_TIERS, SQUAD_SIZE, SQUAD_TARGET, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
+import { PURSE_LAKH, PRICE_TIERS, SQUAD_SIZE, SQUAD_TARGET, VOTE_UNLOCK_AT, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
 
 // ─── SCC League rulebook ───────────────────────────────────────────────────────
 // One place for every rule, so the app, the auctioneer and the WhatsApp group
@@ -14,10 +14,12 @@ export const CAPTAIN_RULES: RuleSection = {
   title: 'Captain election',
   emoji: '👑',
   rules: [
+    `Voting stays **locked until ${VOTE_UNLOCK_AT} players have confirmed** — the first few to register don't get to pick the captains for everyone else.`,
     'Every registered player gets **one ballot** — pick the **one** player you want captaining a team.',
     'You **can vote for yourself**. Campaigning is encouraged 😏',
     'Only players who registered as **IN** can be voted for.',
     'You can **change your ballot** any time until voting closes.',
+    '**Nobody sees the running count.** Vote for who you actually want leading, not for whoever looks like they are winning 🤐',
     'The **top 2 vote-getters** become the captains of the two teams.',
     'A tie is broken by **SCC Rankings rating**, then by a coin toss.',
     'Captains are **auto-assigned** to their own team — they are not auctioned.',

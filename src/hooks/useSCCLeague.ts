@@ -35,6 +35,11 @@ export const ROLE_LABELS: Record<LeagueRole, string> = {
  *  auction makes sense. 26 = 13 a side. */
 export const SQUAD_TARGET = 26;
 
+/** Captain voting stays locked until this many players have confirmed.
+ *  Opening it earlier lets a handful of early birds stitch up the result
+ *  before most of the squad has even registered. */
+export const VOTE_UNLOCK_AT = 22;
+
 // ─── Auction economics (IPL-flavoured, all values in ₹ LAKH) ──────────────────
 // Big numbers are half the fun — nobody brags about being sold for ₹200.
 export const PURSE_LAKH = 5000;                       // ₹50 Cr per team

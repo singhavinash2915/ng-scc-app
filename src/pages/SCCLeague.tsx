@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Gavel, Crown, Swords, Flame, Check, Sparkles, ScrollText, ChevronDown, Vote } from 'lucide-react';
+import { Gavel, Crown, Swords, Flame, Lock, Check, Sparkles, ScrollText, ChevronDown, Vote } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { MyStatsButton } from '../components/MyStatsButton';
+import { useAuth } from '../context/AuthContext';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
-import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
+import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
   tierForRating, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
 import { SEASON_NEW } from '../config/season2';
@@ -32,6 +33,7 @@ function Avatar({ member, size = 40, ring }: { member?: Member; size?: number; r
 }
 
 export function SCCLeague() {
+  const { isAdmin } = useAuth();
   const { members } = useMembers();
   const { matches } = useMatches();
   const { scorecards } = useAllScorecards();
@@ -112,6 +114,7 @@ export function SCCLeague() {
   const myRated = myRating != null;
 
   const count = league.going.length;
+  const votingOpen = count >= VOTE_UNLOCK_AT && candidates.length >= 2;
   const pct = Math.min(100, (count / SQUAD_TARGET) * 100);
   const remaining = Math.max(0, SQUAD_TARGET - count);
   const inputCls = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-400';
@@ -375,9 +378,11 @@ export function SCCLeague() {
               <Vote className="w-3.5 h-3.5" /> How the voting works
             </p>
             <ol className="space-y-1.5 text-[12px] text-slate-700 dark:text-white/75">
-              <li><b>1.</b> Every registered player gets <b>one ballot</b> — pick the one player you want captaining.</li>
-              <li><b>2.</b> You can <b>vote for yourself</b>, and change your ballot any time until voting closes.</li>
-              <li><b>3.</b> The <b>2 most-voted</b> become the captains of the two teams. Ties broken by SCC rating.</li>
+              <li><b>1.</b> Ballots unlock at <b>{VOTE_UNLOCK_AT} confirmed players</b> — no stitching it up early.</li>
+              <li><b>2.</b> Every registered player gets <b>one ballot</b> — pick the one player you want captaining.</li>
+              <li><b>3.</b> You can <b>vote for yourself</b>, and change your ballot any time until voting closes.</li>
+              <li><b>4.</b> The count stays <b>hidden from everyone</b> until voting closes 🤐</li>
+              <li><b>5.</b> The <b>2 most-voted</b> become the captains of the two teams. Ties broken by SCC rating.</li>
             </ol>
             <p className="text-[11px] text-amber-700/80 dark:text-amber-300/70 mt-2">
               Captains are <b>not auctioned</b> — they're assigned to their own team automatically, and each
@@ -387,10 +392,23 @@ export function SCCLeague() {
 
           {!myId ? (
             <div className="flex justify-center"><MyStatsButton /></div>
-          ) : candidates.length < 2 ? (
-            <p className="text-sm text-slate-500 dark:text-white/60">
-              Voting opens once a few players are in — get your name on the list first! 🏏
-            </p>
+          ) : !votingOpen ? (
+            <div className="rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4">
+              <p className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-1.5">
+                <Lock className="w-4 h-4 text-slate-400" /> Voting opens at {VOTE_UNLOCK_AT} confirmed players
+              </p>
+              <p className="text-xs text-slate-500 dark:text-white/60 mt-1.5">
+                Ballots stay shut until most of the squad is in — otherwise the first few to register
+                decide the captains for everyone else.
+              </p>
+              <div className="mt-3 h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-700"
+                  style={{ width: `${Math.min(100, (count / VOTE_UNLOCK_AT) * 100)}%` }} />
+              </div>
+              <p className="text-[11px] font-bold text-amber-600 mt-1.5">
+                {count} of {VOTE_UNLOCK_AT} · {Math.max(0, VOTE_UNLOCK_AT - count)} more to unlock 🔓
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               <div>
@@ -410,11 +428,26 @@ export function SCCLeague() {
             </div>
           )}
 
-          {/* Live count */}
-          {league.tally.ballots > 0 && (
+          {/* Running count — ADMIN ONLY. If members can watch the numbers move
+              they stop voting for who should captain and start voting to swing
+              the result, which is exactly what we don't want. */}
+          {votingOpen && !isAdmin && league.tally.ballots > 0 && (
+            <div className="mt-5 pt-4 border-t border-slate-100 dark:border-white/10 text-center">
+              <p className="text-3xl">🔒</p>
+              <p className="text-sm font-black text-slate-800 dark:text-white mt-1">
+                {league.tally.ballots} ballot{league.tally.ballots === 1 ? '' : 's'} cast
+              </p>
+              <p className="text-xs text-slate-500 dark:text-white/60 mt-1 max-w-xs mx-auto">
+                Who's leading stays sealed until voting closes — vote for who you actually want,
+                not for who's ahead 😏
+              </p>
+            </div>
+          )}
+
+          {isAdmin && league.tally.ballots > 0 && (
             <div className="mt-5 pt-4 border-t border-slate-100 dark:border-white/10">
-              <p className="text-[10px] font-black uppercase text-slate-400 mb-2.5">
-                Live count · {league.tally.ballots} ballot{league.tally.ballots === 1 ? '' : 's'}
+              <p className="text-[10px] font-black uppercase text-slate-400 mb-2.5 flex items-center gap-1.5">
+                <Lock className="w-3 h-3" /> Admin only · Live count · {league.tally.ballots} ballot{league.tally.ballots === 1 ? '' : 's'}
               </p>
               <p className="text-[11px] font-black mb-1.5 text-amber-500">👑 Captain</p>
               {league.tally.captains.slice(0, 6).map((c, i) => (
