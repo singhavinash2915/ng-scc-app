@@ -1,14 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Gavel, Crown, Shield, Swords, Flame, Check, Sparkles } from 'lucide-react';
+import { Gavel, Crown, Shield, Swords, Flame, Check, Sparkles, ScrollText, ChevronDown, Vote } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { MyStatsButton } from '../components/MyStatsButton';
 import { useMembers } from '../hooks/useMembers';
-import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
+import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, BASE_PRICE_OPTIONS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
+  type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
+import { ALL_RULES } from '../config/leagueRules';
 import { SEASON_NEW } from '../config/season2';
 import type { Member } from '../types';
 
 const PROFILE_KEY = 'scc-my-profile-id';
-const BASE_PRICES = [50, 100, 200, 500];
 
 const ROLE_EMOJI: Record<LeagueRole, string> = {
   batter: '🏏', bowler: '🎯', allrounder: '⚡', keeper: '🧤',
@@ -43,7 +44,7 @@ export function SCCLeague() {
   const mine = league.myRegistration(myId);
   const [status, setStatus] = useState<LeagueStatus>('in');
   const [role, setRole] = useState<LeagueRole>('allrounder');
-  const [basePrice, setBasePrice] = useState(100);
+  const [basePrice, setBasePrice] = useState(BASE_PRICE_OPTIONS[0]);
   const [pitch, setPitch] = useState('');
   const [canCommit, setCanCommit] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,7 +54,7 @@ export function SCCLeague() {
     if (!mine) return;
     setStatus(mine.status);
     setRole((mine.role as LeagueRole) ?? 'allrounder');
-    setBasePrice(mine.base_price ?? 100);
+    setBasePrice(mine.base_price ?? BASE_PRICE_OPTIONS[0]);
     setPitch(mine.pitch ?? '');
     setCanCommit(mine.can_commit);
   }, [mine]);
@@ -129,6 +130,12 @@ export function SCCLeague() {
               Two squads. One auction. A match every month.<br className="hidden sm:block" />
               Register, vote for your captain, then find out what you're <b>really</b> worth 😏
             </p>
+
+            {/* Purse headline — the number that makes it feel big */}
+            <div className="rise-in-2 inline-flex items-center gap-2 mt-3 bg-white/15 border border-white/25 backdrop-blur rounded-full px-4 py-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Purse per team</span>
+              <span className="font-display text-lg font-extrabold" style={{ color: '#fde68a' }}>{formatPrice(PURSE_LAKH)}</span>
+            </div>
 
             {/* Squad ring */}
             <div className="rise-in-3 mt-6 flex items-center justify-center gap-6 flex-wrap">
@@ -253,14 +260,14 @@ export function SCCLeague() {
                       Your base price 💰 <span className="normal-case font-medium">— be bold, captains are watching</span>
                     </p>
                     <div className="grid grid-cols-4 gap-2">
-                      {BASE_PRICES.map(p => (
+                      {BASE_PRICE_OPTIONS.map(p => (
                         <button key={p} onClick={() => setBasePrice(p)}
                           className={`rounded-xl py-3 text-sm font-black transition-all ${
                             basePrice === p
                               ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md scale-105'
                               : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70'
                           }`}>
-                          ₹{p}
+                          {formatPrice(p)}
                         </button>
                       ))}
                     </div>
@@ -310,7 +317,7 @@ export function SCCLeague() {
                     className="relative rounded-2xl p-3 text-white overflow-hidden shadow-md"
                     style={{ background: 'linear-gradient(150deg,#4c1d95,#7c3aed 60%,#a78bfa)' }}>
                     <span className="absolute top-2 right-2 text-[9px] font-black bg-amber-400 text-slate-900 rounded-full px-1.5 py-0.5">
-                      ₹{r.base_price}
+                      {formatPrice(r.base_price)}
                     </span>
                     <Avatar member={m} size={44} ring="rgba(255,255,255,.5)" />
                     <p className="font-black text-sm mt-2 truncate">{m?.name?.split(' ')[0] ?? '?'}</p>
@@ -329,10 +336,25 @@ export function SCCLeague() {
           <p className="text-[11px] font-black uppercase tracking-[2px] text-amber-600 mb-1 flex items-center gap-1.5">
             <Crown className="w-4 h-4" fill="currentColor" /> Captain election
           </p>
-          <p className="text-xs text-slate-500 dark:text-white/60 mb-4">
+          <p className="text-xs text-slate-500 dark:text-white/60 mb-3">
             The squad votes. Top 2 become <b>captains</b> of the two teams; next 2 are their <b>vice-captains</b>.
             They run the bidding on auction night 🔨
           </p>
+
+          {/* How voting works — 3 steps, so nobody has to ask */}
+          <div className="rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 p-3.5 mb-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-300 mb-2 flex items-center gap-1.5">
+              <Vote className="w-3.5 h-3.5" /> How the voting works
+            </p>
+            <ol className="space-y-1.5 text-[12px] text-slate-700 dark:text-white/75">
+              <li><b>1.</b> Every registered player gets <b>one ballot</b> — pick 1 captain + 1 vice-captain.</li>
+              <li><b>2.</b> You can <b>vote for yourself</b>, and change your ballot any time until voting closes.</li>
+              <li><b>3.</b> The <b>2 most-voted</b> become captains; the <b>next 2</b> vice-picks are their deputies.</li>
+            </ol>
+            <p className="text-[11px] text-amber-700/80 dark:text-amber-300/70 mt-2">
+              Captains &amp; vices are <b>not auctioned</b> — they're assigned to their team automatically.
+            </p>
+          </div>
 
           {!myId ? (
             <div className="flex justify-center"><MyStatsButton /></div>
@@ -429,6 +451,54 @@ export function SCCLeague() {
               )}
             </div>
           )}
+        </div>
+
+        {/* ── RULEBOOK ─────────────────────────────────────────────────── */}
+        <div className="glass rounded-3xl p-5 sm:p-6">
+          <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-600 dark:text-white/70 mb-1 flex items-center gap-1.5">
+            <ScrollText className="w-4 h-4" /> The rulebook
+          </p>
+          <p className="text-xs text-slate-500 dark:text-white/60 mb-4">
+            Everything settled up front so auction night is arguments about <i>players</i>, not rules 😄
+          </p>
+
+          {/* Key numbers at a glance */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              { v: formatPrice(PURSE_LAKH), l: 'Purse / team', c: 'from-amber-400 to-orange-500' },
+              { v: String(SQUAD_SIZE), l: 'Players / squad', c: 'from-violet-500 to-purple-600' },
+              { v: String(SQUAD_TARGET), l: 'Needed to start', c: 'from-emerald-500 to-teal-500' },
+            ].map(k => (
+              <div key={k.l} className={`rounded-2xl p-3 text-center text-white bg-gradient-to-br ${k.c} shadow-md`}>
+                <p className="font-display text-lg font-extrabold leading-none">{k.v}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-white/80 mt-1">{k.l}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            {ALL_RULES.map(section => (
+              <details key={section.title} className="group rounded-2xl bg-white/60 dark:bg-white/5 overflow-hidden">
+                <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer list-none">
+                  <span className="text-lg">{section.emoji}</span>
+                  <span className="flex-1 font-bold text-sm text-slate-800 dark:text-white">{section.title}</span>
+                  <span className="text-[10px] font-bold text-slate-400">{section.rules.length} rules</span>
+                  <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180" />
+                </summary>
+                <ol className="px-4 pb-4 space-y-2">
+                  {section.rules.map((rule, i) => (
+                    <li key={i} className="flex gap-2.5 text-[12.5px] leading-relaxed text-slate-600 dark:text-white/70">
+                      <span className="font-black text-violet-500 shrink-0">{i + 1}.</span>
+                      {/* **bold** markers from the rulebook */}
+                      <span dangerouslySetInnerHTML={{
+                        __html: rule.replace(/\*\*(.+?)\*\*/g, '<b class="text-slate-900 dark:text-white">$1</b>'),
+                      }} />
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            ))}
+          </div>
         </div>
 
         <p className="text-center text-slate-400 text-xs pb-6 flex items-center justify-center gap-1.5">

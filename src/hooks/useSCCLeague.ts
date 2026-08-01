@@ -35,6 +35,23 @@ export const ROLE_LABELS: Record<LeagueRole, string> = {
 /** Two XIs need this many committed players before an auction makes sense. */
 export const SQUAD_TARGET = 22;
 
+// ─── Auction economics (IPL-flavoured, all values in ₹ LAKH) ──────────────────
+// Big numbers are half the fun — nobody brags about being sold for ₹200.
+export const PURSE_LAKH = 5000;                       // ₹50 Cr per team
+export const BASE_PRICE_OPTIONS = [20, 50, 100, 200]; // ₹20L · ₹50L · ₹1Cr · ₹2Cr
+export const SQUAD_SIZE = 11;                         // captain + vice + 9 bought
+export const BID_STEP_SMALL = 10;                     // +₹10L while under ₹1 Cr
+export const BID_STEP_BIG = 25;                       // +₹25L at ₹1 Cr and above
+
+/** 20 → "₹20 L" · 100 → "₹1 Cr" · 250 → "₹2.5 Cr" */
+export function formatPrice(lakh: number): string {
+  if (lakh >= 100) {
+    const cr = lakh / 100;
+    return `₹${Number.isInteger(cr) ? cr : cr.toFixed(2).replace(/\.?0+$/, '')} Cr`;
+  }
+  return `₹${lakh} L`;
+}
+
 const isMissingTable = (e: { code?: string; message: string }) =>
   e.code === '42P01' || e.code === 'PGRST205' || /does not exist|could not find the table/i.test(e.message);
 

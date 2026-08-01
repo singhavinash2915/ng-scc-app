@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS scc_league_registrations (
   member_id     UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
   status        TEXT NOT NULL DEFAULT 'in',          -- 'in' | 'out'  (no maybes!)
   role          TEXT,                                -- 'batter'|'bowler'|'allrounder'|'keeper'
-  base_price    INT DEFAULT 100,                     -- self-declared base price
+  base_price    INT DEFAULT 20,                      -- self-declared base price, in ₹ LAKH (20 = ₹20L, 100 = ₹1Cr)
   pitch         TEXT,                                -- one-line sell, read out at the auction
   can_commit    BOOLEAN DEFAULT true,                -- can make ~1 match a month
   created_at    TIMESTAMPTZ DEFAULT now(),
