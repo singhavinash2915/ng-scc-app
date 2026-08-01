@@ -174,7 +174,7 @@ export function SCCLeague() {
                 <p className="text-white/70 text-xs mt-1 max-w-[190px]">
                   {count >= SQUAD_TARGET
                     ? 'Two full XIs locked. Auction time 🔨'
-                    : 'Enough for two full XIs unlocks the auction'}
+                    : `Get to ${SQUAD_TARGET} — 13 a side — and the auction is on`}
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {(Object.keys(ROLE_LABELS) as LeagueRole[]).map(r => (
@@ -440,7 +440,9 @@ export function SCCLeague() {
                         style={{ background: i === 0
                           ? 'linear-gradient(135deg,#1e3a8a,#3b82f6)'
                           : 'linear-gradient(135deg,#7c2d12,#f97316)' }}>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-white/70">Team {i + 1}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-white/70">
+                          Team {i + 1} · name TBD
+                        </p>
                         <div className="flex items-center gap-2 mt-2">
                           <Avatar member={memberById[cid]} size={34} ring="rgba(255,255,255,.6)" />
                           <div className="min-w-0">

@@ -27,6 +27,10 @@ interface Pick {
 interface Config {
   matchDate: string;
   matchVenue: string;
+  /** Squad names are picked once the captains are known, so they're editable
+   *  here. The DB still stores the team as 'dhurandars' / 'bazigars'. */
+  dhurName: string;
+  bazName: string;
   dhurCaptainId: string;
   bazCaptainId: string;
   poolOrder: string[];     // shuffled member IDs
@@ -46,7 +50,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-const TEAM_NAMES: Record<Team, string> = {
+const DEFAULT_TEAM_NAMES: Record<Team, string> = {
   dhurandars: 'Dhurandars',
   bazigars: 'Bazigars',
 };
@@ -80,6 +84,8 @@ export function Auction() {
   const [config, setConfig] = useState<Config>({
     matchDate: new Date().toISOString().split('T')[0],
     matchVenue: 'Four Star Cricket Ground',
+    dhurName: DEFAULT_TEAM_NAMES.dhurandars,
+    bazName: DEFAULT_TEAM_NAMES.bazigars,
     dhurCaptainId: '',
     bazCaptainId: '',
     poolOrder: [],
@@ -125,6 +131,9 @@ export function Auction() {
     members.forEach(x => { m[x.id] = x; });
     return m;
   }, [members]);
+
+  const teamName = (t: Team) =>
+    (t === 'dhurandars' ? config.dhurName : config.bazName)?.trim() || DEFAULT_TEAM_NAMES[t];
 
   const dhurCaptain = config.dhurCaptainId ? memberById[config.dhurCaptainId] : null;
   const bazCaptain = config.bazCaptainId ? memberById[config.bazCaptainId] : null;
@@ -246,7 +255,7 @@ export function Auction() {
         {
           date: config.matchDate,
           venue: config.matchVenue,
-          opponent: 'Sangria Dhurandars vs Sangria Bazigars',
+          opponent: `${teamName('dhurandars')} vs ${teamName('bazigars')}`,
           result: 'upcoming',
           our_score: null,
           opponent_score: null,
@@ -254,7 +263,7 @@ export function Auction() {
           ground_cost: 0,
           other_expenses: 0,
           deduct_from_balance: false,
-          notes: `Internal match · auction-built. Spent: Dhurandars ₹${dhurSpent}, Bazigars ₹${bazSpent}`,
+          notes: `Internal match · auction-built. Spent: ${teamName('dhurandars')} ₹${dhurSpent}, ${teamName('bazigars')} ₹${bazSpent}`,
           man_of_match_id: null,
           match_type: 'internal',
           winning_team: null,
@@ -359,13 +368,32 @@ export function Auction() {
               </div>
             </div>
 
+            {/* Team names — chosen once the captains are known */}
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400">Team Names</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="🦁 Team 1"
+                  value={config.dhurName}
+                  onChange={e => setConfig(c => ({ ...c, dhurName: e.target.value }))}
+                  placeholder={DEFAULT_TEAM_NAMES.dhurandars}
+                />
+                <Input
+                  label="🐅 Team 2"
+                  value={config.bazName}
+                  onChange={e => setConfig(c => ({ ...c, bazName: e.target.value }))}
+                  placeholder={DEFAULT_TEAM_NAMES.bazigars}
+                />
+              </div>
+            </div>
+
             {/* Captains */}
             <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
               <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400">Pick Captains</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 mb-1.5 flex items-center gap-1">
-                    🦁 Dhurandars Captain
+                    🦁 {teamName('dhurandars')} Captain
                   </label>
                   <select
                     value={config.dhurCaptainId}
@@ -380,7 +408,7 @@ export function Auction() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-purple-700 dark:text-purple-300 mb-1.5 flex items-center gap-1">
-                    🐅 Bazigars Captain
+                    🐅 {teamName('bazigars')} Captain
                   </label>
                   <select
                     value={config.bazCaptainId}
@@ -574,7 +602,7 @@ export function Auction() {
                   </p>
                   {currentBidder && (
                     <p className={`text-sm font-bold mt-2 ${TEAM_ACCENT[currentBidder]}`}>
-                      {TEAM_EMOJI[currentBidder]} {TEAM_NAMES[currentBidder]} bid
+                      {TEAM_EMOJI[currentBidder]} {teamName(currentBidder)} bid
                     </p>
                   )}
                 </div>
@@ -613,7 +641,7 @@ export function Auction() {
             <div className="grid grid-cols-2 gap-3">
               <Button onClick={markSold} disabled={!currentBidder} className="!py-3 !bg-emerald-500 hover:!bg-emerald-600">
                 <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                SOLD {currentBidder ? `to ${TEAM_NAMES[currentBidder]}` : ''}
+                SOLD {currentBidder ? `to ${teamName(currentBidder)}` : ''}
               </Button>
               <Button onClick={markUnsold} variant="secondary" className="!py-3">
                 <X className="w-4 h-4 mr-1.5" />
@@ -638,7 +666,7 @@ export function Auction() {
                       <div className="flex items-center justify-between">
                         <span className="text-2xl">{TEAM_EMOJI[team]}</span>
                         <span className={`text-[10px] font-bold uppercase tracking-[1.5px] ${TEAM_ACCENT[team]}`}>
-                          {TEAM_NAMES[team]}
+                          {teamName(team)}
                         </span>
                       </div>
                       {captain && (
@@ -680,7 +708,7 @@ export function Auction() {
                         <span className="font-bold text-gray-700 dark:text-gray-300 flex-1 truncate">{m.name}</span>
                         {p.team ? (
                           <span className={`font-black ${p.team === 'dhurandars' ? 'text-blue-600' : 'text-purple-600'}`}>
-                            ₹{p.price.toLocaleString('en-IN')} → {TEAM_NAMES[p.team]}
+                            ₹{p.price.toLocaleString('en-IN')} → {teamName(p.team)}
                           </span>
                         ) : (
                           <span className="text-gray-400 font-semibold">Unsold</span>
@@ -719,7 +747,7 @@ export function Auction() {
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-black text-white flex items-center gap-2">
                           <span className="text-2xl">{TEAM_EMOJI[team]}</span>
-                          {TEAM_NAMES[team]}
+                          {teamName(team)}
                         </h3>
                         <span className="text-xs text-white/60">{teamPicks.length + 1} players · ₹{spent.toLocaleString('en-IN')}</span>
                       </div>

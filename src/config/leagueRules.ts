@@ -55,6 +55,7 @@ export const SEASON_RULES: RuleSection = {
     'Points: **Win 3 · Tie 1 · Loss 0**. Standings live in the app.',
     'Squads are **locked for the season** — with one mid-season transfer window if the teams look lopsided.',
     'Missing your match? Tell your captain early — repeated no-shows may be traded 😬',
+    '**Team names come later** — once the squad list and the two captains are locked, each captain names their own side 🎨',
     'Winner lifts the **SCC League trophy** at Awards Night 🏆',
   ],
 };

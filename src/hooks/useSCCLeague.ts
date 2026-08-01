@@ -31,13 +31,14 @@ export const ROLE_LABELS: Record<LeagueRole, string> = {
   keeper: '🧤 Keeper',
 };
 
-/** Two XIs need this many committed players before an auction makes sense. */
-export const SQUAD_TARGET = 22;
+/** Two full squads (plus cover for the inevitable drop-outs) before an
+ *  auction makes sense. 26 = 13 a side. */
+export const SQUAD_TARGET = 26;
 
 // ─── Auction economics (IPL-flavoured, all values in ₹ LAKH) ──────────────────
 // Big numbers are half the fun — nobody brags about being sold for ₹200.
 export const PURSE_LAKH = 5000;                       // ₹50 Cr per team
-export const SQUAD_SIZE = 11;                         // captain + 10 bought
+export const SQUAD_SIZE = 13;                         // captain + 12 bought
 export const BID_STEP_SMALL = 10;                     // +₹10L while under ₹1 Cr
 export const BID_STEP_BIG = 25;                       // +₹25L at ₹1 Cr and above
 
