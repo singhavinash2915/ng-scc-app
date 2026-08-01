@@ -1,4 +1,4 @@
-import { PURSE_LAKH, BASE_PRICE_OPTIONS, SQUAD_SIZE, SQUAD_TARGET, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
+import { PURSE_LAKH, PRICE_TIERS, SQUAD_SIZE, SQUAD_TARGET, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
 
 // ─── SCC League rulebook ───────────────────────────────────────────────────────
 // One place for every rule, so the app, the auctioneer and the WhatsApp group
@@ -14,15 +14,14 @@ export const CAPTAIN_RULES: RuleSection = {
   title: 'Captain election',
   emoji: '👑',
   rules: [
-    'Every registered player gets **one ballot** — pick 1 captain and 1 vice-captain.',
+    'Every registered player gets **one ballot** — pick the **one** player you want captaining a team.',
     'You **can vote for yourself**. Campaigning is encouraged 😏',
-    'Captain and vice-captain must be **different people**.',
     'Only players who registered as **IN** can be voted for.',
     'You can **change your ballot** any time until voting closes.',
-    'The **top 2 captain vote-getters** become the captains of the two teams.',
-    'The **next 2 highest vice-captain picks** (excluding the captains) become their deputies.',
+    'The **top 2 vote-getters** become the captains of the two teams.',
     'A tie is broken by **SCC Rankings rating**, then by a coin toss.',
-    'Captains and vice-captains are **auto-assigned** to their team — they are not auctioned.',
+    'Captains are **auto-assigned** to their own team — they are not auctioned.',
+    'Each captain names their own deputy after the auction — that is **their call, not a vote**.',
   ],
 };
 
@@ -31,10 +30,12 @@ export const AUCTION_RULES: RuleSection = {
   emoji: '🔨',
   rules: [
     `Each team gets a purse of **${formatPrice(PURSE_LAKH)}**.`,
-    `Each squad is **${SQUAD_SIZE} players**: captain + vice-captain + **${SQUAD_SIZE - 2} bought at auction**.`,
-    `Captain & vice-captain are **retained** at ${formatPrice(BASE_PRICE_OPTIONS[2])} each, deducted from the purse.`,
+    `Each squad is **${SQUAD_SIZE} players**: the captain + **${SQUAD_SIZE - 1} bought at auction**.`,
+    `The captain is **retained at their own graded price**, deducted from the purse before bidding starts.`,
+    '**Base price is earned, not chosen.** It is graded automatically from your SCC Rankings rating — nobody picks their own slab.',
+    `Grades: ${PRICE_TIERS.map(t => `**${t.emoji} ${t.label} ${formatPrice(t.price)}**`).join(' · ')}.`,
+    'Played too few matches to be rated? You start at **Grade C** — the auction is where you fix that 😄',
     'Everyone else enters the pool in **random order** — nobody knows when their name comes up.',
-    `Your **base price** is the one you picked at registration (${BASE_PRICE_OPTIONS.map(formatPrice).join(' · ')}).`,
     `Bidding rises in **${formatPrice(BID_STEP_SMALL)}** steps below ${formatPrice(100)}, and **${formatPrice(BID_STEP_BIG)}** steps at ${formatPrice(100)} and above.`,
     'Your **one-liner is read out** before bidding opens. Make it count 🗣️',
     'A captain **cannot bid** beyond what leaves enough purse to fill their remaining slots at base price.',
@@ -50,7 +51,7 @@ export const SEASON_RULES: RuleSection = {
   emoji: '⚔️',
   rules: [
     `We need **${SQUAD_TARGET} confirmed players** before the auction can happen.`,
-    '**One match a month**, dates published before the auction so everyone can plan.',
+    '**Two to three league matches every month**, dates published before the auction so everyone can plan.',
     'Points: **Win 3 · Tie 1 · Loss 0**. Standings live in the app.',
     'Squads are **locked for the season** — with one mid-season transfer window if the teams look lopsided.',
     'Missing your match? Tell your captain early — repeated no-shows may be traded 😬',

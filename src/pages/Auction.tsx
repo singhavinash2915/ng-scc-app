@@ -136,15 +136,15 @@ export function Auction() {
   }, [members]);
 
   // ── Default pool: all active EXCEPT captains ─────────────────────────
+  // Members and matches land in separate requests, so this has to wait for BOTH.
+  // Keying only on members.length used to fire while matches were still empty —
+  // every isActive() came back false and the admin was left with an empty pool.
+  const [poolSeeded, setPoolSeeded] = useState(false);
   useEffect(() => {
-    if (poolSelected.length === 0) {
-      const defaults = members
-        .filter(m => isActive(m.id))
-        .map(m => m.id);
-      setPoolSelected(defaults);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [members.length]);
+    if (poolSeeded || members.length === 0 || matches.length === 0) return;
+    setPoolSelected(members.filter(m => isActive(m.id)).map(m => m.id));
+    setPoolSeeded(true);
+  }, [poolSeeded, members, matches.length, isActive]);
 
   // ── Stats helpers ────────────────────────────────────────────────────
   const getStats = (memberId: string) => cricketStats.find(s => s.member_id === memberId);
@@ -260,8 +260,13 @@ export function Auction() {
           winning_team: null,
           polling_enabled: false,
           polling_deadline: null,
-          captain_id: config.dhurCaptainId,
-          vice_captain_id: config.bazCaptainId,
+          // Internal matches carry a captain PER TEAM. Writing these into
+          // captain_id / vice_captain_id instead would leave the Matches page
+          // showing no crowns and calling the Bazigars captain a vice-captain.
+          dhurandars_captain_id: config.dhurCaptainId,
+          bazigars_captain_id: config.bazCaptainId,
+          captain_id: null,
+          vice_captain_id: null,
         },
         playerIds,
         playerTeams,

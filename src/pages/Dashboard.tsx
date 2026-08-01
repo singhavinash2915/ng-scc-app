@@ -925,7 +925,7 @@ export function Dashboard() {
               <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl">🔨</div>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-black text-base leading-tight truncate">SCC League — register for the auction! 🔨</p>
-                <p className="text-white/90 text-xs font-medium">Two squads · one auction · a match every month. Are you in?</p>
+                <p className="text-white/90 text-xs font-medium">Two squads · one auction · 2–3 matches every month. Are you in?</p>
               </div>
               <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
             </div>

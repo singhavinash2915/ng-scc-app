@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Gavel, Crown, Shield, Swords, Flame, Check, Sparkles, ScrollText, ChevronDown, Vote } from 'lucide-react';
+import { Gavel, Crown, Swords, Flame, Check, Sparkles, ScrollText, ChevronDown, Vote } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { MyStatsButton } from '../components/MyStatsButton';
 import { useMembers } from '../hooks/useMembers';
-import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, BASE_PRICE_OPTIONS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
-  type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
+import { useMatches } from '../hooks/useMatches';
+import { useAllScorecards } from '../hooks/useAllScorecards';
+import { useMarketValue } from '../hooks/useMarketValue';
+import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
+  tierForRating, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
 import { SEASON_NEW } from '../config/season2';
 import type { Member } from '../types';
@@ -30,7 +33,17 @@ function Avatar({ member, size = 40, ring }: { member?: Member; size?: number; r
 
 export function SCCLeague() {
   const { members } = useMembers();
+  const { matches } = useMatches();
+  const { scorecards } = useAllScorecards();
   const league = useSCCLeague(SEASON_NEW);
+
+  // Base price is GRADED from the club's own rating — never self-selected,
+  // otherwise every single player would tick "₹2 Cr" and the grade means nothing.
+  const values = useMarketValue(matches, members, scorecards);
+  const ratingById = useMemo(
+    () => Object.fromEntries(values.map(v => [v.member.id, v.rating])) as Record<string, number>,
+    [values],
+  );
 
   const [myId, setMyId] = useState<string | null>(null);
   useEffect(() => { setMyId(localStorage.getItem(PROFILE_KEY)); }, []);
@@ -44,7 +57,6 @@ export function SCCLeague() {
   const mine = league.myRegistration(myId);
   const [status, setStatus] = useState<LeagueStatus>('in');
   const [role, setRole] = useState<LeagueRole>('allrounder');
-  const [basePrice, setBasePrice] = useState(BASE_PRICE_OPTIONS[0]);
   const [pitch, setPitch] = useState('');
   const [canCommit, setCanCommit] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,7 +66,6 @@ export function SCCLeague() {
     if (!mine) return;
     setStatus(mine.status);
     setRole((mine.role as LeagueRole) ?? 'allrounder');
-    setBasePrice(mine.base_price ?? BASE_PRICE_OPTIONS[0]);
     setPitch(mine.pitch ?? '');
     setCanCommit(mine.can_commit);
   }, [mine]);
@@ -62,7 +73,7 @@ export function SCCLeague() {
   const submit = async () => {
     if (!myId) return;
     setSaving(true); setMsg(null);
-    const res = await league.register({ memberId: myId, status, role, basePrice, pitch, canCommit });
+    const res = await league.register({ memberId: myId, status, role, basePrice: myTier.price, pitch, canCommit });
     setSaving(false);
     setMsg(res.success
       ? (status === 'out' ? 'Noted — you can change your mind any time 🏏' : "✓ You're IN! See you at the auction 🔨")
@@ -73,20 +84,18 @@ export function SCCLeague() {
   // ── Captain election ────────────────────────────────────────────────────
   const myBallot = league.myVote(myId);
   const [capPick, setCapPick] = useState('');
-  const [vicePick, setVicePick] = useState('');
   const [voting, setVoting] = useState(false);
   const [voteMsg, setVoteMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!myBallot) return;
     setCapPick(myBallot.captain_id ?? '');
-    setVicePick(myBallot.vice_id ?? '');
   }, [myBallot]);
 
   const vote = async () => {
-    if (!myId) return;
+    if (!myId || !capPick) return;
     setVoting(true); setVoteMsg(null);
-    const res = await league.castVote(myId, capPick || null, vicePick || null);
+    const res = await league.castVote(myId, capPick);
     setVoting(false);
     setVoteMsg(res.success ? '✓ Ballot locked in!' : `Could not save: ${res.error}`);
     setTimeout(() => setVoteMsg(null), 3500);
@@ -97,6 +106,10 @@ export function SCCLeague() {
       .sort((a, b) => a.name.localeCompare(b.name)),
     [league.going, memberById],
   );
+
+  const myRating = myId ? ratingById[myId] : undefined;
+  const myTier = tierForRating(myRating);
+  const myRated = myRating != null;
 
   const count = league.going.length;
   const pct = Math.min(100, (count / SQUAD_TARGET) * 100);
@@ -127,7 +140,7 @@ export function SCCLeague() {
               SCC <span style={{ background: 'linear-gradient(90deg,#fde68a,#fbbf24 45%,#f472b6)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>League</span>
             </h1>
             <p className="rise-in-2 text-white/85 text-sm sm:text-base mt-2.5 max-w-md mx-auto font-medium">
-              Two squads. One auction. A match every month.<br className="hidden sm:block" />
+              Two squads. One auction. Two to three matches every month.<br className="hidden sm:block" />
               Register, vote for your captain, then find out what you're <b>really</b> worth 😏
             </p>
 
@@ -181,7 +194,7 @@ export function SCCLeague() {
             { icon: '🙋', t: 'Register', d: "Confirm you're in" },
             { icon: '👑', t: 'Vote', d: 'Pick the captains' },
             { icon: '🔨', t: 'Auction', d: 'Get bought' },
-            { icon: '⚔️', t: 'Play', d: 'One match a month' },
+            { icon: '⚔️', t: 'Play', d: '2–3 matches a month' },
           ].map(s => (
             <div key={s.t} className="glass rounded-2xl p-3.5 text-center">
               <div className="text-2xl">{s.icon}</div>
@@ -257,18 +270,33 @@ export function SCCLeague() {
 
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                      Your base price 💰 <span className="normal-case font-medium">— be bold, captains are watching</span>
+                      Your base price 💰 <span className="normal-case font-medium">— earned, not chosen</span>
                     </p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {BASE_PRICE_OPTIONS.map(p => (
-                        <button key={p} onClick={() => setBasePrice(p)}
-                          className={`rounded-xl py-3 text-sm font-black transition-all ${
-                            basePrice === p
-                              ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md scale-105'
-                              : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70'
+                    <div className={`rounded-2xl p-4 text-white bg-gradient-to-r ${myTier.cls} shadow-md`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl leading-none">{myTier.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-black uppercase tracking-widest opacity-80">{myTier.label}</p>
+                          <p className="text-2xl font-black leading-tight">{formatPrice(myTier.price)}</p>
+                        </div>
+                      </div>
+                      <p className="text-[11px] mt-2.5 opacity-90 leading-snug">
+                        {myRated
+                          ? <>Graded from your <b>SCC Rankings rating</b> ({Math.round(myRating!)}/1000). Play well, get upgraded 📈</>
+                          : <>Not enough rated matches yet, so you start at <b>Grade C</b>. The auction is where you fix that 😄</>}
+                      </p>
+                    </div>
+                    <div className="mt-2 grid grid-cols-4 gap-1.5">
+                      {PRICE_TIERS.map(t => (
+                        <div key={t.key}
+                          className={`rounded-lg py-1.5 text-center text-[10px] font-bold ${
+                            t.key === myTier.key
+                              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                              : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-white/60'
                           }`}>
-                          {formatPrice(p)}
-                        </button>
+                          <span className="block text-sm leading-none mb-0.5">{t.emoji}</span>
+                          {formatPrice(t.price)}
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -285,7 +313,7 @@ export function SCCLeague() {
                     <input type="checkbox" checked={canCommit} onChange={e => setCanCommit(e.target.checked)}
                       className="mt-0.5 w-4 h-4 accent-violet-600" />
                     <span className="text-sm">
-                      <span className="font-bold text-slate-900 dark:text-white">I can make roughly one match a month</span>
+                      <span className="font-bold text-slate-900 dark:text-white">I can make most of the 2–3 league matches each month</span>
                       <span className="block text-xs text-slate-500 dark:text-white/60">Be honest 🙏</span>
                     </span>
                   </label>
@@ -337,8 +365,8 @@ export function SCCLeague() {
             <Crown className="w-4 h-4" fill="currentColor" /> Captain election
           </p>
           <p className="text-xs text-slate-500 dark:text-white/60 mb-3">
-            The squad votes. Top 2 become <b>captains</b> of the two teams; next 2 are their <b>vice-captains</b>.
-            They run the bidding on auction night 🔨
+            The squad votes. The <b>two most-voted</b> players captain the two teams
+            and run the bidding on auction night 🔨
           </p>
 
           {/* How voting works — 3 steps, so nobody has to ask */}
@@ -347,12 +375,13 @@ export function SCCLeague() {
               <Vote className="w-3.5 h-3.5" /> How the voting works
             </p>
             <ol className="space-y-1.5 text-[12px] text-slate-700 dark:text-white/75">
-              <li><b>1.</b> Every registered player gets <b>one ballot</b> — pick 1 captain + 1 vice-captain.</li>
+              <li><b>1.</b> Every registered player gets <b>one ballot</b> — pick the one player you want captaining.</li>
               <li><b>2.</b> You can <b>vote for yourself</b>, and change your ballot any time until voting closes.</li>
-              <li><b>3.</b> The <b>2 most-voted</b> become captains; the <b>next 2</b> vice-picks are their deputies.</li>
+              <li><b>3.</b> The <b>2 most-voted</b> become the captains of the two teams. Ties broken by SCC rating.</li>
             </ol>
             <p className="text-[11px] text-amber-700/80 dark:text-amber-300/70 mt-2">
-              Captains &amp; vices are <b>not auctioned</b> — they're assigned to their team automatically.
+              Captains are <b>not auctioned</b> — they're assigned to their own team automatically, and each
+              picks their own deputy after the auction.
             </p>
           </div>
 
@@ -364,23 +393,14 @@ export function SCCLeague() {
             </p>
           ) : (
             <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1.5">👑 Captain</p>
-                  <select value={capPick} onChange={e => setCapPick(e.target.value)} className={inputCls}>
-                    <option value="">Pick a captain…</option>
-                    {candidates.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-sky-600 mb-1.5">🛡️ Vice-captain</p>
-                  <select value={vicePick} onChange={e => setVicePick(e.target.value)} className={inputCls}>
-                    <option value="">Pick a vice-captain…</option>
-                    {candidates.filter(m => m.id !== capPick).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
-                </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1.5">👑 My captain pick</p>
+                <select value={capPick} onChange={e => setCapPick(e.target.value)} className={inputCls}>
+                  <option value="">Pick a captain…</option>
+                  {candidates.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
               </div>
-              <button onClick={vote} disabled={voting || (!capPick && !vicePick) || league.tableMissing}
+              <button onClick={vote} disabled={voting || !capPick || league.tableMissing}
                 className="w-full rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 disabled:opacity-40 text-white font-black py-3 text-sm transition-all shadow-md">
                 {voting ? 'Saving…' : myBallot ? 'Update my ballot' : 'Cast my vote 👑'}
               </button>
@@ -396,23 +416,17 @@ export function SCCLeague() {
               <p className="text-[10px] font-black uppercase text-slate-400 mb-2.5">
                 Live count · {league.tally.ballots} ballot{league.tally.ballots === 1 ? '' : 's'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {([['👑 Captain', league.tally.captains, 'text-amber-500'], ['🛡️ Vice-captain', league.tally.vices, 'text-sky-500']] as const).map(([label, rows, colour]) => (
-                  <div key={label}>
-                    <p className={`text-[11px] font-black mb-1.5 ${colour}`}>{label}</p>
-                    {rows.slice(0, 5).map((c, i) => (
-                      <div key={c.id} className="flex items-center gap-2 py-1">
-                        <span className={`text-[11px] font-black w-4 ${i < 2 ? colour : 'text-slate-300'}`}>{i + 1}</span>
-                        <Avatar member={memberById[c.id]} size={24} />
-                        <span className="text-xs flex-1 truncate text-slate-700 dark:text-white/80">
-                          {memberById[c.id]?.name ?? '?'}
-                        </span>
-                        <span className="text-xs font-black text-slate-500 tabular-nums">{c.n}</span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
+              <p className="text-[11px] font-black mb-1.5 text-amber-500">👑 Captain</p>
+              {league.tally.captains.slice(0, 6).map((c, i) => (
+                <div key={c.id} className="flex items-center gap-2 py-1">
+                  <span className={`text-[11px] font-black w-4 ${i < 2 ? 'text-amber-500' : 'text-slate-300'}`}>{i + 1}</span>
+                  <Avatar member={memberById[c.id]} size={24} />
+                  <span className="text-xs flex-1 truncate text-slate-700 dark:text-white/80">
+                    {memberById[c.id]?.name ?? '?'}
+                  </span>
+                  <span className="text-xs font-black text-slate-500 tabular-nums">{c.n}</span>
+                </div>
+              ))}
 
               {/* Provisional teams */}
               {league.leadership.captains.length === 2 && (
@@ -434,11 +448,7 @@ export function SCCLeague() {
                               <Crown className="w-3 h-3" fill="currentColor" />
                               {memberById[cid]?.name?.split(' ')[0] ?? '?'}
                             </p>
-                            {league.leadership.vices[i] && (
-                              <p className="text-white/75 text-[10px] truncate flex items-center gap-1">
-                                <Shield className="w-2.5 h-2.5" /> {memberById[league.leadership.vices[i]]?.name?.split(' ')[0] ?? '?'}
-                              </p>
-                            )}
+                            <p className="text-white/75 text-[10px]">Captain</p>
                           </div>
                         </div>
                       </div>

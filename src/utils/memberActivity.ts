@@ -5,9 +5,11 @@ import type { Match } from '../types';
  * A member is considered "active" if they participated in any of the last 10 matches.
  */
 export function getActiveMemberIds(matches: Match[], lastN: number = 10): Set<string> {
-  // Get the last N matches (excluding cancelled ones)
+  // Only matches that were actually PLAYED count. Fixtures booked months ahead
+  // (result 'upcoming') have no squad yet — before this filter, a freshly synced
+  // season of fixtures would fill the whole window and wipe out the active list.
   const recentMatches = matches
-    .filter(m => m.result !== 'cancelled')
+    .filter(m => m.result !== 'cancelled' && m.result !== 'upcoming')
     .slice(0, lastN);
 
   const activeMemberIds = new Set<string>();

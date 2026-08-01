@@ -22,7 +22,6 @@ export interface LeagueVote {
   season: string;
   voter_id: string;
   captain_id: string | null;
-  vice_id: string | null;
 }
 
 export const ROLE_LABELS: Record<LeagueRole, string> = {
@@ -38,10 +37,35 @@ export const SQUAD_TARGET = 22;
 // ─── Auction economics (IPL-flavoured, all values in ₹ LAKH) ──────────────────
 // Big numbers are half the fun — nobody brags about being sold for ₹200.
 export const PURSE_LAKH = 5000;                       // ₹50 Cr per team
-export const BASE_PRICE_OPTIONS = [20, 50, 100, 200]; // ₹20L · ₹50L · ₹1Cr · ₹2Cr
-export const SQUAD_SIZE = 11;                         // captain + vice + 9 bought
+export const SQUAD_SIZE = 11;                         // captain + 10 bought
 export const BID_STEP_SMALL = 10;                     // +₹10L while under ₹1 Cr
 export const BID_STEP_BIG = 25;                       // +₹25L at ₹1 Cr and above
+
+// ─── Base-price tiers ─────────────────────────────────────────────────────────
+// Base price is EARNED, not chosen. If players picked their own, everyone would
+// pick the top slab and it would mean nothing. Instead we grade them from the
+// club's own ICC-style rating (the same one behind SCC Rankings / market value),
+// so the tier is objective — and arguing about it is half the fun 😄
+export interface PriceTier {
+  key: 'marquee' | 'a' | 'b' | 'c';
+  label: string;
+  emoji: string;
+  price: number;      // ₹ lakh
+  minRating: number;  // SCC rating needed
+  cls: string;
+}
+
+export const PRICE_TIERS: PriceTier[] = [
+  { key: 'marquee', label: 'Marquee', emoji: '💎', price: 200, minRating: 750, cls: 'from-violet-500 to-fuchsia-500' },
+  { key: 'a',       label: 'Grade A', emoji: '🥇', price: 100, minRating: 500, cls: 'from-amber-400 to-orange-500' },
+  { key: 'b',       label: 'Grade B', emoji: '🥈', price: 50,  minRating: 250, cls: 'from-slate-400 to-slate-500' },
+  { key: 'c',       label: 'Grade C', emoji: '🥉', price: 20,  minRating: 0,   cls: 'from-orange-600 to-amber-700' },
+];
+
+/** Grade a player from their SCC rating (0–1000). Unrated players start at C. */
+export function tierForRating(rating: number | undefined): PriceTier {
+  return PRICE_TIERS.find(t => (rating ?? 0) >= t.minRating) ?? PRICE_TIERS[PRICE_TIERS.length - 1];
+}
 
 /** 20 → "₹20 L" · 100 → "₹1 Cr" · 250 → "₹2.5 Cr" */
 export function formatPrice(lakh: number): string {
@@ -85,7 +109,7 @@ export function useSCCLeague(season: string) {
     memberId: string;
     status: LeagueStatus;
     role: LeagueRole | null;
-    basePrice: number;
+    basePrice: number;   // graded from rating, not chosen
     pitch: string;
     canCommit: boolean;
   }) => {
@@ -110,9 +134,9 @@ export function useSCCLeague(season: string) {
   );
 
   // ── Captain election ────────────────────────────────────────────────────
-  const castVote = useCallback(async (voterId: string, captainId: string | null, viceId: string | null) => {
+  const castVote = useCallback(async (voterId: string, captainId: string) => {
     const { error } = await supabase.from('scc_league_captain_votes').upsert({
-      season, voter_id: voterId, captain_id: captainId, vice_id: viceId,
+      season, voter_id: voterId, captain_id: captainId,
     }, { onConflict: 'season,voter_id' });
     if (error) return { success: false, error: error.message };
     await fetchAll();
@@ -133,28 +157,21 @@ export function useSCCLeague(season: string) {
     return c;
   }, [going]);
 
-  /** Tally of captain / vice votes, most-voted first. */
+  /** Captain vote tally, most-voted first. */
   const tally = useMemo(() => {
-    const count = (key: 'captain_id' | 'vice_id') => {
-      const m = new Map<string, number>();
-      votes.forEach(v => { const id = v[key]; if (id) m.set(id, (m.get(id) || 0) + 1); });
-      return [...m.entries()]
-        .map(([id, n]) => ({ id, n }))
-        .sort((a, b) => b.n - a.n || a.id.localeCompare(b.id));
-    };
-    return { captains: count('captain_id'), vices: count('vice_id'), ballots: votes.length };
+    const m = new Map<string, number>();
+    votes.forEach(v => { if (v.captain_id) m.set(v.captain_id, (m.get(v.captain_id) || 0) + 1); });
+    const captains = [...m.entries()]
+      .map(([id, n]) => ({ id, n }))
+      .sort((a, b) => b.n - a.n || a.id.localeCompare(b.id));
+    return { captains, ballots: votes.length };
   }, [votes]);
 
-  /**
-   * Provisional leadership: the two most-voted become the captains of the two
-   * teams; the two most-voted vice picks (who aren't already captains) are
-   * their deputies.
-   */
-  const leadership = useMemo(() => {
-    const captains = tally.captains.slice(0, 2).map(c => c.id);
-    const vices = tally.vices.filter(v => !captains.includes(v.id)).slice(0, 2).map(v => v.id);
-    return { captains, vices };
-  }, [tally]);
+  /** The two most-voted players captain the two teams. */
+  const leadership = useMemo(
+    () => ({ captains: tally.captains.slice(0, 2).map(c => c.id) }),
+    [tally],
+  );
 
   return {
     registrations, votes, loading, tableMissing,
