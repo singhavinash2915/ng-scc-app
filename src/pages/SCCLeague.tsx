@@ -7,7 +7,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
-import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, SQUAD_MAX, IMPACT_SLOTS_PER_TEAM, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
+import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, SQUAD_MAX, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
   tierForRating, isWillingCaptain, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
 import { SEASON_NEW } from '../config/season2';
