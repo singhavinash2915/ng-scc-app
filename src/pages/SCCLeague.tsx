@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Gavel, Crown, Swords, Flame, Lock, Check, Sparkles, ScrollText, ChevronDown, Vote } from 'lucide-react';
+import { Gavel, Crown, Swords, Flame, Lock, UserMinus, Check, Sparkles, ScrollText, ChevronDown, Vote } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { MyStatsButton } from '../components/MyStatsButton';
 import { useAuth } from '../context/AuthContext';
@@ -186,6 +186,11 @@ export function SCCLeague() {
                     </span>
                   ))}
                 </div>
+                {league.sittingOut.length > 0 && (
+                  <p className="text-white/50 text-[11px] font-bold mt-2">
+                    😔 {league.sittingOut.length} sitting out
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -355,6 +360,35 @@ export function SCCLeague() {
                     <p className="text-[10px] text-white/70">{r.role ? ROLE_LABELS[r.role as LeagueRole] : ''}</p>
                     {r.pitch && <p className="text-[10px] text-white/60 italic mt-1 line-clamp-2">"{r.pitch}"</p>}
                     {!r.can_commit && <p className="text-[9px] text-amber-300 font-bold mt-1">limited availability</p>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── SITTING OUT ──────────────────────────────────────────────── */}
+        {/* Shown so the group can see who has actually answered. Silence and
+            "no" look identical otherwise, and captains keep chasing people
+            who already said they're out. */}
+        {league.sittingOut.length > 0 && (
+          <div className="glass rounded-3xl p-5">
+            <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-1 flex items-center gap-1.5">
+              <UserMinus className="w-4 h-4" /> Sitting this one out · {league.sittingOut.length}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-white/60 mb-3">
+              No hard feelings — next season 🤝 Changed your mind? Just tap <b>I'm IN</b> above.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {league.sittingOut.map(r => {
+                const m = memberById[r.member_id];
+                return (
+                  <div key={r.id}
+                    className="flex items-center gap-2 rounded-full bg-slate-100 dark:bg-white/10 pl-1 pr-3 py-1">
+                    <Avatar member={m} size={24} />
+                    <span className="text-xs font-bold text-slate-500 dark:text-white/60">
+                      {m?.name?.split(' ')[0] ?? '?'}
+                    </span>
                   </div>
                 );
               })}

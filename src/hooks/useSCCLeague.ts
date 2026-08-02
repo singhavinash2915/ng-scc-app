@@ -156,6 +156,7 @@ export function useSCCLeague(season: string) {
 
   // ── Derived ─────────────────────────────────────────────────────────────
   const going = useMemo(() => registrations.filter(r => r.status === 'in'), [registrations]);
+  const sittingOut = useMemo(() => registrations.filter(r => r.status === 'out'), [registrations]);
 
   const roleCounts = useMemo(() => {
     const c: Record<string, number> = { batter: 0, bowler: 0, allrounder: 0, keeper: 0 };
@@ -182,7 +183,7 @@ export function useSCCLeague(season: string) {
   return {
     registrations, votes, loading, tableMissing,
     register, myRegistration, castVote, myVote,
-    going, roleCounts, tally, leadership,
+    going, sittingOut, roleCounts, tally, leadership,
     refetch: fetchAll,
   };
 }
