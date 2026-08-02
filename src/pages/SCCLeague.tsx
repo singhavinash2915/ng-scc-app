@@ -72,16 +72,26 @@ export function SCCLeague() {
     setCanCommit(mine.can_commit);
   }, [mine]);
 
-  const submit = async () => {
+  const save = async (next: LeagueStatus) => {
     if (!myId) return;
     setSaving(true); setMsg(null);
-    const res = await league.register({ memberId: myId, status, role, basePrice: myTier.price, pitch, canCommit });
+    const res = await league.register({ memberId: myId, status: next, role, basePrice: myTier.price, pitch, canCommit });
     setSaving(false);
     setMsg(res.success
-      ? (status === 'out' ? 'Noted — you can change your mind any time 🏏' : "✓ You're IN! See you at the auction 🔨")
+      ? (next === 'out' ? '✓ Noted — you can change your mind any time 🏏' : "✓ You're IN! See you at the auction 🔨")
       : `Could not save: ${res.error}`);
     setTimeout(() => setMsg(null), 4000);
   };
+
+  const submit = () => save(status);
+
+  /**
+   * Opting out saves on the tap. There is nothing else to fill in, and the old
+   * two-step version silently ate every opt-out: tapping "Sitting out" collapsed
+   * the whole form, which read as "done", so nobody pressed the little "Save"
+   * button underneath and not one 'out' row was ever written.
+   */
+  const chooseOut = () => { setStatus('out'); save('out'); };
 
   // ── Captain election ────────────────────────────────────────────────────
   const myBallot = league.myVote(myId);
@@ -250,14 +260,25 @@ export function SCCLeague() {
                   <span className="text-2xl block">🔥</span>
                   <span className="text-sm">I'm IN</span>
                 </button>
-                <button onClick={() => setStatus('out')}
-                  className={`rounded-2xl py-4 font-black transition-all ${
+                <button onClick={chooseOut} disabled={saving || league.tableMissing}
+                  className={`rounded-2xl py-4 font-black transition-all disabled:opacity-60 ${
                     status === 'out' ? 'bg-slate-500 text-white shadow-lg' : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-white/60'
                   }`}>
                   <span className="text-2xl block">😔</span>
                   <span className="text-sm">Sitting out</span>
                 </button>
               </div>
+
+              {status === 'out' && (
+                <div className="rounded-2xl bg-slate-100 dark:bg-white/10 p-4 text-center">
+                  <p className="text-sm font-black text-slate-700 dark:text-white">
+                    {mine?.status === 'out' ? "You're marked as sitting out 😔" : 'Saving…'}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
+                    Saved — nothing else to do. Changed your mind? Just tap <b>I'm IN</b> above 🔥
+                  </p>
+                </div>
+              )}
 
               {status === 'in' && (
                 <>
@@ -328,10 +349,14 @@ export function SCCLeague() {
                 </>
               )}
 
-              <button onClick={submit} disabled={saving || league.tableMissing}
-                className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-pink-600 hover:brightness-110 disabled:opacity-40 text-white font-black py-4 text-base transition-all shadow-lg">
-                {saving ? 'Saving…' : mine ? 'Update my registration' : status === 'in' ? 'Count me in 🔥' : 'Save'}
-              </button>
+              {/* Only IN needs a confirm step — it has a role, a pitch and the
+                  availability box to fill in first. OUT already saved on tap. */}
+              {status === 'in' && (
+                <button onClick={submit} disabled={saving || league.tableMissing}
+                  className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-pink-600 hover:brightness-110 disabled:opacity-40 text-white font-black py-4 text-base transition-all shadow-lg">
+                  {saving ? 'Saving…' : mine?.status === 'in' ? 'Update my registration' : 'Count me in 🔥'}
+                </button>
+              )}
               {msg && (
                 <p className={`text-sm font-bold text-center ${msg.startsWith('✓') || msg.startsWith('Noted') ? 'text-emerald-600' : 'text-rose-500'}`}>{msg}</p>
               )}
