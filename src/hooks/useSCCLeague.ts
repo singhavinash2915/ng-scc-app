@@ -15,7 +15,13 @@ export interface LeagueRegistration {
   base_price: number;
   pitch: string | null;
   can_commit: boolean;
+  /** Willing to captain a side. Undefined until add_league_captaincy_optout.sql
+   *  has run — treated as willing, which is the pre-existing behaviour. */
+  wants_captaincy?: boolean;
 }
+
+/** Nobody is forced onto the ballot; missing column == willing. */
+export const isWillingCaptain = (r: LeagueRegistration) => r.wants_captaincy !== false;
 
 export interface LeagueVote {
   id: string;
@@ -118,8 +124,9 @@ export function useSCCLeague(season: string) {
     basePrice: number;   // graded from rating, not chosen
     pitch: string;
     canCommit: boolean;
+    wantsCaptaincy: boolean;
   }) => {
-    const { error } = await supabase.from('scc_league_registrations').upsert({
+    const base = {
       season,
       member_id: input.memberId,
       status: input.status,
@@ -128,7 +135,16 @@ export function useSCCLeague(season: string) {
       pitch: input.pitch.trim() || null,
       can_commit: input.canCommit,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'season,member_id' });
+    };
+    let { error } = await supabase.from('scc_league_registrations')
+      .upsert({ ...base, wants_captaincy: input.wantsCaptaincy }, { onConflict: 'season,member_id' });
+
+    // Migration not run yet? Save everything else rather than losing the
+    // registration entirely — the captaincy flag defaults to willing anyway.
+    if (error?.code === '42703' || /wants_captaincy/.test(error?.message ?? '')) {
+      ({ error } = await supabase.from('scc_league_registrations')
+        .upsert(base, { onConflict: 'season,member_id' }));
+    }
     if (error) return { success: false, error: error.message };
     await fetchAll();
     return { success: true };
@@ -158,6 +174,9 @@ export function useSCCLeague(season: string) {
   const going = useMemo(() => registrations.filter(r => r.status === 'in'), [registrations]);
   const sittingOut = useMemo(() => registrations.filter(r => r.status === 'out'), [registrations]);
 
+  /** Only players who are in AND up for the job appear on the captain ballot. */
+  const captainCandidates = useMemo(() => going.filter(isWillingCaptain), [going]);
+
   const roleCounts = useMemo(() => {
     const c: Record<string, number> = { batter: 0, bowler: 0, allrounder: 0, keeper: 0 };
     going.forEach(r => { if (r.role) c[r.role] = (c[r.role] || 0) + 1; });
@@ -183,7 +202,7 @@ export function useSCCLeague(season: string) {
   return {
     registrations, votes, loading, tableMissing,
     register, myRegistration, castVote, myVote,
-    going, sittingOut, roleCounts, tally, leadership,
+    going, sittingOut, captainCandidates, roleCounts, tally, leadership,
     refetch: fetchAll,
   };
 }

@@ -8,7 +8,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
 import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
-  tierForRating, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
+  tierForRating, isWillingCaptain, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
 import { SEASON_NEW } from '../config/season2';
 import type { Member } from '../types';
@@ -61,6 +61,7 @@ export function SCCLeague() {
   const [role, setRole] = useState<LeagueRole>('allrounder');
   const [pitch, setPitch] = useState('');
   const [canCommit, setCanCommit] = useState(true);
+  const [wantsCaptaincy, setWantsCaptaincy] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -70,12 +71,13 @@ export function SCCLeague() {
     setRole((mine.role as LeagueRole) ?? 'allrounder');
     setPitch(mine.pitch ?? '');
     setCanCommit(mine.can_commit);
+    setWantsCaptaincy(isWillingCaptain(mine));
   }, [mine]);
 
   const save = async (next: LeagueStatus) => {
     if (!myId) return;
     setSaving(true); setMsg(null);
-    const res = await league.register({ memberId: myId, status: next, role, basePrice: myTier.price, pitch, canCommit });
+    const res = await league.register({ memberId: myId, status: next, role, basePrice: myTier.price, pitch, canCommit, wantsCaptaincy });
     setSaving(false);
     setMsg(res.success
       ? (next === 'out' ? '✓ Noted — you can change your mind any time 🏏' : "✓ You're IN! See you at the auction 🔨")
@@ -114,9 +116,9 @@ export function SCCLeague() {
   };
 
   const candidates = useMemo(
-    () => league.going.map(r => memberById[r.member_id]).filter(Boolean)
+    () => league.captainCandidates.map(r => memberById[r.member_id]).filter(Boolean)
       .sort((a, b) => a.name.localeCompare(b.name)),
-    [league.going, memberById],
+    [league.captainCandidates, memberById],
   );
 
   const myRating = myId ? ratingById[myId] : undefined;
@@ -125,6 +127,12 @@ export function SCCLeague() {
 
   const count = league.going.length;
   const votingOpen = count >= VOTE_UNLOCK_AT && candidates.length >= 2;
+  // Once ballots are live the captaincy choice is frozen — pulling out after
+  // people have voted for you throws their vote away.
+  const captaincyLocked = count >= VOTE_UNLOCK_AT;
+  // Belt and braces: if a ballot ends up pointing at someone who is no longer a
+  // candidate, tell that voter instead of silently binning their vote.
+  const ballotWithdrawn = !!myBallot?.captain_id && !candidates.some(m => m.id === myBallot.captain_id);
   const pct = Math.min(100, (count / SQUAD_TARGET) * 100);
   const remaining = Math.max(0, SQUAD_TARGET - count);
   const inputCls = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-400';
@@ -346,6 +354,31 @@ export function SCCLeague() {
                       <span className="block text-xs text-slate-500 dark:text-white/60">Be honest 🙏</span>
                     </span>
                   </label>
+
+                  {/* Captaincy is a separate question from playing. Someone who
+                      doesn't want the job shouldn't be on the ballot at all —
+                      every vote spent on them would be thrown away. */}
+                  <label className={`flex items-start gap-3 rounded-xl p-3.5 ${
+                    captaincyLocked
+                      ? 'bg-slate-50 dark:bg-white/5 opacity-70 cursor-not-allowed'
+                      : 'bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 cursor-pointer'
+                  }`}>
+                    <input type="checkbox" checked={wantsCaptaincy} disabled={captaincyLocked}
+                      onChange={e => setWantsCaptaincy(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-amber-600" />
+                    <span className="text-sm">
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        👑 Put me on the captain ballot
+                      </span>
+                      <span className="block text-xs text-slate-500 dark:text-white/60 mt-0.5">
+                        {captaincyLocked
+                          ? 'Locked — voting has started, so this can no longer change.'
+                          : wantsCaptaincy
+                            ? "Happy to lead a side if the squad picks you. Untick if you'd rather just play — you'll be left off the ballot so nobody wastes a vote on you."
+                            : "You're off the ballot 👍 You'll still be in the auction like everyone else."}
+                      </span>
+                    </span>
+                  </label>
                 </>
               )}
 
@@ -467,15 +500,32 @@ export function SCCLeague() {
               <p className="text-[11px] font-bold text-amber-600 mt-1.5">
                 {count} of {VOTE_UNLOCK_AT} · {Math.max(0, VOTE_UNLOCK_AT - count)} more to unlock 🔓
               </p>
+              <p className="text-[11px] text-slate-500 dark:text-white/60 mt-2.5 pt-2.5 border-t border-slate-200 dark:border-white/10">
+                👑 Don't want to captain? Untick <b>"Put me on the captain ballot"</b> above <b>before voting opens</b> —
+                after that it's locked, and a vote spent on someone who declines is a wasted vote.
+                <span className="block mt-1 font-bold text-slate-600 dark:text-white/70">
+                  {candidates.length} of {count} are up for it so far.
+                </span>
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1.5">👑 My captain pick</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1.5">
+                  👑 My captain pick <span className="text-slate-400">· {candidates.length} on the ballot</span>
+                </p>
                 <select value={capPick} onChange={e => setCapPick(e.target.value)} className={inputCls}>
                   <option value="">Pick a captain…</option>
                   {candidates.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
+                <p className="text-[11px] text-slate-500 dark:text-white/60 mt-1.5">
+                  Only players who said they're up for the job are listed — no wasted votes.
+                </p>
+                {ballotWithdrawn && (
+                  <p className="text-[11px] font-bold text-rose-500 mt-1.5">
+                    ⚠️ The player you voted for is no longer on the ballot — please pick again.
+                  </p>
+                )}
               </div>
               <button onClick={vote} disabled={voting || !capPick || league.tableMissing}
                 className="w-full rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 disabled:opacity-40 text-white font-black py-3 text-sm transition-all shadow-md">
