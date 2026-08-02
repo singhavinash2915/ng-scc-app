@@ -15,6 +15,7 @@ export const CAPTAIN_RULES: RuleSection = {
   emoji: '👑',
   rules: [
     `Voting stays **locked until ${VOTE_UNLOCK_AT} players have confirmed** — the first few to register don't get to pick the captains for everyone else.`,
+    'Only players registered as **IN** get a ballot — if you are sitting out, you do not pick the captains for those who turn up.',
     'Every registered player gets **one ballot** — pick the **one** player you want captaining a team.',
     'You **can vote for yourself**. Campaigning is encouraged 😏',
     "**Captaincy is optional.** Don't fancy the job? Untick *Put me on the captain ballot* and you're left off it — you still play, you just can't be voted captain 🙅",

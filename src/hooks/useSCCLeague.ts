@@ -157,13 +157,20 @@ export function useSCCLeague(season: string) {
 
   // ── Captain election ────────────────────────────────────────────────────
   const castVote = useCallback(async (voterId: string, captainId: string) => {
+    // Only confirmed players get a say. Registration status is the whole
+    // eligibility rule, so it is enforced here as well as in the UI —
+    // sitting out (or never registering) must not buy you a ballot.
+    const voter = registrations.find(r => r.member_id === voterId);
+    if (voter?.status !== 'in') {
+      return { success: false, error: 'Only players registered as IN can vote.' };
+    }
     const { error } = await supabase.from('scc_league_captain_votes').upsert({
       season, voter_id: voterId, captain_id: captainId,
     }, { onConflict: 'season,voter_id' });
     if (error) return { success: false, error: error.message };
     await fetchAll();
     return { success: true };
-  }, [season, fetchAll]);
+  }, [season, fetchAll, registrations]);
 
   const myVote = useCallback(
     (memberId: string | null) => (memberId ? votes.find(v => v.voter_id === memberId) ?? null : null),
@@ -183,15 +190,24 @@ export function useSCCLeague(season: string) {
     return c;
   }, [going]);
 
-  /** Captain vote tally, most-voted first. */
+  /**
+   * Captain vote tally, most-voted first.
+   * Counts only ballots from players currently registered IN — a vote cast by
+   * someone sitting out (or never registered) is not a vote.
+   */
+  const eligibleVotes = useMemo(() => {
+    const inIds = new Set(going.map(r => r.member_id));
+    return votes.filter(v => inIds.has(v.voter_id));
+  }, [votes, going]);
+
   const tally = useMemo(() => {
     const m = new Map<string, number>();
-    votes.forEach(v => { if (v.captain_id) m.set(v.captain_id, (m.get(v.captain_id) || 0) + 1); });
+    eligibleVotes.forEach(v => { if (v.captain_id) m.set(v.captain_id, (m.get(v.captain_id) || 0) + 1); });
     const captains = [...m.entries()]
       .map(([id, n]) => ({ id, n }))
       .sort((a, b) => b.n - a.n || a.id.localeCompare(b.id));
-    return { captains, ballots: votes.length };
-  }, [votes]);
+    return { captains, ballots: eligibleVotes.length, discarded: votes.length - eligibleVotes.length };
+  }, [eligibleVotes, votes]);
 
   /** The two most-voted players captain the two teams. */
   const leadership = useMemo(

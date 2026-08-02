@@ -130,6 +130,7 @@ export function SCCLeague() {
   // Once ballots are live the captaincy choice is frozen — pulling out after
   // people have voted for you throws their vote away.
   const captaincyLocked = count >= VOTE_UNLOCK_AT;
+  const canVote = mine?.status === 'in';
   // Belt and braces: if a ballot ends up pointing at someone who is no longer a
   // candidate, tell that voter instead of silently binning their vote.
   const ballotWithdrawn = !!myBallot?.captain_id && !candidates.some(m => m.id === myBallot.captain_id);
@@ -484,6 +485,21 @@ export function SCCLeague() {
 
           {!myId ? (
             <div className="flex justify-center"><MyStatsButton /></div>
+          ) : !canVote ? (
+            /* Eligibility is the registration itself. Anyone could vote before
+               this — including players sitting out, and anyone who had simply
+               picked a profile without registering at all. */
+            <div className="rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4">
+              <p className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-1.5">
+                <Lock className="w-4 h-4 text-slate-400" />
+                {mine?.status === 'out' ? "You're sitting this one out" : 'Register first to vote'}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-white/60 mt-1.5">
+                {mine?.status === 'out'
+                  ? "Only players in the auction pick the captains — they're the ones who'll be playing under them. Tap I'm IN above if you'd like a say 🔥"
+                  : 'Confirm you\'re in above, then come back and cast your ballot 👑'}
+              </p>
+            </div>
           ) : !votingOpen ? (
             <div className="rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4">
               <p className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-1.5">
@@ -558,6 +574,12 @@ export function SCCLeague() {
               <p className="text-[10px] font-black uppercase text-slate-400 mb-2.5 flex items-center gap-1.5">
                 <Lock className="w-3 h-3" /> Admin only · Live count · {league.tally.ballots} ballot{league.tally.ballots === 1 ? '' : 's'}
               </p>
+              {league.tally.discarded > 0 && (
+                <p className="text-[11px] font-bold text-rose-500 mb-2">
+                  {league.tally.discarded} ballot{league.tally.discarded === 1 ? '' : 's'} not counted — cast by
+                  {league.tally.discarded === 1 ? ' a player' : ' players'} not registered IN.
+                </p>
+              )}
               <p className="text-[11px] font-black mb-1.5 text-amber-500">👑 Captain</p>
               {league.tally.captains.slice(0, 6).map((c, i) => (
                 <div key={c.id} className="flex items-center gap-2 py-1">
