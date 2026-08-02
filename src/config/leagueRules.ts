@@ -1,4 +1,4 @@
-import { PURSE_LAKH, PRICE_TIERS, SQUAD_SIZE, SQUAD_TARGET, VOTE_UNLOCK_AT, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
+import { PURSE_LAKH, PRICE_TIERS, AUCTION_SETS, SQUAD_SIZE, SQUAD_TARGET, SQUAD_MAX, IMPACT_SLOTS_PER_TEAM, VOTE_UNLOCK_AT, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
 
 // ─── SCC League rulebook ───────────────────────────────────────────────────────
 // One place for every rule, so the app, the auctioneer and the WhatsApp group
@@ -34,13 +34,15 @@ export const AUCTION_RULES: RuleSection = {
   title: 'Auction rules',
   emoji: '🔨',
   rules: [
-    `Each team gets a purse of **${formatPrice(PURSE_LAKH)}**.`,
+    `Each team gets a purse of **${formatPrice(PURSE_LAKH)}** — and it is meant to run out. The whole pool is worth about ₹17 Cr at base, so there is roughly enough money to win two or three bidding wars, not twelve.`,
+    `Players come up in **sets**: ${AUCTION_SETS.map(x => `${x.emoji} ${x.label}`).join(' → ')} → unsold round. Order inside a set is **random**.`,
+    'The **Marquee Set goes first**, while every purse is full and nobody has spent a rupee. Get in early or wait and gamble 😈',
     `Each squad is **${SQUAD_SIZE} players**: the captain + **${SQUAD_SIZE - 1} bought at auction**.`,
+    `Registered after the first ${SQUAD_TARGET}? You go in as an **⚡ Impact Player** — ${IMPACT_SLOTS_PER_TEAM} per squad, up to ${SQUAD_MAX} players total. Impact players are auctioned **last**, out of whatever purse is left.`,
     `The captain is **retained at their own graded price**, deducted from the purse before bidding starts.`,
     '**Base price is earned, not chosen.** It is graded automatically from your SCC Rankings rating — nobody picks their own slab.',
     `Grades: ${PRICE_TIERS.map(t => `**${t.emoji} ${t.label} ${formatPrice(t.price)}**`).join(' · ')}.`,
     'Played too few matches to be rated? You start at **Grade C** — the auction is where you fix that 😄',
-    'Everyone else enters the pool in **random order** — nobody knows when their name comes up.',
     `Bidding rises in **${formatPrice(BID_STEP_SMALL)}** steps below ${formatPrice(100)}, and **${formatPrice(BID_STEP_BIG)}** steps at ${formatPrice(100)} and above.`,
     'Your **one-liner is read out** before bidding opens. Make it count 🗣️',
     'A captain **cannot bid** beyond what leaves enough purse to fill their remaining slots at base price.',

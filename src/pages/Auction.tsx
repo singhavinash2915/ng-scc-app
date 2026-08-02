@@ -13,6 +13,11 @@ import { useCricketStats } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
+import { useAllScorecards } from '../hooks/useAllScorecards';
+import { useMarketValue } from '../hooks/useMarketValue';
+import { useSCCLeague, AUCTION_SETS, tierForRating, formatPrice, PURSE_LAKH,
+  BID_STEP_SMALL, BID_STEP_BIG } from '../hooks/useSCCLeague';
+import { SEASON_NEW } from '../config/season2';
 import type { Member } from '../types';
 
 type Team = 'dhurandars' | 'bazigars';
@@ -80,6 +85,33 @@ export function Auction() {
   const { counts: momCounts } = useMOMCounts();
   const { isActive } = useMemberActivity(members, matches);
 
+  // Base prices come from the league registration (already graded from the SCC
+  // rating); anyone not registered falls back to grading on the fly.
+  const { scorecards } = useAllScorecards();
+  const values = useMarketValue(matches, members, scorecards);
+  const league = useSCCLeague(SEASON_NEW);
+
+  const basePriceById = useMemo(() => {
+    const rating: Record<string, number> = {};
+    values.forEach(v => { rating[v.member.id] = v.rating; });
+    const m: Record<string, number> = {};
+    members.forEach(x => { m[x.id] = tierForRating(rating[x.id]).price; });
+    league.registrations.forEach(r => { if (r.base_price) m[r.member_id] = r.base_price; });
+    return m;
+  }, [values, members, league.registrations]);
+
+  /** Marquee first, then A, B, C — shuffled inside each set so the order within
+   *  a set is still a surprise. Selling the big names while every purse is full
+   *  is what makes the early bidding hurt. */
+  const orderIntoSets = (ids: string[]) => {
+    const bucket = (id: string) => {
+      const p = basePriceById[id] ?? 20;
+      const i = AUCTION_SETS.findIndex(s => s.price === p);
+      return i < 0 ? AUCTION_SETS.length - 1 : i;
+    };
+    return AUCTION_SETS.flatMap((_, i) => shuffle(ids.filter(id => bucket(id) === i)));
+  };
+
   const [step, setStep] = useState<Step>('setup');
   const [config, setConfig] = useState<Config>({
     matchDate: new Date().toISOString().split('T')[0],
@@ -89,9 +121,9 @@ export function Auction() {
     dhurCaptainId: '',
     bazCaptainId: '',
     poolOrder: [],
-    budgetEach: 10000,
-    basePrice: 100,
-    bidIncrement: 50,
+    budgetEach: PURSE_LAKH,   // ₹ LAKH, same units as the league base prices
+    basePrice: 20,
+    bidIncrement: BID_STEP_SMALL,
   });
   const [picks, setPicks] = useState<Pick[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -150,10 +182,15 @@ export function Auction() {
   // every isActive() came back false and the admin was left with an empty pool.
   const [poolSeeded, setPoolSeeded] = useState(false);
   useEffect(() => {
-    if (poolSeeded || members.length === 0 || matches.length === 0) return;
-    setPoolSelected(members.filter(m => isActive(m.id)).map(m => m.id));
+    if (poolSeeded || members.length === 0 || matches.length === 0 || league.loading) return;
+    // Prefer the league sign-ups — those are the people who actually said they
+    // want to be auctioned. Fall back to active members for a one-off internal
+    // match with no league registration behind it.
+    setPoolSelected(league.going.length > 0
+      ? league.going.map(r => r.member_id)
+      : members.filter(m => isActive(m.id)).map(m => m.id));
     setPoolSeeded(true);
-  }, [poolSeeded, members, matches.length, isActive]);
+  }, [poolSeeded, members, matches.length, isActive, league.going, league.loading]);
 
   // ── Stats helpers ────────────────────────────────────────────────────
   const getStats = (memberId: string) => cricketStats.find(s => s.member_id === memberId);
@@ -179,10 +216,10 @@ export function Auction() {
       alert('Pool must have at least 2 players');
       return;
     }
-    setConfig(c => ({ ...c, poolOrder: shuffle(pool) }));
+    setConfig(c => ({ ...c, poolOrder: orderIntoSets(pool) }));
     setPicks([]);
     setCurrentIdx(0);
-    setCurrentBid(config.basePrice);
+    setCurrentBid(basePriceById[orderIntoSets(pool)[0]] ?? config.basePrice);
     setCurrentBidder(null);
     setStep('auction');
   };
@@ -194,16 +231,25 @@ export function Auction() {
   const bazSpent = bazPicks.reduce((s, p) => s + p.price, 0);
   const dhurBudget = config.budgetEach - dhurSpent;
   const bazBudget = config.budgetEach - bazSpent;
-  const dhurCanBid = dhurBudget >= currentBid + config.bidIncrement;
-  const bazCanBid = bazBudget >= currentBid + config.bidIncrement;
+  const nextBid = currentBid + (currentBid >= 100 ? BID_STEP_BIG : BID_STEP_SMALL);
+  const dhurCanBid = dhurBudget >= nextBid;
+  const bazCanBid = bazBudget >= nextBid;
 
   const currentPlayerId = config.poolOrder[currentIdx];
+  const currentSet = AUCTION_SETS.find(x => x.price === basePriceById[currentPlayerId])
+    ?? AUCTION_SETS[AUCTION_SETS.length - 1];
+  const setSize = config.poolOrder.filter(id => basePriceById[id] === currentSet.price).length;
+  const setIdx = config.poolOrder.slice(0, currentIdx + 1)
+    .filter(id => basePriceById[id] === currentSet.price).length;
   const currentPlayer = currentPlayerId ? memberById[currentPlayerId] : null;
   const totalToAuction = config.poolOrder.length;
   const remainingToAuction = totalToAuction - currentIdx;
 
+  /** Steps widen once the bidding gets serious, so ₹1 Cr+ moves faster. */
+  const bidStep = currentBid >= 100 ? BID_STEP_BIG : BID_STEP_SMALL;
+
   const placeBid = (team: Team) => {
-    const newBid = currentBid + config.bidIncrement;
+    const newBid = currentBid + bidStep;
     const budget = team === 'dhurandars' ? dhurBudget : bazBudget;
     if (newBid > budget) return;
     setCurrentBid(newBid);
@@ -227,7 +273,7 @@ export function Auction() {
       setStep('done');
     } else {
       setCurrentIdx(i => i + 1);
-      setCurrentBid(config.basePrice);
+      setCurrentBid(basePriceById[config.poolOrder[currentIdx + 1]] ?? config.basePrice);
       setCurrentBidder(null);
     }
   };
@@ -263,7 +309,7 @@ export function Auction() {
           ground_cost: 0,
           other_expenses: 0,
           deduct_from_balance: false,
-          notes: `Internal match · auction-built. Spent: ${teamName('dhurandars')} ₹${dhurSpent}, ${teamName('bazigars')} ₹${bazSpent}`,
+          notes: `Internal match · auction-built. Spent: ${teamName('dhurandars')} ${formatPrice(dhurSpent)}, ${teamName('bazigars')} ${formatPrice(bazSpent)}`,
           man_of_match_id: null,
           match_type: 'internal',
           winning_team: null,
@@ -429,19 +475,19 @@ export function Auction() {
               <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400">Budget & Bidding</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input
-                  label="Budget per team (₹)"
+                  label="Purse per team (₹ lakh)"
                   type="number"
                   value={config.budgetEach}
                   onChange={e => setConfig(c => ({ ...c, budgetEach: parseInt(e.target.value) || 0 }))}
                 />
                 <Input
-                  label="Base price (₹)"
+                  label="Fallback base price (₹ lakh)"
                   type="number"
                   value={config.basePrice}
                   onChange={e => setConfig(c => ({ ...c, basePrice: parseInt(e.target.value) || 0 }))}
                 />
                 <Input
-                  label="Bid increment (₹)"
+                  label="Min bid step (₹ lakh)"
                   type="number"
                   value={config.bidIncrement}
                   onChange={e => setConfig(c => ({ ...c, bidIncrement: parseInt(e.target.value) || 0 }))}
@@ -456,6 +502,14 @@ export function Auction() {
                   Pool ({poolSelected.filter(id => id !== config.dhurCaptainId && id !== config.bazCaptainId).length} players)
                 </p>
                 <div className="flex gap-2">
+                  {league.going.length > 0 && (
+                    <button
+                      onClick={() => setPoolSelected(league.going.map(r => r.member_id))}
+                      className="text-xs text-violet-500 font-semibold hover:text-violet-600"
+                    >
+                      League ({league.going.length})
+                    </button>
+                  )}
                   <button
                     onClick={() => setPoolSelected(members.filter(m => isActive(m.id)).map(m => m.id))}
                     className="text-xs text-primary-500 font-semibold hover:text-primary-600"
@@ -546,6 +600,15 @@ export function Auction() {
                  }}>
               <div className="absolute inset-0 border border-amber-500/30 rounded-3xl pointer-events-none" />
               <div className="relative p-6 lg:p-8 text-center">
+                {/* Which set is on the block — the room needs to know whether the
+                    big names are still coming or the money should be spent now. */}
+                <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3.5 py-1.5 mb-3">
+                  <span className="text-base leading-none">{currentSet.emoji}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[2px] text-white/90">
+                    {currentSet.label}
+                  </span>
+                  <span className="text-[10px] font-bold text-white/50">{setIdx}/{setSize}</span>
+                </div>
                 <p className="text-amber-300/70 text-[10px] font-bold uppercase tracking-[3px]">On the block</p>
                 <div className="mt-4 flex justify-center">
                   {currentPlayer.avatar_url ? (
@@ -557,6 +620,9 @@ export function Auction() {
                   )}
                 </div>
                 <h2 className="text-3xl lg:text-4xl font-black text-white mt-4 tracking-tight">{currentPlayer.name}</h2>
+                <p className="text-white/50 text-xs font-bold mt-1">
+                  Base {formatPrice(basePriceById[currentPlayer.id] ?? config.basePrice)}
+                </p>
                 {currentPlayer.role && (
                   <p className="text-amber-200/80 text-sm mt-1 font-semibold">
                     {currentPlayer.role.replace('_', '-')}
@@ -598,7 +664,7 @@ export function Auction() {
                   <p className="text-[10px] font-bold uppercase tracking-[2px] text-white/50">Current Bid</p>
                   <p className="text-5xl lg:text-6xl font-black text-white tabular-nums mt-1"
                      style={{ background: 'linear-gradient(180deg, #fff 30%, #fde68a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    ₹{currentBid.toLocaleString('en-IN')}
+                    {formatPrice(currentBid)}
                   </p>
                   {currentBidder && (
                     <p className={`text-sm font-bold mt-2 ${TEAM_ACCENT[currentBidder]}`}>
@@ -622,7 +688,7 @@ export function Auction() {
               >
                 <div className="text-2xl">🦁</div>
                 <div className="text-xs uppercase tracking-widest mt-1 opacity-80">Dhurandars Bid</div>
-                <div className="text-lg font-black tabular-nums">+₹{config.bidIncrement}</div>
+                <div className="text-lg font-black tabular-nums">+{formatPrice(bidStep)}</div>
               </button>
               <button
                 onClick={() => placeBid('bazigars')}
@@ -635,7 +701,7 @@ export function Auction() {
               >
                 <div className="text-2xl">🐅</div>
                 <div className="text-xs uppercase tracking-widest mt-1 opacity-80">Bazigars Bid</div>
-                <div className="text-lg font-black tabular-nums">+₹{config.bidIncrement}</div>
+                <div className="text-lg font-black tabular-nums">+{formatPrice(bidStep)}</div>
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -676,14 +742,14 @@ export function Auction() {
                         </p>
                       )}
                       <div className="mt-3 flex items-baseline justify-between">
-                        <p className="text-2xl font-black text-white tabular-nums">₹{budget.toLocaleString('en-IN')}</p>
+                        <p className="text-2xl font-black text-white tabular-nums">{formatPrice(budget)}</p>
                         <p className="text-[10px] text-white/50 font-semibold">{teamPicks.length + 1} players</p>
                       </div>
                       <div className="mt-1.5 h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div className={`h-full transition-all duration-500 ${team === 'dhurandars' ? 'bg-blue-400' : 'bg-purple-400'}`}
                              style={{ width: `${used}%` }} />
                       </div>
-                      <p className="text-[10px] text-white/50 mt-1">Spent ₹{spent.toLocaleString('en-IN')} ({used.toFixed(0)}%)</p>
+                      <p className="text-[10px] text-white/50 mt-1">Spent {formatPrice(spent)} ({used.toFixed(0)}%)</p>
                     </div>
                   </div>
                 );
@@ -708,7 +774,7 @@ export function Auction() {
                         <span className="font-bold text-gray-700 dark:text-gray-300 flex-1 truncate">{m.name}</span>
                         {p.team ? (
                           <span className={`font-black ${p.team === 'dhurandars' ? 'text-blue-600' : 'text-purple-600'}`}>
-                            ₹{p.price.toLocaleString('en-IN')} → {teamName(p.team)}
+                            {formatPrice(p.price)} → {teamName(p.team)}
                           </span>
                         ) : (
                           <span className="text-gray-400 font-semibold">Unsold</span>
@@ -749,7 +815,7 @@ export function Auction() {
                           <span className="text-2xl">{TEAM_EMOJI[team]}</span>
                           {teamName(team)}
                         </h3>
-                        <span className="text-xs text-white/60">{teamPicks.length + 1} players · ₹{spent.toLocaleString('en-IN')}</span>
+                        <span className="text-xs text-white/60">{teamPicks.length + 1} players · {formatPrice(spent)}</span>
                       </div>
                       <div className="space-y-1.5">
                         {captain && (
@@ -766,7 +832,7 @@ export function Auction() {
                             <div key={p.memberId} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/5">
                               <Users className="w-3 h-3 text-white/40 flex-shrink-0" />
                               <span className="text-sm text-white truncate flex-1">{m.name}</span>
-                              <span className="text-xs font-black text-white/70 tabular-nums">₹{p.price}</span>
+                              <span className="text-xs font-black text-white/70 tabular-nums">{formatPrice(p.price)}</span>
                             </div>
                           );
                         })}

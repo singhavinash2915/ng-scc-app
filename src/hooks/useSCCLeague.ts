@@ -37,9 +37,13 @@ export const ROLE_LABELS: Record<LeagueRole, string> = {
   keeper: '🧤 Keeper',
 };
 
-/** Two full squads (plus cover for the inevitable drop-outs) before an
- *  auction makes sense. 26 = 13 a side. */
+/** Two full squads before an auction makes sense. 26 = 13 a side. */
 export const SQUAD_TARGET = 26;
+
+/** Late joiners aren't turned away — the next 4 go in as IMPACT PLAYERS,
+ *  2 per squad, auctioned last out of what's left in the purse. */
+export const IMPACT_SLOTS_PER_TEAM = 2;
+export const SQUAD_MAX = SQUAD_TARGET + IMPACT_SLOTS_PER_TEAM * 2;   // 30
 
 /** Captain voting stays locked until this many players have confirmed.
  *  Opening it earlier lets a handful of early birds stitch up the result
@@ -48,10 +52,14 @@ export const VOTE_UNLOCK_AT = 22;
 
 // ─── Auction economics (IPL-flavoured, all values in ₹ LAKH) ──────────────────
 // Big numbers are half the fun — nobody brags about being sold for ₹200.
-export const PURSE_LAKH = 5000;                       // ₹50 Cr per team
-export const SQUAD_SIZE = 13;                         // captain + 12 bought
-export const BID_STEP_SMALL = 10;                     // +₹10L while under ₹1 Cr
-export const BID_STEP_BIG = 25;                       // +₹25L at ₹1 Cr and above
+// Purse is deliberately tight. The pool's total base value is ~₹17 Cr, so
+// ₹15 Cr a side puts about 1.8x that much money on the table — enough to
+// fight over two or three stars, not enough to buy everyone. At ₹50 Cr the
+// money never ran out and every bid was meaningless.
+export const PURSE_LAKH = 1500;                       // ₹15 Cr per team
+export const SQUAD_SIZE = 13;                         // captain + 12 bought (+2 impact)
+export const BID_STEP_SMALL = 5;                      // +₹5L while under ₹1 Cr
+export const BID_STEP_BIG = 10;                       // +₹10L at ₹1 Cr and above
 
 // ─── Base-price tiers ─────────────────────────────────────────────────────────
 // Base price is EARNED, not chosen. If players picked their own, everyone would
@@ -73,6 +81,15 @@ export const PRICE_TIERS: PriceTier[] = [
   { key: 'b',       label: 'Grade B', emoji: '🥈', price: 50,  minRating: 250, cls: 'from-slate-400 to-slate-500' },
   { key: 'c',       label: 'Grade C', emoji: '🥉', price: 20,  minRating: 0,   cls: 'from-orange-600 to-amber-700' },
 ];
+
+/** The order players come up on auction night: Marquee first, while every
+ *  captain still has a full purse and the room is loudest. */
+export const AUCTION_SETS = [
+  { key: 'marquee', label: 'Marquee Set', emoji: '💎', price: 200, blurb: 'The headline names. Full purses, no mercy.' },
+  { key: 'a',       label: 'Set A',       emoji: '🥇', price: 100, blurb: 'Proven match-winners.' },
+  { key: 'b',       label: 'Set B',       emoji: '🥈', price: 50,  blurb: 'The engine room — squads are won here.' },
+  { key: 'c',       label: 'Set C',       emoji: '🥉', price: 20,  blurb: 'Bargains, punts and future stars.' },
+] as const;
 
 /** Grade a player from their SCC rating (0–1000). Unrated players start at C. */
 export function tierForRating(rating: number | undefined): PriceTier {

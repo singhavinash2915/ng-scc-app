@@ -7,7 +7,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
-import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
+import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, SQUAD_MAX, IMPACT_SLOTS_PER_TEAM, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
   tierForRating, isWillingCaptain, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
 import { SEASON_NEW } from '../config/season2';
@@ -136,6 +136,9 @@ export function SCCLeague() {
   const ballotWithdrawn = !!myBallot?.captain_id && !candidates.some(m => m.id === myBallot.captain_id);
   const pct = Math.min(100, (count / SQUAD_TARGET) * 100);
   const remaining = Math.max(0, SQUAD_TARGET - count);
+  // Past 26 the squad isn't closed — the next 4 are impact players.
+  const impactTaken = Math.max(0, Math.min(SQUAD_MAX, count) - SQUAD_TARGET);
+  const impactLeft = Math.max(0, SQUAD_MAX - Math.max(count, SQUAD_TARGET));
   const inputCls = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-400';
 
   // Ring geometry for the squad counter
@@ -191,12 +194,16 @@ export function SCCLeague() {
               </div>
               <div className="text-left">
                 <p className="font-display text-xl font-extrabold">
-                  {count >= SQUAD_TARGET ? 'Squad complete! 🎉' : `${remaining} more needed`}
+                  {count >= SQUAD_MAX
+                    ? 'Squad FULL 🔒'
+                    : count >= SQUAD_TARGET ? 'Squad complete! 🎉' : `${remaining} more needed`}
                 </p>
                 <p className="text-white/70 text-xs mt-1 max-w-[190px]">
-                  {count >= SQUAD_TARGET
-                    ? 'Two full XIs locked. Auction time 🔨'
-                    : `Get to ${SQUAD_TARGET} — 13 a side — and the auction is on`}
+                  {count >= SQUAD_MAX
+                    ? `All ${SQUAD_MAX} spots gone. Auction time 🔨`
+                    : count >= SQUAD_TARGET
+                      ? `Two full XIs locked 🔨 ${impactLeft} impact-player spot${impactLeft === 1 ? '' : 's'} still open`
+                      : `Get to ${SQUAD_TARGET} — 13 a side — and the auction is on`}
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {(Object.keys(ROLE_LABELS) as LeagueRole[]).map(r => (
@@ -205,6 +212,11 @@ export function SCCLeague() {
                     </span>
                   ))}
                 </div>
+                {impactTaken > 0 && (
+                  <p className="text-amber-300 text-[11px] font-bold mt-2">
+                    ⚡ {impactTaken} impact player{impactTaken === 1 ? '' : 's'} · {impactLeft} spot{impactLeft === 1 ? '' : 's'} left
+                  </p>
+                )}
                 {league.sittingOut.length > 0 && (
                   <p className="text-white/50 text-[11px] font-bold mt-2">
                     😔 {league.sittingOut.length} sitting out
