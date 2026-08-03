@@ -161,22 +161,30 @@ export function useSCCLeague(season: string, options: LeagueOptions = {}) {
     setVotes(((mineRes.data as LeagueVote[]) || []));
 
     if (standRes.error && isMissingTable(standRes.error)) {
-      // Views not created yet — fall back to counting locally so the election
-      // still works. Only the top few NAMES are ever rendered either way.
-      const voteRes = await supabase.from('scc_league_captain_votes').select('*').eq('season', season);
-      const rows = voteRes.error ? [] : ((voteRes.data as LeagueVote[]) || []);
-      setVotes(myId ? rows.filter(v => v.voter_id === myId) : []);
-      const inIds = new Set((regRes.data as LeagueRegistration[] || [])
-        .filter(r => r.status === 'in').map(r => r.member_id));
-      const eligible = rows.filter(v => inIds.has(v.voter_id));
-      const m = new Map<string, number>();
-      eligible.forEach(v => { if (v.captain_id) m.set(v.captain_id, (m.get(v.captain_id) || 0) + 1); });
-      const ranked = [...m.entries()].sort((a, b) => b[1] - a[1]);
-      setStandings(ranked.map(([id, n]) => ({
-        captain_id: id,
-        position: ranked.filter(([, o]) => o > n).length + 1,
-      })));
-      setBallotCount(eligible.length);
+      // Views not created yet. Fall back to counting locally — but ONLY for an
+      // admin. A member's browser must never pull the ballot rows: doing that
+      // here once put every vote in every member's network tab, which is the
+      // whole thing this design exists to prevent.
+      if (!isAdmin) {
+        const countRes2 = await supabase.from('scc_league_captain_votes')
+          .select('id', { count: 'exact', head: true }).eq('season', season);
+        setStandings([]);                       // members are shown no standings
+        setBallotCount(countRes2.count ?? 0);   // a bare number, no identities
+      } else {
+        const voteRes = await supabase.from('scc_league_captain_votes').select('*').eq('season', season);
+        const rows = voteRes.error ? [] : ((voteRes.data as LeagueVote[]) || []);
+        const inIds = new Set((regRes.data as LeagueRegistration[] || [])
+          .filter(r => r.status === 'in').map(r => r.member_id));
+        const eligible = rows.filter(v => inIds.has(v.voter_id));
+        const m = new Map<string, number>();
+        eligible.forEach(v => { if (v.captain_id) m.set(v.captain_id, (m.get(v.captain_id) || 0) + 1); });
+        const ranked = [...m.entries()].sort((a, b) => b[1] - a[1]);
+        setStandings(ranked.map(([id, n]) => ({
+          captain_id: id,
+          position: ranked.filter(([, o]) => o > n).length + 1,
+        })));
+        setBallotCount(eligible.length);
+      }
     } else {
       setStandings((standRes.data as CaptainStanding[]) || []);
       setBallotCount((countRes.data as { ballots: number } | null)?.ballots ?? 0);
