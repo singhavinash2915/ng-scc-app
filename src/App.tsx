@@ -25,6 +25,7 @@ const SeasonAwards = lazy(() => import('./pages/SeasonAwards').then(m => ({ defa
 const SeasonKickoff = lazy(() => import('./pages/SeasonKickoff').then(m => ({ default: m.SeasonKickoff })));
 const Honours = lazy(() => import('./pages/Honours').then(m => ({ default: m.Honours })));
 const SCCLeague = lazy(() => import('./pages/SCCLeague').then(m => ({ default: m.SCCLeague })));
+const LeagueResult = lazy(() => import('./pages/LeagueResult').then(m => ({ default: m.LeagueResult })));
 const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
 const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
 const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
@@ -114,6 +115,8 @@ const AppRoutes = () => (
         <Route path="/awards"        element={<Suspense fallback={<PageLoader />}><SeasonAwards /></Suspense>} />
         <Route path="/kickoff"       element={<Suspense fallback={<PageLoader />}><SeasonKickoff /></Suspense>} />
         <Route path="/scc-league"    element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><SCCLeague /></Suspense> : <Navigate to="/" replace />} />
+        {/* Election reveal — admin-gated inside the page, kept out of the nav */}
+        <Route path="/league-result" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><LeagueResult /></Suspense> : <Navigate to="/" replace />} />
         <Route path="/pressure"      element={<Navigate to="/honours?tab=pressure" replace />} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />
