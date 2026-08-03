@@ -7,7 +7,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
-import { useSCCLeague, ROLE_LABELS, SQUAD_TARGET, SQUAD_MAX, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
+import { useSCCLeague, ROLE_LABELS, REVEAL_TOP_N, SQUAD_TARGET, SQUAD_MAX, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
   tierForRating, isWillingCaptain, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
 import { SEASON_NEW } from '../config/season2';
@@ -585,36 +585,35 @@ export function SCCLeague() {
           {isAdmin && league.tally.ballots > 0 && (
             <div className="mt-5 pt-4 border-t border-slate-100 dark:border-white/10">
               <p className="text-[10px] font-black uppercase text-slate-400 mb-2.5 flex items-center gap-1.5">
-                <Lock className="w-3 h-3" /> Admin only · Live count · {league.tally.ballots} ballot{league.tally.ballots === 1 ? '' : 's'}
+                <Lock className="w-3 h-3" /> Admin only · Leading {REVEAL_TOP_N}
               </p>
-              {league.tally.discarded > 0 && (
-                <p className="text-[11px] font-bold text-rose-500 mb-2">
-                  {league.tally.discarded} ballot{league.tally.discarded === 1 ? '' : 's'} not counted — cast by
-                  {league.tally.discarded === 1 ? ' a player' : ' players'} not registered IN.
-                </p>
-              )}
-              <p className="text-[11px] font-black mb-1.5 text-amber-500">👑 Captain</p>
-              {league.tally.captains.slice(0, 6).map((c, i) => (
-                <div key={c.id} className="flex items-center gap-2 py-1">
-                  <span className={`text-[11px] font-black w-4 ${i < 2 ? 'text-amber-500' : 'text-slate-300'}`}>{i + 1}</span>
-                  <Avatar member={memberById[c.id]} size={24} />
-                  <span className="text-xs flex-1 truncate text-slate-700 dark:text-white/80">
+              {/* Names and order only. No vote counts anywhere on screen — the
+                  admin password is shared, so a number here is a number the
+                  whole club can read. Run scripts/league_votes.sh for the real
+                  numbers. */}
+              {league.revealed.map((c, i) => (
+                <div key={c.id} className="flex items-center gap-2.5 py-1.5">
+                  <span className={`text-sm font-black w-5 ${i < 2 ? 'text-amber-500' : 'text-slate-300'}`}>
+                    {i + 1}
+                  </span>
+                  <Avatar member={memberById[c.id]} size={28} />
+                  <span className="text-sm font-bold flex-1 truncate text-slate-700 dark:text-white/80">
                     {memberById[c.id]?.name ?? '?'}
                   </span>
                   {c.tied && (
                     <span className="text-[9px] font-black uppercase bg-amber-100 text-amber-700 rounded px-1.5 py-0.5">
-                      tie · rating {Math.round(c.rating)}
+                      tie
                     </span>
                   )}
-                  <span className="text-xs font-black text-slate-500 tabular-nums">{c.n}</span>
+                  {i < 2 && <Crown className="w-3.5 h-3.5 text-amber-500" fill="currentColor" />}
                 </div>
               ))}
-              {league.tally.captains.some(c => c.tied) && (
-                <p className="text-[11px] text-slate-500 dark:text-white/60 mt-2">
-                  Level on votes — ordered by <b>SCC Rankings rating</b>, as the rulebook says. If it's
-                  still level at the close, it's a coin toss 🪙
-                </p>
-              )}
+              <p className="text-[11px] text-slate-500 dark:text-white/60 mt-2">
+                Order only — vote counts are never shown in the app.
+                {league.revealed.some(c => c.tied) && (
+                  <> Level pegging is split on <b>SCC Rankings rating</b>, then a coin toss 🪙</>
+                )}
+              </p>
 
               {/* Provisional teams */}
               {league.leadership.captains.length === 2 && (

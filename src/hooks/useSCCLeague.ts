@@ -30,6 +30,15 @@ export interface LeagueVote {
   captain_id: string | null;
 }
 
+/** A ranked position with NO vote count attached — equal positions = a tie. */
+export interface CaptainStanding {
+  captain_id: string;
+  position: number;
+}
+
+/** How many leaders the app is ever allowed to reveal. */
+export const REVEAL_TOP_N = 3;
+
 export const ROLE_LABELS: Record<LeagueRole, string> = {
   batter: '🏏 Batter',
   bowler: '🎯 Bowler',
@@ -121,6 +130,7 @@ export function useSCCLeague(season: string, options: LeagueOptions = {}) {
   const { isAdmin = false, myId = null, ratingById } = options;
   const [registrations, setRegistrations] = useState<LeagueRegistration[]>([]);
   const [votes, setVotes] = useState<LeagueVote[]>([]);
+  const [standings, setStandings] = useState<CaptainStanding[]>([]);
   const [ballotCount, setBallotCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [tableMissing, setTableMissing] = useState(false);
@@ -137,23 +147,39 @@ export function useSCCLeague(season: string, options: LeagueOptions = {}) {
     }
 
     // A secret ballot has to be secret in the NETWORK TAB too, not just on
-    // screen. Non-admins get a count and their own row — the other ballots
-    // never leave the database, so there is nothing to snoop.
-    if (isAdmin) {
+    // screen — and the admin password is shared, so admins are no exception.
+    // NOBODY's browser gets the ballots or the counts: everyone reads ranked
+    // positions from a view, plus their own row so they can see their pick.
+    const [standRes, countRes, mineRes] = await Promise.all([
+      supabase.from('scc_league_captain_standings')
+        .select('captain_id,position').eq('season', season).order('position'),
+      supabase.from('scc_league_ballot_counts').select('ballots').eq('season', season).maybeSingle(),
+      myId
+        ? supabase.from('scc_league_captain_votes').select('*').eq('season', season).eq('voter_id', myId)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    setVotes(((mineRes.data as LeagueVote[]) || []));
+
+    if (standRes.error && isMissingTable(standRes.error)) {
+      // Views not created yet — fall back to counting locally so the election
+      // still works. Only the top few NAMES are ever rendered either way.
       const voteRes = await supabase.from('scc_league_captain_votes').select('*').eq('season', season);
       const rows = voteRes.error ? [] : ((voteRes.data as LeagueVote[]) || []);
-      setVotes(rows);
-      setBallotCount(rows.length);
+      setVotes(myId ? rows.filter(v => v.voter_id === myId) : []);
+      const inIds = new Set((regRes.data as LeagueRegistration[] || [])
+        .filter(r => r.status === 'in').map(r => r.member_id));
+      const eligible = rows.filter(v => inIds.has(v.voter_id));
+      const m = new Map<string, number>();
+      eligible.forEach(v => { if (v.captain_id) m.set(v.captain_id, (m.get(v.captain_id) || 0) + 1); });
+      const ranked = [...m.entries()].sort((a, b) => b[1] - a[1]);
+      setStandings(ranked.map(([id, n]) => ({
+        captain_id: id,
+        position: ranked.filter(([, o]) => o > n).length + 1,
+      })));
+      setBallotCount(eligible.length);
     } else {
-      const [countRes, mineRes] = await Promise.all([
-        supabase.from('scc_league_captain_votes')
-          .select('id', { count: 'exact', head: true }).eq('season', season),
-        myId
-          ? supabase.from('scc_league_captain_votes').select('*').eq('season', season).eq('voter_id', myId)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
-      setBallotCount(countRes.count ?? 0);
-      setVotes(((mineRes.data as LeagueVote[]) || []));
+      setStandings((standRes.data as CaptainStanding[]) || []);
+      setBallotCount((countRes.data as { ballots: number } | null)?.ballots ?? 0);
     }
     setLoading(false);
   }, [season, isAdmin, myId]);
@@ -235,35 +261,23 @@ export function useSCCLeague(season: string, options: LeagueOptions = {}) {
   }, [going]);
 
   /**
-   * Captain vote tally, most-voted first.
-   * Counts only ballots from players currently registered IN — a vote cast by
-   * someone sitting out (or never registered) is not a vote.
+   * The leading few captain candidates — NAMES AND ORDER ONLY.
+   * No counts anywhere: the admin password is shared around, so a number on
+   * screen is a number the whole club can read. Ties (equal positions) are
+   * settled on SCC Rankings rating, exactly as the rulebook says.
    */
-  const eligibleVotes = useMemo(() => {
-    const inIds = new Set(going.map(r => r.member_id));
-    return votes.filter(v => inIds.has(v.voter_id));
-  }, [votes, going]);
-
   const tally = useMemo(() => {
-    const m = new Map<string, number>();
-    eligibleVotes.forEach(v => { if (v.captain_id) m.set(v.captain_id, (m.get(v.captain_id) || 0) + 1); });
-    // Ties are broken by SCC Rankings rating, exactly as the rulebook states.
-    // This used to fall back to comparing UUIDs, which ordered a tie by an
-    // accident of the database — Dhawal's id simply started with a lower digit
-    // than Avinash's. Nothing to do with cricket, and it decided a captaincy.
     const rating = (id: string) => ratingById?.[id] ?? 0;
-    const captains = [...m.entries()]
-      .map(([id, n]) => ({ id, n, rating: rating(id), tied: false }))
-      .sort((a, b) => b.n - a.n || b.rating - a.rating);
-    captains.forEach((c, i) => {
-      c.tied = captains.some((o, j) => j !== i && o.n === c.n);
-    });
-    return {
-      captains,
-      ballots: isAdmin ? eligibleVotes.length : ballotCount,
-      discarded: isAdmin ? votes.length - eligibleVotes.length : 0,
-    };
-  }, [eligibleVotes, votes, ratingById, isAdmin, ballotCount]);
+    const captains = [...standings]
+      .sort((a, b) => a.position - b.position || rating(b.captain_id) - rating(a.captain_id))
+      .map(x => ({
+        id: x.captain_id,
+        position: x.position,
+        rating: rating(x.captain_id),
+        tied: standings.some(o => o.captain_id !== x.captain_id && o.position === x.position),
+      }));
+    return { captains, ballots: ballotCount };
+  }, [standings, ratingById, ballotCount]);
 
   /** The two most-voted players captain the two teams. */
   const leadership = useMemo(
@@ -271,10 +285,12 @@ export function useSCCLeague(season: string, options: LeagueOptions = {}) {
     [tally],
   );
 
+  const revealed = useMemo(() => tally.captains.slice(0, REVEAL_TOP_N), [tally]);
+
   return {
     registrations, votes, loading, tableMissing,
     register, myRegistration, castVote, myVote,
-    going, sittingOut, captainCandidates, roleCounts, tally, leadership,
+    going, sittingOut, captainCandidates, roleCounts, tally, leadership, revealed,
     refetch: fetchAll,
   };
 }
