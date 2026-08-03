@@ -37,10 +37,9 @@ export function SCCLeague() {
   const { members } = useMembers();
   const { matches } = useMatches();
   const { scorecards } = useAllScorecards();
-  const league = useSCCLeague(SEASON_NEW);
-
   // Base price is GRADED from the club's own rating — never self-selected,
   // otherwise every single player would tick "₹2 Cr" and the grade means nothing.
+  // The same ratings break captain-vote ties, per the rulebook.
   const values = useMarketValue(matches, members, scorecards);
   const ratingById = useMemo(
     () => Object.fromEntries(values.map(v => [v.member.id, v.rating])) as Record<string, number>,
@@ -49,6 +48,8 @@ export function SCCLeague() {
 
   const [myId, setMyId] = useState<string | null>(null);
   useEffect(() => { setMyId(localStorage.getItem(PROFILE_KEY)); }, []);
+
+  const league = useSCCLeague(SEASON_NEW, { isAdmin, myId, ratingById });
 
   const memberById = useMemo(
     () => Object.fromEntries(members.map(m => [m.id, m])) as Record<string, Member>,
@@ -600,9 +601,20 @@ export function SCCLeague() {
                   <span className="text-xs flex-1 truncate text-slate-700 dark:text-white/80">
                     {memberById[c.id]?.name ?? '?'}
                   </span>
+                  {c.tied && (
+                    <span className="text-[9px] font-black uppercase bg-amber-100 text-amber-700 rounded px-1.5 py-0.5">
+                      tie · rating {Math.round(c.rating)}
+                    </span>
+                  )}
                   <span className="text-xs font-black text-slate-500 tabular-nums">{c.n}</span>
                 </div>
               ))}
+              {league.tally.captains.some(c => c.tied) && (
+                <p className="text-[11px] text-slate-500 dark:text-white/60 mt-2">
+                  Level on votes — ordered by <b>SCC Rankings rating</b>, as the rulebook says. If it's
+                  still level at the close, it's a coin toss 🪙
+                </p>
+              )}
 
               {/* Provisional teams */}
               {league.leadership.captains.length === 2 && (
