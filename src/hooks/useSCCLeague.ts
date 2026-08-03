@@ -39,6 +39,15 @@ export interface CaptainStanding {
 /** How many leaders the app is ever allowed to reveal. */
 export const REVEAL_TOP_N = 3;
 
+/** Ballots close 5pm IST, Mon 3 Aug 2026 (= 11:30 UTC). */
+export const VOTING_CLOSES_AT = new Date('2026-08-03T11:30:00Z');
+export const votingHasClosed = () => Date.now() >= VOTING_CLOSES_AT.getTime();
+
+/** Own ballot, mirrored on the device. Once the ballots table is locked down
+ *  the app can no longer read even your own row back, so this is what lets it
+ *  still show you your pick. */
+const myBallotKey = (season: string) => `scc-league-ballot-${season}`;
+
 export const ROLE_LABELS: Record<LeagueRole, string> = {
   batter: '🏏 Batter',
   bowler: '🎯 Bowler',
@@ -158,7 +167,18 @@ export function useSCCLeague(season: string, options: LeagueOptions = {}) {
         ? supabase.from('scc_league_captain_votes').select('*').eq('season', season).eq('voter_id', myId)
         : Promise.resolve({ data: [], error: null }),
     ]);
-    setVotes(((mineRes.data as LeagueVote[]) || []));
+    const mineRows = (mineRes.data as LeagueVote[]) || [];
+    if (mineRows.length) {
+      setVotes(mineRows);
+      localStorage.setItem(myBallotKey(season), mineRows[0].captain_id ?? '');
+    } else {
+      // Ballots may simply be unreadable now (by design). Fall back to the
+      // copy this device kept when the vote was cast.
+      const local = myId ? localStorage.getItem(myBallotKey(season)) : null;
+      setVotes(local
+        ? [{ id: 'local', season, voter_id: myId!, captain_id: local }]
+        : []);
+    }
 
     if (standRes.error && isMissingTable(standRes.error)) {
       // Views not created yet. Fall back to counting locally — but ONLY for an
@@ -242,10 +262,14 @@ export function useSCCLeague(season: string, options: LeagueOptions = {}) {
     if (voter?.status !== 'in') {
       return { success: false, error: 'Only players registered as IN can vote.' };
     }
+    if (votingHasClosed()) {
+      return { success: false, error: 'Voting has closed.' };
+    }
     const { error } = await supabase.from('scc_league_captain_votes').upsert({
       season, voter_id: voterId, captain_id: captainId,
     }, { onConflict: 'season,voter_id' });
     if (error) return { success: false, error: error.message };
+    localStorage.setItem(myBallotKey(season), captainId);
     await fetchAll();
     return { success: true };
   }, [season, fetchAll, registrations]);

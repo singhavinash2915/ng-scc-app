@@ -7,7 +7,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
-import { useSCCLeague, ROLE_LABELS, REVEAL_TOP_N, SQUAD_TARGET, SQUAD_MAX, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
+import { useSCCLeague, ROLE_LABELS, REVEAL_TOP_N, VOTING_CLOSES_AT, votingHasClosed, SQUAD_TARGET, SQUAD_MAX, VOTE_UNLOCK_AT, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, formatPrice,
   tierForRating, isWillingCaptain, type LeagueStatus, type LeagueRole } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
 import { SEASON_NEW } from '../config/season2';
@@ -132,6 +132,10 @@ export function SCCLeague() {
   // people have voted for you throws their vote away.
   const captaincyLocked = count >= VOTE_UNLOCK_AT;
   const canVote = mine?.status === 'in';
+  const closed = votingHasClosed();
+  const closesAt = VOTING_CLOSES_AT.toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+  });
   // Belt and braces: if a ballot ends up pointing at someone who is no longer a
   // candidate, tell that voter instead of silently binning their vote.
   const ballotWithdrawn = !!myBallot?.captain_id && !candidates.some(m => m.id === myBallot.captain_id);
@@ -496,7 +500,15 @@ export function SCCLeague() {
             </p>
           </div>
 
-          {!myId ? (
+          {closed ? (
+            <div className="rounded-2xl bg-slate-900 text-white p-4 text-center">
+              <p className="text-2xl">🔒</p>
+              <p className="text-sm font-black mt-1">Voting closed</p>
+              <p className="text-xs text-white/70 mt-1">
+                Ballots shut at {closesAt} IST. The captains are decided — announcement incoming 👑
+              </p>
+            </div>
+          ) : !myId ? (
             <div className="flex justify-center"><MyStatsButton /></div>
           ) : !canVote ? (
             /* Eligibility is the registration itself. Anyone could vote before
@@ -549,6 +561,9 @@ export function SCCLeague() {
                 </select>
                 <p className="text-[11px] text-slate-500 dark:text-white/60 mt-1.5">
                   Only players who said they're up for the job are listed — no wasted votes.
+                </p>
+                <p className="text-[11px] font-bold text-rose-500 mt-1">
+                  ⏰ Ballots close {closesAt} IST
                 </p>
                 {ballotWithdrawn && (
                   <p className="text-[11px] font-bold text-rose-500 mt-1.5">
