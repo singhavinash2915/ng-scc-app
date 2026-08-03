@@ -16,7 +16,14 @@ interface Props {
 
 const ROW_H = 38;
 const GAP = 8;
-const STEP_MS = 420;
+// Slow enough to actually watch a lead change land. Speed is adjustable
+// below — projected on a screen, the default is the one that reads.
+const SPEEDS = [
+  { label: '0.5x', ms: 1600 },
+  { label: '1x',   ms: 900 },
+  { label: '2x',   ms: 420 },
+];
+const DEFAULT_SPEED = 1;
 
 const istClock = (iso: string) => {
   const d = new Date(iso);
@@ -32,8 +39,11 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
     [ballots],
   );
 
-  const [idx, setIdx] = useState(steps.length);
-  const [playing, setPlaying] = useState(false);
+  // Starts at zero and plays itself: opening the page IS the replay. Parking
+  // it at the final count meant Play had nothing left to show.
+  const [idx, setIdx] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const timer = useRef<number | null>(null);
 
   const atEnd = idx >= steps.length;
@@ -43,9 +53,9 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
 
   useEffect(() => {
     if (!running) return;
-    timer.current = window.setTimeout(() => setIdx(i => i + 1), STEP_MS);
+    timer.current = window.setTimeout(() => setIdx(i => i + 1), SPEEDS[speed].ms);
     return () => { if (timer.current) window.clearTimeout(timer.current); };
-  }, [running, idx]);
+  }, [running, idx, speed]);
 
   const finalRank = useMemo(
     () => Object.fromEntries(candidates.map((c, i) => [c.id, i])) as Record<string, number>,
@@ -62,6 +72,9 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
   }, [steps, idx, candidates, finalRank]);
 
   const max = Math.max(1, ...rows.map(r => r.votes));
+  const castSoFar = Math.min(idx, steps.length);
+  /** Share of the ballots cast SO FAR, so the figure moves with the replay. */
+  const pctOf = (v: number) => (castSoFar ? Math.round((v / castSoFar) * 100) : 0);
   const lastAt = idx > 0 ? steps[Math.min(idx, steps.length) - 1].at : null;
   const leader = rows[0];
   const colourFor = (id: string) =>
@@ -113,6 +126,19 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
         <span className="text-[11px] font-bold tabular-nums text-slate-500 dark:text-white/60">
           {idx}/{steps.length}
         </span>
+
+        <div className="flex items-center gap-1">
+          {SPEEDS.map((sp, i) => (
+            <button key={sp.label} onClick={() => setSpeed(i)}
+              className={`rounded-full px-2 py-1 text-[10px] font-black transition-colors ${
+                speed === i
+                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                  : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-white/60'
+              }`}>
+              {sp.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-baseline justify-between mb-3">
@@ -122,6 +148,7 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
         {leader && leader.votes > 0 && (
           <p className="text-xs font-black text-slate-900 dark:text-white">
             Leading: {memberById[leader.id]?.name?.split(' ')[0] ?? '?'}
+            <span className="font-bold text-slate-400"> · {castSoFar} ballot{castSoFar === 1 ? '' : 's'} in</span>
           </p>
         )}
       </div>
@@ -142,6 +169,10 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
             </div>
             <span className="text-xs font-black tabular-nums w-5 text-right text-slate-900 dark:text-white">
               {r.votes}
+            </span>
+            <span className="text-[11px] font-bold tabular-nums w-9 text-right
+                             text-slate-400 dark:text-white/45">
+              {r.votes > 0 ? `${pctOf(r.votes)}%` : '—'}
             </span>
           </div>
         ))}

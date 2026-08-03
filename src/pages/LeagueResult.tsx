@@ -68,6 +68,8 @@ export function LeagueResult() {
   const winners = candidates.slice(0, 2);
   const rest = candidates.slice(2);
   const maxVotes = candidates[0]?.votes || 1;
+  const totalVotes = candidates.reduce((n, c) => n + c.votes, 0) || 1;
+  const pct = (v: number) => Math.round((v / totalVotes) * 100);
   const SERIES = ['#2a78d6', '#eb6834'];
 
   return (
@@ -134,7 +136,7 @@ export function LeagueResult() {
                       {c.votes}
                     </p>
                     <p className="text-[11px] text-white/60 -mt-0.5">
-                      vote{c.votes === 1 ? '' : 's'}
+                      vote{c.votes === 1 ? '' : 's'} · {pct(c.votes)}% of the ballot
                     </p>
                   </div>
                 ))}
@@ -169,7 +171,8 @@ export function LeagueResult() {
                 <ScrollText className="w-4 h-4 text-slate-400" /> The count
               </h2>
               <p className="text-xs text-slate-500 dark:text-white/60 mt-1 mb-4">
-                Every player who received a vote. The top two take the captaincies.
+                Every player who received a vote, with their share of the {totalVotes} ballots.
+                The top two take the captaincies.
               </p>
 
               <div className="space-y-2.5">
@@ -199,6 +202,8 @@ export function LeagueResult() {
                         </div>
                         <span className="text-xs font-black tabular-nums w-5 text-right
                                          text-slate-900 dark:text-white">{c.votes}</span>
+                        <span className="text-[11px] font-bold tabular-nums w-9 text-right
+                                         text-slate-400 dark:text-white/45">{pct(c.votes)}%</span>
                       </div>
                     </div>
                   );
