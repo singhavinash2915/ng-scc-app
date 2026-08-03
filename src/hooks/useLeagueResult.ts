@@ -10,6 +10,8 @@ export interface Ballot {
   voterId: string;
   captainId: string;
   at: string;
+  /** True when `at` is when the vote LAST changed, not just when first cast. */
+  exact: boolean;
 }
 
 export interface Candidate {
@@ -21,18 +23,29 @@ export interface Candidate {
 
 export function useLeagueResult(season: string, ratingById?: Record<string, number>) {
   const [ballots, setBallots] = useState<Ballot[]>([]);
+  const [exactTimes, setExactTimes] = useState(false);
   const [eligibleIds, setEligibleIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [voteRes, regRes] = await Promise.all([
-      supabase.from('scc_league_captain_votes')
-        .select('voter_id,captain_id,created_at').eq('season', season).order('created_at'),
-      supabase.from('scc_league_registrations')
-        .select('member_id,status').eq('season', season),
-    ]);
+    // Prefer updated_at: a changed vote keeps its original created_at, so
+    // ordering by that replays everyone's FINAL pick at their FIRST timestamp
+    // and hides every lead change. Falls back when the column isn't there yet.
+    let voteRes = await supabase.from('scc_league_captain_votes')
+      .select('voter_id,captain_id,created_at,updated_at').eq('season', season);
+    let exact = true;
+    if (voteRes.error?.code === '42703' || /updated_at/.test(voteRes.error?.message ?? '')) {
+      exact = false;
+      voteRes = await supabase.from('scc_league_captain_votes')
+        .select('voter_id,captain_id,created_at').eq('season', season) as typeof voteRes;
+    }
+    setExactTimes(exact);
+
+    const regRes = await supabase.from('scc_league_registrations')
+      .select('member_id,status').eq('season', season);
+
     if (voteRes.error) {
       // Expected once the ballots are locked down at the database — say so
       // plainly rather than rendering an empty, wrong-looking page.
@@ -43,8 +56,9 @@ export function useLeagueResult(season: string, ratingById?: Record<string, numb
       setBallots((voteRes.data || []).map(v => ({
         voterId: v.voter_id as string,
         captainId: v.captain_id as string,
-        at: v.created_at as string,
-      })).filter(b => b.captainId));
+        at: ((v as { updated_at?: string }).updated_at ?? v.created_at) as string,
+        exact,
+      })).filter(b => b.captainId).sort((a, b) => a.at.localeCompare(b.at)));
     }
     setEligibleIds(new Set(
       ((regRes.data || []) as { member_id: string; status: string }[])
@@ -95,5 +109,5 @@ export function useLeagueResult(season: string, ratingById?: Record<string, numb
     [ballots, eligibleIds],
   );
 
-  return { candidates, valid, turnout, notVoted, discarded, loading, error, refetch: fetchAll };
+  return { candidates, valid, turnout, notVoted, discarded, exactTimes, loading, error, refetch: fetchAll };
 }

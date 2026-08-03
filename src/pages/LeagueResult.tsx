@@ -40,7 +40,7 @@ export function LeagueResult() {
     [values],
   );
 
-  const { candidates, valid, turnout, notVoted, discarded, loading, error } =
+  const { candidates, valid, turnout, notVoted, discarded, exactTimes, loading, error } =
     useLeagueResult(SEASON_NEW, ratingById);
 
   const memberById = useMemo(
@@ -223,9 +223,25 @@ export function LeagueResult() {
               <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400" /> How the lead changed
               </h2>
-              <p className="text-xs text-slate-500 dark:text-white/60 mt-1 mb-4">
+              <p className="text-xs text-slate-500 dark:text-white/60 mt-1 mb-3">
                 Every ballot replayed in the order it landed. Press play and watch the bars swap.
               </p>
+
+              {!exactTimes && (
+                <div className="rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200
+                                dark:border-amber-500/25 p-3.5 mb-4">
+                  <p className="text-[11px] font-bold text-amber-800 dark:text-amber-200">
+                    Approximate replay
+                  </p>
+                  <p className="text-[11px] text-amber-700/80 dark:text-amber-200/70 mt-1 leading-snug">
+                    Changing a vote overwrote the old one and kept the original timestamp, so this
+                    shows each player's <b>final</b> pick at the time they <b>first</b> voted. Anyone
+                    who briefly led on votes that later moved elsewhere won't appear — that history
+                    was never stored. Run <code>add_league_vote_history.sql</code> to record it
+                    properly from the next election.
+                  </p>
+                </div>
+              )}
 
               {/* identity is never colour-alone: the legend names the two winners */}
               <div className="flex flex-wrap gap-3 mb-4">
