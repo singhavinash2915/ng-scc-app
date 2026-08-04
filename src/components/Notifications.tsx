@@ -12,6 +12,20 @@ import {
 import type { Member, Match } from '../types';
 import { getActiveMemberIds } from '../utils/memberActivity';
 
+const SEEN_KEY = 'scc-notifications-seen';
+
+/**
+ * These aren't events, they're standing conditions — a low balance stays low
+ * until someone tops up. So "read" is per condition AND per value: seeing
+ * "₹245" marks it read, but if it drops to "-₹100" the message changes and it
+ * notifies again, which is exactly when you'd want telling.
+ */
+const signature = (n: { id: string; message: string }) => `${n.id}|${n.message}`;
+
+const loadSeen = (): string[] => {
+  try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); } catch { return []; }
+};
+
 interface NotificationsProps {
   members: Member[];
   matches: Match[];
@@ -28,6 +42,7 @@ interface Notification {
 
 export function Notifications({ members, matches }: NotificationsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [seen, setSeen] = useState<string[]>(loadSeen);
 
   const notifications = useMemo(() => {
     const notifs: Notification[] = [];
@@ -135,22 +150,40 @@ export function Notifications({ members, matches }: NotificationsProps) {
     }
   };
 
-  const highPriorityCount = notifications.filter(n => n.priority === 'high').length;
+  /** Only things you haven't already looked at drive the badge. */
+  const unseen = useMemo(
+    () => notifications.filter(n => !seen.includes(signature(n))),
+    [notifications, seen],
+  );
+  const highPriorityCount = unseen.filter(n => n.priority === 'high').length;
+
+  const markAllSeen = () => {
+    // Store only signatures that still exist, so this can't grow forever.
+    const sigs = notifications.map(signature);
+    setSeen(sigs);
+    localStorage.setItem(SEEN_KEY, JSON.stringify(sigs));
+  };
+
+  const openPanel = () => {
+    const next = !isOpen;
+    setIsOpen(next);
+    if (next) markAllSeen();
+  };
 
   return (
     <div className="relative">
       {/* Notification Bell Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={openPanel}
         className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        aria-label="Notifications"
+        aria-label={`Notifications${unseen.length ? `, ${unseen.length} new` : ''}`}
       >
         <Bell className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-        {notifications.length > 0 && (
+        {unseen.length > 0 && (
           <span className={`absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center text-xs font-bold text-white rounded-full px-1 ${
             highPriorityCount > 0 ? 'bg-red-500 animate-pulse' : 'bg-primary-500'
           }`}>
-            {notifications.length}
+            {unseen.length}
           </span>
         )}
       </button>
@@ -252,6 +285,10 @@ export function Notifications({ members, matches }: NotificationsProps) {
                     )}
                   </div>
                 </div>
+                <p className="text-[10px] text-gray-400 mt-1.5">
+                  These stay listed until they're actually resolved — the badge clears once
+                  you've seen them, and returns if anything changes.
+                </p>
               </div>
             )}
           </div>
