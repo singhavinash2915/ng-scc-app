@@ -26,6 +26,15 @@ export interface AuctionRow {
   round?: number;
 }
 
+export interface Bid {
+  id: number;
+  member_id: string;
+  team: TeamKey;
+  amount: number;
+  round: number;
+  created_at: string;
+}
+
 export interface Pick {
   id: string;
   member_id: string;
@@ -48,6 +57,7 @@ export function useAuctionLive(
   const { live = true, basePriceOf } = opts;
   const [auction, setAuction] = useState<AuctionRow | null>(null);
   const [picks, setPicks] = useState<Pick[]>([]);
+  const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const [tableMissing, setTableMissing] = useState(false);
   const busy = useRef(false);
@@ -56,11 +66,13 @@ export function useAuctionLive(
     // Never let a slow poll stack up behind another one.
     if (busy.current) return;
     busy.current = true;
-    const [aRes, pRes] = await Promise.all([
+    const [aRes, pRes, bRes] = await Promise.all([
       supabase.from('scc_auction').select('*').eq('season', season).maybeSingle(),
       supabase.from('scc_auction_picks').select('*').eq('season', season).order('created_at'),
+      supabase.from('scc_auction_bids').select('*').eq('season', season).order('id'),
     ]);
     busy.current = false;
+    setBids(bRes.error ? [] : ((bRes.data as Bid[]) ?? []));
     if (isMissing(aRes.error)) { setTableMissing(true); setLoading(false); return; }
     setTableMissing(false);
     setAuction((aRes.data as AuctionRow) ?? null);
@@ -144,8 +156,26 @@ export function useAuctionLive(
     if (!auction || !canBid(team)) return;
     // Optimistic: the room should see the number jump the instant it's called.
     setAuction(a => a && ({ ...a, current_bid: nextBid, current_bidder: team }));
-    await patch({ current_bid: nextBid, current_bidder: team });
-  }, [auction, canBid, nextBid, patch]);
+    const memberId = auction.pool_order[auction.current_idx];
+    await Promise.all([
+      patch({ current_bid: nextBid, current_bidder: team }),
+      // The trail can only be captured live — nothing can rebuild it later.
+      // Failing silently is deliberate: a missing history row must never stop
+      // the auctioneer taking the next bid.
+      memberId
+        ? supabase.from('scc_auction_bids').insert({
+            season, member_id: memberId, team, amount: nextBid,
+            round: auction.round ?? 1,
+          })
+        : Promise.resolve(),
+    ]);
+  }, [auction, canBid, nextBid, patch, season]);
+
+  /** Every bid for one player, newest first — the IPL-style auction trail. */
+  const trailFor = useCallback(
+    (memberId: string) => bids.filter(b => b.member_id === memberId).slice().reverse(),
+    [bids],
+  );
 
   const round = auction?.round ?? 1;
 
@@ -285,7 +315,7 @@ export function useAuctionLive(
   }, [season, fetchAll]);
 
   return {
-    auction, picks, sold, unsold, loading, tableMissing,
+    auction, picks, bids, sold, unsold, loading, tableMissing, trailFor,
     currentMemberId, bidStep, nextBid, canBid, maxBid, budget, spent, squad,
     bid, sell, passOver, undo, start, reset, patch, hasSlot, captainCost, round,
     refetch: fetchAll,

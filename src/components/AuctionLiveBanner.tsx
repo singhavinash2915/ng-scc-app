@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { Radio, Crown, Gavel } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { Radio, Crown, Gavel, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useMembers } from '../hooks/useMembers';
 import { useSCCLeague, formatPrice } from '../hooks/useSCCLeague';
 import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
@@ -17,7 +18,13 @@ const TEAM_EMOJI: Record<TeamKey, string> = { team1: '🦁', team2: '🐅' };
 export function AuctionLiveBanner() {
   const { members } = useMembers();
   const league = useSCCLeague(SEASON_NEW);
-  const A = useAuctionLive(SEASON_NEW);
+  // Base prices come from the league grades; the hook needs them to deduct
+  // each captain's retention from their own purse.
+  const baseOf = useCallback(
+    (id: string) => league.registrations.find(r => r.member_id === id)?.base_price ?? 20,
+    [league.registrations],
+  );
+  const A = useAuctionLive(SEASON_NEW, { basePriceOf: baseOf });
 
   const memberById = useMemo(
     () => Object.fromEntries(members.map(m => [m.id, m])) as Record<string, Member>,
@@ -120,6 +127,12 @@ export function AuctionLiveBanner() {
             </div>
           ))}
         </div>
+
+        <Link to="/auction-centre"
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-white/15
+                     border border-white/20 py-2 text-[11px] font-black">
+          Open the Auction Centre <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
 
         {/* last few sales — the bit everyone talks about */}
         {A.sold.length > 0 && (

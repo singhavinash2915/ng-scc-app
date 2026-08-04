@@ -27,6 +27,7 @@ const Honours = lazy(() => import('./pages/Honours').then(m => ({ default: m.Hon
 const SCCLeague = lazy(() => import('./pages/SCCLeague').then(m => ({ default: m.SCCLeague })));
 const LeagueResult = lazy(() => import('./pages/LeagueResult').then(m => ({ default: m.LeagueResult })));
 const AuctionLive = lazy(() => import('./pages/AuctionLive').then(m => ({ default: m.AuctionLive })));
+const AuctionCentre = lazy(() => import('./pages/AuctionCentre').then(m => ({ default: m.AuctionCentre })));
 const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
 const Finance      = lazy(() => import('./pages/Finance').then(m => ({ default: m.Finance })));
 const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
@@ -120,6 +121,8 @@ const AppRoutes = () => (
         <Route path="/league-result" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><LeagueResult /></Suspense> : <Navigate to="/" replace />} />
         {/* Live auction — public to watch, admin-only to run */}
         <Route path="/auction-live" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><AuctionLive /></Suspense> : <Navigate to="/" replace />} />
+        {/* Public side of auction night — live picks, team spend, full bid trails */}
+        <Route path="/auction-centre" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><AuctionCentre /></Suspense> : <Navigate to="/" replace />} />
         <Route path="/pressure"      element={<Navigate to="/honours?tab=pressure" replace />} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />
