@@ -70,11 +70,10 @@ export const VOTE_UNLOCK_AT = 22;
 
 // ─── Auction economics (IPL-flavoured, all values in ₹ LAKH) ──────────────────
 // Big numbers are half the fun — nobody brags about being sold for ₹200.
-// Purse is deliberately tight. The pool's total base value is ~₹17 Cr, so
-// ₹15 Cr a side puts about 1.8x that much money on the table — enough to
-// fight over two or three stars, not enough to buy everyone. At ₹50 Cr the
-// money never ran out and every bid was meaningless.
-export const PURSE_LAKH = 1500;                       // ₹15 Cr per team
+// The pool's total base value is ~₹17 Cr, so ₹25 Cr a side puts about 3x that
+// much money on the table: room for real bidding wars while still forcing
+// choices late on. (At the original ₹50 Cr the money never ran out at all.)
+export const PURSE_LAKH = 2500;                       // ₹25 Cr per team
 export const SQUAD_SIZE = 13;                         // captain + 12 bought (+2 impact)
 export const BID_STEP_SMALL = 5;                      // +₹5L while under ₹1 Cr
 export const BID_STEP_BIG = 10;                       // +₹10L at ₹1 Cr and above

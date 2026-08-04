@@ -1,0 +1,434 @@
+import { useMemo, useState } from 'react';
+import { Gavel, Crown, Undo2, Check, X, Radio, Wallet, Users } from 'lucide-react';
+import { Header } from '../components/layout/Header';
+import { useAuth } from '../context/AuthContext';
+import { useMembers } from '../hooks/useMembers';
+import { useMatches } from '../hooks/useMatches';
+import { useAllScorecards } from '../hooks/useAllScorecards';
+import { useMarketValue } from '../hooks/useMarketValue';
+import { useCricketStats } from '../hooks/useCricketStats';
+import { useSCCLeague, AUCTION_SETS, tierForRating, formatPrice, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
+import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
+import { SEASON_NEW } from '../config/season2';
+import type { Member } from '../types';
+
+// ─── SCC League — live auction ─────────────────────────────────────────────────
+// Built to be watched. Every member can open this on their phone while the
+// auctioneer runs it; state lives in the database so all screens agree and a
+// refresh loses nothing.
+
+const TEAM_COLOR: Record<TeamKey, string> = { team1: '#2a78d6', team2: '#eb6834' };
+const TEAM_EMOJI: Record<TeamKey, string> = { team1: '🦁', team2: '🐅' };
+
+function Face({ member, size = 44, ring }: { member?: Member; size?: number; ring?: string }) {
+  return member?.avatar_url ? (
+    <img src={member.avatar_url} alt="" className="rounded-full object-cover flex-shrink-0"
+      style={{ width: size, height: size, border: ring ? `3px solid ${ring}` : undefined }} />
+  ) : (
+    <div className="rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white font-black
+                    flex items-center justify-center flex-shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.4, border: ring ? `3px solid ${ring}` : undefined }}>
+      {member?.name?.charAt(0) ?? '?'}
+    </div>
+  );
+}
+
+export function AuctionLive() {
+  const { isAdmin } = useAuth();
+  const { members } = useMembers();
+  const { matches } = useMatches();
+  const { scorecards } = useAllScorecards();
+  const { stats } = useCricketStats('2025-26');
+  const league = useSCCLeague(SEASON_NEW);
+  const A = useAuctionLive(SEASON_NEW);
+
+  const memberById = useMemo(
+    () => Object.fromEntries(members.map(m => [m.id, m])) as Record<string, Member>,
+    [members],
+  );
+
+  const values = useMarketValue(matches, members, scorecards);
+  const basePriceById = useMemo(() => {
+    const rating: Record<string, number> = {};
+    values.forEach(v => { rating[v.member.id] = v.rating; });
+    const m: Record<string, number> = {};
+    members.forEach(x => { m[x.id] = tierForRating(rating[x.id]).price; });
+    league.registrations.forEach(r => { if (r.base_price) m[r.member_id] = r.base_price; });
+    return m;
+  }, [values, members, league.registrations]);
+  const baseOf = (id: string) => basePriceById[id] ?? 20;
+
+  const a = A.auction;
+  const current = A.currentMemberId ? memberById[A.currentMemberId] : undefined;
+  const currentSet = useMemo(
+    () => AUCTION_SETS.find(s => s.price === (A.currentMemberId ? baseOf(A.currentMemberId) : -1))
+      ?? AUCTION_SETS[AUCTION_SETS.length - 1],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [A.currentMemberId, basePriceById],
+  );
+  const teamName = (t: TeamKey) => (t === 'team1' ? a?.team1_name : a?.team2_name) || 'Team';
+  const captainOf = (t: TeamKey) => (t === 'team1' ? a?.team1_captain_id : a?.team2_captain_id);
+
+  if (A.tableMissing) {
+    return (
+      <div>
+        <Header title="Live Auction" subtitle="SCC League" />
+        <div className="p-8 max-w-lg mx-auto mt-10">
+          <div className="rounded-3xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 p-6">
+            <p className="font-black text-amber-900 dark:text-amber-200">Auction tables not created yet</p>
+            <p className="text-sm text-amber-800/80 dark:text-amber-200/70 mt-1.5">
+              Run <code className="font-mono">supabase/migrations/add_scc_auction.sql</code> in the
+              Supabase SQL editor, then reload.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen al-root">
+      <style>{`
+        .al-root { --al-1:#2a78d6; --al-2:#eb6834; }
+        @keyframes al-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+        .al-live { animation: al-pulse 1.6s ease-in-out infinite; }
+        @keyframes al-pop { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+        .al-pop { animation: al-pop .35s cubic-bezier(.22,1,.36,1) both; }
+        @media (prefers-reduced-motion: reduce) { .al-live,.al-pop { animation: none } }
+      `}</style>
+
+      <Header title="Live Auction" subtitle={`SCC League · Season ${SEASON_NEW}`} />
+
+      <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-4">
+
+        {A.loading && <p className="text-sm text-slate-400">Connecting…</p>}
+
+        {!A.loading && !a && (
+          <SetupCard
+            league={league} memberById={memberById} baseOf={baseOf}
+            isAdmin={isAdmin} onStart={A.start}
+          />
+        )}
+
+        {a && (
+          <>
+            {/* ── STATUS STRIP ─────────────────────────────────────────── */}
+            <div className="flex items-center justify-between rounded-2xl bg-slate-900 text-white px-4 py-2.5">
+              <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
+                <Radio className={`w-3.5 h-3.5 text-rose-400 ${a.status === 'live' ? 'al-live' : ''}`} />
+                {a.status === 'live' ? 'Live' : a.status === 'done' ? 'Complete' : 'Setup'}
+              </span>
+              <span className="text-[11px] font-bold text-white/60">
+                {A.picks.length}/{a.pool_order.length} resolved · {A.sold.length} sold · {A.unsold.length} unsold
+              </span>
+            </div>
+
+            {/* ── ON THE BLOCK ─────────────────────────────────────────── */}
+            {a.status === 'live' && current && (
+              <div key={current.id} className="al-pop relative overflow-hidden rounded-3xl text-white shadow-2xl"
+                style={{
+                  background: a.current_bidder
+                    ? `radial-gradient(700px 320px at 50% -10%, ${TEAM_COLOR[a.current_bidder]}bb, transparent 60%), linear-gradient(150deg,#0f172a,#020617)`
+                    : 'radial-gradient(700px 320px at 50% -10%, rgba(251,191,36,.45), transparent 60%), linear-gradient(150deg,#1a1205,#020617)',
+                }}>
+                <div className="p-6 sm:p-8 text-center">
+                  <div className="inline-flex items-center gap-2 bg-white/12 border border-white/20 rounded-full px-3.5 py-1.5">
+                    <span>{currentSet.emoji}</span>
+                    <span className="text-[10px] font-black uppercase tracking-[2px]">{currentSet.label}</span>
+                  </div>
+
+                  <div className="mt-5 flex justify-center">
+                    <Face member={current} size={116} ring="rgba(255,255,255,.45)" />
+                  </div>
+
+                  <h2 className="font-display text-3xl sm:text-4xl font-extrabold mt-4">{current.name}</h2>
+                  <p className="text-white/60 text-xs font-bold mt-1">
+                    Base {formatPrice(baseOf(current.id))}
+                    {league.registrations.find(r => r.member_id === current.id)?.role &&
+                      ` · ${league.registrations.find(r => r.member_id === current.id)!.role}`}
+                  </p>
+
+                  {(() => {
+                    const s = stats.find(x => x.member_id === current.id);
+                    const pitch = league.registrations.find(r => r.member_id === current.id)?.pitch;
+                    return (
+                      <>
+                        {s && (
+                          <div className="flex items-center justify-center gap-6 mt-4 text-white/85">
+                            {s.batting_runs > 0 && <Stat v={s.batting_runs} l="runs" />}
+                            {s.bowling_wickets > 0 && <Stat v={s.bowling_wickets} l="wkts" />}
+                            {s.batting_matches > 0 && <Stat v={s.batting_matches} l="matches" />}
+                          </div>
+                        )}
+                        {pitch && (
+                          <p className="text-sm italic text-amber-200/90 mt-4 max-w-md mx-auto">"{pitch}"</p>
+                        )}
+                      </>
+                    );
+                  })()}
+
+                  <div className="mt-7 pt-5 border-t border-white/10">
+                    <p className="text-[10px] font-black uppercase tracking-[2px] text-white/50">Current bid</p>
+                    <p className="text-6xl sm:text-7xl font-extrabold mt-1"
+                      style={{ color: a.current_bidder ? TEAM_COLOR[a.current_bidder] : '#fde68a' }}>
+                      {formatPrice(a.current_bid)}
+                    </p>
+                    <p className="text-sm font-bold mt-2 h-5">
+                      {a.current_bidder
+                        ? <>{TEAM_EMOJI[a.current_bidder]} {teamName(a.current_bidder)}</>
+                        : <span className="text-white/40">Opening bid — no offers yet</span>}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {a.status === 'done' && (
+              <div className="rounded-3xl p-8 text-center text-white shadow-2xl"
+                style={{ background: 'radial-gradient(600px 300px at 50% 0%, rgba(34,197,94,.4), transparent 60%), linear-gradient(150deg,#064e3b,#020617)' }}>
+                <p className="text-6xl">🏆</p>
+                <h2 className="font-display text-3xl font-extrabold mt-2">Auction complete!</h2>
+                <p className="text-white/70 text-sm mt-1">
+                  {A.sold.length} sold · {A.unsold.length} unsold
+                </p>
+              </div>
+            )}
+
+            {/* ── ADMIN CONTROLS ───────────────────────────────────────── */}
+            {isAdmin && a.status === 'live' && (
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
+                  {(['team1', 'team2'] as TeamKey[]).map(t => (
+                    <button key={t} onClick={() => A.bid(t)} disabled={!A.canBid(t)}
+                      className="rounded-2xl py-4 text-white font-black shadow-lg disabled:opacity-40
+                                 disabled:cursor-not-allowed active:scale-95 transition-transform"
+                      style={{ background: A.canBid(t) ? TEAM_COLOR[t] : '#94a3b8' }}>
+                      <span className="text-2xl block">{TEAM_EMOJI[t]}</span>
+                      <span className="text-xs uppercase tracking-widest opacity-90">{teamName(t)}</span>
+                      <span className="block text-lg tabular-nums">+{formatPrice(A.bidStep)}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2.5">
+                  <button onClick={() => A.sell(baseOf)} disabled={!a.current_bidder}
+                    className="rounded-2xl py-3 bg-emerald-500 disabled:opacity-40 text-white font-black text-sm
+                               inline-flex items-center justify-center gap-1.5">
+                    <Check className="w-4 h-4" /> SOLD
+                  </button>
+                  <button onClick={() => A.passOver(baseOf)}
+                    className="rounded-2xl py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white
+                               font-black text-sm inline-flex items-center justify-center gap-1.5">
+                    <X className="w-4 h-4" /> Unsold
+                  </button>
+                  <button onClick={A.undo} disabled={A.picks.length === 0}
+                    className="rounded-2xl py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white
+                               font-black text-sm disabled:opacity-40 inline-flex items-center justify-center gap-1.5">
+                    <Undo2 className="w-4 h-4" /> Undo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── TEAMS ────────────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(['team1', 'team2'] as TeamKey[]).map(t => {
+                const cap = captainOf(t);
+                const roster = A.squad(t);
+                const used = (A.spent(t) / (a.purse_lakh || 1)) * 100;
+                return (
+                  <div key={t} className="rounded-3xl p-4 text-white shadow-lg"
+                    style={{ background: `linear-gradient(150deg, ${TEAM_COLOR[t]}, #0b1220)` }}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-lg">{TEAM_EMOJI[t]} {teamName(t)}</span>
+                      <span className="text-[10px] font-bold text-white/60">
+                        {roster.length + 1}/{a.squad_size}
+                      </span>
+                    </div>
+
+                    {cap && (
+                      <div className="flex items-center gap-2 mt-2.5 bg-white/12 rounded-xl px-2 py-1.5">
+                        <Crown className="w-3.5 h-3.5 text-amber-300" fill="currentColor" />
+                        <span className="text-sm font-bold truncate">{memberById[cap]?.name}</span>
+                        <span className="ml-auto text-[10px] font-black text-amber-300">CAPTAIN</span>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-2xl font-extrabold">
+                        <Wallet className="w-4 h-4 opacity-60" />{formatPrice(A.budget(t))}
+                      </span>
+                      <span className="text-[10px] text-white/55">left of {formatPrice(a.purse_lakh)}</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 rounded-full bg-white/15 overflow-hidden">
+                      <div className="h-full bg-white/70 transition-all duration-500" style={{ width: `${used}%` }} />
+                    </div>
+
+                    <div className="mt-3 space-y-1">
+                      {roster.length === 0 && (
+                        <p className="text-[11px] text-white/45 py-1">No players bought yet</p>
+                      )}
+                      {roster.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 bg-white/8 rounded-lg px-2 py-1">
+                          <Users className="w-3 h-3 text-white/40 flex-shrink-0" />
+                          <span className="text-xs truncate flex-1">{memberById[p.member_id]?.name}</span>
+                          <span className="text-[11px] font-black tabular-nums">{formatPrice(p.price)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── SOLD LOG ─────────────────────────────────────────────── */}
+            {A.picks.length > 0 && (
+              <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[2px] text-slate-400 mb-2">Auction log</p>
+                <div className="max-h-56 overflow-y-auto space-y-1">
+                  {[...A.picks].reverse().map(p => (
+                    <div key={p.id} className="flex items-center gap-2 text-xs py-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ background: p.team ? TEAM_COLOR[p.team] : '#94a3b8' }} />
+                      <span className="font-bold text-slate-700 dark:text-white/80 flex-1 truncate">
+                        {memberById[p.member_id]?.name}
+                      </span>
+                      {p.team
+                        ? <span className="font-black tabular-nums" style={{ color: TEAM_COLOR[p.team] }}>
+                            {formatPrice(p.price)} → {teamName(p.team)}
+                          </span>
+                        : <span className="text-slate-400 font-bold">Unsold</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isAdmin && (
+              <button onClick={() => { if (confirm('Wipe this auction completely and start over?')) A.reset(); }}
+                className="text-xs text-rose-500 font-bold">Reset auction</button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ v, l }: { v: number; l: string }) {
+  return (
+    <div className="text-center">
+      <p className="text-2xl font-extrabold tabular-nums">{v}</p>
+      <p className="text-[10px] uppercase tracking-widest text-white/40">{l}</p>
+    </div>
+  );
+}
+
+// ─── Setup ─────────────────────────────────────────────────────────────────────
+function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
+  league: ReturnType<typeof useSCCLeague>;
+  memberById: Record<string, Member>;
+  baseOf: (id: string) => number;
+  isAdmin: boolean;
+  onStart: ReturnType<typeof useAuctionLive>['start'];
+}) {
+  const [t1, setT1] = useState('Team 1');
+  const [t2, setT2] = useState('Team 2');
+  const [c1, setC1] = useState('');
+  const [c2, setC2] = useState('');
+  const [purse, setPurse] = useState(PURSE_LAKH);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const pool = league.going.map(r => r.member_id);
+  const input = 'w-full rounded-xl border border-slate-200 dark:border-white/15 bg-white dark:bg-white/5 px-3 py-2.5 text-sm';
+
+  if (!isAdmin) {
+    return (
+      <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 text-center">
+        <Gavel className="w-10 h-10 text-violet-500 mx-auto mb-3" />
+        <h2 className="text-lg font-black text-slate-900 dark:text-white">The auction hasn't started</h2>
+        <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
+          Keep this page open — it goes live the moment the first name is called 🔨
+        </p>
+      </div>
+    );
+  }
+
+  const go = async () => {
+    if (!c1 || !c2 || c1 === c2) { setErr('Pick two different captains'); return; }
+    const order = pool.filter(id => id !== c1 && id !== c2)
+      // Marquee first, shuffled within each grade — the big names sell while
+      // every purse is still full.
+      .map(id => ({ id, p: baseOf(id), r: Math.random() }))
+      .sort((x, y) => y.p - x.p || x.r - y.r)
+      .map(x => x.id);
+    if (order.length < 2) { setErr('Need at least 2 players in the pool'); return; }
+    setBusy(true);
+    const e = await onStart({
+      team1Name: t1.trim() || 'Team 1', team2Name: t2.trim() || 'Team 2',
+      team1CaptainId: c1, team2CaptainId: c2,
+      poolOrder: order, purseLakh: purse, squadSize: SQUAD_SIZE,
+      firstBid: baseOf(order[0]),
+    });
+    setBusy(false);
+    setErr(e);
+  };
+
+  return (
+    <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 space-y-4">
+      <div>
+        <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+          <Gavel className="w-5 h-5 text-violet-500" /> Set up the auction
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
+          {pool.length} registered players · everyone watching sees this the moment you start.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">🦁 Team 1 name</label>
+          <input value={t1} onChange={e => setT1(e.target.value)} className={input} />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">🐅 Team 2 name</label>
+          <input value={t2} onChange={e => setT2(e.target.value)} className={input} />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Team 1 captain</label>
+          <select value={c1} onChange={e => setC1(e.target.value)} className={input}>
+            <option value="">— Select —</option>
+            {pool.filter(id => id !== c2).map(id => (
+              <option key={id} value={id}>{memberById[id]?.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Team 2 captain</label>
+          <select value={c2} onChange={e => setC2(e.target.value)} className={input}>
+            <option value="">— Select —</option>
+            {pool.filter(id => id !== c1).map(id => (
+              <option key={id} value={id}>{memberById[id]?.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="col-span-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Purse per team (₹ lakh) — {formatPrice(purse)}
+          </label>
+          <input type="number" value={purse} onChange={e => setPurse(Number(e.target.value) || 0)} className={input} />
+        </div>
+      </div>
+
+      {err && <p className="text-sm font-bold text-rose-500">{err}</p>}
+
+      <button onClick={go} disabled={busy}
+        className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-black py-4
+                   disabled:opacity-40">
+        {busy ? 'Starting…' : 'Start the auction 🔨'}
+      </button>
+    </div>
+  );
+}
+
+export default AuctionLive;
