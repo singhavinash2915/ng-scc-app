@@ -33,7 +33,7 @@ export function SCCLeagueBanner() {
 
         <div className="flex-1 min-w-0">
           <p className="text-white font-black text-base leading-tight truncate">
-            {full ? 'SCC League — squad complete! 🎉' : 'SCC League — register for the auction! 🔨'}
+            {full ? 'SCC League — squad locked 🔒' : 'SCC League — register for the auction! 🔨'}
           </p>
 
           {/* The count, big enough to actually register at a glance */}
@@ -56,7 +56,7 @@ export function SCCLeagueBanner() {
 
           <p className="text-white/90 text-[11px] font-medium mt-1.5">
             {full
-              ? 'Auction time — tap to see the pool 🔨'
+              ? 'Captains elected · auction night is next 🔨 Tap to see the pool'
               : votesOpen
                 ? `Voting is OPEN · ${remaining} more to fill the squad`
                 : `${remaining} more to go · voting unlocks at ${VOTE_UNLOCK_AT}`}

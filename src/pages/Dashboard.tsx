@@ -9,6 +9,7 @@ import { Header } from '../components/layout/Header';
 import { AccentSwitcher } from '../components/AccentSwitcher';
 import { PremiumHero } from '../components/PremiumHero';
 import { SCCLeagueBanner } from '../components/SCCLeagueBanner';
+import { AuctionLiveBanner } from '../components/AuctionLiveBanner';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
@@ -361,6 +362,9 @@ export function Dashboard() {
 
       {/* ── Remaining sections keep the Stadium-Night dark styling for now ── */}
       <div className="p-4 lg:p-8 space-y-4">
+
+        {/* ── AUCTION, LIVE — outranks everything while it's running ────── */}
+        {FEATURES.sccLeague && <AuctionLiveBanner />}
 
         {/* ── SCC LEAGUE — registration drive, top billing while it's open ── */}
         {FEATURES.sccLeague && <SCCLeagueBanner />}
