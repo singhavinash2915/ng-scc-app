@@ -23,6 +23,7 @@ export interface AuctionRow {
   current_idx: number;
   current_bid: number;
   current_bidder: TeamKey | null;
+  round?: number;
 }
 
 export interface Pick {
@@ -40,8 +41,11 @@ const isMissing = (e: { code?: string; message: string } | null) =>
   !!e && (e.code === '42P01' || e.code === 'PGRST205' ||
     /does not exist|could not find the table/i.test(e.message));
 
-export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
-  const { live = true } = opts;
+export function useAuctionLive(
+  season: string,
+  opts: { live?: boolean; basePriceOf?: (id: string) => number } = {},
+) {
+  const { live = true, basePriceOf } = opts;
   const [auction, setAuction] = useState<AuctionRow | null>(null);
   const [picks, setPicks] = useState<Pick[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +92,16 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
   const purse = auction?.purse_lakh ?? PURSE_LAKH;
   const size = auction?.squad_size ?? 13;
 
-  const budget = useCallback((t: TeamKey) => purse - spent(t), [purse, spent]);
+  /** What the captain costs their own team, deducted before a single bid. */
+  const captainCost = useCallback((t: TeamKey) => {
+    const id = t === 'team1' ? auction?.team1_captain_id : auction?.team2_captain_id;
+    return id && basePriceOf ? basePriceOf(id) : 0;
+  }, [auction, basePriceOf]);
+
+  const budget = useCallback(
+    (t: TeamKey) => purse - captainCost(t) - spent(t),
+    [purse, captainCost, spent],
+  );
 
   /**
    * A captain may not bid away the money needed to fill their remaining slots
@@ -114,8 +127,15 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
 
   // ── Admin actions ──────────────────────────────────────────────────────
   const patch = useCallback(async (fields: Partial<AuctionRow>) => {
-    const { error } = await supabase.from('scc_auction')
-      .update({ ...fields, updated_at: new Date().toISOString() }).eq('season', season);
+    const body = { ...fields, updated_at: new Date().toISOString() };
+    let { error } = await supabase.from('scc_auction').update(body).eq('season', season);
+    // add_scc_auction_rounds.sql not run yet? Everything except the round
+    // counter still works, so drop it rather than losing the whole update.
+    if (error && (error.code === '42703' || error.code === 'PGRST204' || /round/.test(error.message))) {
+      const { round: _drop, ...rest } = body as Record<string, unknown>;
+      void _drop;
+      ({ error } = await supabase.from('scc_auction').update(rest).eq('season', season));
+    }
     if (!error) await fetchAll();
     return error?.message ?? null;
   }, [season, fetchAll]);
@@ -127,36 +147,81 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
     await patch({ current_bid: nextBid, current_bidder: team });
   }, [auction, canBid, nextBid, patch]);
 
-  const advance = useCallback(async (basePriceOf: (id: string) => number) => {
+  const round = auction?.round ?? 1;
+
+  /**
+   * Draw the next name. Rather than following a fixed list, the auctioneer pulls
+   * a RANDOM player from the richest set still on the table — Marquee first,
+   * then A, B, C — so nobody knows who is coming up next even within a set.
+   */
+  const drawFrom = useCallback((ids: string[], priceOf: (id: string) => number) => {
+    if (ids.length === 0) return null;
+    const top = Math.max(...ids.map(priceOf));
+    const inSet = ids.filter(id => priceOf(id) === top);
+    return inSet[Math.floor(Math.random() * inSet.length)];
+  }, []);
+
+  const advance = useCallback(async (priceOf: (id: string) => number) => {
     if (!auction) return;
-    const next = auction.current_idx + 1;
-    if (next >= auction.pool_order.length) {
-      await patch({ status: 'done', current_bidder: null, current_bid: 0 });
-    } else {
+    const resolvedIds = new Set(picks.map(p => p.member_id));
+    // Anyone in this round's pool who hasn't been resolved yet.
+    const remaining = auction.pool_order.filter(id => !resolvedIds.has(id));
+    const roomLeft = (['team1', 'team2'] as TeamKey[]).some(t => squad(t).length < size - 1);
+
+    const next = remaining.length ? drawFrom(remaining, priceOf) : null;
+    if (next && roomLeft) {
+      // Keep pool_order as the running record: resolved first, drawn player next.
+      const order = [...auction.pool_order.filter(id => resolvedIds.has(id)), next,
+        ...remaining.filter(id => id !== next)];
       await patch({
-        current_idx: next,
-        current_bid: basePriceOf(auction.pool_order[next]),
+        pool_order: order,
+        current_idx: order.indexOf(next),
+        current_bid: priceOf(next),
         current_bidder: null,
       });
+      return;
     }
-  }, [auction, patch]);
+
+    // Round over. Unsold players get another go at base price, as the rulebook
+    // promises — otherwise a team can finish short purely on running order.
+    // But only if SOMETHING sold this round: a round where every name is passed
+    // would otherwise restart forever, and the auctioneer can never close.
+    const soldThisRound = picks.some(p => p.team && auction.pool_order.includes(p.member_id));
+    const unsoldIds = picks.filter(p => !p.team).map(p => p.member_id);
+    if (roomLeft && unsoldIds.length > 0 && soldThisRound) {
+      await supabase.from('scc_auction_picks').delete()
+        .eq('season', season).in('member_id', unsoldIds);
+      const first = drawFrom(unsoldIds, priceOf)!;
+      const order = [first, ...unsoldIds.filter(id => id !== first)];
+      await patch({
+        round: round + 1,
+        pool_order: order,
+        current_idx: 0,
+        current_bid: priceOf(first),
+        current_bidder: null,
+      });
+      return;
+    }
+
+    await patch({ status: 'done', current_bidder: null, current_bid: 0 });
+  }, [auction, picks, squad, size, drawFrom, patch, season, round]);
 
   const sell = useCallback(async (basePriceOf: (id: string) => number) => {
     if (!auction || !currentMemberId || !auction.current_bidder) return;
     await supabase.from('scc_auction_picks').upsert({
       season, member_id: currentMemberId,
-      team: auction.current_bidder, price: auction.current_bid, round: 1,
+      team: auction.current_bidder, price: auction.current_bid, round,
     }, { onConflict: 'season,member_id' });
     await advance(basePriceOf);
-  }, [auction, currentMemberId, season, advance]);
+  }, [auction, currentMemberId, season, advance, round]);
 
   const passOver = useCallback(async (basePriceOf: (id: string) => number) => {
     if (!auction || !currentMemberId) return;
     await supabase.from('scc_auction_picks').upsert({
-      season, member_id: currentMemberId, team: null, price: 0, round: 1,
+      season, member_id: currentMemberId, team: null, price: 0, round,
     }, { onConflict: 'season,member_id' });
     await advance(basePriceOf);
-  }, [auction, currentMemberId, season, advance]);
+  }, [auction, currentMemberId, season, advance, round]);
 
   /**
    * Undo the last resolved player and put them back on the block, reopened at
@@ -182,7 +247,7 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
     team1CaptainId: string; team2CaptainId: string;
     poolOrder: string[]; purseLakh: number; squadSize: number; firstBid: number;
   }) => {
-    const { error } = await supabase.from('scc_auction').upsert({
+    const row = {
       season,
       status: 'live',
       team1_name: input.team1Name,
@@ -195,8 +260,18 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
       current_idx: 0,
       current_bid: input.firstBid,
       current_bidder: null,
+      round: 1,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'season' });
+    };
+    let { error } = await supabase.from('scc_auction').upsert(row, { onConflict: 'season' });
+    // Same fallback as patch(): without add_scc_auction_rounds.sql the round
+    // column is absent and PostgREST rejects the WHOLE insert, so the auction
+    // could never start at all.
+    if (error && (error.code === '42703' || error.code === 'PGRST204' || /round/.test(error.message))) {
+      const { round: _drop, ...rest } = row;
+      void _drop;
+      ({ error } = await supabase.from('scc_auction').upsert(rest, { onConflict: 'season' }));
+    }
     if (error) return error.message;
     await fetchAll();
     return null;
@@ -212,6 +287,7 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
   return {
     auction, picks, sold, unsold, loading, tableMissing,
     currentMemberId, bidStep, nextBid, canBid, maxBid, budget, spent, squad,
-    bid, sell, passOver, undo, start, reset, patch, hasSlot, refetch: fetchAll,
+    bid, sell, passOver, undo, start, reset, patch, hasSlot, captainCost, round,
+    refetch: fetchAll,
   };
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Gavel, Crown, Undo2, Check, X, Radio, Wallet, Users, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useAuth } from '../context/AuthContext';
@@ -40,7 +40,7 @@ export function AuctionLive() {
   const { scorecards } = useAllScorecards();
   const { stats } = useCricketStats('2025-26');
   const league = useSCCLeague(SEASON_NEW);
-  const A = useAuctionLive(SEASON_NEW);
+
 
   const memberById = useMemo(
     () => Object.fromEntries(members.map(m => [m.id, m])) as Record<string, Member>,
@@ -56,7 +56,8 @@ export function AuctionLive() {
     league.registrations.forEach(r => { if (r.base_price) m[r.member_id] = r.base_price; });
     return m;
   }, [values, members, league.registrations]);
-  const baseOf = (id: string) => basePriceById[id] ?? 20;
+  const baseOf = useCallback((id: string) => basePriceById[id] ?? 20, [basePriceById]);
+  const A = useAuctionLive(SEASON_NEW, { basePriceOf: baseOf });
 
   const a = A.auction;
   const current = A.currentMemberId ? memberById[A.currentMemberId] : undefined;
@@ -135,9 +136,17 @@ export function AuctionLive() {
               <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
                 <Radio className={`w-3.5 h-3.5 text-rose-400 ${a.status === 'live' ? 'al-live' : ''}`} />
                 {a.status === 'live' ? 'Live' : a.status === 'done' ? 'Complete' : 'Setup'}
+                {a.status === 'live' && A.round > 1 && (
+                  <span className="ml-1 rounded-full bg-amber-400 text-slate-900 px-2 py-0.5 text-[9px]">
+                    Unsold round {A.round - 1}
+                  </span>
+                )}
               </span>
               <span className="text-[11px] font-bold text-white/60">
-                {A.picks.length}/{a.pool_order.length} resolved · {A.sold.length} sold · {A.unsold.length} unsold
+                {/* pool_order shrinks to the unsold list in later rounds, so a
+                    "26/9" style ratio was nonsense. Count what's left instead. */}
+                {A.sold.length} sold · {A.unsold.length} unsold ·{' '}
+                {Math.max(0, a.pool_order.filter(id => !A.picks.some(p => p.member_id === id)).length)} left
               </span>
             </div>
 
@@ -269,7 +278,9 @@ export function AuctionLive() {
                       <div className="flex items-center gap-2 mt-2.5 bg-white/12 rounded-xl px-2 py-1.5">
                         <Crown className="w-3.5 h-3.5 text-amber-300" fill="currentColor" />
                         <span className="text-sm font-bold truncate">{memberById[cap]?.name}</span>
-                        <span className="ml-auto text-[10px] font-black text-amber-300">CAPTAIN</span>
+                        <span className="ml-auto text-[10px] font-black text-amber-300">
+                          {A.captainCost(t) > 0 ? formatPrice(A.captainCost(t)) : 'CAPTAIN'}
+                        </span>
                       </div>
                     )}
 
@@ -277,7 +288,10 @@ export function AuctionLive() {
                       <span className="inline-flex items-center gap-1.5 text-2xl font-extrabold">
                         <Wallet className="w-4 h-4 opacity-60" />{formatPrice(A.budget(t))}
                       </span>
-                      <span className="text-[10px] text-white/55">left of {formatPrice(a.purse_lakh)}</span>
+                      <span className="text-[10px] text-white/55">
+                        left of {formatPrice(a.purse_lakh)}
+                        {A.captainCost(t) > 0 && ` · −${formatPrice(A.captainCost(t))} retention`}
+                      </span>
                     </div>
                     <div className="mt-1.5 h-1.5 rounded-full bg-white/15 overflow-hidden">
                       <div className="h-full bg-white/70 transition-all duration-500" style={{ width: `${used}%` }} />
