@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Gavel, Flame, UserMinus, ScrollText, ChevronDown, Radio } from 'lucide-react';
+import { Gavel, Flame, UserMinus, ScrollText, ChevronDown, Radio, Crown } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
 import {
@@ -8,7 +8,7 @@ import {
   formatPrice, type LeagueRole,
 } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
-import { SEASON_NEW } from '../config/season2';
+import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, isLeagueCaptain } from '../config/season2';
 import type { Member } from '../types';
 
 // ─── SCC League — the squad ────────────────────────────────────────────────────
@@ -42,9 +42,9 @@ export function SCCLeague() {
     [members],
   );
 
-  /** Squad ordered by grade, then name — the order the auction will follow. */
+  /** The pool the auction actually bids on — captains are retained, not sold. */
   const squad = useMemo(
-    () => [...league.going].sort((a, b) =>
+    () => league.going.filter(r => !isLeagueCaptain(r.member_id)).sort((a, b) =>
       (b.base_price || 0) - (a.base_price || 0) ||
       (memberById[a.member_id]?.name ?? '').localeCompare(memberById[b.member_id]?.name ?? ''),
     ),
@@ -79,13 +79,13 @@ export function SCCLeague() {
               SCC <span style={{ background: 'linear-gradient(90deg,#fde68a,#fbbf24 45%,#f472b6)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>League</span>
             </h1>
             <p className="text-white/85 text-sm mt-2.5 max-w-md mx-auto font-medium">
-              Registration closed. {league.going.length} players are in the pool, graded and waiting
-              for the hammer 🔨
+              Registration closed. {squad.length} players go under the hammer, graded and
+              waiting for a bid 🔨
             </p>
 
             <div className="grid grid-cols-3 gap-2.5 mt-6 max-w-sm mx-auto">
               {[
-                { v: String(league.going.length), l: 'In the pool' },
+                { v: String(squad.length), l: 'In the pool' },
                 { v: formatPrice(PURSE_LAKH), l: 'Purse / team' },
                 { v: String(SQUAD_SIZE), l: 'Players / squad' },
               ].map(k => (
@@ -122,6 +122,38 @@ export function SCCLeague() {
             </div>
           </div>
         </Link>
+
+        {/* ── CAPTAINS ─────────────────────────────────────────────────── */}
+        <div className="glass rounded-3xl p-5">
+          <p className="text-[11px] font-black uppercase tracking-[2px] text-amber-600 mb-1 flex items-center gap-1.5">
+            <Crown className="w-4 h-4" fill="currentColor" /> Your captains
+          </p>
+          <p className="text-xs text-slate-500 dark:text-white/60 mb-3">
+            Elected by the squad. They build their teams at the auction — and are
+            <b> not auctioned themselves</b>.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {LEAGUE_CAPTAIN_IDS.map((id, i) => (
+              <div key={id} className="rounded-2xl p-4 text-white text-center shadow-md"
+                style={{ background: i === 0
+                  ? 'linear-gradient(140deg,#1e3a8a,#2a78d6)'
+                  : 'linear-gradient(140deg,#7c2d12,#eb6834)' }}>
+                <div className="flex justify-center">
+                  <Avatar member={memberById[id]} size={64} ring="rgba(255,255,255,.55)" />
+                </div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/70 mt-2.5">
+                  Team {i + 1} · name TBD
+                </p>
+                <p className="font-display text-lg font-extrabold leading-tight mt-0.5">
+                  {memberById[id]?.name ?? '?'}
+                </p>
+                <p className="text-[10px] text-white/70 inline-flex items-center gap-1 mt-1">
+                  <Crown className="w-3 h-3" fill="currentColor" /> Captain
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* ── THE POOL, BY GRADE ───────────────────────────────────────── */}
         {byTier.map(({ tier, players }) => (

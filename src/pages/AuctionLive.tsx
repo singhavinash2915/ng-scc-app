@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Gavel, Crown, Undo2, Check, X, Radio, Wallet, Users } from 'lucide-react';
+import { Gavel, Crown, Undo2, Check, X, Radio, Wallet, Users, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useAuth } from '../context/AuthContext';
 import { useMembers } from '../hooks/useMembers';
@@ -9,7 +9,7 @@ import { useMarketValue } from '../hooks/useMarketValue';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useSCCLeague, AUCTION_SETS, tierForRating, formatPrice, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
 import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
-import { SEASON_NEW } from '../config/season2';
+import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, isLeagueCaptain } from '../config/season2';
 import type { Member } from '../types';
 
 // ─── SCC League — live auction ─────────────────────────────────────────────────
@@ -68,6 +68,24 @@ export function AuctionLive() {
   );
   const teamName = (t: TeamKey) => (t === 'team1' ? a?.team1_name : a?.team2_name) || 'Team';
   const captainOf = (t: TeamKey) => (t === 'team1' ? a?.team1_captain_id : a?.team2_captain_id);
+
+  // Admin only, per request — the auctioneer runs it and shares the screen.
+  if (!isAdmin) {
+    return (
+      <div>
+        <Header title="Live Auction" subtitle="Admin only" />
+        <div className="p-8 max-w-md mx-auto mt-12 text-center">
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
+            <Lock className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">Auction room</h2>
+            <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
+              The auction is run from the admin screen. Watch it on the big screen 🔨
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (A.tableMissing) {
     return (
@@ -205,7 +223,9 @@ export function AuctionLive() {
                       style={{ background: A.canBid(t) ? TEAM_COLOR[t] : '#94a3b8' }}>
                       <span className="text-2xl block">{TEAM_EMOJI[t]}</span>
                       <span className="text-xs uppercase tracking-widest opacity-90">{teamName(t)}</span>
-                      <span className="block text-lg tabular-nums">+{formatPrice(A.bidStep)}</span>
+                      <span className="block text-lg tabular-nums">
+                        {!A.hasSlot(t) ? 'SQUAD FULL' : A.canBid(t) ? `+${formatPrice(A.bidStep)}` : 'NO PURSE'}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -220,7 +240,7 @@ export function AuctionLive() {
                                font-black text-sm inline-flex items-center justify-center gap-1.5">
                     <X className="w-4 h-4" /> Unsold
                   </button>
-                  <button onClick={A.undo} disabled={A.picks.length === 0}
+                  <button onClick={() => A.undo(baseOf)} disabled={A.picks.length === 0}
                     className="rounded-2xl py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white
                                font-black text-sm disabled:opacity-40 inline-flex items-center justify-center gap-1.5">
                     <Undo2 className="w-4 h-4" /> Undo
@@ -333,13 +353,14 @@ function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
 }) {
   const [t1, setT1] = useState('Team 1');
   const [t2, setT2] = useState('Team 2');
-  const [c1, setC1] = useState('');
-  const [c2, setC2] = useState('');
+  // The election decided these; they are retained, never auctioned.
+  const [c1, setC1] = useState(LEAGUE_CAPTAIN_IDS[0] ?? '');
+  const [c2, setC2] = useState(LEAGUE_CAPTAIN_IDS[1] ?? '');
   const [purse, setPurse] = useState(PURSE_LAKH);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const pool = league.going.map(r => r.member_id);
+  const pool = league.going.map(r => r.member_id).filter(id => !isLeagueCaptain(id));
   const input = 'w-full rounded-xl border border-slate-200 dark:border-white/15 bg-white dark:bg-white/5 px-3 py-2.5 text-sm';
 
   if (!isAdmin) {
@@ -381,7 +402,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
           <Gavel className="w-5 h-5 text-violet-500" /> Set up the auction
         </h2>
         <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
-          {pool.length} registered players · everyone watching sees this the moment you start.
+          {pool.length} players go under the hammer · the two elected captains are retained, not auctioned.
         </p>
       </div>
 
@@ -398,7 +419,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Team 1 captain</label>
           <select value={c1} onChange={e => setC1(e.target.value)} className={input}>
             <option value="">— Select —</option>
-            {pool.filter(id => id !== c2).map(id => (
+            {league.going.map(r => r.member_id).filter(id => id !== c2).map(id => (
               <option key={id} value={id}>{memberById[id]?.name}</option>
             ))}
           </select>
@@ -407,7 +428,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Team 2 captain</label>
           <select value={c2} onChange={e => setC2(e.target.value)} className={input}>
             <option value="">— Select —</option>
-            {pool.filter(id => id !== c1).map(id => (
+            {league.going.map(r => r.member_id).filter(id => id !== c1).map(id => (
               <option key={id} value={id}>{memberById[id]?.name}</option>
             ))}
           </select>

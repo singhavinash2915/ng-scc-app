@@ -103,7 +103,14 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
   const currentMemberId = auction?.pool_order?.[auction.current_idx] ?? null;
   const bidStep = (auction?.current_bid ?? 0) >= 100 ? BID_STEP_BIG : BID_STEP_SMALL;
   const nextBid = (auction?.current_bid ?? 0) + bidStep;
-  const canBid = useCallback((t: TeamKey) => nextBid <= maxBid(t), [nextBid, maxBid]);
+  /** A full squad cannot bid. maxBid alone doesn't stop it: once the last slot
+   *  is filled slotsLeft hits 0, so the reserve falls away and the whole
+   *  remaining purse looks spendable — a team ended a test run 14/13. */
+  const hasSlot = useCallback((t: TeamKey) => squad(t).length < size - 1, [squad, size]);
+  const canBid = useCallback(
+    (t: TeamKey) => hasSlot(t) && nextBid <= maxBid(t),
+    [hasSlot, nextBid, maxBid],
+  );
 
   // ── Admin actions ──────────────────────────────────────────────────────
   const patch = useCallback(async (fields: Partial<AuctionRow>) => {
@@ -151,8 +158,13 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
     await advance(basePriceOf);
   }, [auction, currentMemberId, season, advance]);
 
-  /** Undo the last resolved player and put them back on the block. */
-  const undo = useCallback(async () => {
+  /**
+   * Undo the last resolved player and put them back on the block, reopened at
+   * their BASE price. Reopening at `last.price` looked right for a sale but
+   * gave 0 for an unsold player, so undoing an unsold pass restarted a ₹2 Cr
+   * marquee name at the ₹20 L floor.
+   */
+  const undo = useCallback(async (basePriceOf: (id: string) => number) => {
     if (!auction || picks.length === 0) return;
     const last = [...picks].sort((a, b) => a.created_at.localeCompare(b.created_at)).pop()!;
     await supabase.from('scc_auction_picks').delete().eq('id', last.id);
@@ -160,7 +172,7 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
     await patch({
       status: 'live',
       current_idx: backTo >= 0 ? backTo : Math.max(0, auction.current_idx - 1),
-      current_bid: last.price || 20,
+      current_bid: basePriceOf(last.member_id),
       current_bidder: null,
     });
   }, [auction, picks, patch]);
@@ -200,6 +212,6 @@ export function useAuctionLive(season: string, opts: { live?: boolean } = {}) {
   return {
     auction, picks, sold, unsold, loading, tableMissing,
     currentMemberId, bidStep, nextBid, canBid, maxBid, budget, spent, squad,
-    bid, sell, passOver, undo, start, reset, patch, refetch: fetchAll,
+    bid, sell, passOver, undo, start, reset, patch, hasSlot, refetch: fetchAll,
   };
 }

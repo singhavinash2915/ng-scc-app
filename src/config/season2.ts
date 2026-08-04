@@ -15,3 +15,15 @@ export const AUCTION_NIGHT = {
   label: 'Late August 2026',
   confirmed: false,
 };
+
+// ─── SCC League captains ───────────────────────────────────────────────────────
+// The 2026-27 election is over and the result is final, so the two captains are
+// recorded here as a fact. Deriving them from the ballots would mean every page
+// that names a captain has to read the vote table — the one thing we keep out of
+// browsers. Team 1 first, in finishing order.
+export const LEAGUE_CAPTAIN_IDS: readonly string[] = [
+  '230629f4-cd80-4903-8b75-c485c75b2de7',   // AKASH JADHAV
+  '7545cb6b-41fe-4102-b392-f560ae44805f',   // Avinash Singh
+];
+
+export const isLeagueCaptain = (id: string) => LEAGUE_CAPTAIN_IDS.includes(id);
