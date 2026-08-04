@@ -55,13 +55,13 @@ export const ROLE_LABELS: Record<LeagueRole, string> = {
   keeper: '🧤 Keeper',
 };
 
-/** Two full squads before an auction makes sense. 26 = 13 a side. */
-export const SQUAD_TARGET = 26;
+/** Two full squads. 30 registered = 15 a side, and the maths lands exactly:
+ *  2 captains retained + 28 auctioned = 14 bought per team. */
+export const SQUAD_TARGET = 30;
 
-/** Late joiners aren't turned away — the next 4 go in as IMPACT PLAYERS,
- *  2 per squad, auctioned last out of what's left in the purse. */
-export const IMPACT_SLOTS_PER_TEAM = 2;
-export const SQUAD_MAX = SQUAD_TARGET + IMPACT_SLOTS_PER_TEAM * 2;   // 30
+/** No spare slots left at 30 — every registered player has a place. */
+export const IMPACT_SLOTS_PER_TEAM = 0;
+export const SQUAD_MAX = SQUAD_TARGET;
 
 /** Captain voting stays locked until this many players have confirmed.
  *  Opening it earlier lets a handful of early birds stitch up the result
@@ -74,7 +74,7 @@ export const VOTE_UNLOCK_AT = 22;
 // much money on the table: room for real bidding wars while still forcing
 // choices late on. (At the original ₹50 Cr the money never ran out at all.)
 export const PURSE_LAKH = 2500;                       // ₹25 Cr per team
-export const SQUAD_SIZE = 13;                         // captain + 12 bought (+2 impact)
+export const SQUAD_SIZE = 15;                         // captain + 14 bought
 export const BID_STEP_SMALL = 5;                      // +₹5L while under ₹1 Cr
 export const BID_STEP_BIG = 10;                       // +₹10L at ₹1 Cr and above
 

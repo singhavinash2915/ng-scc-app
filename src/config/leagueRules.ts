@@ -1,4 +1,4 @@
-import { PURSE_LAKH, PRICE_TIERS, AUCTION_SETS, SQUAD_SIZE, SQUAD_TARGET, SQUAD_MAX, IMPACT_SLOTS_PER_TEAM, VOTE_UNLOCK_AT, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
+import { PURSE_LAKH, PRICE_TIERS, AUCTION_SETS, SQUAD_SIZE, SQUAD_TARGET, VOTE_UNLOCK_AT, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
 
 // ─── SCC League rulebook ───────────────────────────────────────────────────────
 // One place for every rule, so the app, the auctioneer and the WhatsApp group
@@ -38,7 +38,7 @@ export const AUCTION_RULES: RuleSection = {
     `Players come up in **sets**: ${AUCTION_SETS.map(x => `${x.emoji} ${x.label}`).join(' → ')} → unsold round. Order inside a set is **random**.`,
     'The **Marquee Set goes first**, while every purse is full and nobody has spent a rupee. Get in early or wait and gamble 😈',
     `Each squad is **${SQUAD_SIZE} players**: the captain + **${SQUAD_SIZE - 1} bought at auction**.`,
-    `Registered after the first ${SQUAD_TARGET}? You go in as an **⚡ Impact Player** — ${IMPACT_SLOTS_PER_TEAM} per squad, up to ${SQUAD_MAX} players total. Impact players are auctioned **last**, out of whatever purse is left.`,
+    `**${SQUAD_TARGET} players, ${SQUAD_SIZE} a side** — every registered player has a place, so the maths lands exactly: 2 captains retained and ${SQUAD_TARGET - 2} under the hammer.`,
     `The captain is **retained at their own graded price**, deducted from the purse before bidding starts.`,
     '**Base price is earned, not chosen.** It is graded automatically from your SCC Rankings rating — nobody picks their own slab.',
     `Grades: ${PRICE_TIERS.map(t => `**${t.emoji} ${t.label} ${formatPrice(t.price)}**`).join(' · ')}.`,

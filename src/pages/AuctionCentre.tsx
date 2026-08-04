@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Search, Crown, Radio, TrendingUp, Sparkles, Zap } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
-import { useSCCLeague, formatPrice, PRICE_TIERS } from '../hooks/useSCCLeague';
+import { useSCCLeague, formatPrice, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
 import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
 import { SEASON_NEW, isLeagueCaptain } from '../config/season2';
 import type { Member } from '../types';
@@ -87,25 +87,7 @@ export function AuctionCentre() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [A.sold, league.registrations]);
 
-  if (A.tableMissing || (!A.loading && !a)) {
-    return (
-      <div>
-        <Header title="Auction Centre" subtitle="SCC League" />
-        <div className="p-8 max-w-md mx-auto mt-12 text-center">
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
-            <p className="text-4xl">🔨</p>
-            <h2 className="text-lg font-black text-slate-900 dark:text-white mt-2">
-              The auction hasn't started
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
-              Keep this open — every bid appears here the moment it's called.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  const started = !!a;
   const TABS: Array<[Tab, string]> = [['live', 'Live'], ['teams', 'Teams'], ['players', 'Players']];
 
   return (
@@ -114,17 +96,17 @@ export function AuctionCentre() {
       <div className="p-4 lg:p-8 max-w-3xl mx-auto">
 
         {/* status */}
-        {a && (
-          <div className="flex items-center justify-between rounded-2xl bg-slate-900 text-white px-4 py-2.5 mb-3">
-            <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
-              <Radio className="w-3.5 h-3.5 text-rose-400" />
-              {a.status === 'done' ? 'Auction completed' : 'Live'}
-            </span>
-            <span className="text-[11px] font-bold text-white/60">
-              {A.sold.length} sold · {A.unsold.length} unsold
-            </span>
-          </div>
-        )}
+        <div className="flex items-center justify-between rounded-2xl bg-slate-900 text-white px-4 py-2.5 mb-3">
+          <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
+            <Radio className={`w-3.5 h-3.5 ${started ? 'text-rose-400' : 'text-white/30'}`} />
+            {!started ? 'Auction not started' : a!.status === 'done' ? 'Auction completed' : 'Live'}
+          </span>
+          <span className="text-[11px] font-bold text-white/60">
+            {started
+              ? `${A.sold.length} sold · ${A.unsold.length} unsold`
+              : `${pool.length} players · ${formatPrice(PURSE_LAKH)} a side`}
+          </span>
+        </div>
 
         {/* tabs */}
         <div className="flex gap-1 border-b border-slate-200 dark:border-white/10 mb-4">
@@ -143,7 +125,20 @@ export function AuctionCentre() {
         {/* ── LIVE ─────────────────────────────────────────────────────── */}
         {tab === 'live' && (
           <div className="space-y-3">
-            {featured.length === 0 && (
+            {!started && (
+              <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+                              dark:border-white/10 p-6 text-center">
+                <p className="text-4xl">🔨</p>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white mt-2">
+                  Auction night is coming
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
+                  {pool.length} players graded and waiting. Browse the full list on the
+                  <b> Players</b> tab — every bid lands here the moment it's called.
+                </p>
+              </div>
+            )}
+            {started && featured.length === 0 && (
               <p className="text-sm text-slate-500 dark:text-white/60">
                 Nothing sold yet — the first name is about to go under the hammer.
               </p>
@@ -184,6 +179,19 @@ export function AuctionCentre() {
         )}
 
         {/* ── TEAMS ────────────────────────────────────────────────────── */}
+        {tab === 'teams' && !started && (
+          <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+                          dark:border-white/10 p-6 text-center">
+            <Crown className="w-8 h-8 text-amber-500 mx-auto" fill="currentColor" />
+            <p className="text-sm font-black text-slate-900 dark:text-white mt-2">
+              Squads get built on auction night
+            </p>
+            <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
+              {SQUAD_SIZE} a side · {formatPrice(PURSE_LAKH)} purse each
+            </p>
+          </div>
+        )}
+
         {tab === 'teams' && a && (
           <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
                           dark:border-white/10 overflow-hidden">
