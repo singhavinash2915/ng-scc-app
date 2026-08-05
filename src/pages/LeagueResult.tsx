@@ -8,7 +8,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
 import { useLeagueResult } from '../hooks/useLeagueResult';
-import { SEASON_NEW } from '../config/season2';
+import { SEASON_NEW, LEAGUE_TEAM_NAMES } from '../config/season2';
 import type { Member } from '../types';
 
 // ─── SCC League — captain election result ──────────────────────────────────────
@@ -126,7 +126,9 @@ export function LeagueResult() {
                     <div className="inline-flex items-center gap-1 mt-3 bg-white/15 border border-white/25
                                     rounded-full px-2.5 py-1">
                       <Crown className="w-3 h-3" fill="currentColor" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Team {i + 1}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">
+                        {i === 0 ? LEAGUE_TEAM_NAMES.team1 : LEAGUE_TEAM_NAMES.team2}
+                      </span>
                     </div>
                     <p className="font-display text-xl sm:text-2xl font-extrabold mt-2 leading-tight">
                       {memberById[c.id]?.name ?? '?'}
@@ -143,8 +145,8 @@ export function LeagueResult() {
               </div>
 
               <p className="text-center text-white/70 text-xs mt-5 max-w-sm mx-auto">
-                They pick their own squads at the auction — and name their own deputy afterwards.
-                Team names to follow 🎨
+                {LEAGUE_TEAM_NAMES.team1} &amp; {LEAGUE_TEAM_NAMES.team2} — they build their squads
+                at the auction, and name their deputies after 🔨
               </p>
             </div>
 

@@ -8,7 +8,7 @@ import {
   formatPrice, type LeagueRole,
 } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
-import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, isLeagueCaptain } from '../config/season2';
+import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, LEAGUE_TEAM_NAMES, isLeagueCaptain } from '../config/season2';
 import type { Member } from '../types';
 
 // ─── SCC League — the squad ────────────────────────────────────────────────────
@@ -145,14 +145,14 @@ export function SCCLeague() {
                 <div className="flex justify-center">
                   <Avatar member={memberById[id]} size={64} ring="rgba(255,255,255,.55)" />
                 </div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/70 mt-2.5">
-                  Team {i + 1} · name TBD
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/60 mt-2.5">
+                  Team {i + 1}
                 </p>
                 <p className="font-display text-lg font-extrabold leading-tight mt-0.5">
-                  {memberById[id]?.name ?? '?'}
+                  {i === 0 ? LEAGUE_TEAM_NAMES.team1 : LEAGUE_TEAM_NAMES.team2}
                 </p>
                 <p className="text-[10px] text-white/70 inline-flex items-center gap-1 mt-1">
-                  <Crown className="w-3 h-3" fill="currentColor" /> Captain
+                  <Crown className="w-3 h-3" fill="currentColor" /> {memberById[id]?.name ?? '?'}
                 </p>
               </div>
             ))}
