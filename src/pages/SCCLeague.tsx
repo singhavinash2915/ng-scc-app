@@ -4,7 +4,7 @@ import { Gavel, Flame, UserMinus, ScrollText, ChevronDown, Radio, Crown } from '
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
 import {
-  useSCCLeague, ROLE_LABELS, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE, SQUAD_TARGET,
+  useSCCLeague, ROLE_LABELS, DISPLAY_BANDS, bandForPrice, PURSE_LAKH, SQUAD_SIZE, SQUAD_TARGET,
   formatPrice, type LeagueRole,
 } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
@@ -52,8 +52,12 @@ export function SCCLeague() {
   );
 
   const byTier = useMemo(
-    () => PRICE_TIERS.map(t => ({ tier: t, players: squad.filter(r => r.base_price === t.price) }))
-      .filter(g => g.players.length > 0),
+    () => DISPLAY_BANDS.map(tier => ({
+      tier,
+      // Within the Icons band the ₹2 Cr names sit above the ₹1 Cr ones.
+      players: squad.filter(r => bandForPrice(r.base_price).key === tier.key)
+        .sort((a, b) => (b.base_price || 0) - (a.base_price || 0)),
+    })).filter(g => g.players.length > 0),
     [squad],
   );
 
@@ -164,7 +168,12 @@ export function SCCLeague() {
                 {tier.label}
               </p>
               <span className={`text-[10px] font-black text-white rounded-full px-2 py-0.5 bg-gradient-to-r ${tier.cls}`}>
-                {formatPrice(tier.price)}
+                {(() => {
+                  const prices = [...new Set(players.map(p => p.base_price))].sort((a, b) => b - a);
+                  return prices.length > 1
+                    ? `${formatPrice(prices[prices.length - 1])}–${formatPrice(prices[0])}`
+                    : formatPrice(prices[0]);
+                })()}
               </span>
               <span className="ml-auto text-[11px] font-bold text-slate-400">{players.length}</span>
             </div>
@@ -178,6 +187,7 @@ export function SCCLeague() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
                         {m?.name ?? '?'}
+                        <span className="ml-1.5 text-[10px] font-black text-violet-500">{formatPrice(r.base_price)}</span>
                       </p>
                       <p className="text-[10px] text-slate-500 dark:text-white/55">
                         {r.role ? ROLE_LABELS[r.role as LeagueRole] : '—'}

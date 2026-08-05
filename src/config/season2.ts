@@ -10,11 +10,22 @@ export const SEASON_NEW_END = '2027-08-31';
 export const SEASON_PREV_START = '2025-09-01';
 export const SEASON_PREV_END = '2026-08-31';
 
-// Auction Night — pre-season re-draft event (date TBC; late August).
+// Auction Night — the live draft. Friday 7 Aug 2026, 9 PM IST on Google Meet.
+// startsAt is the exact instant, in UTC (9 PM IST = 15:30 UTC), so the poster
+// counts down to the right moment on every device.
 export const AUCTION_NIGHT = {
-  label: 'Late August 2026',
-  confirmed: false,
+  label: 'Friday · 9 PM IST',
+  confirmed: true,
+  startsAt: new Date('2026-08-07T15:30:00Z'),
+  meetUrl: 'https://meet.google.com/landing',   // ← paste the real Meet link here
 };
+
+// The two elected captains have named their sides. These are the auction
+// defaults; the setup screen still lets the auctioneer override on the night.
+export const LEAGUE_TEAM_NAMES = {
+  team1: 'SCC Brahmos',   // AKASH JADHAV
+  team2: 'SCC Agni',      // Avinash Singh
+} as const;
 
 // ─── SCC League captains ───────────────────────────────────────────────────────
 // The 2026-27 election is over and the result is final, so the two captains are

@@ -7,9 +7,9 @@ import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
 import { useCricketStats } from '../hooks/useCricketStats';
-import { useSCCLeague, AUCTION_SETS, tierForRating, formatPrice, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
+import { useSCCLeague, bandForPrice, tierForRating, formatPrice, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
 import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
-import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, isLeagueCaptain } from '../config/season2';
+import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, LEAGUE_TEAM_NAMES, isLeagueCaptain } from '../config/season2';
 import type { Member } from '../types';
 
 // ─── SCC League — live auction ─────────────────────────────────────────────────
@@ -61,9 +61,10 @@ export function AuctionLive() {
 
   const a = A.auction;
   const current = A.currentMemberId ? memberById[A.currentMemberId] : undefined;
+  // Marquee + Grade A come up as one SCC Icons set, so the badge follows the
+  // display band rather than the raw price slab.
   const currentSet = useMemo(
-    () => AUCTION_SETS.find(s => s.price === (A.currentMemberId ? baseOf(A.currentMemberId) : -1))
-      ?? AUCTION_SETS[AUCTION_SETS.length - 1],
+    () => bandForPrice(A.currentMemberId ? baseOf(A.currentMemberId) : 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [A.currentMemberId, basePriceById],
   );
@@ -365,8 +366,8 @@ function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
   isAdmin: boolean;
   onStart: ReturnType<typeof useAuctionLive>['start'];
 }) {
-  const [t1, setT1] = useState('Team 1');
-  const [t2, setT2] = useState('Team 2');
+  const [t1, setT1] = useState<string>(LEAGUE_TEAM_NAMES.team1);
+  const [t2, setT2] = useState<string>(LEAGUE_TEAM_NAMES.team2);
   // The election decided these; they are retained, never auctioned.
   const [c1, setC1] = useState(LEAGUE_CAPTAIN_IDS[0] ?? '');
   const [c2, setC2] = useState(LEAGUE_CAPTAIN_IDS[1] ?? '');

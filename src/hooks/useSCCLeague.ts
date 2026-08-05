@@ -113,6 +113,30 @@ export function tierForRating(rating: number | undefined): PriceTier {
   return PRICE_TIERS.find(t => (rating ?? 0) >= t.minRating) ?? PRICE_TIERS[PRICE_TIERS.length - 1];
 }
 
+// ─── Display bands ─────────────────────────────────────────────────────────────
+// Grading stays four tiers (base prices are already set), but only TWO players
+// landed in Marquee — a two-name headline set is thin. So for display and for
+// the auction's opening set, Marquee and Grade A collapse into one premier band,
+// the SCC ICONS: seven of the club's best, and the loudest bidding of the night.
+export interface DisplayBand {
+  key: 'icons' | 'b' | 'c';
+  label: string;
+  emoji: string;
+  cls: string;
+  /** A base price belongs to this band when it is at least this much. */
+  minPrice: number;
+}
+
+export const DISPLAY_BANDS: DisplayBand[] = [
+  { key: 'icons', label: 'SCC Icons', emoji: '💎', cls: 'from-violet-500 to-fuchsia-500', minPrice: 100 },
+  { key: 'b',     label: 'Grade B',   emoji: '🥈', cls: 'from-slate-400 to-slate-500',   minPrice: 50 },
+  { key: 'c',     label: 'Grade C',   emoji: '🥉', cls: 'from-orange-600 to-amber-700',  minPrice: 0 },
+];
+
+export function bandForPrice(lakh: number): DisplayBand {
+  return DISPLAY_BANDS.find(b => lakh >= b.minPrice) ?? DISPLAY_BANDS[DISPLAY_BANDS.length - 1];
+}
+
 /** 20 → "₹20 L" · 100 → "₹1 Cr" · 250 → "₹2.5 Cr" */
 export function formatPrice(lakh: number): string {
   if (lakh >= 100) {

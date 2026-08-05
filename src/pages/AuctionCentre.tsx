@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Search, Crown, Radio, TrendingUp, Sparkles, Zap } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
-import { useSCCLeague, formatPrice, PRICE_TIERS, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
+import { useSCCLeague, formatPrice, bandForPrice, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
 import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
 import { SEASON_NEW, isLeagueCaptain } from '../config/season2';
 import type { Member } from '../types';
@@ -264,7 +264,7 @@ export function AuctionCentre() {
                 const pick = pickOf(r.member_id);
                 const trail = A.trailFor(r.member_id);
                 const isOpen = open === r.member_id;
-                const tier = PRICE_TIERS.find(t => t.price === r.base_price);
+                const tier = bandForPrice(r.base_price);
                 return (
                   <div key={r.id} className="border-t first:border-t-0 border-slate-100 dark:border-white/10">
                     <button onClick={() => setOpen(isOpen ? null : r.member_id)}
@@ -275,7 +275,7 @@ export function AuctionCentre() {
                           {m?.name}
                         </p>
                         <p className="text-[11px] text-slate-400">
-                          {tier?.emoji} {r.role ?? '—'} · base {formatPrice(r.base_price)}
+                          {tier.emoji} {r.role ?? '—'} · base {formatPrice(r.base_price)}
                         </p>
                       </div>
                       {pick
