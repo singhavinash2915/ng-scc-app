@@ -310,6 +310,9 @@ export function useAuctionLive(
   /** Wipe the whole auction for this season — used by the mock drill. */
   const reset = useCallback(async () => {
     await supabase.from('scc_auction_picks').delete().eq('season', season);
+    // The bid trail has to go too. Left behind, a rehearsal's bids would show
+    // up under the real players on auction night with prices nobody ever called.
+    await supabase.from('scc_auction_bids').delete().eq('season', season);
     await supabase.from('scc_auction').delete().eq('season', season);
     await fetchAll();
   }, [season, fetchAll]);

@@ -33,8 +33,25 @@ function Face({ member, size = 44, ring }: { member?: Member; size?: number; rin
   );
 }
 
+// ─── Rehearsal mode ────────────────────────────────────────────────────────────
+// The captains want a dry run before the real night. A rehearsal writes to its
+// own season row, so the live auction can't be started, dirtied or half-finished
+// by practice — and because the Dashboard banner and Auction Centre both read
+// SEASON_NEW, nothing a rehearsal does is ever broadcast to the members.
+// Persisted: refreshing mid-drill must not silently drop you onto the real season.
+const REHEARSAL_SEASON = `${SEASON_NEW}-REHEARSAL`;
+const REHEARSAL_KEY = 'scc-auction-rehearsal';
+
 export function AuctionLive() {
   const { isAdmin } = useAuth();
+  const [rehearsal, setRehearsal] = useState(
+    () => localStorage.getItem(REHEARSAL_KEY) === '1',
+  );
+  const season = rehearsal ? REHEARSAL_SEASON : SEASON_NEW;
+  const toggleRehearsal = (on: boolean) => {
+    localStorage.setItem(REHEARSAL_KEY, on ? '1' : '0');
+    setRehearsal(on);
+  };
   const { members } = useMembers();
   const { matches } = useMatches();
   const { scorecards } = useAllScorecards();
@@ -57,7 +74,7 @@ export function AuctionLive() {
     return m;
   }, [values, members, league.registrations]);
   const baseOf = useCallback((id: string) => basePriceById[id] ?? 20, [basePriceById]);
-  const A = useAuctionLive(SEASON_NEW, { basePriceOf: baseOf });
+  const A = useAuctionLive(season, { basePriceOf: baseOf });
 
   const a = A.auction;
   const current = A.currentMemberId ? memberById[A.currentMemberId] : undefined;
@@ -117,9 +134,39 @@ export function AuctionLive() {
         @media (prefers-reduced-motion: reduce) { .al-live,.al-pop { animation: none } }
       `}</style>
 
-      <Header title="Live Auction" subtitle={`SCC League · Season ${SEASON_NEW}`} />
+      <Header title={rehearsal ? 'Auction Rehearsal' : 'Live Auction'}
+        subtitle={rehearsal ? 'Practice run · not the real auction' : `SCC League · Season ${SEASON_NEW}`} />
 
       <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-4">
+
+        {/* Which auction am I in? Impossible to get wrong at a glance — the one
+            mistake that would really hurt is running the real auction while
+            everyone thinks it's practice, or vice versa. */}
+        <div className={`flex items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 ${
+          rehearsal
+            ? 'border-amber-400 bg-amber-50 dark:bg-amber-500/10'
+            : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5'
+        }`}>
+          <div className="min-w-0">
+            <p className={`text-[10px] font-black uppercase tracking-widest ${
+              rehearsal ? 'text-amber-600' : 'text-slate-400'}`}>
+              {rehearsal ? '🎭 Rehearsal mode' : '🔴 Real auction'}
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-white/60 leading-snug">
+              {rehearsal
+                ? 'Practice freely — nothing here is shown to members, and the real auction is untouched.'
+                : 'This is the one that counts. Everything appears on the Dashboard and Auction Centre.'}
+            </p>
+          </div>
+          <button onClick={() => toggleRehearsal(!rehearsal)}
+            className={`flex-shrink-0 rounded-xl px-3.5 py-2 text-[11px] font-black border-2 ${
+              rehearsal
+                ? 'border-slate-300 text-slate-600 dark:text-white/70'
+                : 'border-amber-400 text-amber-600'
+            }`}>
+            {rehearsal ? 'Go to real auction' : 'Start a rehearsal'}
+          </button>
+        </div>
 
         {A.loading && <p className="text-sm text-slate-400">Connecting…</p>}
 
