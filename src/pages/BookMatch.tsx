@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { toPng } from 'html-to-image';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useMatchBookings } from '../hooks/useMatchBookings';
 import { useGroundSettings } from '../hooks/useGroundSettings';
+import { useDayHolds, holdMeta, type DayHold } from '../hooks/useDayHolds';
+import { DayHoldModal } from '../components/DayHoldModal';
 import type { MatchSlot } from '../types';
 import {
   CalendarDays,
@@ -310,38 +312,12 @@ export function BookMatch() {
   const { ground, testimonials, upi, fetchSettings } = useGroundSettings();
   const { isAdmin } = useAuth();
 
-  // Dates an admin has pinned for an SCC internal (Brahmos vs Agni) match.
-  const [internalDays, setInternalDays] = useState<Set<string>>(new Set());
-  const [internalTableMissing, setInternalTableMissing] = useState(false);
-  const [busyDate, setBusyDate] = useState<string | null>(null);
+  // Days an admin has taken off the public calendar — a league match, a team
+  // that paid direct, or the ground simply being unavailable.
+  const holds = useDayHolds();
+  const internalDays = useMemo(() => new Set(holds.holds.map(h => h.date)), [holds.holds]);
+  const [holdEditor, setHoldEditor] = useState<{ date: string; existing?: DayHold } | null>(null);
 
-  const fetchInternalDays = useCallback(async () => {
-    const { data, error } = await supabase.from('scc_internal_match_days').select('date');
-    if (error) {
-      if (error.code === '42P01' || error.code === 'PGRST205') setInternalTableMissing(true);
-      return;
-    }
-    setInternalTableMissing(false);
-    setInternalDays(new Set((data ?? []).map((r: { date: string }) => r.date)));
-  }, []);
-  useEffect(() => { fetchInternalDays(); }, [fetchInternalDays]);
-
-  /** Admin: toggle a date as an SCC internal match day. */
-  const toggleInternalDay = useCallback(async (date: string, on: boolean) => {
-    if (internalTableMissing) {
-      alert('Run add_internal_match_days.sql in Supabase first.');
-      return;
-    }
-    setBusyDate(date);
-    if (on) {
-      await supabase.from('scc_internal_match_days')
-        .upsert({ date, note: 'SCC League match' }, { onConflict: 'date' });
-    } else {
-      await supabase.from('scc_internal_match_days').delete().eq('date', date);
-    }
-    await fetchInternalDays();
-    setBusyDate(null);
-  }, [internalTableMissing, fetchInternalDays]);
   const upiId   = upi.upi_id   || UPI_FALLBACK_ID;
   const upiName = upi.upi_name || UPI_FALLBACK_NAME;
   const qrUrl   = upi.qr_code_url;
@@ -813,17 +789,24 @@ export function BookMatch() {
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500 ring-2 ring-violet-100"/>SCC Internal</span>
             </div>
 
-            {/* Admin: reserve internal match days */}
+            {/* Admin: hold days off the public calendar */}
             {isAdmin && (
               <div className="mx-4 sm:mx-5 mt-3 rounded-xl bg-violet-50 border border-violet-200 px-3.5 py-2.5">
                 <p className="text-xs font-bold text-violet-900">
-                  🔨 Admin · tap any open date to reserve it for an SCC internal match (Brahmos vs Agni)
+                  🔨 Admin · tap any date to block it — league match, paid direct, or ground unavailable
                 </p>
                 <p className="text-[11px] text-violet-600 mt-0.5">
-                  {internalTableMissing
+                  {holds.tableMissing
                     ? 'Run add_internal_match_days.sql in Supabase to enable this.'
-                    : 'Reserved dates show the SCC badge and are hidden from external teams. Tap a reserved date to release it.'}
+                    : holds.needsMigration
+                      ? 'Run add_day_hold_kinds.sql to record who booked and what they paid.'
+                      : 'Blocked dates disappear from external booking. Tap one again to edit or release it.'}
                 </p>
+                {holds.offlineTotal > 0 && (
+                  <p className="text-[11px] font-bold text-emerald-700 mt-1.5">
+                    💰 Offline bookings recorded: ₹{holds.offlineTotal.toLocaleString('en-IN')}
+                  </p>
+                )}
               </div>
             )}
 
@@ -842,23 +825,20 @@ export function BookMatch() {
                     const status = slotStatus(slot);
                     const avail  = status === 'available';
                     const isSat  = slot.day_type === 'saturday';
-                    const isMineInternal = internalDays.has(slot.date);
-                    // Admins can pin an available date, or release one they pinned.
+                    const hold = holds.byDate[slot.date];
+                    const isMineInternal = !!hold;
+                    const meta = hold ? holdMeta(hold.kind) : null;
+                    // Admins can hold an open date, or edit/release one they hold.
                     const adminActionable = isAdmin && (avail || isMineInternal);
                     const handleClick = () => {
-                      if (isAdmin && (avail || isMineInternal)) {
-                        const on = !isMineInternal;
-                        if (confirm(on
-                          ? `Reserve ${formatShortDate(slot.date)} for an SCC internal match?\nExternal teams won't be able to book it.`
-                          : `Release ${formatShortDate(slot.date)} back for external bookings?`)) {
-                          toggleInternalDay(slot.date, on);
-                        }
+                      if (adminActionable) {
+                        setHoldEditor({ date: slot.date, existing: hold });
                         return;
                       }
                       setSelectedSlot(slot); setStep('form');
                     };
                     return (
-                      <button key={slot.id} disabled={busyDate === slot.date || (!avail && !adminActionable)}
+                      <button key={slot.id} disabled={holds.busyDate === slot.date || (!avail && !adminActionable)}
                         onClick={handleClick}
                         className={`relative rounded-2xl p-3 text-left border-2 transition-all ${
                           avail
@@ -873,7 +853,11 @@ export function BookMatch() {
                           <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-amber-700 bg-amber-300 rounded-full px-1.5 py-0.5 shadow-sm">SAT</div>
                         )}
                         {status==='reserved' && (
-                          <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-white bg-violet-500 rounded-full px-1.5 py-0.5 shadow-sm">SCC</div>
+                          <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-white bg-violet-500 rounded-full px-1.5 py-0.5 shadow-sm">
+                            {/* Visitors only ever see the SCC badge — the 💰/🚧
+                                emoji would quietly reveal how the day was held. */}
+                            {isAdmin && meta ? meta.emoji : 'SCC'}
+                          </div>
                         )}
                         <div className={`text-[10px] font-bold mb-0.5 tracking-wide uppercase ${
                           avail
@@ -885,7 +869,18 @@ export function BookMatch() {
                         </div>
                         <div className={`font-black text-base ${avail?'text-gray-900':status==='reserved'?'text-violet-900':'text-gray-400'}`}>{formatShortDate(slot.date)}</div>
                         {status==='reserved' ? (
-                          <div className="text-[10px] text-violet-600 font-bold mt-1 leading-tight">🏏 Internal League</div>
+                          <div className="text-[10px] text-violet-600 font-bold mt-1 leading-tight">
+                            {/* Outsiders just see "Booked" for an offline deal — no reason
+                                to advertise that it was arranged off-app. Admins see the
+                                detail so they remember who paid. */}
+                            {meta ? (isAdmin ? `${meta.emoji} ${meta.label}` : meta.publicLabel) : '🏏 SCC League'}
+                            {isAdmin && hold?.team_name && (
+                              <span className="block font-semibold text-violet-500 truncate">{hold.team_name}</span>
+                            )}
+                            {isAdmin && hold?.amount ? (
+                              <span className="block font-black text-emerald-600">₹{hold.amount.toLocaleString('en-IN')}</span>
+                            ) : null}
+                          </div>
                         ) : (
                           <div className={`text-xs mt-1 font-semibold ${avail?(isSat?'text-amber-700':'text-primary-700'):'text-gray-400'}`}>
                             ₹{slot.price.toLocaleString('en-IN')}
@@ -899,6 +894,27 @@ export function BookMatch() {
                 </div>
               )}
             </div>
+
+            {holdEditor && (
+              <DayHoldModal
+                date={holdEditor.date}
+                existing={holdEditor.existing}
+                busy={holds.busyDate === holdEditor.date}
+                formatDate={formatShortDate}
+                suggestedPrice={slots.find(sl => sl.date === holdEditor.date)?.price}
+                onClose={() => setHoldEditor(null)}
+                onSave={async input => {
+                  const err = await holds.holdDay({ date: holdEditor.date, ...input });
+                  if (err) alert(`Could not block that date: ${err}`);
+                  else setHoldEditor(null);
+                }}
+                onRelease={async () => {
+                  const err = await holds.releaseDay(holdEditor.date);
+                  if (err) alert(`Could not release that date: ${err}`);
+                  else setHoldEditor(null);
+                }}
+              />
+            )}
 
             {/* Month pills */}
             <div className="flex gap-1.5 px-4 pb-4 sm:px-5 sm:pb-5 flex-wrap border-t border-gray-100 pt-3.5">
