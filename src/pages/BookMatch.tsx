@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import { useMatchBookings } from '../hooks/useMatchBookings';
 import { useGroundSettings } from '../hooks/useGroundSettings';
 import type { MatchSlot } from '../types';
@@ -307,6 +308,40 @@ function MatchCard({
 export function BookMatch() {
   const { slots, loading, fetchSlots, createBooking } = useMatchBookings();
   const { ground, testimonials, upi, fetchSettings } = useGroundSettings();
+  const { isAdmin } = useAuth();
+
+  // Dates an admin has pinned for an SCC internal (Brahmos vs Agni) match.
+  const [internalDays, setInternalDays] = useState<Set<string>>(new Set());
+  const [internalTableMissing, setInternalTableMissing] = useState(false);
+  const [busyDate, setBusyDate] = useState<string | null>(null);
+
+  const fetchInternalDays = useCallback(async () => {
+    const { data, error } = await supabase.from('scc_internal_match_days').select('date');
+    if (error) {
+      if (error.code === '42P01' || error.code === 'PGRST205') setInternalTableMissing(true);
+      return;
+    }
+    setInternalTableMissing(false);
+    setInternalDays(new Set((data ?? []).map((r: { date: string }) => r.date)));
+  }, []);
+  useEffect(() => { fetchInternalDays(); }, [fetchInternalDays]);
+
+  /** Admin: toggle a date as an SCC internal match day. */
+  const toggleInternalDay = useCallback(async (date: string, on: boolean) => {
+    if (internalTableMissing) {
+      alert('Run add_internal_match_days.sql in Supabase first.');
+      return;
+    }
+    setBusyDate(date);
+    if (on) {
+      await supabase.from('scc_internal_match_days')
+        .upsert({ date, note: 'SCC League match' }, { onConflict: 'date' });
+    } else {
+      await supabase.from('scc_internal_match_days').delete().eq('date', date);
+    }
+    await fetchInternalDays();
+    setBusyDate(null);
+  }, [internalTableMissing, fetchInternalDays]);
   const upiId   = upi.upi_id   || UPI_FALLBACK_ID;
   const upiName = upi.upi_name || UPI_FALLBACK_NAME;
   const qrUrl   = upi.qr_code_url;
@@ -392,7 +427,12 @@ export function BookMatch() {
     slots.forEach(s => { const k = s.date.slice(0,7); if (!map[k]) map[k]=[]; map[k].push(s); });
     return map;
   }, [slots]);
-  const reservedDates     = useMemo(() => computeReservedDates(slots), [slots]);
+  const reservedDates     = useMemo(() => {
+    // Auto-held dates PLUS any an admin has explicitly pinned for a league match.
+    const auto = computeReservedDates(slots);
+    internalDays.forEach(d => auto.add(d));
+    return auto;
+  }, [slots, internalDays]);
   const detectedTeamId    = extractTeamId(chTeamId);
   const monthKeys         = useMemo(() => Object.keys(slotsByMonth).sort(), [slotsByMonth]);
   const currentMonthKey   = monthKeys[currentMonthIndex] ?? '';
@@ -773,6 +813,20 @@ export function BookMatch() {
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500 ring-2 ring-violet-100"/>SCC Internal</span>
             </div>
 
+            {/* Admin: reserve internal match days */}
+            {isAdmin && (
+              <div className="mx-4 sm:mx-5 mt-3 rounded-xl bg-violet-50 border border-violet-200 px-3.5 py-2.5">
+                <p className="text-xs font-bold text-violet-900">
+                  🔨 Admin · tap any open date to reserve it for an SCC internal match (Brahmos vs Agni)
+                </p>
+                <p className="text-[11px] text-violet-600 mt-0.5">
+                  {internalTableMissing
+                    ? 'Run add_internal_match_days.sql in Supabase to enable this.'
+                    : 'Reserved dates show the SCC badge and are hidden from external teams. Tap a reserved date to release it.'}
+                </p>
+              </div>
+            )}
+
             {/* Slots */}
             <div className="p-4 sm:p-5">
               {loading ? (
@@ -788,9 +842,24 @@ export function BookMatch() {
                     const status = slotStatus(slot);
                     const avail  = status === 'available';
                     const isSat  = slot.day_type === 'saturday';
+                    const isMineInternal = internalDays.has(slot.date);
+                    // Admins can pin an available date, or release one they pinned.
+                    const adminActionable = isAdmin && (avail || isMineInternal);
+                    const handleClick = () => {
+                      if (isAdmin && (avail || isMineInternal)) {
+                        const on = !isMineInternal;
+                        if (confirm(on
+                          ? `Reserve ${formatShortDate(slot.date)} for an SCC internal match?\nExternal teams won't be able to book it.`
+                          : `Release ${formatShortDate(slot.date)} back for external bookings?`)) {
+                          toggleInternalDay(slot.date, on);
+                        }
+                        return;
+                      }
+                      setSelectedSlot(slot); setStep('form');
+                    };
                     return (
-                      <button key={slot.id} disabled={!avail}
-                        onClick={()=>{ setSelectedSlot(slot); setStep('form'); }}
+                      <button key={slot.id} disabled={busyDate === slot.date || (!avail && !adminActionable)}
+                        onClick={handleClick}
                         className={`relative rounded-2xl p-3 text-left border-2 transition-all ${
                           avail
                             ? isSat
