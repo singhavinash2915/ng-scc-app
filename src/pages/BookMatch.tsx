@@ -4,8 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useMatchBookings } from '../hooks/useMatchBookings';
 import { useGroundSettings } from '../hooks/useGroundSettings';
-import { useDayHolds, holdMeta, type DayHold } from '../hooks/useDayHolds';
-import { DayHoldModal } from '../components/DayHoldModal';
+import { useDayHolds, holdMeta, OPEN_KIND, type DayHold } from '../hooks/useDayHolds';
+import { DayHoldModal, type DateBlocker } from '../components/DayHoldModal';
 import type { MatchSlot } from '../types';
 import {
   CalendarDays,
@@ -308,15 +308,19 @@ function MatchCard({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function BookMatch() {
-  const { slots, loading, fetchSlots, createBooking } = useMatchBookings();
+  const { slots, loading, fetchSlots, createBooking,
+          updateBookingStatus, toggleSlotAvailability } = useMatchBookings();
   const { ground, testimonials, upi, fetchSettings } = useGroundSettings();
   const { isAdmin } = useAuth();
 
   // Days an admin has taken off the public calendar — a league match, a team
   // that paid direct, or the ground simply being unavailable.
   const holds = useDayHolds();
-  const internalDays = useMemo(() => new Set(holds.holds.map(h => h.date)), [holds.holds]);
-  const [holdEditor, setHoldEditor] = useState<{ date: string; existing?: DayHold } | null>(null);
+  const internalDays = useMemo(() => new Set(holds.blocking.map(h => h.date)), [holds.blocking]);
+  const [holdEditor, setHoldEditor] = useState<
+    { date: string; existing?: DayHold; slot?: MatchSlot; blocker?: DateBlocker } | null
+  >(null);
+  const [freeing, setFreeing] = useState(false);
 
   const upiId   = upi.upi_id   || UPI_FALLBACK_ID;
   const upiName = upi.upi_name || UPI_FALLBACK_NAME;
@@ -404,11 +408,13 @@ export function BookMatch() {
     return map;
   }, [slots]);
   const reservedDates     = useMemo(() => {
-    // Auto-held dates PLUS any an admin has explicitly pinned for a league match.
+    // Auto-held dates PLUS any an admin has explicitly pinned for a league match,
+    // MINUS any the admin has put back on sale after a fixture moved.
     const auto = computeReservedDates(slots);
+    holds.openDates.forEach(d => auto.delete(d));
     internalDays.forEach(d => auto.add(d));
     return auto;
-  }, [slots, internalDays]);
+  }, [slots, internalDays, holds.openDates]);
   const detectedTeamId    = extractTeamId(chTeamId);
   const monthKeys         = useMemo(() => Object.keys(slotsByMonth).sort(), [slotsByMonth]);
   const currentMonthKey   = monthKeys[currentMonthIndex] ?? '';
@@ -825,14 +831,32 @@ export function BookMatch() {
                     const status = slotStatus(slot);
                     const avail  = status === 'available';
                     const isSat  = slot.day_type === 'saturday';
-                    const hold = holds.byDate[slot.date];
+                    const rawHold = holds.byDate[slot.date];
+                    // An 'open' row is an override, not a hold — it must not
+                    // render as though the day were reserved.
+                    const hold = rawHold && rawHold.kind !== OPEN_KIND ? rawHold : undefined;
                     const isMineInternal = !!hold;
                     const meta = hold ? holdMeta(hold.kind) : null;
-                    // Admins can hold an open date, or edit/release one they hold.
-                    const adminActionable = isAdmin && (avail || isMineInternal);
+                    /**
+                     * Why this date is off sale, when the admin didn't put it there.
+                     * Opponents cancel and internal fixtures move, so an admin has
+                     * to be able to free ANY date — not just the ones they blocked.
+                     */
+                    const blocker: DateBlocker | undefined =
+                      status === 'booked' || status === 'pending'
+                        ? { kind: 'booking',
+                            team: slot.booking?.team_name ?? 'A team',
+                            status: slot.booking?.status ?? status,
+                            phone: slot.booking?.contact_phone ?? undefined }
+                        : status === 'blocked' ? { kind: 'closed' }
+                        : status === 'reserved' && !hold ? { kind: 'auto' }
+                        : undefined;
+                    // Admins can act on every date: hold an open one, edit their
+                    // own hold, or free one that something else is holding.
+                    const adminActionable = isAdmin && (avail || isMineInternal || !!blocker);
                     const handleClick = () => {
                       if (adminActionable) {
-                        setHoldEditor({ date: slot.date, existing: hold });
+                        setHoldEditor({ date: slot.date, existing: hold, slot, blocker });
                         return;
                       }
                       setSelectedSlot(slot); setStep('form');
@@ -845,9 +869,9 @@ export function BookMatch() {
                             ? isSat
                               ? 'bg-gradient-to-br from-amber-50 to-white border-amber-200 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
                               : 'bg-gradient-to-br from-primary-50 to-white border-primary-200 hover:border-primary-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
-                            : status==='reserved' ? 'bg-gradient-to-br from-violet-50 to-white border-violet-200 cursor-not-allowed' :
-                              status==='pending' ? 'bg-rose-50/70 border-rose-200 cursor-not-allowed opacity-80' :
-                                                   'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
+                            : status==='reserved' ? `bg-gradient-to-br from-violet-50 to-white border-violet-200 ${adminActionable?'cursor-pointer hover:border-violet-400':'cursor-not-allowed'}` :
+                              status==='pending' ? `bg-rose-50/70 border-rose-200 opacity-80 ${adminActionable?'cursor-pointer hover:border-rose-400 hover:opacity-100':'cursor-not-allowed'}` :
+                                                   `bg-gray-50 border-gray-200 opacity-60 ${adminActionable?'cursor-pointer hover:border-gray-400 hover:opacity-100':'cursor-not-allowed'}`
                         }`}>
                         {avail && isSat && (
                           <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-amber-700 bg-amber-300 rounded-full px-1.5 py-0.5 shadow-sm">SAT</div>
@@ -888,6 +912,13 @@ export function BookMatch() {
                         )}
                         {status==='pending' && <div className="text-[10px] text-rose-500 font-bold mt-0.5">Pending</div>}
                         {(status==='booked'||status==='blocked') && <div className="text-[10px] text-gray-400 font-bold mt-0.5">Booked</div>}
+                        {/* Admins see which team holds it, so they know whose
+                            cancellation they're acting on before they tap. */}
+                        {isAdmin && slot.booking?.team_name && (
+                          <div className="text-[10px] font-bold text-gray-500 truncate mt-0.5">
+                            {slot.booking.team_name}
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -899,7 +930,8 @@ export function BookMatch() {
               <DayHoldModal
                 date={holdEditor.date}
                 existing={holdEditor.existing}
-                busy={holds.busyDate === holdEditor.date}
+                blocker={holdEditor.blocker}
+                busy={holds.busyDate === holdEditor.date || freeing}
                 formatDate={formatShortDate}
                 suggestedPrice={slots.find(sl => sl.date === holdEditor.date)?.price}
                 onClose={() => setHoldEditor(null)}
@@ -911,6 +943,34 @@ export function BookMatch() {
                 onRelease={async () => {
                   const err = await holds.releaseDay(holdEditor.date);
                   if (err) alert(`Could not release that date: ${err}`);
+                  else setHoldEditor(null);
+                }}
+                onFree={async () => {
+                  const { blocker, slot, date } = holdEditor;
+                  // Cancelling a real team's booking is not undoable from here,
+                  // so it gets a confirm; freeing our own held day doesn't.
+                  if (blocker?.kind === 'booking' &&
+                      !confirm(`Cancel ${blocker.team}'s booking and put ${formatShortDate(date)} back on sale?`)) {
+                    return;
+                  }
+                  setFreeing(true);
+                  let err: string | undefined;
+                  if (blocker?.kind === 'booking' && slot?.booking?.id) {
+                    const r = await updateBookingStatus(
+                      slot.booking.id, 'cancelled',
+                      'Freed from the booking calendar — opponent cancelled.',
+                    );
+                    err = r.error;
+                  } else if (blocker?.kind === 'closed' && slot) {
+                    await toggleSlotAvailability(slot.id, true);
+                  } else {
+                    // Auto-held league day: record the override so the schedule
+                    // rule doesn't just re-hold it on the next load.
+                    err = (await holds.openDay(date, 'Reopened by admin')) ?? undefined;
+                  }
+                  await fetchSlots();
+                  setFreeing(false);
+                  if (err) alert(`Could not free that date: ${err}`);
                   else setHoldEditor(null);
                 }}
               />

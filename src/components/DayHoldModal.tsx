@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, CalendarCheck } from 'lucide-react';
 import { HOLD_KINDS, type DayHold, type HoldKind } from '../hooks/useDayHolds';
 
 // ─── Book-a-Match: admin day-hold editor ───────────────────────────────────────
@@ -7,22 +7,37 @@ import { HOLD_KINDS, type DayHold, type HoldKind } from '../hooks/useDayHolds';
 // a day is unavailable matters — most often it's a team who paid the admin
 // directly, and that booking needs a name and an amount against it.
 
+/**
+ * Why this date is currently off the calendar, when it isn't a hold the admin
+ * placed. Each needs a different way out — the one thing they share is that a
+ * cancellation shouldn't leave a good Saturday sitting dead on the calendar.
+ */
+export type DateBlocker =
+  | { kind: 'auto' }                                              // league schedule
+  | { kind: 'booking'; team: string; status: string; phone?: string }
+  | { kind: 'closed' };                                           // slot switched off
+
 interface Props {
   date: string;
   existing?: DayHold;
+  /** Set when the date is unavailable for a reason the admin didn't create. */
+  blocker?: DateBlocker;
   busy: boolean;
   onSave: (input: {
     kind: HoldKind; teamName?: string; contactPhone?: string;
     amount?: number | null; note?: string;
   }) => void;
   onRelease: () => void;
+  /** Put the date back on sale, whatever is holding it. */
+  onFree: () => void;
   onClose: () => void;
   formatDate: (d: string) => string;
   suggestedPrice?: number;
 }
 
 export function DayHoldModal({
-  date, existing, busy, onSave, onRelease, onClose, formatDate, suggestedPrice,
+  date, existing, blocker, busy, onSave, onRelease, onFree, onClose,
+  formatDate, suggestedPrice,
 }: Props) {
   const [kind, setKind] = useState<HoldKind>(existing?.kind ?? 'offline');
   const [teamName, setTeamName] = useState(existing?.team_name ?? '');
@@ -50,7 +65,7 @@ export function DayHoldModal({
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-violet-500">
-              {existing ? 'Edit hold' : 'Block this date'}
+              {existing ? 'Edit hold' : blocker ? 'Manage this date' : 'Block this date'}
             </p>
             <h3 className="font-black text-lg text-gray-900">{formatDate(date)}</h3>
           </div>
@@ -60,6 +75,48 @@ export function DayHoldModal({
         </div>
 
         <div className="p-5 space-y-4">
+
+          {/* Something other than an admin hold is keeping this date off sale.
+              Opponents cancel and fixtures move, so every one of these needs a
+              one-tap way back to available. */}
+          {blocker && (
+            <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-3.5 space-y-2.5">
+              <p className="text-[11px] font-black uppercase tracking-widest text-amber-700">
+                {blocker.kind === 'auto' ? 'Held for the SCC League'
+                  : blocker.kind === 'booking' ? `Booked · ${blocker.status}`
+                  : 'Closed for bookings'}
+              </p>
+              {blocker.kind === 'booking' ? (
+                <p className="text-sm text-amber-900 leading-snug">
+                  <b>{blocker.team}</b> holds this date
+                  {blocker.phone ? <span className="text-amber-700"> · {blocker.phone}</span> : null}.
+                  Freeing it cancels their booking and puts the date back on sale.
+                </p>
+              ) : blocker.kind === 'auto' ? (
+                <p className="text-sm text-amber-900 leading-snug">
+                  The league schedule reserves this day. If the internal match moved,
+                  open it up and an external team can book it.
+                </p>
+              ) : (
+                <p className="text-sm text-amber-900 leading-snug">
+                  This slot was switched off. Turn it back on to take bookings.
+                </p>
+              )}
+              <button onClick={onFree} disabled={busy}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl
+                           bg-emerald-500 text-white font-black py-3 text-sm disabled:opacity-40">
+                <CalendarCheck className="w-4 h-4" />
+                {busy ? 'Freeing…' : 'Make this date available'}
+              </button>
+            </div>
+          )}
+
+          {blocker && (
+            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 pt-1">
+              …or hold it for something else
+            </p>
+          )}
+
           {/* why */}
           <div className="space-y-2">
             {HOLD_KINDS.map(k => (

@@ -7,7 +7,14 @@ import { supabase } from '../lib/supabase';
 // through the app, and before this there was nowhere to record that — the date
 // looked free, and the money left no trace.
 
-export type HoldKind = 'internal' | 'offline' | 'blocked';
+/**
+ * 'open' is the odd one out: it doesn't hold a day, it FREES one. Some dates are
+ * held automatically by the league schedule, and when a fixture moves or an
+ * opponent pulls out the admin needs to put that Saturday back on sale. An
+ * override row is the only way to remember that decision — the auto rule would
+ * otherwise re-hold the date on every page load.
+ */
+export type HoldKind = 'internal' | 'offline' | 'blocked' | 'open';
 
 export interface DayHold {
   id: string;
@@ -45,6 +52,9 @@ export const HOLD_KINDS: Array<{
 
 export const holdMeta = (kind: HoldKind) =>
   HOLD_KINDS.find(k => k.key === kind) ?? HOLD_KINDS[1];
+
+/** Reopening a date the league schedule holds by default. */
+export const OPEN_KIND: HoldKind = 'open';
 
 const isMissingTable = (e: { code?: string; message: string } | null) =>
   !!e && (e.code === '42P01' || e.code === 'PGRST205');
@@ -89,6 +99,15 @@ export function useDayHolds() {
     [holds],
   );
 
+  /** Days actually taken off the calendar (an 'open' row does the opposite). */
+  const blocking = useMemo(() => holds.filter(h => h.kind !== OPEN_KIND), [holds]);
+
+  /** Days the admin has forced back on sale despite the league auto-hold. */
+  const openDates = useMemo(
+    () => new Set(holds.filter(h => h.kind === OPEN_KIND).map(h => h.date)),
+    [holds],
+  );
+
   /** Put a day on hold, or update the hold already on it. */
   const holdDay = useCallback(async (input: {
     date: string; kind: HoldKind; teamName?: string;
@@ -130,6 +149,12 @@ export function useDayHolds() {
     return error?.message ?? null;
   }, [fetchHolds]);
 
+  /** Put a league-held day back on sale — the fixture moved, or SCC pulled out. */
+  const openDay = useCallback(
+    (date: string, note?: string) => holdDay({ date, kind: OPEN_KIND, note }),
+    [holdDay],
+  );
+
   /** What the offline bookings have brought in — money the app never saw. */
   const offlineTotal = useMemo(
     () => holds.filter(h => h.kind === 'offline').reduce((n, h) => n + (h.amount ?? 0), 0),
@@ -137,7 +162,7 @@ export function useDayHolds() {
   );
 
   return {
-    holds, byDate, tableMissing, needsMigration, busyDate,
-    holdDay, releaseDay, offlineTotal, refetch: fetchHolds,
+    holds, blocking, openDates, byDate, tableMissing, needsMigration, busyDate,
+    holdDay, releaseDay, openDay, offlineTotal, refetch: fetchHolds,
   };
 }
