@@ -52,11 +52,9 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          # The action's default is 10 minutes, and it ABORTS a deployment that
-          # is still reporting deployment_in_progress when it expires — so a
-          # slow-but-healthy publish gets cancelled and nothing ships. That's
-          # what happened to b141bf6: a 4 MB / 124-file artifact, well under any
-          # limit, timed out four times in a row while GitHub was reporting all
-          # systems operational. Waiting costs nothing when things are fast.
-          timeout: 1800000        # 30 minutes
+          # Do NOT raise `timeout` above 600000: the action silently clamps it to
+          # ten minutes ("timeout value is greater than the allowed maximum") and
+          # then cancels any deployment still reporting deployment_in_progress.
+          # Waiting longer is simply not available from here — tried 1800000, the
+          # job still ended at 10:10.
           error_count: 20         # tolerate more transient status-poll errors
