@@ -288,7 +288,7 @@ function MatchCard({
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
         {[
           { label:'Date', value: formatShortDate(date) },
-          { label:'Slot', value: slotType === 'saturday' ? 'Saturday' : 'Weekday' },
+          { label:'Fixture', value: slotType === 'saturday' ? 'Saturday' : 'Weekday' },
           { label:'Amount Paid', value:`₹${amount.toLocaleString('en-IN')}` },
           { label:'Booking ID', value: bookingId.slice(0,8).toUpperCase() },
         ].map(({ label, value }) => (
@@ -568,8 +568,12 @@ export function BookMatch() {
                 <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-1.5 leading-tight">
                   Play a Match Against SCC
                 </h2>
+                {/* Teams were reading "book a slot" as renting the ground for two
+                    hours and bringing their own opponent. Say plainly who they
+                    are playing, and that the fee covers the whole fixture. */}
                 <p className="text-emerald-50/90 text-sm sm:text-[15px] leading-relaxed max-w-md">
-                  Pick a date, share your team details, pay to confirm. Verified by admin within hours.
+                  This books a <strong className="text-white">full match against Sangria CC</strong> —
+                  we are your opposition. You are not renting an empty ground.
                 </p>
 
                 {/* Mini stats row */}
@@ -596,6 +600,31 @@ export function BookMatch() {
               </div>
             </div>
 
+            {/* ── What you're actually booking ─────────────────────────────
+                The single most common misunderstanding: teams thought the fee
+                bought two hours of empty ground and they had to find their own
+                opposition. Spell it out before they reach the calendar. */}
+            <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+              <p className="text-[11px] font-black uppercase tracking-widest text-emerald-700 mb-2.5">
+                What you're booking
+              </p>
+              <ul className="space-y-2 text-sm text-emerald-950/85">
+                <li className="flex items-start gap-2.5">
+                  <span className="text-base leading-none mt-0.5">🏏</span>
+                  <span><strong>A match against SCC.</strong> We are your opponent — you don't
+                    need to arrange a team to play.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-base leading-none mt-0.5">🕐</span>
+                  <span><strong>Your date at {ground.name || 'our home ground'}</strong>, 7:00–9:00 AM.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-base leading-none mt-0.5">💰</span>
+                  <span><strong>One price for the whole fixture</strong> — not an hourly ground rental.</span>
+                </li>
+              </ul>
+            </div>
+
             {/* ── Premium Pricing cards ────────────────────────────────── */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
@@ -608,7 +637,7 @@ export function BookMatch() {
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl sm:text-3xl font-black text-gray-900">₹3,000</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">Weekday match · per slot</div>
+                  <div className="text-xs text-gray-500 mt-1">Per match vs SCC · Tue/Thu</div>
                 </div>
               </div>
               <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-white border border-amber-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
@@ -622,7 +651,7 @@ export function BookMatch() {
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl sm:text-3xl font-black text-gray-900">₹4,000</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">Oct–Feb · per slot</div>
+                  <div className="text-xs text-gray-500 mt-1">Per match vs SCC · Oct–Feb</div>
                 </div>
               </div>
             </div>
@@ -736,7 +765,7 @@ export function BookMatch() {
             {/* Info note */}
             <p className="text-xs text-gray-500 flex items-start gap-1.5 mb-6 bg-blue-50/50 border border-blue-100 rounded-xl px-3 py-2.5">
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-500" />
-              <span>One slot per team per month. Booking confirmed after SCC admin verifies payment.</span>
+              <span>One match per team per month. Booking confirmed after SCC admin verifies payment.</span>
             </p>
           </>
         )}
@@ -785,6 +814,13 @@ export function BookMatch() {
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Last reminder before they pick — the price on each tile is the
+                match fee, not a rental rate for the two hours. */}
+            <p className="px-5 py-2.5 text-xs text-gray-600 bg-emerald-50/70 border-b border-emerald-100">
+              🏏 Every date below is a <strong className="text-gray-900">match against SCC</strong>.
+              The price shown is the full match fee.
+            </p>
 
             {/* Legend */}
             <div className="flex items-center gap-x-5 gap-y-1.5 flex-wrap px-5 py-3 border-b border-gray-100 text-xs text-gray-600 bg-gray-50/50">
@@ -1036,13 +1072,13 @@ export function BookMatch() {
         {/* ══ STEP 2: Team Details ══════════════════════════════════════════ */}
         {step === 'form' && selectedSlot && (
           <div className="space-y-4">
-            {/* Slot chip */}
+            {/* Chosen fixture */}
             <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center gap-3">
               <CalendarDays className="w-5 h-5 text-primary-600 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900 text-sm">{formatDate(selectedSlot.date)}</p>
                 <p className="text-xs text-primary-600 mt-0.5">
-                  {selectedSlot.day_type==='saturday'?'Saturday Slot':'Weekday Slot'} · ₹{selectedSlot.price.toLocaleString('en-IN')}
+                  Your team vs SCC · ₹{selectedSlot.price.toLocaleString('en-IN')}
                 </p>
               </div>
               <button onClick={()=>setStep('calendar')}
@@ -1245,7 +1281,7 @@ export function BookMatch() {
                 </p>
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 text-left flex gap-2">
                   <Info className="w-4 h-4 shrink-0 mt-0.5"/>
-                  Slot is reserved for 24 hours. Booking confirmed only after payment.
+                  Your date is held for 24 hours. Booking confirmed only after payment.
                 </div>
               </div>
             )}

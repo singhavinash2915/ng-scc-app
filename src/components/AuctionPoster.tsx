@@ -7,7 +7,7 @@ import { PURSE_LAKH, formatPrice } from '../hooks/useSCCLeague';
 import { useAuctionLive } from '../hooks/useAuctionLive';
 
 // ─── Dashboard: auction night poster ───────────────────────────────────────────
-// The pre-event hype card. Shows a live countdown to the draft, the two named
+// The pre-event hype card. Shows a live countdown to the auction, the two named
 // squads and their captains, and the Meet link. It stands down on its own once
 // the AuctionLiveBanner takes over (that renders whenever the auction row
 // exists), so this is only ever seen in the run-up.
@@ -74,7 +74,10 @@ export function AuctionPoster() {
         </div>
 
         <h2 className="font-display text-3xl sm:text-4xl font-extrabold mt-3 leading-[1.05]">
-          The SCC League <span style={{ background: 'linear-gradient(90deg,#fde68a,#fbbf24 45%,#f472b6)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Draft</span>
+          {/* "Draft" is a different format entirely — captains taking turns
+              picking. This is an auction: names go under the hammer and the
+              higher bid wins. Calling it a draft only confuses the squad. */}
+          The SCC League <span style={{ background: 'linear-gradient(90deg,#fde68a,#fbbf24 45%,#f472b6)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Auction</span>
         </h2>
         <p className="text-white/70 text-sm mt-1.5">
           {formatPrice(PURSE_LAKH)} a side · 15 a squad · live on Google Meet 🎥
