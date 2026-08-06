@@ -351,11 +351,12 @@ export function AuctionLive() {
                     )}
 
                     <div className="mt-3 flex items-baseline justify-between">
-                      <span className="inline-flex items-center gap-1.5 text-2xl font-extrabold">
+                      <span className={`inline-flex items-center gap-1.5 text-2xl font-extrabold ${
+                        A.budget(t) < 0 ? 'text-rose-300' : ''}`}>
                         <Wallet className="w-4 h-4 opacity-60" />{formatPrice(A.budget(t))}
                       </span>
                       <span className="text-[10px] text-white/55">
-                        left of {formatPrice(a.purse_lakh)}
+                        {A.budget(t) < 0 ? 'overspent · ' : 'left '}of {formatPrice(a.purse_lakh)}
                         {A.captainCost(t) > 0 && ` · −${formatPrice(A.captainCost(t))} retention`}
                       </span>
                     </div>

@@ -328,7 +328,8 @@ def run(season, verbose, war=0):
         check(len(bought) == SQUAD_SIZE - 1,
               f"{TEAM_NAMES[t]} finished {len(bought) + 1}/{SQUAD_SIZE} "
               f"— auto-fill failed to even up the squads")
-        summary[t] = (len(bought) + 1, spend + cap, max((p["price"] for p in bought), default=0))
+        summary[t] = (len(bought) + 1, spend + cap, max((p["price"] for p in bought), default=0),
+                      len([p for p in bought if p["round"] == 0]))
 
     check(len(db_bids) >= len([p for p in db_picks if p["team"]]),
           "fewer bids recorded than players sold — the trail is lossy")
@@ -377,9 +378,11 @@ def main():
     print("\n✅ ALL INVARIANTS HELD")
     last = results[-1]
     for t in ("team1", "team2"):
-        size, spend, top = last[t]
+        size, spend, top, given = last[t]
+        over = " (over — end-of-auction allocation)" if spend > PURSE_LAKH else ""
         print(f"  {TEAM_NAMES[t]:<14} {size}/{SQUAD_SIZE} · spent ₹{spend/100:.2f} Cr "
-              f"of ₹{PURSE_LAKH/100:.0f} Cr · top buy ₹{top} L")
+              f"of ₹{PURSE_LAKH/100:.0f} Cr{over} · top buy ₹{top} L"
+              + (f" · {given} allocated" if given else ""))
     print(f"  {last['sold']} sold · {last['unsold']} unsold · "
           f"{last['rounds']} round(s) · {last['bids']} bids recorded")
     avg = sum(r["sold"] for r in results) / len(results)

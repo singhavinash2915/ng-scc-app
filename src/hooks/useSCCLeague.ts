@@ -139,6 +139,11 @@ export function bandForPrice(lakh: number): DisplayBand {
 
 /** 20 → "₹20 L" · 100 → "₹1 Cr" · 250 → "₹2.5 Cr" */
 export function formatPrice(lakh: number): string {
+  // A purse can genuinely go negative: end-of-auction allocation hands leftover
+  // players over at base price whether or not the captain still has money, so a
+  // team that overspent finishes in deficit. "-₹3 Cr over" reads as a fact;
+  // "₹-3 Cr" reads as a bug.
+  if (lakh < 0) return `${formatPrice(-lakh)} over`;
   if (lakh >= 100) {
     const cr = lakh / 100;
     return `₹${Number.isInteger(cr) ? cr : cr.toFixed(2).replace(/\.?0+$/, '')} Cr`;
