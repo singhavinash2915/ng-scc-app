@@ -90,6 +90,8 @@ export function useAuctionLive(
 
   // ── Derived ────────────────────────────────────────────────────────────
   const sold = useMemo(() => picks.filter(p => p.team), [picks]);
+  /** Handed out at the close to even up the squads, not won at auction. */
+  const allocated = useMemo(() => picks.filter(p => p.team && p.round === 0), [picks]);
   const unsold = useMemo(() => picks.filter(p => !p.team), [picks]);
 
   const spent = useCallback(
@@ -115,17 +117,47 @@ export function useAuctionLive(
     [purse, captainCost, spent],
   );
 
-  /**
-   * A captain may not bid away the money needed to fill their remaining slots
-   * at the cheapest base price — otherwise they finish the night short.
-   */
-  const maxBid = useCallback((t: TeamKey) => {
-    const bought = squad(t).length;
-    const slotsLeft = Math.max(0, size - 1 - bought);   // -1 = the captain
-    return budget(t) - Math.max(0, slotsLeft - 1) * 20;
-  }, [squad, size, budget]);
-
   const currentMemberId = auction?.pool_order?.[auction.current_idx] ?? null;
+
+  /**
+   * The cheapest it can possibly cost to fill every slot AFTER the one being
+   * bid on right now — priced off the players genuinely still available, not a
+   * flat floor.
+   *
+   * This used to reserve ₹20 L a slot, on the assumption that a Grade C name
+   * would always still be on the table. It isn't true late on, and a captain
+   * who won a bidding war paid for it: a test where both sides fought the first
+   * player to the ceiling left the winner with SEVEN players out of fifteen and
+   * eight names unsold, because every remaining player's base was above what
+   * the flat reserve had kept back. Reserving the real prices means a captain
+   * can still go big — they simply can't bid past the point where the squad
+   * stops being fillable.
+   */
+  const reserveFor = useCallback((t: TeamKey) => {
+    const slotsAfterThis = Math.max(0, size - 1 - squad(t).length - 1);
+    if (slotsAfterThis === 0) return 0;
+    const resolvedIds = new Set(picks.map(p => p.member_id));
+    const stillAvailable = [
+      // Yet to come up this round…
+      ...(auction?.pool_order ?? []).filter(
+        id => !resolvedIds.has(id) && id !== currentMemberId),
+      // …plus everyone passed over, who returns in the next unsold round.
+      ...picks.filter(p => !p.team).map(p => p.member_id),
+    ];
+    const cheapest = stillAvailable
+      .map(id => basePriceOf?.(id) ?? 20)
+      .sort((a, b) => a - b)
+      .slice(0, slotsAfterThis);
+    return cheapest.reduce((n, p) => n + p, 0);
+  }, [size, squad, picks, auction, currentMemberId, basePriceOf]);
+
+  /**
+   * A captain may not bid away the money needed to fill their remaining slots.
+   */
+  const maxBid = useCallback(
+    (t: TeamKey) => budget(t) - reserveFor(t),
+    [budget, reserveFor],
+  );
   const bidStep = (auction?.current_bid ?? 0) >= 100 ? BID_STEP_BIG : BID_STEP_SMALL;
   /**
    * The FIRST bid is the base price itself, as in a real auction — the
@@ -266,6 +298,42 @@ export function useAuctionLive(
       return;
     }
 
+    /**
+     * Closing time. Any player nobody bought goes to a team that still has a
+     * slot, at his base price — squads have to be even enough to actually field
+     * a side, and there is no bidding left to make that happen.
+     *
+     * This exists because a captain CAN price themselves out: one player may
+     * legally absorb ₹20.4 Cr of a ₹23 Cr purse, after which they can only ever
+     * meet a base price and get outbid on everyone. A test run left the winner
+     * of a bidding war with seven players. Overspending stays a real mistake —
+     * they get the leftovers rather than the players they wanted — but they
+     * still finish with a team.
+     *
+     * These picks are stored with round 0 to mark them as allocated, not won,
+     * so the squad lists can label them and the purse maths can tell them apart.
+     */
+    const leftovers = [
+      ...auction.pool_order.filter(id => !resolvedIds.has(id)),
+      ...resolved.filter(p => !p.team).map(p => p.member_id),
+    ];
+    const counts: Record<TeamKey, number> = { team1: bought('team1'), team2: bought('team2') };
+    const fills = [];
+    // Dearest first, to the emptier squad — the closest thing to fair when
+    // nobody is bidding any more.
+    for (const id of [...leftovers].sort((a, b) => priceOf(b) - priceOf(a))) {
+      const t = (['team1', 'team2'] as TeamKey[])
+        .filter(x => counts[x] < size - 1)
+        .sort((x, y) => counts[x] - counts[y])[0];
+      if (!t) break;
+      counts[t] += 1;
+      fills.push({ season, member_id: id, team: t, price: priceOf(id), round: 0 });
+    }
+    if (fills.length) {
+      await supabase.from('scc_auction_picks')
+        .upsert(fills, { onConflict: 'season,member_id' });
+    }
+
     await patch({ status: 'done', current_bidder: null, current_bid: 0 });
   }, [auction, picks, size, drawFrom, patch, season, round]);
 
@@ -352,7 +420,7 @@ export function useAuctionLive(
   }, [season, fetchAll]);
 
   return {
-    auction, picks, bids, sold, unsold, loading, tableMissing, trailFor,
+    auction, picks, bids, sold, unsold, allocated, loading, tableMissing, trailFor,
     currentMemberId, bidStep, nextBid, canBid, maxBid, budget, spent, squad,
     bid, sell, passOver, undo, start, reset, patch, hasSlot, captainCost, round, opening,
     refetch: fetchAll,

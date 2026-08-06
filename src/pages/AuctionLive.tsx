@@ -266,6 +266,19 @@ export function AuctionLive() {
                 <p className="text-white/70 text-sm mt-1">
                   {A.sold.length} sold · {A.unsold.length} unsold
                 </p>
+                {/* Say so out loud — players appearing in a squad that nobody
+                    remembers bidding for would look like a bug from the room. */}
+                {A.allocated.length > 0 && (
+                  <p className="mt-3 inline-block rounded-2xl bg-amber-400/15 border border-amber-300/30
+                                px-4 py-2.5 text-[12px] text-amber-100 leading-snug">
+                    <b>{A.allocated.length} player{A.allocated.length > 1 ? 's' : ''}</b> nobody
+                    bid for {A.allocated.length > 1 ? 'were' : 'was'} shared out at base price to
+                    even up the squads:{' '}
+                    <span className="font-bold">
+                      {A.allocated.map(p => memberById[p.member_id]?.name ?? '?').join(', ')}
+                    </span>
+                  </p>
+                )}
               </div>
             )}
 

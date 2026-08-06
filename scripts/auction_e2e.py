@@ -24,7 +24,9 @@ never touched. Cleans up after itself unless --keep is passed.
 import argparse
 import json
 import random
+import socket
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -46,19 +48,31 @@ CAPTAINS = [
 TEAM_NAMES = {"team1": "SCC Brahmos", "team2": "SCC Agni"}
 
 
-def api(method, path, body=None, prefer=None):
-    req = urllib.request.Request(f"{BASE}/{path}", method=method)
-    req.add_header("apikey", KEY)
-    req.add_header("Content-Type", "application/json")
-    if prefer:
-        req.add_header("Prefer", prefer)
+def api(method, path, body=None, prefer=None, _tries=5):
+    """One REST call, retrying transient network faults.
+
+    A soak run makes thousands of requests and Supabase will occasionally reset
+    a connection or time out. Dying on that looks exactly like a logic failure
+    in the output, which sent me chasing a bug that wasn't there — so retry the
+    network, and only ever hard-fail on a real HTTP error from PostgREST.
+    """
     data = json.dumps(body).encode() if body is not None else None
-    try:
-        with urllib.request.urlopen(req, data, timeout=30) as r:
-            raw = r.read()
-            return json.loads(raw) if raw else None
-    except urllib.error.HTTPError as e:
-        sys.exit(f"HTTP {e.code} on {method} {path}\n{e.read().decode()[:400]}")
+    for attempt in range(_tries):
+        req = urllib.request.Request(f"{BASE}/{path}", method=method)
+        req.add_header("apikey", KEY)
+        req.add_header("Content-Type", "application/json")
+        if prefer:
+            req.add_header("Prefer", prefer)
+        try:
+            with urllib.request.urlopen(req, data, timeout=30) as r:
+                raw = r.read()
+                return json.loads(raw) if raw else None
+        except urllib.error.HTTPError as e:
+            sys.exit(f"HTTP {e.code} on {method} {path}\n{e.read().decode()[:400]}")
+        except (urllib.error.URLError, socket.timeout, ConnectionError) as e:
+            if attempt == _tries - 1:
+                sys.exit(f"network gave up after {_tries} tries on {method} {path}: {e}")
+            time.sleep(1.5 * (attempt + 1))
 
 
 class Fail(Exception):
@@ -115,9 +129,20 @@ class Auction:
     def budget(self, t):
         return PURSE_LAKH - self.captain_cost(t) - self.spent(t)
 
+    def reserve_for(self, t):
+        """Cheapest possible cost of filling every slot after this one, priced
+        off the players actually left rather than a flat ₹20 L floor."""
+        slots_after = max(0, SQUAD_SIZE - 1 - len(self.squad(t)) - 1)
+        if slots_after == 0:
+            return 0
+        resolved = {p["member_id"] for p in self.picks}
+        cur = self.current()
+        still = [i for i in self.pool if i not in resolved and i != cur] + \
+                [p["member_id"] for p in self.picks if not p["team"]]
+        return sum(sorted(self.base[i] for i in still)[:slots_after])
+
     def max_bid(self, t):
-        slots_left = max(0, SQUAD_SIZE - 1 - len(self.squad(t)))
-        return self.budget(t) - max(0, slots_left - 1) * 20
+        return self.budget(t) - self.reserve_for(t)
 
     def has_slot(self, t):
         return len(self.squad(t)) < SQUAD_SIZE - 1
@@ -146,7 +171,7 @@ class Auction:
         self.bids.append(row)
 
     def resolve(self, team, price):
-        api("POST", "scc_auction_picks", {
+        api("POST", "scc_auction_picks?on_conflict=season,member_id", {
             "season": self.season, "member_id": self.current(),
             "team": team, "price": price, "round": self.round,
         }, prefer="resolution=merge-duplicates")
@@ -181,6 +206,29 @@ class Auction:
             self._patch()
             return True
 
+        # Closing time: hand any unbought player to a team that still has a
+        # slot, at base price, dearest first to the emptier squad. Overspending
+        # stays a real mistake — you get leftovers, not the players you wanted —
+        # but nobody ends the night unable to field a side. Marked round 0.
+        leftovers = [i for i in self.pool if i not in resolved] + \
+                    [p["member_id"] for p in self.picks if not p["team"]]
+        counts = {t: len(self.squad(t)) for t in ("team1", "team2")}
+        fills = []
+        for mid in sorted(set(leftovers), key=lambda i: -self.base[i]):
+            open_teams = sorted([t for t in ("team1", "team2")
+                                 if counts[t] < SQUAD_SIZE - 1], key=lambda t: counts[t])
+            if not open_teams:
+                break
+            t = open_teams[0]
+            counts[t] += 1
+            fills.append({"season": self.season, "member_id": mid, "team": t,
+                          "price": self.base[mid], "round": 0})
+        for f in fills:
+            api("POST", "scc_auction_picks?on_conflict=season,member_id", f,
+                prefer="resolution=merge-duplicates")
+            self.picks = [p for p in self.picks if p["member_id"] != f["member_id"]]
+            self.picks.append({"member_id": f["member_id"], "team": f["team"],
+                               "price": f["price"], "round": 0})
         api("PATCH", f"scc_auction?season=eq.{self.season}",
             {"status": "done", "current_bidder": None, "current_bid": 0})
         return False
@@ -197,7 +245,7 @@ def wipe(season):
         api("DELETE", f"{t}?season=eq.{season}")
 
 
-def run(season, verbose):
+def run(season, verbose, war=0):
     regs = api("GET", f"scc_league_registrations?select=member_id,base_price,status"
                       f"&season=eq.{REAL_SEASON}&status=eq.in")
     members = {m["id"]: m["name"] for m in api("GET", "members?select=id,name")}
@@ -221,8 +269,13 @@ def run(season, verbose):
         if cur is None:
             break
 
-        # Two captains bidding with a bit of appetite, as on the night.
-        keen = {"team1": random.random(), "team2": random.random()}
+        # Two captains bidding with a bit of appetite, as on the night. In `war`
+        # mode the first few names are fought to the absolute ceiling — the
+        # question being whether a captain who blows the purse on one superstar
+        # can still fill the other 13 slots.
+        at_war = war and len([p for p in A.picks if p["team"]]) < war
+        keen = {"team1": 1.0, "team2": 1.0} if at_war else \
+               {"team1": random.random(), "team2": random.random()}
         while True:
             movers = [t for t in ("team1", "team2")
                       if A.can_bid(t) and t != A.bidder and random.random() < keen[t]]
@@ -265,8 +318,16 @@ def run(season, verbose):
         cap = base[CAPTAINS[0 if t == "team1" else 1]]
         check(len(bought) <= SQUAD_SIZE - 1,
               f"{TEAM_NAMES[t]} bought {len(bought)}, cap is {SQUAD_SIZE - 1}")
-        check(spend + cap <= PURSE_LAKH,
-              f"{TEAM_NAMES[t]} overspent: ₹{spend + cap} L of ₹{PURSE_LAKH} L")
+        won = sum(p["price"] for p in bought if p["round"] != 0)
+        check(won + cap <= PURSE_LAKH,
+              f"{TEAM_NAMES[t]} overspent BIDDING: ₹{won + cap} L of ₹{PURSE_LAKH} L")
+        # The one that matters most and was missing: a captain must never be
+        # able to spend themselves out of a full squad. Only excused when the
+        # pool genuinely ran dry — 28 players for 28 slots leaves no slack.
+        # With 28 players for 28 slots, auto-fill must leave both squads full.
+        check(len(bought) == SQUAD_SIZE - 1,
+              f"{TEAM_NAMES[t]} finished {len(bought) + 1}/{SQUAD_SIZE} "
+              f"— auto-fill failed to even up the squads")
         summary[t] = (len(bought) + 1, spend + cap, max((p["price"] for p in bought), default=0))
 
     check(len(db_bids) >= len([p for p in db_picks if p["team"]]),
@@ -277,6 +338,7 @@ def run(season, verbose):
         "sold": len(sold), "unsold": len(db_picks) - len(sold),
         "rounds": max(rounds_seen), "bids": len(db_bids),
         "team1": summary["team1"], "team2": summary["team2"],
+        "allocated": len([p for p in db_picks if p["round"] == 0 and p["team"]]),
     }
 
 
@@ -286,11 +348,14 @@ def main():
     ap.add_argument("--season", default="E2E-TEST")
     ap.add_argument("--keep", action="store_true")
     ap.add_argument("-q", "--quiet", action="store_true")
+    ap.add_argument("--war", type=int, default=0,
+                    help="fight the first N players to the purse ceiling")
     args = ap.parse_args()
 
     check(args.season != REAL_SEASON, "refusing to run against the live season")
 
-    print(f"Auction E2E · season '{args.season}' · {args.runs} run(s)")
+    print(f"Auction E2E · season '{args.season}' · {args.runs} run(s)"
+      + (f" · WAR on first {args.war}" if args.war else ""))
     print(f"Purse ₹{PURSE_LAKH/100:.0f} Cr · squad {SQUAD_SIZE} · {TEAM_NAMES['team1']} v {TEAM_NAMES['team2']}\n")
     results = []
     for n in range(1, args.runs + 1):
@@ -298,7 +363,7 @@ def main():
         if verbose:
             print("Run 1")
         try:
-            r = run(args.season, verbose)
+            r = run(args.season, verbose, war=args.war)
         except Fail as e:
             wipe(args.season)
             sys.exit(f"\n❌ FAILED on run {n}: {e}")
