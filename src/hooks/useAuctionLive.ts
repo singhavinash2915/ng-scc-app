@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { BID_STEP_SMALL, BID_STEP_BIG, PURSE_LAKH } from './useSCCLeague';
+import { BID_STEP_SMALL, BID_STEP_BIG, PURSE_LAKH, bandForPrice } from './useSCCLeague';
 
 // ─── Live auction ──────────────────────────────────────────────────────────────
 // All state lives in the database so every member watching sees the same thing.
@@ -127,7 +127,16 @@ export function useAuctionLive(
 
   const currentMemberId = auction?.pool_order?.[auction.current_idx] ?? null;
   const bidStep = (auction?.current_bid ?? 0) >= 100 ? BID_STEP_BIG : BID_STEP_SMALL;
-  const nextBid = (auction?.current_bid ?? 0) + bidStep;
+  /**
+   * The FIRST bid is the base price itself, as in a real auction — the
+   * auctioneer opens at base and a raised hand accepts it. Previously the
+   * opening bid was base + one step, so a player could never be sold at his
+   * base price at all, and the cheapest possible buy was ₹25 L on a ₹20 L man.
+   */
+  const opening = !auction?.current_bidder;
+  const nextBid = opening
+    ? (auction?.current_bid ?? 0)
+    : (auction?.current_bid ?? 0) + bidStep;
   /** A full squad cannot bid. maxBid alone doesn't stop it: once the last slot
    *  is filled slotsLeft hits 0, so the reserve falls away and the whole
    *  remaining purse looks spendable — a team ended a test run 14/13. */
@@ -186,17 +195,41 @@ export function useAuctionLive(
    */
   const drawFrom = useCallback((ids: string[], priceOf: (id: string) => number) => {
     if (ids.length === 0) return null;
-    const top = Math.max(...ids.map(priceOf));
-    const inSet = ids.filter(id => priceOf(id) === top);
+    // Group by the DISPLAY band, not the raw base price. Everyone sees Marquee
+    // and Grade A merged into one SCC Icons set, but drawing on exact price
+    // made both ₹2 Cr names come up before all five ₹1 Cr ones, every time —
+    // which looks like the auctioneer is simply reading down the list.
+    const band = (id: string) => bandForPrice(priceOf(id)).minPrice;
+    const top = Math.max(...ids.map(band));
+    const inSet = ids.filter(id => band(id) === top);
     return inSet[Math.floor(Math.random() * inSet.length)];
   }, []);
 
-  const advance = useCallback(async (priceOf: (id: string) => number) => {
+  /**
+   * Move to the next name.
+   *
+   * `justResolved` is the player sell()/passOver() has this moment written to
+   * the database. It has to be passed in: `picks` is the state from the last
+   * render, so it does NOT yet contain them, and without this they stay in
+   * `remaining` and can be drawn straight back onto the block at their base
+   * price. That is the "I had to click SOLD two or three times, and the bid
+   * dropped back to base" bug — the sale had gone through every time.
+   */
+  const advance = useCallback(async (
+    priceOf: (id: string) => number,
+    justResolved?: { member_id: string; team: TeamKey | null },
+  ) => {
     if (!auction) return;
-    const resolvedIds = new Set(picks.map(p => p.member_id));
+    // Everything decided so far, INCLUDING the sale that just happened.
+    const resolved = justResolved
+      ? [...picks.filter(p => p.member_id !== justResolved.member_id),
+         { ...justResolved, id: '', price: 0, round, created_at: '' } as Pick]
+      : picks;
+    const resolvedIds = new Set(resolved.map(p => p.member_id));
     // Anyone in this round's pool who hasn't been resolved yet.
     const remaining = auction.pool_order.filter(id => !resolvedIds.has(id));
-    const roomLeft = (['team1', 'team2'] as TeamKey[]).some(t => squad(t).length < size - 1);
+    const bought = (t: TeamKey) => resolved.filter(p => p.team === t).length;
+    const roomLeft = (['team1', 'team2'] as TeamKey[]).some(t => bought(t) < size - 1);
 
     const next = remaining.length ? drawFrom(remaining, priceOf) : null;
     if (next && roomLeft) {
@@ -216,8 +249,8 @@ export function useAuctionLive(
     // promises — otherwise a team can finish short purely on running order.
     // But only if SOMETHING sold this round: a round where every name is passed
     // would otherwise restart forever, and the auctioneer can never close.
-    const soldThisRound = picks.some(p => p.team && auction.pool_order.includes(p.member_id));
-    const unsoldIds = picks.filter(p => !p.team).map(p => p.member_id);
+    const soldThisRound = resolved.some(p => p.team && auction.pool_order.includes(p.member_id));
+    const unsoldIds = resolved.filter(p => !p.team).map(p => p.member_id);
     if (roomLeft && unsoldIds.length > 0 && soldThisRound) {
       await supabase.from('scc_auction_picks').delete()
         .eq('season', season).in('member_id', unsoldIds);
@@ -234,15 +267,16 @@ export function useAuctionLive(
     }
 
     await patch({ status: 'done', current_bidder: null, current_bid: 0 });
-  }, [auction, picks, squad, size, drawFrom, patch, season, round]);
+  }, [auction, picks, size, drawFrom, patch, season, round]);
 
   const sell = useCallback(async (basePriceOf: (id: string) => number) => {
     if (!auction || !currentMemberId || !auction.current_bidder) return;
+    const team = auction.current_bidder;
     await supabase.from('scc_auction_picks').upsert({
       season, member_id: currentMemberId,
-      team: auction.current_bidder, price: auction.current_bid, round,
+      team, price: auction.current_bid, round,
     }, { onConflict: 'season,member_id' });
-    await advance(basePriceOf);
+    await advance(basePriceOf, { member_id: currentMemberId, team });
   }, [auction, currentMemberId, season, advance, round]);
 
   const passOver = useCallback(async (basePriceOf: (id: string) => number) => {
@@ -250,7 +284,7 @@ export function useAuctionLive(
     await supabase.from('scc_auction_picks').upsert({
       season, member_id: currentMemberId, team: null, price: 0, round,
     }, { onConflict: 'season,member_id' });
-    await advance(basePriceOf);
+    await advance(basePriceOf, { member_id: currentMemberId, team: null });
   }, [auction, currentMemberId, season, advance, round]);
 
   /**
@@ -320,7 +354,7 @@ export function useAuctionLive(
   return {
     auction, picks, bids, sold, unsold, loading, tableMissing, trailFor,
     currentMemberId, bidStep, nextBid, canBid, maxBid, budget, spent, squad,
-    bid, sell, passOver, undo, start, reset, patch, hasSlot, captainCost, round,
+    bid, sell, passOver, undo, start, reset, patch, hasSlot, captainCost, round, opening,
     refetch: fetchAll,
   };
 }

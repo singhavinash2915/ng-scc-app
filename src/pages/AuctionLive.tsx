@@ -281,7 +281,12 @@ export function AuctionLive() {
                       <span className="text-2xl block">{TEAM_EMOJI[t]}</span>
                       <span className="text-xs uppercase tracking-widest opacity-90">{teamName(t)}</span>
                       <span className="block text-lg tabular-nums">
-                        {!A.hasSlot(t) ? 'SQUAD FULL' : A.canBid(t) ? `+${formatPrice(A.bidStep)}` : 'NO PURSE'}
+                        {/* The first bid accepts the base price rather than raising
+                            it, so "+₹10 L" would be a lie on the opening call. */}
+                        {!A.hasSlot(t) ? 'SQUAD FULL'
+                          : !A.canBid(t) ? 'NO PURSE'
+                          : A.opening ? formatPrice(A.nextBid)
+                          : `+${formatPrice(A.bidStep)}`}
                       </span>
                     </button>
                   ))}
@@ -440,9 +445,11 @@ function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
   const go = async () => {
     if (!c1 || !c2 || c1 === c2) { setErr('Pick two different captains'); return; }
     const order = pool.filter(id => id !== c1 && id !== c2)
-      // Marquee first, shuffled within each grade — the big names sell while
-      // every purse is still full.
-      .map(id => ({ id, p: baseOf(id), r: Math.random() }))
+      // Icons first, shuffled within each band — the big names sell while every
+      // purse is still full. Banded, not priced: sorting on raw price would put
+      // the ₹2 Cr names ahead of the ₹1 Cr ones inside a set that everyone sees
+      // as one group, so the running order would just mirror the squad list.
+      .map(id => ({ id, p: bandForPrice(baseOf(id)).minPrice, r: Math.random() }))
       .sort((x, y) => y.p - x.p || x.r - y.r)
       .map(x => x.id);
     if (order.length < 2) { setErr('Need at least 2 players in the pool'); return; }

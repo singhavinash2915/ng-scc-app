@@ -93,10 +93,15 @@ class Auction:
         }, prefer="resolution=merge-duplicates")
 
     # ── the rules ──────────────────────────────────────────────────────────
+    def band(self, member_id):
+        """The set as everyone SEES it — Marquee and Grade A are one group."""
+        p = self.base[member_id]
+        return next(b for b in (100, 50, 0) if p >= b)
+
     def draw(self, ids):
-        """Random pick from the richest set still on the table."""
-        top = max(self.base[i] for i in ids)
-        return random.choice([i for i in ids if self.base[i] == top])
+        """Random pick from the richest band still on the table."""
+        top = max(self.band(i) for i in ids)
+        return random.choice([i for i in ids if self.band(i) == top])
 
     def squad(self, t):
         return [p for p in self.picks if p["team"] == t]
@@ -119,6 +124,10 @@ class Auction:
 
     @property
     def next_bid(self):
+        # The opening call accepts the base price rather than raising it, so a
+        # player can be bought at exactly his base.
+        if self.bidder is None:
+            return self.bid_amount
         return self.bid_amount + (BID_STEP_BIG if self.bid_amount >= 100 else BID_STEP_SMALL)
 
     def can_bid(self, t):
@@ -243,6 +252,11 @@ def run(season, verbose):
     check(len(ids) == len(set(ids)), "a player was resolved twice")
     check(all(i not in CAPTAINS for i in ids), "a captain got auctioned")
     check(db_auction["status"] == "done", f"auction ended as {db_auction['status']}")
+    for p in db_picks:
+        if p["team"]:
+            check(p["price"] >= base[p["member_id"]],
+                  f"{members.get(p['member_id'],'?')} sold at ₹{p['price']} L, "
+                  f"under his ₹{base[p['member_id']]} L base")
 
     summary = {}
     for t in ("team1", "team2"):
