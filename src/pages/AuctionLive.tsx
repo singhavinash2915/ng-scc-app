@@ -42,10 +42,21 @@ function Face({ member, size = 44, ring }: { member?: Member; size?: number; rin
 const REHEARSAL_SEASON = `${SEASON_NEW}-REHEARSAL`;
 const REHEARSAL_KEY = 'scc-auction-rehearsal';
 
+/**
+ * OFF for auction night. The toggle is the one control on this page that could
+ * quietly ruin the evening — running the real auction while the room believes
+ * it's practice, or the reverse — and on the night there is no reason to offer
+ * it at all. With this false the page is always the real auction, whatever a
+ * stale localStorage flag from an earlier rehearsal says.
+ *
+ * Set it back to true to rehearse the next one.
+ */
+const REHEARSAL_ENABLED = false;
+
 export function AuctionLive() {
   const { isAdmin } = useAuth();
   const [rehearsal, setRehearsal] = useState(
-    () => localStorage.getItem(REHEARSAL_KEY) === '1',
+    () => REHEARSAL_ENABLED && localStorage.getItem(REHEARSAL_KEY) === '1',
   );
   const season = rehearsal ? REHEARSAL_SEASON : SEASON_NEW;
   const toggleRehearsal = (on: boolean) => {
@@ -233,7 +244,9 @@ export function AuctionLive() {
 
         {/* Which auction am I in? Impossible to get wrong at a glance — the one
             mistake that would really hurt is running the real auction while
-            everyone thinks it's practice, or vice versa. */}
+            everyone thinks it's practice, or vice versa. Hidden entirely once
+            REHEARSAL_ENABLED is off, so on the night there is nothing to hit. */}
+        {REHEARSAL_ENABLED && (
         <div className={`flex items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 ${
           rehearsal
             ? 'border-amber-400 bg-amber-50 dark:bg-amber-500/10'
@@ -259,6 +272,7 @@ export function AuctionLive() {
             {rehearsal ? 'Go to real auction' : 'Start a rehearsal'}
           </button>
         </div>
+        )}
 
         {A.loading && <p className="text-sm text-slate-400">Connecting…</p>}
 
