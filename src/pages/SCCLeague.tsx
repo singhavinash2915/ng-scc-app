@@ -36,6 +36,41 @@ function Avatar({ member, size = 44, ring }: { member?: Member; size?: number; r
   );
 }
 
+// ─── Auction night prophecies ──────────────────────────────────────────────────
+// Deliberately NOT driven by data. The projection above is the serious answer;
+// this is the one that gets the group chat going. Every registered player gets a
+// call, and the tone stays warm — these are teammates, so the joke is always
+// about the bidding, never about the cricketer.
+const PROPHECIES: Array<{ tag: string; emoji: string; line: string }> = [
+  { tag: 'Bidding war',  emoji: '🔥', line: 'Both captains want him. Only one is going home happy.' },
+  { tag: 'Instant sale', emoji: '⚡', line: 'Sold before you finish reading his name.' },
+  { tag: 'Steal',        emoji: '💎', line: 'The bargain of the night — and everyone will know it by March.' },
+  { tag: 'Purse breaker',emoji: '💸', line: 'Somebody raises one time too many. It happens to us all.' },
+  { tag: 'Dark horse',   emoji: '🐎', line: 'Quiet start. Then the price starts climbing and nobody stops.' },
+  { tag: 'Panic buy',    emoji: '😅', line: 'A captain looks at his squad, panics, and pays for it.' },
+  { tag: 'Group chat',   emoji: '💬', line: 'The one they are still arguing about tomorrow morning.' },
+  { tag: 'Slow burn',    emoji: '🕯️', line: 'Held back till late. Worth every second of the wait.' },
+  { tag: 'Gut pick',     emoji: '🎯', line: 'No spreadsheet says this. A captain just wants him.' },
+  { tag: 'Match winner', emoji: '🏆', line: 'Whatever he costs, it looks cheap by the semi-final.' },
+  { tag: 'Eyebrow',      emoji: '🤨', line: 'Expect one raised eyebrow, then a much bigger number.' },
+  { tag: 'Standoff',     emoji: '🧊', line: 'Long silence. Longer stare. Then a bid nobody saw coming.' },
+  { tag: 'Underrated',   emoji: '📈', line: 'Underrated by everyone except the man holding the paddle.' },
+  { tag: 'Fan favourite',emoji: '📣', line: 'The loudest cheer of the night, whatever the price says.' },
+  { tag: 'Late drama',   emoji: '🎬', line: 'Goes unsold, comes back, and costs twice as much.' },
+  { tag: 'Bargain bin',  emoji: '🛒', line: 'Base price. Absolute robbery. Someone is very pleased.' },
+  { tag: 'Wildcard',     emoji: '🃏', line: 'Nobody can predict this one. Least of all the captains.' },
+  { tag: 'Team spirit',  emoji: '🤝', line: 'Bought for the dressing room as much as the scorecard.' },
+  { tag: 'Blockbuster',  emoji: '🍿', line: 'Grab a chair. This one is going to take a while.' },
+  { tag: 'Old guard',    emoji: '🧠', line: 'A captain remembers one innings and stops thinking straight.' },
+];
+
+/** Stable per player, so everyone sees the same call and can argue about it. */
+function prophecyFor(id: string) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return PROPHECIES[h % PROPHECIES.length];
+}
+
 export function SCCLeague() {
   const { members } = useMembers();
   const league = useSCCLeague(SEASON_NEW);
@@ -238,6 +273,54 @@ export function SCCLeague() {
             <p className="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50 dark:bg-white/5">
               Captains are retained, so they don't appear here.
             </p>
+
+            {/* ── EVERY PLAYER, CALLED EARLY ──────────────────────────────
+                Pure fun. The ranking above is the honest projection; this is
+                here to get people arguing before a single bid is made. */}
+            <details className="group border-t border-slate-100 dark:border-white/10">
+              <summary className="flex items-center justify-between px-4 py-3 cursor-pointer
+                                  list-none select-none">
+                <span>
+                  <span className="block text-sm font-black text-slate-900 dark:text-white">
+                    🔮 Every player, called early
+                  </span>
+                  <span className="block text-[11px] text-slate-500 dark:text-white/50">
+                    Absolute nonsense. Argue in the group.
+                  </span>
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400 transition-transform
+                                        group-open:rotate-180 flex-shrink-0" />
+              </summary>
+              <div className="divide-y divide-slate-100 dark:divide-white/10">
+                {squad.map(r => {
+                  const p = prophecyFor(r.member_id);
+                  return (
+                    <div key={r.member_id} className="flex items-start gap-3 px-4 py-2.5">
+                      <Avatar member={memberById[r.member_id]} size={32} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                          {memberById[r.member_id]?.name ?? '?'}
+                          <span className="ml-1.5 text-[10px] font-black text-slate-400">
+                            {formatPrice(r.base_price)}
+                          </span>
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-white/55 leading-snug">
+                          {p.line}
+                        </p>
+                      </div>
+                      <span className="flex-shrink-0 rounded-full bg-violet-50 dark:bg-violet-400/10
+                                       border border-violet-200 dark:border-violet-400/20 px-2 py-0.5
+                                       text-[10px] font-black text-violet-700 dark:text-violet-300">
+                        {p.emoji} {p.tag}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50 dark:bg-white/5">
+                Generated for laughs, not from form. If it's wrong, that's the point 😄
+              </p>
+            </details>
           </div>
         )}
 
