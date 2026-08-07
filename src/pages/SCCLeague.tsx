@@ -1,8 +1,11 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Gavel, Flame, UserMinus, ScrollText, ChevronDown, Radio, Crown } from 'lucide-react';
+import { Gavel, Flame, UserMinus, ScrollText, ChevronDown, Radio, Crown, TrendingUp } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
+import { useMatches } from '../hooks/useMatches';
+import { useAllScorecards } from '../hooks/useAllScorecards';
+import { useMarketValue } from '../hooks/useMarketValue';
 import {
   useSCCLeague, ROLE_LABELS, DISPLAY_BANDS, bandForPrice, PURSE_LAKH, SQUAD_SIZE, SQUAD_TARGET,
   formatPrice, type LeagueRole,
@@ -60,6 +63,38 @@ export function SCCLeague() {
     })).filter(g => g.players.length > 0),
     [squad],
   );
+
+  // ─── Who'll fetch the biggest price? ────────────────────────────────────
+  // A projection, not a promise: base price sets the floor, and current SCC
+  // Rankings form decides how far above it a player is likely to be chased.
+  // Scarcity matters too — when only two men can win you a game, both captains
+  // have to bid for them, and that is what actually moves a price.
+  const { matches } = useMatches();
+  const { scorecards } = useAllScorecards();
+  const values = useMarketValue(matches, members, scorecards);
+  const hotProspects = useMemo(() => {
+    const ratingById: Record<string, number> = {};
+    values.forEach(v => { ratingById[v.member.id] = v.rating; });
+    const pool = squad.map(r => ({ r, rating: ratingById[r.member_id] ?? 0 }));
+    if (pool.length === 0) return [];
+    const top = Math.max(...pool.map(p => p.rating)) || 1;
+    // How rare is this player's band? A 6-strong Icons set bids up harder than
+    // a 14-strong Grade C where a captain can simply wait for the next one.
+    const bandSize: Record<string, number> = {};
+    pool.forEach(p => {
+      const k = bandForPrice(p.r.base_price).key;
+      bandSize[k] = (bandSize[k] || 0) + 1;
+    });
+    return pool
+      .map(({ r, rating }) => {
+        const form = rating / top;                                  // 0–1
+        const scarcity = 1 + 0.6 / Math.max(1, bandSize[bandForPrice(r.base_price).key] / 4);
+        const projected = Math.round(((r.base_price || 20) * (1 + 1.9 * form) * scarcity) / 5) * 5;
+        return { r, rating, form, projected, member: memberById[r.member_id] };
+      })
+      .sort((a, b) => b.projected - a.projected)
+      .slice(0, 5);
+  }, [squad, values, memberById]);
 
   const roleCount = league.roleCounts;
 
@@ -158,6 +193,53 @@ export function SCCLeague() {
             ))}
           </div>
         </div>
+
+        {/* ── BIGGEST BUY WATCH ────────────────────────────────────────── */}
+        {hotProspects.length > 0 && (
+          <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+                          dark:border-white/10 overflow-hidden">
+            <div className="px-5 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+              <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[2px]">
+                <TrendingUp className="w-3.5 h-3.5" /> Biggest buy watch
+              </p>
+              <h3 className="font-display text-xl font-extrabold mt-0.5">Who'll go for the most?</h3>
+              <p className="text-[11px] text-white/80 mt-1 leading-snug">
+                Projected from SCC Rankings form and how rare each grade is — not a
+                reserve, and the room decides on the night.
+              </p>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-white/10">
+              {hotProspects.map((h, i) => (
+                <div key={h.r.member_id} className="flex items-center gap-3 px-4 py-3">
+                  <span className={`w-6 text-center font-display text-lg font-extrabold ${
+                    i === 0 ? 'text-amber-500' : 'text-slate-300 dark:text-white/25'}`}>
+                    {i + 1}
+                  </span>
+                  <Avatar member={h.member} size={38} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-black text-slate-900 dark:text-white truncate text-sm">
+                      {h.member?.name ?? '?'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-white/50">
+                      Base {formatPrice(h.r.base_price)} · form {Math.round(h.form * 100)}%
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-extrabold text-slate-900 dark:text-white tabular-nums">
+                      ~{formatPrice(h.projected)}
+                    </p>
+                    <p className="text-[10px] text-emerald-600 font-bold">
+                      {Math.round((h.projected / (h.r.base_price || 20)) * 10) / 10}× base
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50 dark:bg-white/5">
+              Captains are retained, so they don't appear here.
+            </p>
+          </div>
+        )}
 
         {/* ── THE POOL, BY GRADE ───────────────────────────────────────── */}
         {byTier.map(({ tier, players }) => (

@@ -17,7 +17,7 @@ export const AUCTION_NIGHT = {
   label: 'Friday · 9 PM IST',
   confirmed: true,
   startsAt: new Date('2026-08-07T15:30:00Z'),
-  meetUrl: 'https://meet.google.com/landing',   // ← paste the real Meet link here
+  meetUrl: 'https://meet.google.com/zue-ypka-uza',
 };
 
 // The two elected captains have named their sides. These are the auction

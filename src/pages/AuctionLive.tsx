@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Gavel, Crown, Undo2, Check, X, Radio, Wallet, Users, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useAuth } from '../context/AuthContext';
@@ -92,6 +92,17 @@ export function AuctionLive() {
     [a?.pool_order, A.currentMemberId, A.picks],
   );
 
+  /** The SOLD! moment — held on screen for a few seconds, then it clears itself. */
+  const [celebration, setCelebration] = useState<{
+    name: string; avatar: string | null; price: number;
+    team: TeamKey; teamName: string; at: number;
+  } | null>(null);
+  useEffect(() => {
+    if (!celebration) return;
+    const t = window.setTimeout(() => setCelebration(null), 4200);
+    return () => window.clearTimeout(t);
+  }, [celebration]);
+
   const teamName = (t: TeamKey) => (t === 'team1' ? a?.team1_name : a?.team2_name) || 'Team';
   const captainOf = (t: TeamKey) => (t === 'team1' ? a?.team1_captain_id : a?.team2_captain_id);
 
@@ -138,13 +149,83 @@ export function AuctionLive() {
         .al-live { animation: al-pulse 1.6s ease-in-out infinite; }
         @keyframes al-pop { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
         .al-pop { animation: al-pop .35s cubic-bezier(.22,1,.36,1) both; }
-        @media (prefers-reduced-motion: reduce) { .al-live,.al-pop { animation: none } }
+        @keyframes al-stamp {
+          0%   { transform: scale(2.6) rotate(-14deg); opacity: 0 }
+          55%  { transform: scale(.94) rotate(-14deg); opacity: 1 }
+          70%  { transform: scale(1.06) rotate(-14deg) }
+          100% { transform: scale(1) rotate(-14deg); opacity: 1 }
+        }
+        .al-stamp { animation: al-stamp .55s cubic-bezier(.2,.9,.3,1.4) both; }
+        @keyframes al-fade { from{opacity:0} to{opacity:1} }
+        .al-fade { animation: al-fade .25s ease both; }
+        @keyframes al-rise { from{transform:translateY(14px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .al-rise { animation: al-rise .45s .12s cubic-bezier(.22,1,.36,1) both; }
+        @keyframes al-fall {
+          from { transform: translateY(-12vh) rotate(0deg); opacity: 1 }
+          to   { transform: translateY(104vh) rotate(720deg); opacity: 0 }
+        }
+        .al-confetti { position: fixed; top: 0; width: 10px; height: 14px;
+                       animation: al-fall linear forwards; pointer-events: none; }
+        @media (prefers-reduced-motion: reduce) {
+          .al-live,.al-pop,.al-stamp,.al-rise { animation: none }
+          .al-confetti { display: none }
+        }
       `}</style>
 
       <Header title={rehearsal ? 'Auction Rehearsal' : 'Live Auction'}
         subtitle={rehearsal ? 'Practice run · not the real auction' : `SCC League · Season ${SEASON_NEW}`} />
 
       <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-4">
+
+        {/* ── SOLD! ────────────────────────────────────────────────────────
+            The moment the room reacts to. It's the whole point of running an
+            auction live rather than posting a spreadsheet afterwards. Clears
+            itself after a few seconds so the auctioneer never has to dismiss
+            it mid-flow. */}
+        {celebration && (
+          <div className="al-fade fixed inset-0 z-50 flex items-center justify-center px-6"
+            style={{ background: 'rgba(2,6,23,.82)', backdropFilter: 'blur(3px)' }}
+            onClick={() => setCelebration(null)}>
+            {Array.from({ length: 28 }).map((_, i) => (
+              <span key={i} className="al-confetti"
+                style={{
+                  left: `${(i * 3.6 + (i % 5) * 2) % 100}%`,
+                  background: i % 3 === 0 ? '#fbbf24'
+                    : i % 3 === 1 ? TEAM_COLOR[celebration.team] : '#f472b6',
+                  animationDuration: `${1.9 + (i % 6) * 0.28}s`,
+                  animationDelay: `${(i % 9) * 0.09}s`,
+                  borderRadius: i % 2 ? '2px' : '50%',
+                }} />
+            ))}
+            <div className="relative text-center text-white max-w-md w-full">
+              <p className="al-stamp inline-block font-display text-6xl sm:text-7xl font-extrabold
+                            tracking-tight"
+                style={{ color: '#fde68a', textShadow: '0 6px 30px rgba(251,191,36,.5)' }}>
+                SOLD!
+              </p>
+              <div className="al-rise mt-6">
+                {celebration.avatar
+                  ? <img src={celebration.avatar} alt="" className="w-24 h-24 rounded-2xl object-cover mx-auto"
+                      style={{ border: `3px solid ${TEAM_COLOR[celebration.team]}` }} />
+                  : <div className="w-24 h-24 rounded-2xl mx-auto flex items-center justify-center
+                                    text-4xl font-black bg-white/15"
+                      style={{ border: `3px solid ${TEAM_COLOR[celebration.team]}` }}>
+                      {celebration.name.charAt(0)}
+                    </div>}
+                <p className="font-display text-3xl font-extrabold mt-4 leading-tight">{celebration.name}</p>
+                <p className="text-5xl font-extrabold mt-2 tabular-nums"
+                  style={{ color: TEAM_COLOR[celebration.team] }}>
+                  {formatPrice(celebration.price)}
+                </p>
+                <p className="mt-3 inline-block rounded-full px-4 py-1.5 text-sm font-black"
+                  style={{ background: TEAM_COLOR[celebration.team] }}>
+                  {TEAM_EMOJI[celebration.team]} {celebration.teamName}
+                </p>
+                <p className="text-[11px] text-white/40 mt-5">tap anywhere to carry on</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Which auction am I in? Impossible to get wrong at a glance — the one
             mistake that would really hurt is running the real auction while
@@ -312,7 +393,17 @@ export function AuctionLive() {
                   ))}
                 </div>
                 <div className="grid grid-cols-3 gap-2.5">
-                  <button onClick={() => A.sell(baseOf)} disabled={!a.current_bidder}
+                  <button onClick={() => {
+                    // Capture who/what BEFORE the sale advances to the next name.
+                    if (current && a.current_bidder) {
+                      setCelebration({
+                        name: current.name, avatar: current.avatar_url ?? null,
+                        price: a.current_bid, team: a.current_bidder,
+                        teamName: teamName(a.current_bidder), at: Date.now(),
+                      });
+                    }
+                    A.sell(baseOf);
+                  }} disabled={!a.current_bidder}
                     className="rounded-2xl py-3 bg-emerald-500 disabled:opacity-40 text-white font-black text-sm
                                inline-flex items-center justify-center gap-1.5">
                     <Check className="w-4 h-4" /> SOLD
@@ -351,7 +442,7 @@ export function AuctionLive() {
                 could tell whether to fight for this player or save for a better
                 one. Grouped by set, and the draw is random within a set, so
                 this tells you WHO is coming without giving away the order. */}
-            {a.status === 'live' && remaining.length > 0 && (
+            {a.status === 'live' && (remaining.length > 0 || A.unsold.length > 0) && (
               <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
                               dark:border-white/10 p-4">
                 <div className="flex items-baseline justify-between mb-3">
@@ -359,7 +450,7 @@ export function AuctionLive() {
                     Still to come
                   </h3>
                   <span className="text-[11px] font-bold text-slate-400">
-                    {remaining.length} player{remaining.length > 1 ? 's' : ''}
+                    {remaining.length + A.unsold.length} left
                   </span>
                 </div>
                 <div className="space-y-3">
@@ -389,12 +480,29 @@ export function AuctionLive() {
                     );
                   })}
                 </div>
+                {/* Named, not just counted. "3 passed over" tells a captain
+                    nothing; knowing it's the ₹1 Cr all-rounder he wanted is
+                    exactly what decides whether he saves his purse. */}
                 {A.unsold.length > 0 && (
-                  <p className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/10
-                                text-[11px] text-amber-600 font-bold">
-                    ↻ {A.unsold.length} passed over — {A.unsold.length > 1 ? 'they come' : 'he comes'} back
-                    at base price in the next round
-                  </p>
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/10">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1.5">
+                      ↻ Passed over · {A.unsold.length} — back at base price next round
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {A.unsold
+                        .map(p => ({ id: p.member_id, name: memberById[p.member_id]?.name ?? '?', p: baseOf(p.member_id) }))
+                        .sort((x, y) => y.p - x.p || x.name.localeCompare(y.name))
+                        .map(x => (
+                          <span key={x.id}
+                            className="inline-flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-400/10
+                                       border border-amber-200 dark:border-amber-400/20 px-2 py-1
+                                       text-[11px] font-bold text-amber-800 dark:text-amber-200">
+                            {x.name}
+                            <span className="text-amber-500 font-black">{formatPrice(x.p)}</span>
+                          </span>
+                        ))}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
