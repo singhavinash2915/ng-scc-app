@@ -136,6 +136,19 @@ export function AuctionCentre() {
                   {pool.length} players graded and waiting. Browse the full list on the
                   <b> Players</b> tab — every bid lands here the moment it's called.
                 </p>
+                {/* Say it plainly and say it early. Nobody can audit the draw from
+                    the outside, so the least we owe the squad is a clear statement
+                    of how the order is decided, before it starts mattering. */}
+                <div className="mt-4 rounded-2xl bg-emerald-50 dark:bg-emerald-400/10 border
+                                border-emerald-200 dark:border-emerald-400/20 px-4 py-3 text-left">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-emerald-700
+                                dark:text-emerald-300">🎲 Random order</p>
+                  <p className="text-[12px] text-emerald-900/80 dark:text-emerald-100/70 mt-1 leading-snug">
+                    Names are drawn at random from the top grade still on the table — SCC
+                    Icons first, then Grade B, then Grade C. There is no running order and
+                    nobody, the auctioneer included, knows who is next until it happens.
+                  </p>
+                </div>
               </div>
             )}
             {started && featured.length === 0 && (

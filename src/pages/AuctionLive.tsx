@@ -107,6 +107,40 @@ export function AuctionLive() {
     [a?.pool_order, A.currentMemberId, A.picks],
   );
 
+  /**
+   * The draw, made visible. Members can't audit a Math.random() call, so when a
+   * new name comes up the card riffles through the other candidates in that
+   * grade for a beat before landing. It changes nothing about who was picked —
+   * the player is already chosen and in the database — it just shows the room
+   * that a draw happened rather than a list being read out.
+   */
+  const [drawing, setDrawing] = useState<string | null>(null);
+  useEffect(() => {
+    if (!A.currentMemberId || a?.status !== 'live') { setDrawing(null); return; }
+    // Candidates = everyone in the same grade who could have come up instead.
+    const band = bandForPrice(baseOf(A.currentMemberId)).key;
+    const peers = remaining.filter(id => bandForPrice(baseOf(id)).key === band);
+    if (peers.length === 0) { setDrawing(null); return; }
+    let n = 0;
+    const tick = window.setInterval(() => {
+      n += 1;
+      setDrawing(peers[Math.floor(Math.random() * peers.length)]);
+      if (n >= 9) { window.clearInterval(tick); setDrawing(null); }
+    }, 90);
+    return () => { window.clearInterval(tick); setDrawing(null); };
+    // Deliberately keyed on the player only — re-running on every poll would
+    // restart the riffle mid-bidding.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [A.currentMemberId, a?.status]);
+
+  /** How many players this name could have been drawn from — the honest number. */
+  const drawPool = useMemo(() => {
+    if (!A.currentMemberId) return 0;
+    const band = bandForPrice(baseOf(A.currentMemberId)).key;
+    return remaining.filter(id => bandForPrice(baseOf(id)).key === band).length + 1;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [A.currentMemberId, remaining, basePriceById]);
+
   /** The SOLD! moment — held on screen for a few seconds, then it clears itself. */
   const [celebration, setCelebration] = useState<{
     name: string; avatar: string | null; price: number;
@@ -313,16 +347,32 @@ export function AuctionLive() {
                     : 'radial-gradient(700px 320px at 50% -10%, rgba(251,191,36,.45), transparent 60%), linear-gradient(150deg,#1a1205,#020617)',
                 }}>
                 <div className="p-6 sm:p-8 text-center">
+                  <div className="inline-flex flex-wrap items-center justify-center gap-2">
                   <div className="inline-flex items-center gap-2 bg-white/12 border border-white/20 rounded-full px-3.5 py-1.5">
                     <span>{currentSet.emoji}</span>
                     <span className="text-[10px] font-black uppercase tracking-[2px]">{currentSet.label}</span>
+                  </div>
+                  {drawPool > 1 && (
+                    <div className="inline-flex items-center gap-1.5 bg-emerald-400/15 border
+                                    border-emerald-300/30 rounded-full px-3.5 py-1.5">
+                      <span>🎲</span>
+                      <span className="text-[10px] font-black uppercase tracking-[2px] text-emerald-200">
+                        Random · 1 of {drawPool}
+                      </span>
+                    </div>
+                  )}
                   </div>
 
                   <div className="mt-5 flex justify-center">
                     <Face member={current} size={116} ring="rgba(255,255,255,.45)" />
                   </div>
 
-                  <h2 className="font-display text-3xl sm:text-4xl font-extrabold mt-4">{current.name}</h2>
+                  <h2 className="font-display text-3xl sm:text-4xl font-extrabold mt-4">
+                    {/* Riffling through the other candidates, then landing. */}
+                    <span className={drawing ? 'opacity-45' : ''}>
+                      {drawing ? (memberById[drawing]?.name ?? current.name) : current.name}
+                    </span>
+                  </h2>
                   <p className="text-white/60 text-xs font-bold mt-1">
                     Base {formatPrice(baseOf(current.id))}
                     {league.registrations.find(r => r.member_id === current.id)?.role &&
@@ -465,7 +515,7 @@ export function AuctionLive() {
                               dark:border-white/10 p-4">
                 <div className="flex items-baseline justify-between mb-3">
                   <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">
-                    Still to come
+                    Still to come · 🎲 random order
                   </h3>
                   <span className="text-[11px] font-bold text-slate-400">
                     {remaining.length + A.unsold.length} left

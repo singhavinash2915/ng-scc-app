@@ -40,26 +40,14 @@ export const LEAGUE_CAPTAIN_IDS: readonly string[] = [
 export const isLeagueCaptain = (id: string) => LEAGUE_CAPTAIN_IDS.includes(id);
 
 // ─── Auction running order ─────────────────────────────────────────────────────
-// The order the auctioneer wants for the real night, set by hand: the Icons
-// first, then the Grade B men, and Grade C left to the random draw so the tail
-// of the auction still has surprises in it.
+// EMPTY ON PURPOSE — every name is drawn at random from the richest grade still
+// on the table, and nobody, including the auctioneer, knows who is next.
 //
-// Anyone on this list comes up in exactly this order. Once they are all gone the
-// draw falls back to picking at random within the richest band still on the
-// table. An empty list = fully random, which is what a rehearsal should use.
-export const AUCTION_RUNNING_ORDER: readonly string[] = [
-  '04e8130d-78c4-44b7-a54e-e50c206941c6',   // Soumyaranjan Mohapatra     · ₹2 Cr
-  '5d623102-766a-4243-83ef-2fb941ae96f3',   // Shaan                      · ₹2 Cr
-  '6ee157f3-e24c-4f1b-aad8-542145f5c828',   // Prateek Singh              · ₹1 Cr
-  '1046e698-8d6e-4f14-8c2d-c7759764f02e',   // Rohan Rao                  · ₹1 Cr
-  '1c6cb1c4-f523-4b16-9997-0764190931fc',   // Raushan Kumar              · ₹1 Cr
-  '1f68f840-b4ec-49a2-bcde-49d7fcf17dd0',   // Sushil Yadav               · ₹1 Cr
-  '6571e062-9ac5-414f-b0d6-12e53b680327',   // Niraj Prakash Parmeshwar   · ₹1 Cr
-  'da957ad5-baa8-44b9-9dc6-56f2afa6e7ea',   // Honey Porwal               · ₹50 L
-  '69035791-1be6-4cab-8315-120eccefe44b',   // Aprmay Kumar               · ₹50 L
-  '85762f91-6b6d-46fe-a6cf-9a2b38f07338',   // Vaibhav Shrivastav         · ₹50 L
-  '329137e8-ea3d-4a68-94a3-718e24e610cb',   // Adarsh Dwivedi             · ₹50 L
-  'b8c4f216-25f5-4e85-881c-4973ab4cb042',   // Aditya Purohit             · ₹50 L
-  'e412ba18-86c9-4896-ad06-f687b0bdc88c',   // Saurabh Lele               · ₹50 L
-  '8cfc8965-bb5b-4718-a2ba-d1ca202760a5',   // Nikhil                     · ₹50 L
-];
+// A hand-picked opening order was tried and dropped: once players can see the
+// running order, whoever is called first looks chosen, and an auction that is
+// meant to be even stops feeling that way. Random is the only version that
+// needs no defending.
+//
+// Putting member ids in this list would script the opening sequence again.
+// Don't, unless the whole squad has agreed to it.
+export const AUCTION_RUNNING_ORDER: readonly string[] = [];
