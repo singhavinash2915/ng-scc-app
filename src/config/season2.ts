@@ -48,9 +48,9 @@ export const isLeagueCaptain = (id: string) => LEAGUE_CAPTAIN_IDS.includes(id);
 // draw falls back to picking at random within the richest band still on the
 // table. An empty list = fully random, which is what a rehearsal should use.
 export const AUCTION_RUNNING_ORDER: readonly string[] = [
-  '6ee157f3-e24c-4f1b-aad8-542145f5c828',   // Prateek Singh              · ₹1 Cr
-  '5d623102-766a-4243-83ef-2fb941ae96f3',   // Shaan                      · ₹2 Cr
   '04e8130d-78c4-44b7-a54e-e50c206941c6',   // Soumyaranjan Mohapatra     · ₹2 Cr
+  '5d623102-766a-4243-83ef-2fb941ae96f3',   // Shaan                      · ₹2 Cr
+  '6ee157f3-e24c-4f1b-aad8-542145f5c828',   // Prateek Singh              · ₹1 Cr
   '1046e698-8d6e-4f14-8c2d-c7759764f02e',   // Rohan Rao                  · ₹1 Cr
   '1c6cb1c4-f523-4b16-9997-0764190931fc',   // Raushan Kumar              · ₹1 Cr
   '1f68f840-b4ec-49a2-bcde-49d7fcf17dd0',   // Sushil Yadav               · ₹1 Cr
