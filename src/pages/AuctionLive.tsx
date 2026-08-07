@@ -53,6 +53,17 @@ const REHEARSAL_KEY = 'scc-auction-rehearsal';
  */
 const REHEARSAL_ENABLED = false;
 
+/**
+ * "Reset auction" wipes every pick and bid for the season in one tap. There is
+ * no undo for it and no confirmation strong enough to be worth the risk while a
+ * live auction is on a shared screen — a mis-tap would destroy the night's work
+ * in front of everyone. Hidden for auction night.
+ *
+ * If a reset is genuinely needed mid-auction, delete the rows from Supabase
+ * directly. That is slower on purpose.
+ */
+const SHOW_RESET = false;
+
 export function AuctionLive() {
   const { isAdmin } = useAuth();
   const [rehearsal, setRehearsal] = useState(
@@ -655,7 +666,7 @@ export function AuctionLive() {
               </div>
             )}
 
-            {isAdmin && (
+            {isAdmin && SHOW_RESET && (
               <button onClick={() => { if (confirm('Wipe this auction completely and start over?')) A.reset(); }}
                 className="text-xs text-rose-500 font-bold">Reset auction</button>
             )}
