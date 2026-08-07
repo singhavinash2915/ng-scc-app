@@ -75,8 +75,20 @@ export const VOTE_UNLOCK_AT = 22;
 // choices late on. (At the original ₹50 Cr the money never ran out at all.)
 export const PURSE_LAKH = 2500;                       // ₹25 Cr per team
 export const SQUAD_SIZE = 15;                         // captain + 14 bought
-export const BID_STEP_SMALL = 5;                      // +₹5L while under ₹1 Cr
-export const BID_STEP_BIG = 10;                       // +₹10L at ₹1 Cr and above
+/**
+ * The raise ladder. Steps get bigger as the price climbs, so a ₹3 Cr contest
+ * doesn't crawl up ₹5 L at a time — the mock auction ran long for exactly that
+ * reason.
+ */
+export const BID_STEPS = [
+  { from: 200, step: 20 },   // +₹20 L at ₹2 Cr and above
+  { from: 100, step: 10 },   // +₹10 L from ₹1 Cr
+  { from: 0,   step: 5 },    // +₹5 L below that
+] as const;
+
+export function bidStepFor(currentLakh: number): number {
+  return (BID_STEPS.find(s => currentLakh >= s.from) ?? BID_STEPS[BID_STEPS.length - 1]).step;
+}
 
 // ─── Base-price tiers ─────────────────────────────────────────────────────────
 // Base price is EARNED, not chosen. If players picked their own, everyone would

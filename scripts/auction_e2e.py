@@ -40,7 +40,8 @@ KEY = ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp
 REAL_SEASON = "2026-27"
 PURSE_LAKH = 2500
 SQUAD_SIZE = 15          # captain + 14 bought
-BID_STEP_SMALL, BID_STEP_BIG = 5, 10
+# Raise ladder — mirrors BID_STEPS in useSCCLeague.ts
+BID_STEPS = [(200, 20), (100, 10), (0, 5)]
 CAPTAINS = [
     "230629f4-cd80-4903-8b75-c485c75b2de7",   # AKASH JADHAV  · SCC Brahmos
     "7545cb6b-41fe-4102-b392-f560ae44805f",   # Avinash Singh · SCC Agni
@@ -153,7 +154,7 @@ class Auction:
         # player can be bought at exactly his base.
         if self.bidder is None:
             return self.bid_amount
-        return self.bid_amount + (BID_STEP_BIG if self.bid_amount >= 100 else BID_STEP_SMALL)
+        return self.bid_amount + next(st for fr, st in BID_STEPS if self.bid_amount >= fr)
 
     def can_bid(self, t):
         return self.has_slot(t) and self.next_bid <= self.max_bid(t)

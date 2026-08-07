@@ -1,4 +1,4 @@
-import { PURSE_LAKH, PRICE_TIERS, AUCTION_SETS, SQUAD_SIZE, SQUAD_TARGET, VOTE_UNLOCK_AT, BID_STEP_SMALL, BID_STEP_BIG, formatPrice } from '../hooks/useSCCLeague';
+import { PURSE_LAKH, PRICE_TIERS, AUCTION_SETS, SQUAD_SIZE, SQUAD_TARGET, VOTE_UNLOCK_AT, BID_STEPS, formatPrice } from '../hooks/useSCCLeague';
 
 // ─── SCC League rulebook ───────────────────────────────────────────────────────
 // One place for every rule, so the app, the auctioneer and the WhatsApp group
@@ -43,7 +43,7 @@ export const AUCTION_RULES: RuleSection = {
     '**Base price is earned, not chosen.** It is graded automatically from your SCC Rankings rating — nobody picks their own slab.',
     `Grades: ${PRICE_TIERS.map(t => `**${t.emoji} ${t.label} ${formatPrice(t.price)}**`).join(' · ')}.`,
     'Played too few matches to be rated? You start at **Grade C** — the auction is where you fix that 😄',
-    `Bidding rises in **${formatPrice(BID_STEP_SMALL)}** steps below ${formatPrice(100)}, and **${formatPrice(BID_STEP_BIG)}** steps at ${formatPrice(100)} and above.`,
+    `Bidding rises in **${formatPrice(BID_STEPS[2].step)}** steps below ${formatPrice(100)}, **${formatPrice(BID_STEPS[1].step)}** from ${formatPrice(100)}, and **${formatPrice(BID_STEPS[0].step)}** at ${formatPrice(200)} and above.`,
     'Your **one-liner is read out** before bidding opens. Make it count 🗣️',
     'A captain **cannot bid** beyond what leaves enough purse to fill their remaining slots at base price.',
     'Every squad must contain **at least one wicket-keeper**.',

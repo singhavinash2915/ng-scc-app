@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
 import { useSCCLeague, AUCTION_SETS, tierForRating, formatPrice, PURSE_LAKH,
-  BID_STEP_SMALL, BID_STEP_BIG } from '../hooks/useSCCLeague';
+  BID_STEPS, bidStepFor } from '../hooks/useSCCLeague';
 import { SEASON_NEW } from '../config/season2';
 import type { Member } from '../types';
 
@@ -123,7 +123,7 @@ export function Auction() {
     poolOrder: [],
     budgetEach: PURSE_LAKH,   // ₹ LAKH, same units as the league base prices
     basePrice: 20,
-    bidIncrement: BID_STEP_SMALL,
+    bidIncrement: BID_STEPS[2].step,
   });
   const [picks, setPicks] = useState<Pick[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -231,7 +231,7 @@ export function Auction() {
   const bazSpent = bazPicks.reduce((s, p) => s + p.price, 0);
   const dhurBudget = config.budgetEach - dhurSpent;
   const bazBudget = config.budgetEach - bazSpent;
-  const nextBid = currentBid + (currentBid >= 100 ? BID_STEP_BIG : BID_STEP_SMALL);
+  const nextBid = currentBid + bidStepFor(currentBid);
   const dhurCanBid = dhurBudget >= nextBid;
   const bazCanBid = bazBudget >= nextBid;
 
@@ -246,7 +246,7 @@ export function Auction() {
   const remainingToAuction = totalToAuction - currentIdx;
 
   /** Steps widen once the bidding gets serious, so ₹1 Cr+ moves faster. */
-  const bidStep = currentBid >= 100 ? BID_STEP_BIG : BID_STEP_SMALL;
+  const bidStep = bidStepFor(currentBid);
 
   const placeBid = (team: Team) => {
     const newBid = currentBid + bidStep;

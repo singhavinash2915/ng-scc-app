@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { BID_STEP_SMALL, BID_STEP_BIG, PURSE_LAKH, bandForPrice } from './useSCCLeague';
+import { bidStepFor, PURSE_LAKH, bandForPrice } from './useSCCLeague';
 
 // ─── Live auction ──────────────────────────────────────────────────────────────
 // All state lives in the database so every member watching sees the same thing.
@@ -158,7 +158,7 @@ export function useAuctionLive(
     (t: TeamKey) => budget(t) - reserveFor(t),
     [budget, reserveFor],
   );
-  const bidStep = (auction?.current_bid ?? 0) >= 100 ? BID_STEP_BIG : BID_STEP_SMALL;
+  const bidStep = bidStepFor(auction?.current_bid ?? 0);
   /**
    * The FIRST bid is the base price itself, as in a real auction — the
    * auctioneer opens at base and a raised hand accepts it. Previously the
@@ -361,18 +361,77 @@ export function useAuctionLive(
    * gave 0 for an unsold player, so undoing an unsold pass restarted a ₹2 Cr
    * marquee name at the ₹20 L floor.
    */
+  /** Every bid on the player currently under the hammer, oldest first. */
+  const bidsOnCurrent = useMemo(
+    () => bids.filter(b => b.member_id === currentMemberId && b.round === round),
+    [bids, currentMemberId, round],
+  );
+
+  /**
+   * Take back the last BID — a mis-click on a team button, which is the mistake
+   * that actually happens when the auctioneer is calling a room. Undo used to
+   * only work at the level of a whole sale: the only way to unwind a stray bid
+   * was to sell or pass the player and then undo that, throwing away the entire
+   * bidding history and restarting him at base.
+   */
+  const undoBid = useCallback(async () => {
+    if (!auction || bidsOnCurrent.length === 0) return;
+    const last = bidsOnCurrent[bidsOnCurrent.length - 1];
+    const prev = bidsOnCurrent[bidsOnCurrent.length - 2];
+    await supabase.from('scc_auction_bids').delete().eq('id', last.id);
+    await patch({
+      // No earlier bid? Back to the opening call at base price, nobody leading.
+      current_bid: prev ? prev.amount : (basePriceOf?.(last.member_id) ?? auction.current_bid),
+      current_bidder: prev ? prev.team : null,
+    });
+  }, [auction, bidsOnCurrent, patch, basePriceOf]);
+
+  /**
+   * Reopen the last player who was resolved. This unwinds his WHOLE auction —
+   * the sale and every bid on him — and puts him back at base price, which is
+   * the point: it's for "that shouldn't have been sold", not "wrong number".
+   * For a stray bid use undoBid().
+   */
   const undo = useCallback(async (basePriceOf: (id: string) => number) => {
     if (!auction || picks.length === 0) return;
+
+    // The end-of-auction allocation is one action, so undo it as one — picking
+    // off a single auto-assigned player would leave the squads half-evened and
+    // the auction stuck between finished and not.
+    const allocatedPicks = picks.filter(p => p.round === 0 && p.team);
+    if (auction.status === 'done' && allocatedPicks.length > 0) {
+      await supabase.from('scc_auction_picks').delete()
+        .eq('season', season).in('id', allocatedPicks.map(p => p.id));
+      await patch({ status: 'live', current_bidder: null });
+      return;
+    }
+
     const last = [...picks].sort((a, b) => a.created_at.localeCompare(b.created_at)).pop()!;
-    await supabase.from('scc_auction_picks').delete().eq('id', last.id);
-    const backTo = auction.pool_order.indexOf(last.member_id);
+    await Promise.all([
+      supabase.from('scc_auction_picks').delete().eq('id', last.id),
+      // His bids have to go too. Left behind, they'd show up as a phantom trail
+      // on a player who is about to be auctioned again from scratch.
+      supabase.from('scc_auction_bids').delete()
+        .eq('season', season).eq('member_id', last.member_id).eq('round', round),
+    ]);
+
+    // A new unsold round rewrites pool_order to just the unsold names, so a
+    // player sold in an earlier round isn't in it any more. Undoing him without
+    // putting him back would drop him out of the auction altogether.
+    const inPool = auction.pool_order.indexOf(last.member_id);
+    const order = inPool >= 0
+      ? auction.pool_order
+      : [...auction.pool_order.slice(0, auction.current_idx), last.member_id,
+         ...auction.pool_order.slice(auction.current_idx)];
+
     await patch({
       status: 'live',
-      current_idx: backTo >= 0 ? backTo : Math.max(0, auction.current_idx - 1),
+      pool_order: order,
+      current_idx: inPool >= 0 ? inPool : auction.current_idx,
       current_bid: basePriceOf(last.member_id),
       current_bidder: null,
     });
-  }, [auction, picks, patch]);
+  }, [auction, picks, patch, season, round]);
 
   const start = useCallback(async (input: {
     team1Name: string; team2Name: string;
@@ -422,7 +481,8 @@ export function useAuctionLive(
   return {
     auction, picks, bids, sold, unsold, allocated, loading, tableMissing, trailFor,
     currentMemberId, bidStep, nextBid, canBid, maxBid, budget, spent, squad,
-    bid, sell, passOver, undo, start, reset, patch, hasSlot, captainCost, round, opening,
+    bid, sell, passOver, undo, undoBid, bidsOnCurrent, start, reset, patch,
+    hasSlot, captainCost, round, opening,
     refetch: fetchAll,
   };
 }

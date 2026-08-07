@@ -7,7 +7,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useMarketValue } from '../hooks/useMarketValue';
 import { useCricketStats } from '../hooks/useCricketStats';
-import { useSCCLeague, bandForPrice, tierForRating, formatPrice, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
+import { useSCCLeague, bandForPrice, DISPLAY_BANDS, tierForRating, formatPrice, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
 import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
 import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, LEAGUE_TEAM_NAMES, isLeagueCaptain } from '../config/season2';
 import type { Member } from '../types';
@@ -85,6 +85,13 @@ export function AuctionLive() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [A.currentMemberId, basePriceById],
   );
+  /** Everyone still to be auctioned this round, excluding whoever is on the block. */
+  const remaining = useMemo(
+    () => (a?.pool_order ?? []).filter(
+      id => id !== A.currentMemberId && !A.picks.some(p => p.member_id === id)),
+    [a?.pool_order, A.currentMemberId, A.picks],
+  );
+
   const teamName = (t: TeamKey) => (t === 'team1' ? a?.team1_name : a?.team2_name) || 'Team';
   const captainOf = (t: TeamKey) => (t === 'team1' ? a?.team1_captain_id : a?.team2_captain_id);
 
@@ -315,12 +322,80 @@ export function AuctionLive() {
                                font-black text-sm inline-flex items-center justify-center gap-1.5">
                     <X className="w-4 h-4" /> Unsold
                   </button>
-                  <button onClick={() => A.undo(baseOf)} disabled={A.picks.length === 0}
+                  {/* Two different mistakes, two different buttons. Taking back
+                      a stray tap on a team used to mean selling the player and
+                      undoing that — which threw away his whole auction. */}
+                  <button onClick={() => A.undoBid()} disabled={A.bidsOnCurrent.length === 0}
                     className="rounded-2xl py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white
                                font-black text-sm disabled:opacity-40 inline-flex items-center justify-center gap-1.5">
-                    <Undo2 className="w-4 h-4" /> Undo
+                    <Undo2 className="w-4 h-4" /> Take back bid
                   </button>
                 </div>
+                <button onClick={() => {
+                  const last = [...A.picks].sort((x, y) => x.created_at.localeCompare(y.created_at)).pop();
+                  const who = last ? memberById[last.member_id]?.name ?? 'that player' : '';
+                  if (confirm(`Reopen ${who}? This cancels the sale and every bid on him — he restarts at base price.`)) {
+                    A.undo(baseOf);
+                  }
+                }} disabled={A.picks.length === 0}
+                  className="w-full rounded-2xl py-2.5 border-2 border-rose-200 dark:border-rose-400/30
+                             text-rose-600 dark:text-rose-300 font-black text-[12px] disabled:opacity-40
+                             inline-flex items-center justify-center gap-1.5">
+                  <Undo2 className="w-3.5 h-3.5" /> Reopen the last player
+                </button>
+              </div>
+            )}
+
+            {/* ── STILL TO COME ────────────────────────────────────────────
+                Captains were bidding blind: with no idea who was left, nobody
+                could tell whether to fight for this player or save for a better
+                one. Grouped by set, and the draw is random within a set, so
+                this tells you WHO is coming without giving away the order. */}
+            {a.status === 'live' && remaining.length > 0 && (
+              <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+                              dark:border-white/10 p-4">
+                <div className="flex items-baseline justify-between mb-3">
+                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                    Still to come
+                  </h3>
+                  <span className="text-[11px] font-bold text-slate-400">
+                    {remaining.length} player{remaining.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {DISPLAY_BANDS.map(band => {
+                    const inBand = remaining.filter(id => bandForPrice(baseOf(id)).key === band.key);
+                    if (inBand.length === 0) return null;
+                    return (
+                      <div key={band.key}>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                          {band.emoji} {band.label} · {inBand.length}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {inBand
+                            .map(id => ({ id, name: memberById[id]?.name ?? '?', p: baseOf(id) }))
+                            .sort((x, y) => y.p - x.p || x.name.localeCompare(y.name))
+                            .map(x => (
+                              <span key={x.id}
+                                className="inline-flex items-center gap-1 rounded-lg bg-slate-100
+                                           dark:bg-white/10 px-2 py-1 text-[11px] font-bold
+                                           text-slate-700 dark:text-white/80">
+                                {x.name}
+                                <span className="text-slate-400 font-black">{formatPrice(x.p)}</span>
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {A.unsold.length > 0 && (
+                  <p className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/10
+                                text-[11px] text-amber-600 font-bold">
+                    ↻ {A.unsold.length} passed over — {A.unsold.length > 1 ? 'they come' : 'he comes'} back
+                    at base price in the next round
+                  </p>
+                )}
               </div>
             )}
 
