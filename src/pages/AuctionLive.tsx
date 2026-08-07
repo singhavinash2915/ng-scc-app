@@ -9,7 +9,7 @@ import { useMarketValue } from '../hooks/useMarketValue';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useSCCLeague, bandForPrice, DISPLAY_BANDS, tierForRating, formatPrice, PURSE_LAKH, SQUAD_SIZE } from '../hooks/useSCCLeague';
 import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
-import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, LEAGUE_TEAM_NAMES, isLeagueCaptain } from '../config/season2';
+import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, LEAGUE_TEAM_NAMES, AUCTION_RUNNING_ORDER, isLeagueCaptain } from '../config/season2';
 import type { Member } from '../types';
 
 // ─── SCC League — live auction ─────────────────────────────────────────────────
@@ -74,7 +74,11 @@ export function AuctionLive() {
     return m;
   }, [values, members, league.registrations]);
   const baseOf = useCallback((id: string) => basePriceById[id] ?? 20, [basePriceById]);
-  const A = useAuctionLive(season, { basePriceOf: baseOf });
+  // The rehearsal uses the SAME running order as the real night. A dry run that
+  // draws in a different sequence isn't rehearsing the thing you're about to do,
+  // and it leaves the scripted order itself untested until it matters.
+  const runningOrder = AUCTION_RUNNING_ORDER;
+  const A = useAuctionLive(season, { basePriceOf: baseOf, runningOrder });
 
   const a = A.auction;
   const current = A.currentMemberId ? memberById[A.currentMemberId] : undefined;
@@ -261,7 +265,7 @@ export function AuctionLive() {
         {!A.loading && !a && (
           <SetupCard
             league={league} memberById={memberById} baseOf={baseOf}
-            isAdmin={isAdmin} onStart={A.start}
+            isAdmin={isAdmin} runningOrder={runningOrder} onStart={A.start}
           />
         )}
 
@@ -608,11 +612,13 @@ function Stat({ v, l }: { v: number; l: string }) {
 }
 
 // ─── Setup ─────────────────────────────────────────────────────────────────────
-function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
+function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart }: {
   league: ReturnType<typeof useSCCLeague>;
   memberById: Record<string, Member>;
   baseOf: (id: string) => number;
   isAdmin: boolean;
+  /** Scripted opening sequence; empty for a rehearsal. */
+  runningOrder: readonly string[];
   onStart: ReturnType<typeof useAuctionLive>['start'];
 }) {
   const [t1, setT1] = useState<string>(LEAGUE_TEAM_NAMES.team1);
@@ -641,14 +647,20 @@ function SetupCard({ league, memberById, baseOf, isAdmin, onStart }: {
 
   const go = async () => {
     if (!c1 || !c2 || c1 === c2) { setErr('Pick two different captains'); return; }
-    const order = pool.filter(id => id !== c1 && id !== c2)
-      // Icons first, shuffled within each band — the big names sell while every
-      // purse is still full. Banded, not priced: sorting on raw price would put
-      // the ₹2 Cr names ahead of the ₹1 Cr ones inside a set that everyone sees
-      // as one group, so the running order would just mirror the squad list.
-      .map(id => ({ id, p: bandForPrice(baseOf(id)).minPrice, r: Math.random() }))
-      .sort((x, y) => y.p - x.p || x.r - y.r)
-      .map(x => x.id);
+    const inPool = pool.filter(id => id !== c1 && id !== c2);
+    // Anyone with a scripted slot leads, in exactly that order.
+    const scripted = runningOrder.filter(id => inPool.includes(id));
+    const order = [
+      ...scripted,
+      // The rest: Icons first, shuffled within each band — the big names sell
+      // while every purse is still full. Banded, not priced: sorting on raw
+      // price would put the ₹2 Cr names ahead of the ₹1 Cr ones inside a set
+      // everyone sees as one group, so the order would mirror the squad list.
+      ...inPool.filter(id => !scripted.includes(id))
+        .map(id => ({ id, p: bandForPrice(baseOf(id)).minPrice, r: Math.random() }))
+        .sort((x, y) => y.p - x.p || x.r - y.r)
+        .map(x => x.id),
+    ];
     if (order.length < 2) { setErr('Need at least 2 players in the pool'); return; }
     setBusy(true);
     const e = await onStart({

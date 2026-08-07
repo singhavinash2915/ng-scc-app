@@ -52,9 +52,15 @@ const isMissing = (e: { code?: string; message: string } | null) =>
 
 export function useAuctionLive(
   season: string,
-  opts: { live?: boolean; basePriceOf?: (id: string) => number } = {},
+  opts: {
+    live?: boolean;
+    basePriceOf?: (id: string) => number;
+    /** Fixed running order. Anyone listed comes up in this exact sequence
+     *  before the random draw takes over. Empty = fully random. */
+    runningOrder?: readonly string[];
+  } = {},
 ) {
-  const { live = true, basePriceOf } = opts;
+  const { live = true, basePriceOf, runningOrder = [] } = opts;
   const [auction, setAuction] = useState<AuctionRow | null>(null);
   const [picks, setPicks] = useState<Pick[]>([]);
   const [bids, setBids] = useState<Bid[]>([]);
@@ -227,6 +233,10 @@ export function useAuctionLive(
    */
   const drawFrom = useCallback((ids: string[], priceOf: (id: string) => number) => {
     if (ids.length === 0) return null;
+    // A hand-picked running order wins over the draw: the auctioneer wants the
+    // marquee names to land in a particular sequence, and the tail left random.
+    const scripted = runningOrder.find(id => ids.includes(id));
+    if (scripted) return scripted;
     // Group by the DISPLAY band, not the raw base price. Everyone sees Marquee
     // and Grade A merged into one SCC Icons set, but drawing on exact price
     // made both ₹2 Cr names come up before all five ₹1 Cr ones, every time —
@@ -235,7 +245,7 @@ export function useAuctionLive(
     const top = Math.max(...ids.map(band));
     const inSet = ids.filter(id => band(id) === top);
     return inSet[Math.floor(Math.random() * inSet.length)];
-  }, []);
+  }, [runningOrder]);
 
   /**
    * Move to the next name.
