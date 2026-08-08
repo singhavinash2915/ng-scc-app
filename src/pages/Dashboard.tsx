@@ -1,26 +1,28 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Users, Calendar, TrendingUp, Trophy, AlertCircle, ChevronRight,
-  IndianRupee, UserPlus, Swords,
-  MessageCircle, Flame, MapPin, Activity, Crown, Radio,
+  Users, Calendar, TrendingUp, Trophy, ChevronRight,
+  IndianRupee, Swords,
+  Flame, MapPin, Activity, Crown, Radio,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
+import { MahaSangramCard } from '../components/MahaSangramCard';
+import { ExploreGrid } from '../components/ExploreGrid';
 import { AccentSwitcher } from '../components/AccentSwitcher';
 import { PremiumHero } from '../components/PremiumHero';
 import { SCCLeagueBanner } from '../components/SCCLeagueBanner';
 import { AuctionLiveBanner } from '../components/AuctionLiveBanner';
 import { AuctionPoster } from '../components/AuctionPoster';
-import { CalendarWidget } from '../components/CalendarWidget';
+
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
 import { BirthdayBanner } from '../components/BirthdayBanner';
-import { BirthdayBoard } from '../components/BirthdayBoard';
+
 import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
-import { AnnouncementWall } from '../components/AnnouncementWall';
-import { GroundOpponentInsights } from '../components/GroundOpponentInsights';
-import { MatchCentreCard } from '../components/MatchCentreCard';
-import { DashboardWrappedBanner } from '../components/DashboardWrappedBanner';
+
+
+
+
 import { ElClasicoChampionBanner } from '../components/ElClasicoChampionBanner';
 import { useWeather } from '../hooks/useWeather';
 import { useLiveScore } from '../hooks/useLiveScore';
@@ -39,7 +41,6 @@ import { usePlayerOfPeriod } from '../hooks/usePlayerOfPeriod';
 import { useMatchMemories } from '../hooks/useMatchMemories';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useMonthSummary } from '../hooks/useMonthSummary';
-import { useAuth } from '../context/AuthContext';
 
 // Lazy-loaded heavy components (photos, sponsor data load on-demand)
 const DashboardStars = lazy(() => import('../components/DashboardStars'));
@@ -91,9 +92,8 @@ export function Dashboard() {
   const { activeCount, isActive } = useMemberActivity(members, matches);
   const league = useSeasonLeague();
   const liveStream = useLiveStream();
-  const nextLeagueFixture = league.upcoming[0] ?? null;
   // Match Day mode — an upcoming match dated today takes over the top banner
-  const { todaysMatch, daysToKickoff } = useMemo(() => {
+  const { todaysMatch } = useMemo(() => {
     const now = new Date();
     const today = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
     const tm = matches.find(m => m.result === 'upcoming' && m.date === today) ?? null;
@@ -117,7 +117,6 @@ export function Dashboard() {
   // If a match was played in the last 7 days, show "of the Week"; else "of the Month"
   const featuredPlayer = playerOfWeek || playerOfMonth;
   const featuredLabel = playerOfWeek ? 'Player of the Week' : 'Player of the Month';
-  const { isAdmin } = useAuth();
   const { getPendingCount } = useRequests();
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
@@ -147,11 +146,7 @@ export function Dashboard() {
     return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount };
   }, [members, matches, getPendingCount, activeCount]);
 
-  const recentMatches = useMemo(() =>
-    matches.filter(m => m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result)).slice(0, 5),
-  [matches]);
   const allLowBalanceMembers = useMemo(() => members.filter(m => isActive(m.id) && m.balance < 1000), [members, isActive]);
-  const lowBalanceMembers = useMemo(() => allLowBalanceMembers.slice(0, 5), [allLowBalanceMembers]);
 
   const latestWonMatch = useMemo(() => matches.find(m => m.result === 'won' && m.man_of_match), [matches]);
   const showManOfMatch = useMemo(() => {
@@ -411,18 +406,6 @@ export function Dashboard() {
             </div>
           </div>
         )}
-
-        {/* ── ANNOUNCEMENT WALL ────────────────────────────────────────── */}
-        <AnnouncementWall />
-
-        {/* ── TEAM PHOTO CAROUSEL (lazy) ─────────────────────────────────── */}
-        {/* Showcase recent team match photos near the top of the dashboard. */}
-        {showDeferred && (
-          <Suspense fallback={null}>
-            <DashboardDeferred section="photos" />
-          </Suspense>
-        )}
-
 
         {/* ── BENTO GRID ────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 auto-rows-[minmax(120px,auto)]">
@@ -696,19 +679,6 @@ export function Dashboard() {
 
         </div>
 
-        {/* ── SEASON WRAPPED — personal season story ─────────────────── */}
-        <DashboardWrappedBanner />
-
-        {/* ── MATCH CENTRE — pre-match analytics for the next match ───── */}
-        {nextUpcomingMatch && (
-          <MatchCentreCard
-            nextMatch={nextUpcomingMatch}
-            matches={matches}
-            members={members}
-            cricketStats={cricketStats}
-          />
-        )}
-
         {/* ── LAST MATCH SUMMARY + ON THIS DAY ────────────────────────── */}
         {(lastAnyCompletedMatch || memories.length > 0) && (
           <div className={`grid grid-cols-1 gap-4 ${lastAnyCompletedMatch && memories.length > 0 ? 'lg:grid-cols-3' : ''}`}>
@@ -757,9 +727,6 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* ── BIRTHDAYS ─────────────────────────────────────────────────── */}
-        <BirthdayBoard members={members} />
-
         {/* ── SEASON STARS (lazy — loads cricketStats on demand) ────────── */}
         {showDeferred && (
           <Suspense fallback={null}>
@@ -767,7 +734,11 @@ export function Dashboard() {
           </Suspense>
         )}
 
-        {/* ── INTERNAL BATTLE ─────────────────────── */}
+        {/* ── MAHASANGRAM — this season's internal competition ─────────── */}
+        <MahaSangramCard matches={matches} />
+
+        {/* ── INTERNAL BATTLE — the older Dhurandars/Bazigars rivalry, kept
+             as its own separate record ─────────────────────────────────── */}
         {internalMatchStats.total > 0 && (
           <div className="dark relative overflow-hidden rounded-2xl shadow-xl bg-[#0c1322] border border-white/10">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600/25 via-transparent to-purple-600/25" />
@@ -910,190 +881,11 @@ export function Dashboard() {
           </Link>
         )}
 
-        {/* ── SEASON KICKOFF banner ───────────────────────────────────── */}
-        {nextLeagueFixture && !todaysMatch && (
-          <Link to="/kickoff" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
-            style={{ background: 'linear-gradient(110deg,#065f46,#059669 55%,#0ea5e9)' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl">🚀</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-base leading-tight truncate">
-                  Season 2026-27 kicks off in {daysToKickoff} days 🚀
-                </p>
-                <p className="text-white/90 text-xs font-medium">Predictions, fantasy draft, goals & market values — get season-ready</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </Link>
-        )}
-
-        {/* ── SEASON CHAMPIONS banner ─────────────────────────────────── */}
-        <Link to="/awards" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
-          style={{ background: 'linear-gradient(110deg,#b45309,#f59e0b 55%,#fde68a)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl">🏆</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-black text-base leading-tight truncate">Season 2025-26 Champions 🏆</p>
-              <p className="text-white/90 text-xs font-medium">The Awards Night winners are in — tap to celebrate</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-        </Link>
-
-        {/* ── SEASON LEAGUE banner ────────────────────────────────────── */}
-        {league.totalFixtures > 0 && (
-          <Link to="/league" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
-            style={{ background: 'linear-gradient(110deg,#78350f,#b45309 55%,#f59e0b)' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 text-xl">🏆</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-base leading-tight truncate">{league.name}</p>
-                <p className="text-white/80 text-xs font-medium">
-                  {league.played.length > 0
-                    ? `${league.won}W · ${league.lost}L · ${league.winPct}% win · ${league.points} pts`
-                    : `${league.totalFixtures} fixtures this season`}
-                  {nextLeagueFixture && ` · Next: vs ${nextLeagueFixture.opponent || 'TBD'}`}
-                </p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </Link>
-        )}
-
-        {/* ── RECENT MATCHES + LOW BALANCE ────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-          {/* Recent Matches */}
-          <div className="glass rounded-2xl overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-slate-200 dark:border-white/8 flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
-                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                Recent Matches
-              </h3>
-              <Link to="/matches" className="text-[11px] text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:text-gray-300 flex items-center gap-0.5 font-semibold transition-colors group">
-                All <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </div>
-            {recentMatches.length === 0 ? (
-              <p className="p-6 text-center text-slate-300 dark:text-gray-600 text-sm">No matches yet</p>
-            ) : (
-              <div className="divide-y divide-white/5">
-                {recentMatches.map(match => (
-                  <div key={match.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${
-                      match.result === 'won'  ? 'bg-emerald-600' :
-                      match.result === 'lost' ? 'bg-red-700' :
-                      match.result === 'draw' ? 'bg-amber-600' : 'bg-gray-700'
-                    }`}>
-                      {match.result === 'upcoming' ? '⏳' : match.result === 'won' ? 'W' : match.result === 'lost' ? 'L' : 'D'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-800 dark:text-white text-sm truncate">
-                        {match.match_type === 'internal' ? 'Dhurandars vs Bazigars' : `vs ${match.opponent || 'TBD'}`}
-                      </p>
-                      <p className="text-[11px] text-slate-300 dark:text-gray-600 truncate">
-                        {match.venue && `${match.venue} · `}
-                        {new Date(match.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                      </p>
-                    </div>
-                    {match.our_score && (
-                      <span className="text-xs font-semibold text-slate-400 dark:text-gray-500 flex-shrink-0 tabular-nums">{match.our_score}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Low Balance Alert */}
-          <div className="glass rounded-2xl overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-slate-200 dark:border-white/8 flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
-                <AlertCircle className="w-3.5 h-3.5 text-yellow-500" />
-                Low Balance
-                {allLowBalanceMembers.length > 0 && (
-                  <span className="px-1.5 py-0.5 bg-red-500/80 text-white text-[9px] font-black rounded-full">{allLowBalanceMembers.length}</span>
-                )}
-              </h3>
-              <div className="flex items-center gap-2">
-                {isAdmin && allLowBalanceMembers.length > 0 && (
-                  <button onClick={() => setShowWhatsAppModal(true)} className="text-emerald-500 hover:text-emerald-400 transition-colors" title="WhatsApp Reminders">
-                    <MessageCircle className="w-4 h-4" />
-                  </button>
-                )}
-                <Link to="/members" className="text-[11px] text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:text-gray-300 flex items-center gap-0.5 font-semibold transition-colors group">
-                  All <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              </div>
-            </div>
-            {lowBalanceMembers.length === 0 ? (
-              <div className="p-6 text-center">
-                <div className="w-10 h-10 rounded-full bg-emerald-900/30 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2">
-                  <TrendingUp className="w-5 h-5 text-emerald-500" />
-                </div>
-                <p className="text-sm text-slate-300 dark:text-gray-600">All members have sufficient balance 🎉</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-white/5">
-                {lowBalanceMembers.map(member => (
-                  <div key={member.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/3 transition-colors">
-                    {member.avatar_url ? (
-                      <img src={member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-slate-200 dark:border-white/10" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-800 border border-slate-200 dark:border-white/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-slate-500 dark:text-gray-400">{member.name.charAt(0)}</span>
-                      </div>
-                    )}
-                    <p className="font-medium text-slate-800 dark:text-white text-sm flex-1 truncate">{member.name}</p>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${
-                      member.balance < 0
-                        ? 'bg-red-500/15 text-red-400 border border-red-500/20'
-                        : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                    }`}>
-                      ₹{member.balance.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* (Photo gallery moved up — see "TEAM PHOTO CAROUSEL" above) */}
-
-        {/* ── CALENDAR ────────────────────────────── */}
-        <CalendarWidget matches={matches} />
-
-        {/* ── GROUND & OPPONENT INSIGHTS ───────────────────────────────── */}
-        {matches.length > 0 && (
-          <div className="glass rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-bold text-gray-400 dark:text-slate-400 dark:text-gray-500 uppercase tracking-[2px]">Ground & Opponent Insights</p>
-              <a href="/analytics" className="text-xs text-primary-600 dark:text-primary-400 font-semibold hover:underline">Full analysis →</a>
-            </div>
-            <GroundOpponentInsights matches={matches} compact />
-          </div>
-        )}
-
         {/* ── SQUAD POLL ───────────────────────────────────────────────── */}
         <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
 
-        {/* ── JOIN CLUB BANNER ────────────────────── */}
-        <Link to="/requests">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-500 via-primary-600 to-emerald-500 shadow-lg group">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-            <div className="relative flex items-center gap-4 p-4 lg:p-5">
-              <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm flex-shrink-0">
-                <UserPlus className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1 text-white min-w-0">
-                <h3 className="font-bold text-sm lg:text-base">Want to Join Sangria Cricket Club?</h3>
-                <p className="text-primary-100 text-xs mt-0.5">Submit your membership request — we'd love to have you!</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-white/70 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-            </div>
-          </div>
-        </Link>
+        {/* ── EXPLORE — everything that used to be inlined above ──────── */}
+        <ExploreGrid />
 
         {/* ── SPONSOR (always at bottom) ─────────── */}
         {showDeferred && (
