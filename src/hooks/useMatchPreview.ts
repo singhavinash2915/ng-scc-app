@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { Match, Member } from '../types';
 import { useHeadToHead } from './useHeadToHead';
 import { normalizeVenue } from '../utils/normalizeVenue';
+import { internalSides, type InternalSides } from '../utils/internalTeams';
 
 // Minimal shape we need from member_cricket_stats rows.
 export interface PreviewStatRow {
@@ -77,6 +78,9 @@ function clamp(n: number, lo: number, hi: number) {
  * venue record, win probability, key players, and the community prediction.
  * Pure compute over data the dashboard already loads.
  */
+/** The original Dhurandars vs Bazigars fixture, as opposed to MahaSangram. */
+const isLegacyRivalry = (s: InternalSides) => /dhurandar/i.test(s.home) || /bazigar/i.test(s.away);
+
 export function useMatchPreview(
   nextMatch: Match | null,
   matches: Match[],
@@ -96,9 +100,14 @@ export function useMatchPreview(
       ['won', 'lost', 'draw'].includes(m.result)
     );
 
-    // ── Internal "El Clasico" rivalry (Dhurandhars vs Baazigars) ──────────────
+    // ── Internal rivalry head-to-head ─────────────────────────────────────
+    // Only for the ORIGINAL Dhurandars vs Bazigars fixture. The record is
+    // counted from winning_team, which only ever holds those two values, so a
+    // MahaSangram tie would otherwise display another competition's 5–4 under
+    // the Brahmos and Agni names — real numbers, wrong teams, which is worse
+    // than showing none.
     let internalH2H: MatchPreview['internalH2H'] = null;
-    if (isInternal) {
+    if (isInternal && isLegacyRivalry(internalSides(nextMatch))) {
       const internalDecided = matches
         .filter(m => m.match_type === 'internal'
           && ['won', 'lost', 'draw'].includes(m.result)
@@ -164,17 +173,25 @@ export function useMatchPreview(
       ? ` We average ${avgRunsUs} to their ${avgRunsThem}.`
       : '';
     if (isInternal) {
+      /**
+       * Two internal competitions now share match_type='internal'. The names
+       * come off the fixture, and the head-to-head only applies when this IS
+       * the old rivalry — internalH2H counts wins by dhurandars/bazigars, so
+       * quoting it on a MahaSangram tie would report another competition's
+       * record under the wrong two teams.
+       */
+      const sides = internalSides(nextMatch);
       const h = internalH2H;
       if (h && h.played > 0) {
         if (h.dhur === h.baz) {
-          storyline = `El Clásico, dead level — Dhurandhars and Baazigars locked ${h.dhur}–${h.baz} from ${h.played}. Whoever wins tomorrow takes the bragging rights. 🔥`;
+          storyline = `${sides.home} and ${sides.away} are locked ${h.dhur}–${h.baz} from ${h.played}. Whoever wins takes the bragging rights. 🔥`;
         } else {
-          const leadName = h.dhur > h.baz ? 'Dhurandhars' : 'Baazigars';
-          const trailName = h.dhur > h.baz ? 'Baazigars' : 'Dhurandhars';
-          storyline = `El Clásico — ${leadName} lead the rivalry ${Math.max(h.dhur, h.baz)}–${Math.min(h.dhur, h.baz)}. Can ${trailName} hit back, or do ${leadName} pull clear? 🔥`;
+          const leadName = h.dhur > h.baz ? sides.home : sides.away;
+          const trailName = h.dhur > h.baz ? sides.away : sides.home;
+          storyline = `${leadName} lead the rivalry ${Math.max(h.dhur, h.baz)}–${Math.min(h.dhur, h.baz)}. Can ${trailName} hit back, or do ${leadName} pull clear? 🔥`;
         }
       } else {
-        storyline = `El Clásico — Dhurandhars vs Baazigars. Bragging rights on the line. No mercy, no excuses. 🔥`;
+        storyline = `${sides.home} vs ${sides.away}. Bragging rights on the line. No mercy, no excuses. 🔥`;
       }
     } else if (firstMeeting) {
       storyline = `First-ever meeting with ${opponent} — no history, everything to play for.`;

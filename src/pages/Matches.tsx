@@ -38,6 +38,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useMatchVideos } from '../hooks/useMatchVideos';
 import { MatchVideos } from '../components/MatchVideos';
+import { internalSides } from '../utils/internalTeams';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
 import { PollSummaryBadge } from '../components/PollSummaryBadge';
@@ -851,12 +852,9 @@ export function Matches() {
                       {match.match_type === 'internal' ? (
                         <h3 className="font-semibold text-gray-900 dark:text-white">
                           {/* Two internal rivalries now share this match type, so
-                              the title can't be hard-coded to Dhurandars vs
-                              Bazigars — a MahaSangram fixture was showing under
-                              the wrong teams entirely. */}
-                          {match.opponent?.trim()
-                            ? match.opponent
-                            : '🦁 Dhurandars vs Bazigars 🐅'}
+                              the title can't be hard-coded — a MahaSangram
+                              fixture was showing under the wrong teams. */}
+                          {internalSides(match).label}
                         </h3>
                       ) : (
                         <h3 className="font-semibold text-gray-900 dark:text-white">

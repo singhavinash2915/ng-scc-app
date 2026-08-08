@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import type { Match } from '../types';
 import { MatchScorecardModal } from './MatchScorecardModal';
 import { useFullScorecard } from '../hooks/useFullScorecard';
+import { internalSides } from '../utils/internalTeams';
 
 interface Props {
   match: Match;
@@ -47,7 +48,9 @@ export function MatchSummaryCard({ match }: Props) {
   // Pre-fetch scorecard data so we can show highlights in the card itself
   const { data: scorecard } = useFullScorecard(match.ch_match_id);
   const matchLabel = isInternal
-    ? 'Dhurandars vs Bazigars'
+    // Read the two sides off the fixture — MahaSangram and the old rivalry are
+    // both match_type='internal', so a fixed label mislabels one of them.
+    ? internalSides(match).label
     : `SCC vs ${match.opponent ?? 'TBD'}`;
 
   return (

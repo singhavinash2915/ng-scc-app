@@ -6,6 +6,7 @@ import { Select } from './ui/Input';
 import { usePredictions, type PredictionInput, type PredictionWinner } from '../hooks/usePredictions';
 import { useMembers } from '../hooks/useMembers';
 import type { Match } from '../types';
+import { internalSides } from '../utils/internalTeams';
 
 interface Props {
   isOpen: boolean;
@@ -228,7 +229,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
         <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Next Match</p>
         <p className="text-base font-black text-gray-900 dark:text-white mt-0.5">
           {isInternal
-            ? 'Dhurandars vs Bazigars'
+            ? internalSides(match).label
             : <>SCC vs <span className="text-emerald-600 dark:text-emerald-400">{match.opponent || 'TBD'}</span></>
           }
         </p>

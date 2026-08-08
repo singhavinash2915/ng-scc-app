@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Swords, TrendingUp, MapPin, Crown, Target, Activity, BarChart3, ChevronRight } from 'lucide-react';
 import { useMatchPreview, type PreviewStatRow } from '../hooks/useMatchPreview';
+import { internalSides } from '../utils/internalTeams';
 import { usePredictions } from '../hooks/usePredictions';
 import type { Match, Member } from '../types';
 
@@ -45,6 +46,11 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
     internalH2H,
   } = preview;
 
+  // Team names come from the fixture itself. Two internal competitions now share
+  // match_type='internal', so hard-coding one pair labelled the other wrong — a
+  // MahaSangram match was showing as Dhurandhars vs Baazigars.
+  const sides = internalSides(nextMatch);
+
   return (
     <div
       className="w-full relative overflow-hidden rounded-2xl p-5 lg:p-6 shadow-2xl"
@@ -71,13 +77,13 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       {/* Teams */}
       <div className="relative flex items-center justify-center gap-3 mb-4">
         <span className={`text-lg lg:text-xl font-black text-right flex-1 truncate ${isInternal ? 'text-rose-300' : 'text-white'}`}>
-          {isInternal ? 'Dhurandhars' : 'Sangria CC'}
+          {isInternal ? sides.home : 'Sangria CC'}
         </span>
         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/8 border border-white/15 flex-shrink-0">
           <Swords className="w-4 h-4 text-violet-300" />
         </div>
         <span className={`text-lg lg:text-xl font-black text-left flex-1 truncate ${isInternal ? 'text-sky-300' : 'bg-gradient-to-r from-violet-300 to-emerald-300 bg-clip-text text-transparent'}`}>
-          {isInternal ? 'Baazigars' : opponent}
+          {isInternal ? sides.away : opponent}
         </span>
       </div>
 
@@ -99,12 +105,12 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
             <div className="flex items-center justify-between mb-2">
               <div className="text-center flex-1">
                 <p className="text-rose-300 text-3xl font-black tabular-nums leading-none">{dhur}</p>
-                <p className="text-rose-300/70 text-[9px] font-bold uppercase tracking-wider mt-1">Dhurandhars</p>
+                <p className="text-rose-300/70 text-[9px] font-bold uppercase tracking-wider mt-1">{sides.home}</p>
               </div>
               <span className="text-white/30 text-lg font-black px-2">–</span>
               <div className="text-center flex-1">
                 <p className="text-sky-300 text-3xl font-black tabular-nums leading-none">{baz}</p>
-                <p className="text-sky-300/70 text-[9px] font-bold uppercase tracking-wider mt-1">Baazigars</p>
+                <p className="text-sky-300/70 text-[9px] font-bold uppercase tracking-wider mt-1">{sides.away}</p>
               </div>
             </div>
             {/* rivalry meter */}
@@ -124,7 +130,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
               {lastWinner && (
                 <span className="text-[10px] font-semibold text-white/50">
                   Last: <span className={lastWinner === 'dhurandars' ? 'text-rose-300' : 'text-sky-300'}>
-                    {lastWinner === 'dhurandars' ? 'Dhurandhars' : 'Baazigars'}
+                    {lastWinner === 'dhurandars' ? sides.home : sides.away}
                   </span>
                 </span>
               )}

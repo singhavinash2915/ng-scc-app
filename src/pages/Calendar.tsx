@@ -17,6 +17,7 @@ import { Button } from '../components/ui/Button';
 import { useMatches } from '../hooks/useMatches';
 import { useAuth } from '../context/AuthContext';
 import type { Match } from '../types';
+import { internalSides } from '../utils/internalTeams';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -331,7 +332,7 @@ export function Calendar() {
                           <div>
                             <p className="font-semibold text-gray-900 dark:text-white">
                               {match.match_type === 'internal'
-                                ? 'Dhurandars vs Bazigars'
+                                ? internalSides(match).label
                                 : `vs ${match.opponent || 'TBD'}`}
                             </p>
                             {match.match_type === 'internal' && (
