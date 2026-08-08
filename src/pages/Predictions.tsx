@@ -15,6 +15,7 @@ import { deriveOutcome, PREDICTION_POINTS } from '../lib/predictionScorer';
 import { PredictMatchModal } from '../components/PredictMatchModal';
 import type { Match } from '../types';
 import type { MatchScorecard } from '../hooks/useMatchScorecard';
+import { internalSides } from '../utils/internalTeams';
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -335,7 +336,7 @@ export function Predictions() {
                         <p className="text-[10px] font-bold uppercase tracking-widest text-purple-500">{fmtDate(m.date)}</p>
                         <h4 className="text-lg font-black text-gray-900 dark:text-white mt-0.5">
                           {m.match_type === 'internal'
-                            ? 'Dhurandars vs Bazigars'
+                            ? internalSides(m).label
                             : <>SCC vs <span className="text-emerald-600 dark:text-emerald-400">{m.opponent || 'TBD'}</span></>
                           }
                         </h4>
@@ -611,7 +612,7 @@ export function Predictions() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                              {match.match_type === 'internal' ? 'Dhurandars vs Bazigars' : `vs ${match.opponent || 'TBD'}`}
+                              {match.match_type === 'internal' ? internalSides(match).label : `vs ${match.opponent || 'TBD'}`}
                             </p>
                             <p className="text-[11px] text-gray-500 dark:text-gray-400">
                               {fmtDate(match.date)} · 🎰 {picks.length} prediction{picks.length === 1 ? '' : 's'}

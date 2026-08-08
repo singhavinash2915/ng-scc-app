@@ -77,7 +77,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { to: '/members', icon: Users, label: 'Members' },
               { to: '/matches', icon: Calendar, label: 'Matches' },
               { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
-              { to: '/scc-league', icon: Gavel, label: 'SCC League' },
+              { to: '/scc-mahasangram', icon: Gavel, label: 'MahaSangram' },
               { to: '/awards', icon: Award, label: 'Season Awards' },
               { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
               { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },

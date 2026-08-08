@@ -4,6 +4,7 @@ import { CalendarDays, MapPin, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from './ui/Card';
 import { Badge } from './ui/Badge';
 import type { Match } from '../types';
+import { internalSides } from '../utils/internalTeams';
 
 interface CalendarWidgetProps {
   matches: Match[];
@@ -105,7 +106,7 @@ export function CalendarWidget({ matches }: CalendarWidgetProps) {
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900 dark:text-white truncate">
                         {match.match_type === 'internal'
-                          ? 'Dhurandars vs Bazigars'
+                          ? internalSides(match).label
                           : `vs ${match.opponent || 'TBD'}`}
                       </p>
                       {match.match_type === 'internal' && (

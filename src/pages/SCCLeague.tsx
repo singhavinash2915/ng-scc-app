@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Gavel, UserMinus, ScrollText, ChevronDown, Crown, Trophy, ExternalLink, Wallet } from 'lucide-react';
+import { Gavel, UserMinus, ScrollText, ChevronDown, Crown, Trophy, ExternalLink, Wallet, CalendarDays } from 'lucide-react';
 import { Header } from '../components/layout/Header';
+import { TeamCrest } from '../components/TeamCrest';
+import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import {
   useSCCLeague, PURSE_LAKH, SQUAD_SIZE, SQUAD_TARGET, formatPrice,
@@ -16,7 +18,6 @@ import type { Member } from '../types';
 // the rules everyone agreed to. No forms, no ballots.
 
 const TEAM_COLOR: Record<TeamKey, string> = { team1: '#2a78d6', team2: '#eb6834' };
-const TEAM_EMOJI: Record<TeamKey, string> = { team1: '🦁', team2: '🐅' };
 
 function Avatar({ member, size = 44, ring }: { member?: Member; size?: number; ring?: string }) {
   return member?.avatar_url ? (
@@ -85,12 +86,32 @@ export function SCCLeague() {
     [A.sold, memberById],
   );
 
+  /**
+   * MahaSangram fixtures, pulled from the same `matches` table the rest of the
+   * app uses — the CricHeroes sync writes them in as internal matches. Kept
+   * apart from the older Dhurandars/Bazigars games, which are their own rivalry.
+   */
+  const { matches } = useMatches();
+  const fixtures = useMemo(
+    () => matches
+      .filter(m => m.match_type === 'internal' &&
+        /brahmos|agni|mahasangram/i.test(m.opponent ?? ''))
+      .sort((a, b) => {
+        const aUp = a.result === 'upcoming', bUp = b.result === 'upcoming';
+        if (aUp !== bUp) return aUp ? -1 : 1;
+        const ta = new Date(a.date).getTime(), tb = new Date(b.date).getTime();
+        return aUp ? ta - tb : tb - ta;
+      }),
+    [matches],
+  );
+  const playedCount = fixtures.filter(f => f.result !== 'upcoming').length;
+
   const totalSpend = rosters.reduce((n, r) => n + r.spent, 0);
 
 
   return (
     <div className="min-h-screen">
-      <Header title="SCC League" subtitle={`The squad · Season ${SEASON_NEW}`} />
+      <Header title="SCC MahaSangram" subtitle={`Brahmos vs Agni · Season ${SEASON_NEW}`} />
       <div className="p-4 lg:p-8 max-w-3xl mx-auto space-y-4">
 
         {/* ── HERO ─────────────────────────────────────────────────────── */}
@@ -147,8 +168,8 @@ export function SCCLeague() {
               {rosters.map(r => (
                 <div key={r.key} className="mb-3 last:mb-0">
                   <div className="flex items-baseline justify-between mb-1.5">
-                    <span className="text-sm font-black text-slate-800 dark:text-white">
-                      {TEAM_EMOJI[r.key]} {r.name}
+                    <span className="inline-flex items-center gap-2 text-sm font-black text-slate-800 dark:text-white">
+                      <TeamCrest team={r.key} size={22} /> {r.name}
                     </span>
                     <span className="text-xs font-bold tabular-nums" style={{ color: TEAM_COLOR[r.key] }}>
                       {formatPrice(r.spent)}
@@ -166,6 +187,61 @@ export function SCCLeague() {
               ))}
             </div>
 
+            {/* ── FIXTURES ─────────────────────────────────────────────── */}
+            <div className="glass rounded-3xl p-5">
+              <div className="flex items-baseline justify-between mb-3.5">
+                <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400
+                              inline-flex items-center gap-1.5">
+                  <CalendarDays className="w-4 h-4" /> Fixtures
+                </p>
+                <span className="text-[11px] font-bold text-slate-400">
+                  {playedCount} played · {fixtures.length - playedCount} to come
+                </span>
+              </div>
+
+              {fixtures.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-white/50 leading-snug">
+                  No fixtures published yet. They appear here automatically once
+                  they're on CricHeroes.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {fixtures.slice(0, 6).map(f => {
+                    const up = f.result === 'upcoming';
+                    return (
+                      <div key={f.id}
+                        className="flex items-center gap-3 rounded-2xl bg-white/60 dark:bg-white/5 px-3.5 py-3">
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <TeamCrest team="team1" size={26} />
+                          <span className="text-[10px] font-black text-slate-400">v</span>
+                          <TeamCrest team="team2" size={26} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-black text-slate-900 dark:text-white">
+                            {new Date(f.date).toLocaleDateString('en-IN',
+                              { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate">{f.venue || '—'}</p>
+                        </div>
+                        {up ? (
+                          <span className="flex-shrink-0 rounded-full bg-emerald-50 dark:bg-emerald-400/10
+                                           border border-emerald-200 dark:border-emerald-400/20 px-2.5 py-1
+                                           text-[10px] font-black text-emerald-700 dark:text-emerald-300">
+                            Upcoming
+                          </span>
+                        ) : (
+                          <span className="flex-shrink-0 text-[11px] font-black tabular-nums
+                                           text-slate-700 dark:text-white/80">
+                            {f.our_score || '—'} · {f.opponent_score || '—'}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* ── THE SQUADS ───────────────────────────────────────────────
                 A switcher rather than two columns: on a phone, side-by-side
                 squads of fifteen means neither is readable. */}
@@ -177,8 +253,8 @@ export function SCCLeague() {
                     <button key={r.key} onClick={() => setOpenTeam(r.key)}
                       className={`px-3 py-4 text-center transition-all ${on ? 'text-white' : 'text-slate-500 dark:text-white/50'}`}
                       style={{ background: on ? TEAM_COLOR[r.key] : 'transparent' }}>
-                      <span className="block text-xl leading-none">{TEAM_EMOJI[r.key]}</span>
-                      <span className="block font-black text-sm mt-1">{r.name}</span>
+                      <TeamCrest team={r.key} size={34} />
+                      <span className="block font-black text-sm mt-1.5">{r.name}</span>
                       <span className={`block text-[10px] font-bold mt-0.5 ${on ? 'text-white/70' : 'text-slate-400'}`}>
                         {r.size} players · {formatPrice(r.spent)}
                       </span>
@@ -254,8 +330,10 @@ export function SCCLeague() {
                         <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
                           {b.member?.name ?? '?'}
                         </p>
-                        <p className="text-[10px] font-bold" style={{ color: TEAM_COLOR[b.team as TeamKey] }}>
-                          {TEAM_EMOJI[b.team as TeamKey]} {rosters.find(r => r.key === b.team)?.name}
+                        <p className="inline-flex items-center gap-1.5 text-[10px] font-bold"
+                          style={{ color: TEAM_COLOR[b.team as TeamKey] }}>
+                          <TeamCrest team={b.team as TeamKey} size={14} />
+                          {rosters.find(r => r.key === b.team)?.name}
                         </p>
                       </div>
                       <span className="font-black tabular-nums text-slate-900 dark:text-white">
