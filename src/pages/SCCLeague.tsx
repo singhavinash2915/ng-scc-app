@@ -1,14 +1,13 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Gavel, Flame, UserMinus, ScrollText, ChevronDown, Radio, Crown } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Gavel, UserMinus, ScrollText, ChevronDown, Crown, Trophy, ExternalLink, Wallet } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
 import {
-  useSCCLeague, ROLE_LABELS, DISPLAY_BANDS, bandForPrice, PURSE_LAKH, SQUAD_SIZE, SQUAD_TARGET,
-  formatPrice, type LeagueRole,
+  useSCCLeague, PURSE_LAKH, SQUAD_SIZE, SQUAD_TARGET, formatPrice,
 } from '../hooks/useSCCLeague';
 import { ALL_RULES } from '../config/leagueRules';
-import { SEASON_NEW, LEAGUE_CAPTAIN_IDS, LEAGUE_TEAM_NAMES, isLeagueCaptain } from '../config/season2';
+import { useAuctionLive, type TeamKey } from '../hooks/useAuctionLive';
+import { SEASON_NEW, LEAGUE_TEAM_NAMES, MAHASANGRAM } from '../config/season2';
 import type { Member } from '../types';
 
 // ─── SCC League — the squad ────────────────────────────────────────────────────
@@ -16,9 +15,8 @@ import type { Member } from '../types';
 // purely the record: who signed up, what grade they carry into the auction, and
 // the rules everyone agreed to. No forms, no ballots.
 
-const ROLE_EMOJI: Record<LeagueRole, string> = {
-  batter: '🏏', bowler: '🎯', allrounder: '⚡', keeper: '🧤',
-};
+const TEAM_COLOR: Record<TeamKey, string> = { team1: '#2a78d6', team2: '#eb6834' };
+const TEAM_EMOJI: Record<TeamKey, string> = { team1: '🦁', team2: '🐅' };
 
 function Avatar({ member, size = 44, ring }: { member?: Member; size?: number; ring?: string }) {
   return member?.avatar_url ? (
@@ -33,41 +31,6 @@ function Avatar({ member, size = 44, ring }: { member?: Member; size?: number; r
   );
 }
 
-// ─── Auction night prophecies ──────────────────────────────────────────────────
-// Deliberately NOT driven by data. The projection above is the serious answer;
-// this is the one that gets the group chat going. Every registered player gets a
-// call, and the tone stays warm — these are teammates, so the joke is always
-// about the bidding, never about the cricketer.
-const PROPHECIES: Array<{ tag: string; emoji: string; line: string }> = [
-  { tag: 'Bidding war',  emoji: '🔥', line: 'Both captains want him. Only one is going home happy.' },
-  { tag: 'Instant sale', emoji: '⚡', line: 'Sold before you finish reading his name.' },
-  { tag: 'Steal',        emoji: '💎', line: 'The bargain of the night — and everyone will know it by March.' },
-  { tag: 'Purse breaker',emoji: '💸', line: 'Somebody raises one time too many. It happens to us all.' },
-  { tag: 'Dark horse',   emoji: '🐎', line: 'Quiet start. Then the price starts climbing and nobody stops.' },
-  { tag: 'Panic buy',    emoji: '😅', line: 'A captain looks at his squad, panics, and pays for it.' },
-  { tag: 'Group chat',   emoji: '💬', line: 'The one they are still arguing about tomorrow morning.' },
-  { tag: 'Slow burn',    emoji: '🕯️', line: 'Held back till late. Worth every second of the wait.' },
-  { tag: 'Gut pick',     emoji: '🎯', line: 'No spreadsheet says this. A captain just wants him.' },
-  { tag: 'Match winner', emoji: '🏆', line: 'Whatever he costs, it looks cheap by the semi-final.' },
-  { tag: 'Eyebrow',      emoji: '🤨', line: 'Expect one raised eyebrow, then a much bigger number.' },
-  { tag: 'Standoff',     emoji: '🧊', line: 'Long silence. Longer stare. Then a bid nobody saw coming.' },
-  { tag: 'Underrated',   emoji: '📈', line: 'Underrated by everyone except the man holding the paddle.' },
-  { tag: 'Fan favourite',emoji: '📣', line: 'The loudest cheer of the night, whatever the price says.' },
-  { tag: 'Late drama',   emoji: '🎬', line: 'Goes unsold, comes back, and costs twice as much.' },
-  { tag: 'Bargain bin',  emoji: '🛒', line: 'Base price. Absolute robbery. Someone is very pleased.' },
-  { tag: 'Wildcard',     emoji: '🃏', line: 'Nobody can predict this one. Least of all the captains.' },
-  { tag: 'Team spirit',  emoji: '🤝', line: 'Bought for the dressing room as much as the scorecard.' },
-  { tag: 'Blockbuster',  emoji: '🍿', line: 'Grab a chair. This one is going to take a while.' },
-  { tag: 'Old guard',    emoji: '🧠', line: 'A captain remembers one innings and stops thinking straight.' },
-];
-
-/** Stable per player, so everyone sees the same call and can argue about it. */
-function prophecyFor(id: string) {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return PROPHECIES[h % PROPHECIES.length];
-}
-
 export function SCCLeague() {
   const { members } = useMembers();
   const league = useSCCLeague(SEASON_NEW);
@@ -77,26 +40,53 @@ export function SCCLeague() {
     [members],
   );
 
-  /** The pool the auction actually bids on — captains are retained, not sold. */
-  const squad = useMemo(
-    () => league.going.filter(r => !isLeagueCaptain(r.member_id)).sort((a, b) =>
-      (b.base_price || 0) - (a.base_price || 0) ||
-      (memberById[a.member_id]?.name ?? '').localeCompare(memberById[b.member_id]?.name ?? ''),
-    ),
-    [league.going, memberById],
+  // ─── Auction result ──────────────────────────────────────────────────────
+  // The auction is done, so this page stops being a preview and becomes the
+  // record: who ended up where, and what they cost.
+  const A = useAuctionLive(SEASON_NEW, { live: false });
+  const auction = A.auction;
+  const done = auction?.status === 'done';
+  const [openTeam, setOpenTeam] = useState<TeamKey>('team1');
+
+  const basePriceOf = useMemo(() => {
+    const m: Record<string, number> = {};
+    league.registrations.forEach(r => { if (r.base_price) m[r.member_id] = r.base_price; });
+    return m;
+  }, [league.registrations]);
+
+  const rosters = useMemo(() => {
+    const build = (t: TeamKey) => {
+      const capId = (t === 'team1' ? auction?.team1_captain_id : auction?.team2_captain_id) ?? null;
+      const bought = A.sold
+        .filter(p => p.team === t)
+        .map(p => ({
+          id: p.member_id, price: p.price, allocated: p.round === 0,
+          member: memberById[p.member_id],
+        }))
+        .sort((x, y) => y.price - x.price);
+      const capSpend = capId ? (basePriceOf[capId] ?? 0) : 0;
+      return {
+        key: t,
+        name: (t === 'team1' ? auction?.team1_name : auction?.team2_name) || LEAGUE_TEAM_NAMES[t],
+        captain: capId ? memberById[capId] : undefined,
+        capSpend,
+        bought,
+        size: bought.length + (capId ? 1 : 0),
+        spent: capSpend + bought.reduce((n, b) => n + b.price, 0),
+      };
+    };
+    return [build('team1'), build('team2')];
+  }, [auction, A.sold, memberById, basePriceOf]);
+
+  /** The names that went for the most, across both squads. */
+  const topBuys = useMemo(
+    () => [...A.sold].sort((a, b) => b.price - a.price).slice(0, 5)
+      .map(p => ({ ...p, member: memberById[p.member_id] })),
+    [A.sold, memberById],
   );
 
-  const byTier = useMemo(
-    () => DISPLAY_BANDS.map(tier => ({
-      tier,
-      // Within the Icons band the ₹2 Cr names sit above the ₹1 Cr ones.
-      players: squad.filter(r => bandForPrice(r.base_price).key === tier.key)
-        .sort((a, b) => (b.base_price || 0) - (a.base_price || 0)),
-    })).filter(g => g.players.length > 0),
-    [squad],
-  );
+  const totalSpend = rosters.reduce((n, r) => n + r.spent, 0);
 
-  const roleCount = league.roleCounts;
 
   return (
     <div className="min-h-screen">
@@ -108,196 +98,175 @@ export function SCCLeague() {
           style={{ background: 'radial-gradient(900px 400px at 85% -10%, #7c3aed 0%, transparent 55%), linear-gradient(140deg,#1e1b4b 5%,#4c1d95 45%,#9d174d 100%)' }}>
           <div className="blob-anim absolute -top-24 -right-16 w-72 h-72 rounded-full pointer-events-none"
             style={{ background: '#f472b6', filter: 'blur(80px)', opacity: .35 }} />
-
-          <div className="relative text-center">
-            <span className="inline-flex items-center gap-1.5 bg-white/15 border border-white/25 backdrop-blur
-                             rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[3px]">
-              <Gavel className="w-3.5 h-3.5" /> Auction League
+          <div className="relative">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 border border-white/25
+                             backdrop-blur px-3 py-1 text-[10px] font-black uppercase tracking-[3px]">
+              <Trophy className="w-3 h-3" /> {done ? 'Squads are set' : 'Auction league'}
             </span>
-            <h1 className="font-display text-4xl sm:text-5xl font-extrabold mt-3 leading-[1.05] drop-shadow">
-              SCC <span style={{ background: 'linear-gradient(90deg,#fde68a,#fbbf24 45%,#f472b6)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>League</span>
+            <h1 className="font-display text-4xl sm:text-5xl font-extrabold mt-3 leading-[1.05]">
+              SCC <span style={{
+                background: 'linear-gradient(90deg,#fde68a,#fbbf24 45%,#f472b6)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+              }}>MahaSangram</span>
             </h1>
-            <p className="text-white/85 text-sm mt-2.5 max-w-md mx-auto font-medium">
-              Registration closed. {squad.length} players go under the hammer, graded and
-              waiting for a bid 🔨
+            <p className="text-white/70 text-sm mt-2">
+              {MAHASANGRAM.tagline}
             </p>
 
-            <div className="grid grid-cols-3 gap-2.5 mt-6 max-w-sm mx-auto">
-              {[
-                { v: String(squad.length), l: 'In the pool' },
-                { v: formatPrice(PURSE_LAKH), l: 'Purse / team' },
-                { v: String(SQUAD_SIZE), l: 'Players / squad' },
-              ].map(k => (
-                <div key={k.l} className="bg-white/12 border border-white/20 rounded-2xl py-3">
-                  <p className="font-display text-lg font-extrabold leading-none">{k.v}</p>
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-white/70 mt-1">{k.l}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-1.5 mt-4">
-              {(Object.keys(ROLE_LABELS) as LeagueRole[]).map(r => (
-                <span key={r} className="text-[10px] font-bold bg-white/15 rounded-full px-2.5 py-1">
-                  {ROLE_EMOJI[r]} {roleCount[r] ?? 0}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── WATCH THE AUCTION ────────────────────────────────────────── */}
-        <Link to="/auction-live"
-          className="block rounded-2xl px-5 py-4 shadow-lg"
-          style={{ background: 'linear-gradient(110deg,#0f172a,#4c1d95 60%,#db2777)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center text-xl">🔨</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-black text-base flex items-center gap-2">
-                Live Auction <Radio className="w-3.5 h-3.5 text-rose-400" />
-              </p>
-              <p className="text-white/80 text-xs font-medium">
-                Watch every bid as it happens — open it on your phone on auction night
-              </p>
-            </div>
-          </div>
-        </Link>
-
-        {/* ── CAPTAINS ─────────────────────────────────────────────────── */}
-        <div className="glass rounded-3xl p-5">
-          <p className="text-[11px] font-black uppercase tracking-[2px] text-amber-600 mb-1 flex items-center gap-1.5">
-            <Crown className="w-4 h-4" fill="currentColor" /> Your captains
-          </p>
-          <p className="text-xs text-slate-500 dark:text-white/60 mb-3">
-            Elected by the squad. They build their teams at the auction — and are
-            <b> not auctioned themselves</b>.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {LEAGUE_CAPTAIN_IDS.map((id, i) => (
-              <div key={id} className="rounded-2xl p-4 text-white text-center shadow-md"
-                style={{ background: i === 0
-                  ? 'linear-gradient(140deg,#1e3a8a,#2a78d6)'
-                  : 'linear-gradient(140deg,#7c2d12,#eb6834)' }}>
-                <div className="flex justify-center">
-                  <Avatar member={memberById[id]} size={64} ring="rgba(255,255,255,.55)" />
-                </div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/60 mt-2.5">
-                  Team {i + 1}
-                </p>
-                <p className="font-display text-lg font-extrabold leading-tight mt-0.5">
-                  {i === 0 ? LEAGUE_TEAM_NAMES.team1 : LEAGUE_TEAM_NAMES.team2}
-                </p>
-                <p className="text-[10px] text-white/70 inline-flex items-center gap-1 mt-1">
-                  <Crown className="w-3 h-3" fill="currentColor" /> {memberById[id]?.name ?? '?'}
-                </p>
+            {done && (
+              <div className="grid grid-cols-3 gap-2.5 mt-5">
+                {[
+                  { v: String(A.sold.length), l: 'Players sold' },
+                  { v: formatPrice(totalSpend), l: 'Total spend' },
+                  { v: topBuys[0] ? formatPrice(topBuys[0].price) : '—', l: 'Top buy' },
+                ].map(k => (
+                  <div key={k.l} className="rounded-2xl bg-white/10 border border-white/15 px-2 py-3 text-center">
+                    <p className="font-display text-xl sm:text-2xl font-extrabold leading-none">{k.v}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-white/55 mt-1.5">{k.l}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+
+            <a href={MAHASANGRAM.cricHeroesUrl} target="_blank" rel="noopener noreferrer"
+              className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white text-slate-900
+                         font-black text-sm px-5 py-3 shadow-lg hover:-translate-y-0.5 transition-transform">
+              Scorecards on CricHeroes <ExternalLink className="w-4 h-4" />
+            </a>
           </div>
         </div>
 
-        {/* ── EVERY PLAYER, CALLED EARLY ───────────────────────────────
-            There used to be a ranked "biggest buy" top five here, projected
-            from form. It was accurate and it was a mistake: naming five men on
-            a page the whole club reads leaves the other twenty-three looking at
-            a list they are not on. This says something about EVERYONE, it is
-            transparently nonsense, and nobody comes off badly. */}
-        {squad.length > 0 && (
-          <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
-                          dark:border-white/10 overflow-hidden">
-            <div className="px-5 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white">
-              <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[2px]">
-                🔮 Auction night prophecies
+        {done && (
+          <>
+            {/* ── PURSE, HEAD TO HEAD ──────────────────────────────────── */}
+            <div className="glass rounded-3xl p-5">
+              <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-3.5
+                            flex items-center gap-1.5">
+                <Wallet className="w-4 h-4" /> How the purses went
               </p>
-              <h3 className="font-display text-xl font-extrabold mt-0.5">Calling all {squad.length}</h3>
-              <p className="text-[11px] text-white/80 mt-1 leading-snug">
-                Absolutely no science involved. Find yours, disagree loudly, take it
-                to the group.
-              </p>
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-white/10">
-              {squad.map(r => {
-                const p = prophecyFor(r.member_id);
-                return (
-                  <div key={r.member_id} className="flex items-start gap-3 px-4 py-2.5">
-                    <Avatar member={memberById[r.member_id]} size={32} />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
-                        {memberById[r.member_id]?.name ?? '?'}
-                        <span className="ml-1.5 text-[10px] font-black text-slate-400">
-                          {formatPrice(r.base_price)}
-                        </span>
-                      </p>
-                      <p className="text-[11px] text-slate-500 dark:text-white/55 leading-snug">
-                        {p.line}
-                      </p>
-                    </div>
-                    <span className="flex-shrink-0 rounded-full bg-violet-50 dark:bg-violet-400/10
-                                     border border-violet-200 dark:border-violet-400/20 px-2 py-0.5
-                                     text-[10px] font-black text-violet-700 dark:text-violet-300">
-                      {p.emoji} {p.tag}
+              {rosters.map(r => (
+                <div key={r.key} className="mb-3 last:mb-0">
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <span className="text-sm font-black text-slate-800 dark:text-white">
+                      {TEAM_EMOJI[r.key]} {r.name}
+                    </span>
+                    <span className="text-xs font-bold tabular-nums" style={{ color: TEAM_COLOR[r.key] }}>
+                      {formatPrice(r.spent)}
+                      <span className="text-slate-400 font-medium"> of {formatPrice(PURSE_LAKH)}</span>
                     </span>
                   </div>
-                );
-              })}
-            </div>
-            <p className="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50 dark:bg-white/5">
-              For laughs, not from form — captains are retained so they sit this one out.
-              If it's wrong, that's the point 😄
-            </p>
-          </div>
-        )}
-
-        {/* ── THE POOL, BY GRADE ───────────────────────────────────────── */}
-        {byTier.map(({ tier, players }) => (
-          <div key={tier.key} className="glass rounded-3xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">{tier.emoji}</span>
-              <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-600 dark:text-white/70">
-                {tier.label}
-              </p>
-              <span className={`text-[10px] font-black text-white rounded-full px-2 py-0.5 bg-gradient-to-r ${tier.cls}`}>
-                {(() => {
-                  const prices = [...new Set(players.map(p => p.base_price))].sort((a, b) => b - a);
-                  return prices.length > 1
-                    ? `${formatPrice(prices[prices.length - 1])}–${formatPrice(prices[0])}`
-                    : formatPrice(prices[0]);
-                })()}
-              </span>
-              <span className="ml-auto text-[11px] font-bold text-slate-400">{players.length}</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {players.map(r => {
-                const m = memberById[r.member_id];
-                return (
-                  <div key={r.id} className="flex items-start gap-2.5 rounded-2xl bg-white/60 dark:bg-white/5 p-2.5">
-                    <Avatar member={m} size={38} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                        {m?.name ?? '?'}
-                        <span className="ml-1.5 text-[10px] font-black text-violet-500">{formatPrice(r.base_price)}</span>
-                      </p>
-                      <p className="text-[10px] text-slate-500 dark:text-white/55">
-                        {r.role ? ROLE_LABELS[r.role as LeagueRole] : '—'}
-                        {!r.can_commit && ' · limited availability'}
-                      </p>
-                      {r.pitch && (
-                        <p className="text-[10px] italic text-slate-400 dark:text-white/45 mt-0.5 line-clamp-2">
-                          "{r.pitch}"
-                        </p>
-                      )}
-                    </div>
+                  <div className="h-2.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${Math.min(100, (r.spent / PURSE_LAKH) * 100)}%`,
+                        background: TEAM_COLOR[r.key],
+                      }} />
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
-          </div>
-        ))}
 
-        {squad.length === 0 && !league.loading && (
-          <div className="glass rounded-3xl p-8 text-center">
-            <Flame className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm text-slate-500 dark:text-white/60">Nobody registered yet.</p>
-          </div>
+            {/* ── THE SQUADS ───────────────────────────────────────────────
+                A switcher rather than two columns: on a phone, side-by-side
+                squads of fifteen means neither is readable. */}
+            <div className="glass rounded-3xl overflow-hidden">
+              <div className="grid grid-cols-2">
+                {rosters.map(r => {
+                  const on = openTeam === r.key;
+                  return (
+                    <button key={r.key} onClick={() => setOpenTeam(r.key)}
+                      className={`px-3 py-4 text-center transition-all ${on ? 'text-white' : 'text-slate-500 dark:text-white/50'}`}
+                      style={{ background: on ? TEAM_COLOR[r.key] : 'transparent' }}>
+                      <span className="block text-xl leading-none">{TEAM_EMOJI[r.key]}</span>
+                      <span className="block font-black text-sm mt-1">{r.name}</span>
+                      <span className={`block text-[10px] font-bold mt-0.5 ${on ? 'text-white/70' : 'text-slate-400'}`}>
+                        {r.size} players · {formatPrice(r.spent)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {rosters.filter(r => r.key === openTeam).map(r => (
+                <div key={r.key}>
+                  {/* captain first, always */}
+                  {r.captain && (
+                    <div className="flex items-center gap-3 px-4 py-3 border-b-2"
+                      style={{ borderColor: `${TEAM_COLOR[r.key]}33`, background: `${TEAM_COLOR[r.key]}0f` }}>
+                      <Avatar member={r.captain} size={44} ring={TEAM_COLOR[r.key]} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-black text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+                          {r.captain.name}
+                          <Crown className="w-3.5 h-3.5 text-amber-500" fill="currentColor" />
+                        </p>
+                        <p className="text-[11px] font-bold" style={{ color: TEAM_COLOR[r.key] }}>
+                          Captain · retained
+                        </p>
+                      </div>
+                      <span className="font-black text-slate-400 tabular-nums text-sm">
+                        {formatPrice(r.capSpend)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="divide-y divide-slate-100 dark:divide-white/10">
+                    {r.bought.map((b, i) => (
+                      <div key={b.id} className="flex items-center gap-3 px-4 py-2.5">
+                        <span className="w-5 text-center text-[11px] font-black text-slate-300 dark:text-white/25">
+                          {i + 1}
+                        </span>
+                        <Avatar member={b.member} size={34} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                            {b.member?.name ?? '?'}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            Base {formatPrice(basePriceOf[b.id] ?? 20)}
+                            {b.allocated && ' · allocated at close'}
+                          </p>
+                        </div>
+                        <span className="font-black tabular-nums text-sm flex-shrink-0"
+                          style={{ color: TEAM_COLOR[r.key] }}>
+                          {formatPrice(b.price)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── TOP BUYS ─────────────────────────────────────────────── */}
+            {topBuys.length > 0 && (
+              <div className="glass rounded-3xl p-5">
+                <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-3
+                              flex items-center gap-1.5">
+                  <Gavel className="w-4 h-4" /> Biggest buys of the night
+                </p>
+                <div className="space-y-2">
+                  {topBuys.map((b, i) => (
+                    <div key={b.id} className="flex items-center gap-3">
+                      <span className={`w-6 text-center font-display text-lg font-extrabold ${
+                        i === 0 ? 'text-amber-500' : 'text-slate-300 dark:text-white/25'}`}>
+                        {i + 1}
+                      </span>
+                      <Avatar member={b.member} size={34} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                          {b.member?.name ?? '?'}
+                        </p>
+                        <p className="text-[10px] font-bold" style={{ color: TEAM_COLOR[b.team as TeamKey] }}>
+                          {TEAM_EMOJI[b.team as TeamKey]} {rosters.find(r => r.key === b.team)?.name}
+                        </p>
+                      </div>
+                      <span className="font-black tabular-nums text-slate-900 dark:text-white">
+                        {formatPrice(b.price)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* ── SITTING OUT ──────────────────────────────────────────────── */}

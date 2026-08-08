@@ -51,3 +51,12 @@ export const isLeagueCaptain = (id: string) => LEAGUE_CAPTAIN_IDS.includes(id);
 // Putting member ids in this list would script the opening sequence again.
 // Don't, unless the whole squad has agreed to it.
 export const AUCTION_RUNNING_ORDER: readonly string[] = [];
+
+// ─── The internal tournament ───────────────────────────────────────────────────
+// What the two auction squads actually play for. Named by the club; the
+// CricHeroes link is where the scorecards live.
+export const MAHASANGRAM = {
+  name: 'SCC MahaSangram',
+  tagline: 'Brahmos vs Agni · Season 2026-27',
+  cricHeroesUrl: 'https://cricheroes.in/scorecard/26509825/scc-mahasangram/scc-agni-vs-scc-brahmos',
+} as const;
