@@ -22,7 +22,7 @@ import {
   Trophy,
   BookOpen,
   ExternalLink,
-  Rocket,
+  // Rocket,  — re-add with the Season Kickoff nav item
   Gavel,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -36,7 +36,9 @@ const publicNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/members', icon: Users, label: 'Members' },
   { to: '/matches', icon: Calendar, label: 'Matches' },
-  { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
+  // Season Kickoff is hidden from the nav until it's refreshed later this
+  // month. The route still works, so any existing link keeps resolving.
+  // { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
   { to: '/scc-league', icon: Gavel, label: 'SCC League' },
   { to: '/awards', icon: Award, label: 'Season Awards' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
