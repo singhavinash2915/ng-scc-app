@@ -21,7 +21,7 @@ const LINKS = [
   { to: '/awards',       icon: Award,        label: 'Awards',     hint: 'Season honours' },
   { to: '/ai-insights',  icon: Brain,        label: 'AI Insights',hint: 'Ask anything' },
   { to: '/members',      icon: Users,        label: 'Members',    hint: 'The squad' },
-  { to: '/scc-league',   icon: ScrollText,   label: 'SCC League', hint: 'MahaSangram' },
+  { to: '/scc-mahasangram', icon: ScrollText, label: 'MahaSangram', hint: 'Squads & stats' },
 ];
 
 export function ExploreGrid() {

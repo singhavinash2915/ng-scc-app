@@ -98,7 +98,7 @@ export function MahaSangramCard({ matches }: Props) {
             : 'Squads locked — fixtures to come'}
         </p>
 
-        <Link to="/scc-league"
+        <Link to="/scc-mahasangram"
           className="mt-4 flex items-center justify-center gap-1.5 rounded-2xl bg-white/12
                      border border-white/20 py-2.5 text-[11px] font-black hover:bg-white/20 transition-colors">
           See both squads <ChevronRight className="w-3.5 h-3.5" />

@@ -116,7 +116,11 @@ const AppRoutes = () => (
         <Route path="/league"        element={<Suspense fallback={<PageLoader />}><SeasonLeague /></Suspense>} />
         <Route path="/awards"        element={<Suspense fallback={<PageLoader />}><SeasonAwards /></Suspense>} />
         <Route path="/kickoff"       element={<Suspense fallback={<PageLoader />}><SeasonKickoff /></Suspense>} />
-        <Route path="/scc-league"    element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><SCCLeague /></Suspense> : <Navigate to="/" replace />} />
+        <Route path="/scc-mahasangram" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><SCCLeague /></Suspense> : <Navigate to="/" replace />} />
+        {/* The page was /scc-league before it was named. Anyone holding that
+            link — including the WhatsApp messages sent during registration —
+            still lands in the right place. */}
+        <Route path="/scc-league"    element={<Navigate to="/scc-mahasangram" replace />} />
         {/* Election reveal — admin-gated inside the page, kept out of the nav */}
         <Route path="/league-result" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><LeagueResult /></Suspense> : <Navigate to="/" replace />} />
         {/* Live auction — public to watch, admin-only to run */}

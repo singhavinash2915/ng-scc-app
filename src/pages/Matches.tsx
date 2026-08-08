@@ -330,7 +330,20 @@ export function Matches() {
       if (matchTypeFilter !== 'all' && match.match_type !== matchTypeFilter) return false;
 
       return true;
-    });
+    })
+      /**
+       * Newest first — but "newest" means different things either side of today.
+       * The raw feed is date-descending, which put February 2027 at the very top
+       * and buried last week's result under eight fixtures nobody has played.
+       * Upcoming now runs soonest-first (the next match is the one you care
+       * about), and played runs most-recent-first beneath it.
+       */
+      .sort((a, b) => {
+        const aUp = a.result === 'upcoming', bUp = b.result === 'upcoming';
+        if (aUp !== bUp) return aUp ? -1 : 1;
+        const ta = new Date(a.date).getTime(), tb = new Date(b.date).getTime();
+        return aUp ? ta - tb : tb - ta;
+      });
   }, [matches, filter, matchTypeFilter]);
 
   const [playerFilter, setPlayerFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -837,7 +850,13 @@ export function Matches() {
                     <div className="flex items-center gap-3 mb-2 flex-wrap">
                       {match.match_type === 'internal' ? (
                         <h3 className="font-semibold text-gray-900 dark:text-white">
-                          🦁 Dhurandars vs Bazigars 🐅
+                          {/* Two internal rivalries now share this match type, so
+                              the title can't be hard-coded to Dhurandars vs
+                              Bazigars — a MahaSangram fixture was showing under
+                              the wrong teams entirely. */}
+                          {match.opponent?.trim()
+                            ? match.opponent
+                            : '🦁 Dhurandars vs Bazigars 🐅'}
                         </h3>
                       ) : (
                         <h3 className="font-semibold text-gray-900 dark:text-white">

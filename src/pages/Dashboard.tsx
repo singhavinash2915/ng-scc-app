@@ -35,7 +35,6 @@ import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { usePlayerOfPeriod } from '../hooks/usePlayerOfPeriod';
-import { useMatchMemories } from '../hooks/useMatchMemories';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useMonthSummary } from '../hooks/useMonthSummary';
 
@@ -104,7 +103,6 @@ export function Dashboard() {
   const monthSummary = useMonthSummary();
   const { stats: cricketStats } = useCricketStats('2025-26');
   const { playerOfMonth, playerOfWeek } = usePlayerOfPeriod(matches, members, cricketStats);
-  const memories = useMatchMemories(matches);
 
   // Live match alert — match scheduled today (in any state: upcoming or completed-today)
   const liveMatchToday = useMemo(() => {
@@ -658,51 +656,12 @@ export function Dashboard() {
         )}
 
         {/* ── LAST MATCH SUMMARY + ON THIS DAY ────────────────────────── */}
-        {(lastAnyCompletedMatch || memories.length > 0) && (
-          <div className={`grid grid-cols-1 gap-4 ${lastAnyCompletedMatch && memories.length > 0 ? 'lg:grid-cols-3' : ''}`}>
-
-            {/* Last match card — full width on mobile, 2/3 on desktop (when memories also shown) */}
-            {lastAnyCompletedMatch && (
-              <div className={memories.length > 0 ? 'lg:col-span-2' : ''}>
-                <MatchSummaryCard match={lastAnyCompletedMatch} />
-              </div>
-            )}
-
-            {/* On This Day — side panel on desktop, stacks below on mobile */}
-            {memories.length > 0 && (
-              <div className="glass rounded-2xl p-4 flex flex-col justify-center">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">{memories[0]?.archive ? '📼' : '🗓️'}</span>
-                  <span className="text-pink-400 text-[10px] font-bold uppercase tracking-[2px]">{memories[0]?.archive ? 'From the Archives' : 'On This Day'}</span>
-                </div>
-                <div className="space-y-2.5">
-                  {memories.slice(0, 2).map(m => (
-                    <div key={m.match.id} className="border-l-2 border-pink-500/30 pl-3">
-                      <p className="text-[10px] text-slate-300 dark:text-gray-600 uppercase font-bold tracking-wider mb-0.5">
-                        {m.exact
-                          ? (m.yearsAgo === 1 ? '1 year ago today' : `${m.yearsAgo} years ago today`)
-                          : `${new Date(m.match.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · ${m.yearsAgo}y ago`}
-                      </p>
-                      <p className="text-sm text-slate-600 dark:text-gray-300 font-medium leading-snug">
-                        {m.match.match_type === 'internal' ? 'Dhurandars vs Bazigars' : `vs ${m.match.opponent || 'TBD'}`}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded ${
-                          m.match.result === 'won'  ? 'bg-emerald-500/15 text-emerald-400'
-                          : m.match.result === 'lost' ? 'bg-red-500/15 text-red-400'
-                          : 'bg-amber-500/15 text-amber-400'
-                        }`}>{m.match.result}</span>
-                        {m.match.our_score && (
-                          <span className="text-[10px] text-slate-300 dark:text-gray-600">{m.match.our_score} vs {m.match.opponent_score}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-          </div>
+        {/* ── LAST MATCH SUMMARY ──────────────────────────────────────────
+             "On This Day / From the Archives" is gone. It surfaced whatever
+             happened to share today's date, which on most days is nothing, and
+             on the rest is a year-old league game nobody was asking about. */}
+        {lastAnyCompletedMatch && (
+          <MatchSummaryCard match={lastAnyCompletedMatch} />
         )}
 
         {/* ── BIRTHDAYS ─────────────────────────────────────────────────── */}
