@@ -24,6 +24,8 @@ import type { Match, MatchType, InternalTeam } from '../types';
 const TEAM_NAMES: Record<InternalTeam, string> = {
   dhurandars: 'Sangria Dhurandars',
   bazigars: 'Sangria Bazigars',
+  brahmos: 'SCC Brahmos',
+  agni: 'SCC Agni',
 };
 
 export function MatchDayTools() {

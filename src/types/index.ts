@@ -48,7 +48,19 @@ export interface CustomAward {
 }
 
 export type MatchType = 'external' | 'internal';
-export type InternalTeam = 'dhurandars' | 'bazigars';
+/**
+ * The four internal sides, across two competitions the club runs in parallel:
+ * dhurandars/bazigars is the original rivalry, brahmos/agni is SCC MahaSangram.
+ * Widened in supabase/migrations/add_mahasangram_teams.sql — the database
+ * CHECK constraints must allow the same four values as this union.
+ */
+export type InternalTeam = 'dhurandars' | 'bazigars' | 'brahmos' | 'agni';
+
+/** Which competition a pair of sides belongs to. */
+export const INTERNAL_RIVALRIES = {
+  classic: { home: 'dhurandars', away: 'bazigars', label: 'Dhurandars vs Bazigars' },
+  mahasangram: { home: 'brahmos', away: 'agni', label: 'Brahmos vs Agni' },
+} as const;
 
 export interface Match {
   id: string;

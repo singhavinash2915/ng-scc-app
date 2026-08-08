@@ -201,6 +201,8 @@ function MatchComments({ matchId, myMemberId, myMemberName }: {
 const TEAM_NAMES: Record<InternalTeam, string> = {
   dhurandars: 'Sangria Dhurandars',
   bazigars: 'Sangria Bazigars',
+  brahmos: 'SCC Brahmos',
+  agni: 'SCC Agni',
 };
 
 export function Matches() {
@@ -281,6 +283,33 @@ export function Matches() {
 
   // For internal matches - track which team each player is on
   const [playerTeams, setPlayerTeams] = useState<Record<string, InternalTeam>>({});
+
+  /**
+   * Which two sides the result form should offer. Read off the fixture being
+   * edited so a MahaSangram match records Brahmos or Agni — before this the
+   * buttons were hard-coded to Dhurandars and Bazigars, and there was simply no
+   * way to save a Brahmos win.
+   */
+  const resultSides = useMemo(() => {
+    const sides = internalSides(selectedMatch);
+    const maha = /brahmos|agni/i.test(sides.label);
+    return maha
+      // Full class strings, not `border-${tone}-500`: Tailwind only ships
+      // classes it can find literally in the source, so an interpolated name
+      // compiles fine and then renders with no styling at all.
+      ? [
+          { key: 'brahmos' as InternalTeam, label: `🦁 ${sides.home}`,
+            on: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300' },
+          { key: 'agni' as InternalTeam, label: `🐅 ${sides.away}`,
+            on: 'border-orange-500 bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-700 dark:text-orange-300' },
+        ]
+      : [
+          { key: 'dhurandars' as InternalTeam, label: `🦁 ${sides.home}`,
+            on: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300' },
+          { key: 'bazigars' as InternalTeam, label: `🐅 ${sides.away}`,
+            on: 'border-purple-500 bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-300' },
+        ];
+  }, [selectedMatch]);
 
   const [resultData, setResultData] = useState({
     result: 'won' as Match['result'],
@@ -2155,29 +2184,20 @@ export function Matches() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Winning Team *
                   </label>
+                  {/* The two sides come from the fixture, so a MahaSangram
+                      result records Brahmos or Agni rather than forcing the
+                      admin to pick a team that isn't playing. */}
                   <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setResultData({ ...resultData, winning_team: 'dhurandars' })}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        resultData.winning_team === 'dhurandars'
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-gray-700'
-                      }`}
-                    >
-                      <span className="font-medium text-blue-700 dark:text-blue-300">🦁 Dhurandars</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setResultData({ ...resultData, winning_team: 'bazigars' })}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        resultData.winning_team === 'bazigars'
-                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                          : 'border-gray-200 dark:border-gray-700'
-                      }`}
-                    >
-                      <span className="font-medium text-purple-700 dark:text-purple-300">🐅 Bazigars</span>
-                    </button>
+                    {resultSides.map(({ key, label, on, text }) => (
+                      <button key={key} type="button"
+                        onClick={() => setResultData({ ...resultData, winning_team: key })}
+                        className={`p-3 rounded-xl border-2 transition-all ${
+                          resultData.winning_team === key ? on : 'border-gray-200 dark:border-gray-700'
+                        }`}
+                      >
+                        <span className={`font-medium ${text}`}>{label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
