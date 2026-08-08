@@ -59,4 +59,10 @@ export const MAHASANGRAM = {
   name: 'SCC MahaSangram',
   tagline: 'Brahmos vs Agni · Season 2026-27',
   cricHeroesUrl: 'https://cricheroes.in/scorecard/26509825/scc-mahasangram/scc-agni-vs-scc-brahmos',
+  /** CricHeroes ids, read off the tournament's own fixture feed. */
+  tournamentId: 2154934,
+  teamIds: {
+    team1: 14361049,   // SCC Brahmos
+    team2: 14361070,   // SCC Agni
+  },
 } as const;

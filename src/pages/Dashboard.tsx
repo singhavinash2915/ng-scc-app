@@ -2,17 +2,15 @@ import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Calendar, TrendingUp, Trophy, ChevronRight,
-  IndianRupee, Swords,
-  Flame, MapPin, Activity, Crown, Radio,
+  IndianRupee, Flame, MapPin, Activity, Crown, Radio,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
+import { MatchCentreCard } from '../components/MatchCentreCard';
+import { BirthdayBoard } from '../components/BirthdayBoard';
 import { MahaSangramCard } from '../components/MahaSangramCard';
 import { ExploreGrid } from '../components/ExploreGrid';
 import { AccentSwitcher } from '../components/AccentSwitcher';
 import { PremiumHero } from '../components/PremiumHero';
-import { SCCLeagueBanner } from '../components/SCCLeagueBanner';
-import { AuctionLiveBanner } from '../components/AuctionLiveBanner';
-import { AuctionPoster } from '../components/AuctionPoster';
 
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { DashboardPoll } from '../components/DashboardPoll';
@@ -32,7 +30,6 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useSeasonLeague } from '../hooks/useSeasonLeague';
 import { useLiveStream } from '../hooks/useLiveStream';
-import { FEATURES } from '../config/features';
 import { useRequests } from '../hooks/useRequests';
 import { useAnimatedValue } from '../hooks/useAnimatedValue';
 import { useMemberActivity } from '../hooks/useMemberActivity';
@@ -174,33 +171,6 @@ export function Dashboard() {
     return { result: first, count };
   }, [lastFiveResults]);
 
-  const internalMatchStats = useMemo(() => {
-    const int = matches.filter(m => m.match_type === 'internal');
-    const completed = int.filter(m => ['won', 'lost', 'draw'].includes(m.result));
-    const dhurandarsWins = completed.filter(m => m.winning_team === 'dhurandars').length;
-    const bazigarsWins   = completed.filter(m => m.winning_team === 'bazigars').length;
-    const draws          = completed.filter(m => m.result === 'draw').length;
-
-    // Current streak: count consecutive wins for the same team (newest-first)
-    let streakTeam: string | null = null;
-    let streakCount = 0;
-    for (const m of completed) {
-      if (m.result === 'draw') break;
-      if (!streakTeam) { streakTeam = m.winning_team ?? null; streakCount = 1; }
-      else if (m.winning_team === streakTeam) streakCount++;
-      else break;
-    }
-
-    // Last completed internal match
-    const lastMatch = completed[0] ?? null;
-
-    // Next upcoming internal match
-    const nextInternal = int
-      .filter(m => m.result === 'upcoming')
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] ?? null;
-
-    return { total: completed.length, dhurandarsWins, bazigarsWins, draws, streakTeam, streakCount, lastMatch, nextInternal };
-  }, [matches]);
 
   const avgBalance = useMemo(() => {
     const active = members.filter(m => isActive(m.id));
@@ -262,8 +232,6 @@ export function Dashboard() {
   const animatedWinRate = useAnimatedValue(Math.round(stats.winRate), 1000);
   const animatedWon = useAnimatedValue(stats.won, 800);
   const animatedLost = useAnimatedValue(stats.lost, 800);
-  const animatedDhurandarsWins = useAnimatedValue(internalMatchStats.dhurandarsWins, 800);
-  const animatedBazigarsWins = useAnimatedValue(internalMatchStats.bazigarsWins, 800);
 
   // ── Personalisation: identify the "me" member ────────────────────────────
   const myMemberId = useMemo(() => {
@@ -359,12 +327,12 @@ export function Dashboard() {
       {/* ── Remaining sections keep the Stadium-Night dark styling for now ── */}
       <div className="p-4 lg:p-8 space-y-4">
 
-        {/* ── AUCTION NIGHT — poster before, live banner once it's running ── */}
-        {FEATURES.sccLeague && <AuctionPoster />}
-        {FEATURES.sccLeague && <AuctionLiveBanner />}
-
-        {/* ── SCC LEAGUE — registration drive, top billing while it's open ── */}
-        {FEATURES.sccLeague && <SCCLeagueBanner />}
+        {/* ── AUCTION NIGHT ────────────────────────────────────────────────
+             Both the auction banners and the SCC League registration banner are
+             retired now the auction is finished. They were written for the
+             build-up — "auction night is next", "captains elected" — and reading
+             that a week afterwards makes the app look stale. The MahaSangram
+             card below carries the result instead. */}
 
         {/* ── EL CLÁSICO CHAMPIONS — 24h heroic victory showcase ────────── */}
         <ElClasicoChampionBanner matches={matches} />
@@ -679,6 +647,16 @@ export function Dashboard() {
 
         </div>
 
+        {/* ── MATCH CENTRE — pre-match analytics for the next match ───── */}
+        {nextUpcomingMatch && (
+          <MatchCentreCard
+            nextMatch={nextUpcomingMatch}
+            matches={matches}
+            members={members}
+            cricketStats={cricketStats}
+          />
+        )}
+
         {/* ── LAST MATCH SUMMARY + ON THIS DAY ────────────────────────── */}
         {(lastAnyCompletedMatch || memories.length > 0) && (
           <div className={`grid grid-cols-1 gap-4 ${lastAnyCompletedMatch && memories.length > 0 ? 'lg:grid-cols-3' : ''}`}>
@@ -727,6 +705,9 @@ export function Dashboard() {
           </div>
         )}
 
+        {/* ── BIRTHDAYS ─────────────────────────────────────────────────── */}
+        <BirthdayBoard members={members} />
+
         {/* ── SEASON STARS (lazy — loads cricketStats on demand) ────────── */}
         {showDeferred && (
           <Suspense fallback={null}>
@@ -737,134 +718,11 @@ export function Dashboard() {
         {/* ── MAHASANGRAM — this season's internal competition ─────────── */}
         <MahaSangramCard matches={matches} />
 
-        {/* ── INTERNAL BATTLE — the older Dhurandars/Bazigars rivalry, kept
-             as its own separate record ─────────────────────────────────── */}
-        {internalMatchStats.total > 0 && (
-          <div className="dark relative overflow-hidden rounded-2xl shadow-xl bg-[#0c1322] border border-white/10">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/25 via-transparent to-purple-600/25" />
-            <div className="absolute inset-0 opacity-[0.08]" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='20' x2='40' y2='20' stroke='white' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='20' y2='40' stroke='white' stroke-width='0.5'/%3E%3C/svg%3E")`,
-              backgroundSize: '40px 40px',
-            }} />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-slate-100 dark:bg-white/5" />
-            <div className="relative p-5 lg:p-6">
-
-              {/* Header row */}
-              <div className="flex items-center justify-between mb-5">
-                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                  <Swords className="w-3.5 h-3.5" /> Internal Rivalry · {internalMatchStats.total} played
-                </p>
-                {/* Streak badge */}
-                {internalMatchStats.streakCount >= 2 && internalMatchStats.streakTeam && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${
-                    internalMatchStats.streakTeam === 'dhurandars'
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                  }`}>
-                    🔥 {internalMatchStats.streakCount}-match streak
-                  </span>
-                )}
-              </div>
-
-              {/* Score row */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 text-center">
-                  <div className={`inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/40 mb-3 transition-transform ${internalMatchStats.dhurandarsWins > internalMatchStats.bazigarsWins ? 'scale-110' : ''}`}>
-                    <span className="text-3xl lg:text-4xl font-black text-white tabular-nums">{animatedDhurandarsWins}</span>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">🦁 Dhurandars</h4>
-                  <p className="text-blue-300/50 text-xs">wins</p>
-                  {internalMatchStats.dhurandarsWins > internalMatchStats.bazigarsWins && (
-                    <p className="text-yellow-400 text-xs mt-1 font-black">👑 Leading</p>
-                  )}
-                </div>
-                <div className="text-center flex-shrink-0 px-2">
-                  <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
-                    <span className="text-white font-black text-sm">VS</span>
-                  </div>
-                  {internalMatchStats.draws > 0 && (
-                    <p className="text-amber-400/70 text-[10px] mt-1">{internalMatchStats.draws} no result{internalMatchStats.draws > 1 ? 's' : ''}</p>
-                  )}
-                  {internalMatchStats.dhurandarsWins === internalMatchStats.bazigarsWins && (
-                    <p className="text-white/40 text-[10px] mt-1">Tied!</p>
-                  )}
-                </div>
-                <div className="flex-1 text-center">
-                  <div className={`inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 shadow-lg shadow-purple-500/40 mb-3 transition-transform ${internalMatchStats.bazigarsWins > internalMatchStats.dhurandarsWins ? 'scale-110' : ''}`}>
-                    <span className="text-3xl lg:text-4xl font-black text-white tabular-nums">{animatedBazigarsWins}</span>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">🐅 Bazigars</h4>
-                  <p className="text-purple-300/50 text-xs">wins</p>
-                  {internalMatchStats.bazigarsWins > internalMatchStats.dhurandarsWins && (
-                    <p className="text-yellow-400 text-xs mt-1 font-black">👑 Leading</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              <div className="mt-5 h-2 bg-white/10 rounded-full overflow-hidden flex">
-                {internalMatchStats.dhurandarsWins > 0 && (
-                  <div className="h-full bg-gradient-to-r from-blue-400 to-blue-500 transition-all duration-1000 rounded-l-full"
-                    style={{ width: `${(internalMatchStats.dhurandarsWins / internalMatchStats.total) * 100}%` }} />
-                )}
-                {internalMatchStats.draws > 0 && (
-                  <div className="h-full bg-amber-400 transition-all duration-1000"
-                    style={{ width: `${(internalMatchStats.draws / internalMatchStats.total) * 100}%` }} />
-                )}
-                {internalMatchStats.bazigarsWins > 0 && (
-                  <div className="h-full bg-gradient-to-r from-purple-400 to-purple-500 transition-all duration-1000 rounded-r-full"
-                    style={{ width: `${(internalMatchStats.bazigarsWins / internalMatchStats.total) * 100}%` }} />
-                )}
-              </div>
-              <div className="flex justify-between mt-1.5">
-                <span className="text-blue-400/60 text-[10px] font-medium">🦁 Dhurandars</span>
-                {internalMatchStats.draws > 0 && <span className="text-amber-400/60 text-[10px] font-medium">No Result</span>}
-                <span className="text-purple-400/60 text-[10px] font-medium">Bazigars 🐅</span>
-              </div>
-
-              {/* Last match + next match footer */}
-              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 flex-wrap">
-                {internalMatchStats.lastMatch && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-white/30 text-[10px] uppercase tracking-wider font-bold">Last:</span>
-                    <span className={`text-[11px] font-bold ${
-                      internalMatchStats.lastMatch.winning_team === 'dhurandars' ? 'text-blue-300' :
-                      internalMatchStats.lastMatch.winning_team === 'bazigars'   ? 'text-purple-300' :
-                      'text-amber-300'
-                    }`}>
-                      {internalMatchStats.lastMatch.winning_team === 'dhurandars' ? '🦁 Dhurandars won' :
-                       internalMatchStats.lastMatch.winning_team === 'bazigars'   ? '🐅 Bazigars won' : 'No Result'}
-                    </span>
-                    {internalMatchStats.lastMatch.our_score && (
-                      <span className="text-white/30 text-[10px]">
-                        · {internalMatchStats.lastMatch.our_score}
-                        {internalMatchStats.lastMatch.opponent_score && ` vs ${internalMatchStats.lastMatch.opponent_score}`}
-                      </span>
-                    )}
-                    <span className="text-white/25 text-[10px]">
-                      {new Date(internalMatchStats.lastMatch.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    </span>
-                  </div>
-                )}
-                {internalMatchStats.nextInternal && (
-                  <Link
-                    to="/matches"
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-white/70 text-[10px] font-bold hover:bg-white/20 transition-colors"
-                  >
-                    <Calendar className="w-3 h-3" />
-                    Next: {new Date(internalMatchStats.nextInternal.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                  </Link>
-                )}
-                <Link
-                  to="/matches"
-                  className="flex items-center gap-1 text-white/30 hover:text-white/60 transition-colors text-[10px] font-bold"
-                >
-                  View all →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* ── INTERNAL BATTLE ─────────────────────────────────────────────
+             The Dhurandars vs Bazigars rivalry is off the Dashboard: it's a
+             different competition from MahaSangram and having both sets of
+             internal teams on one screen just reads as confusion. Its record
+             is intact and still shown on the Matches and Records pages. */}
 
         {/* ── MATCH DAY banner — takes over when we play today ────────── */}
         {todaysMatch && !liveStream.isLive && (
