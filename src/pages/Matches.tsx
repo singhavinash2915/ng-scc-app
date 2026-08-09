@@ -38,10 +38,13 @@ import { useMembers } from '../hooks/useMembers';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
 import { useMatchVideos } from '../hooks/useMatchVideos';
 import { MatchVideos } from '../components/MatchVideos';
+import { MomVoteCard } from '../components/MomVoteCard';
 import { internalSides } from '../utils/internalTeams';
 import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useAuth } from '../context/AuthContext';
 import { PollSummaryBadge } from '../components/PollSummaryBadge';
+import { CaptainRatings } from '../components/CaptainRatings';
+import { isLeagueCaptain } from '../config/season2';
 import { PollManageModal } from '../components/PollManageModal';
 import { SquadGraphicModal } from '../components/SquadGraphicModal';
 import { MatchPosterModal } from '../components/MatchPosterModal';
@@ -1102,6 +1105,12 @@ export function Matches() {
                     {/* ── Reactions + Comments ──────────────────────── */}
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60 flex flex-col gap-2">
                       <MatchReactions matchId={match.id} myMemberId={myMemberId} />
+                      {/* Members' own MOM vote, alongside the official award. */}
+                      <MomVoteCard match={match} members={members} myMemberId={myMemberId} />
+                      {/* Captain ratings — editor for admins and the two elected
+                          captains, own-mark-only for everyone else. */}
+                      <CaptainRatings match={match} members={members} myMemberId={myMemberId}
+                        canRate={isAdmin || (!!myMemberId && isLeagueCaptain(myMemberId))} />
                       <MatchComments matchId={match.id} myMemberId={myMemberId} myMemberName={myMemberName} />
                     </div>
                   </div>
