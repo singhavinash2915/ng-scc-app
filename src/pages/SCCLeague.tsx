@@ -111,7 +111,17 @@ export function SCCLeague() {
 
   // The competition, scored: table, series score and MVP race.
   const { scorecards } = useAllScorecards();
-  const maha = useMahaSangram(matches, members, scorecards);
+  /** What each player cost — purchases at their hammer price, captains at
+   *  their retention. Feeds the value-for-money index. */
+  const priceOf = useMemo(() => {
+    const m: Record<string, number> = {};
+    A.sold.forEach(p => { m[p.member_id] = p.price; });
+    rosters.forEach(r => {
+      if (r.captain) m[r.captain.id] = r.capSpend;
+    });
+    return m;
+  }, [A.sold, rosters]);
+  const maha = useMahaSangram(matches, members, scorecards, priceOf);
   const sideOf = (k: string) => (k === 'brahmos' ? 'team1' : 'team2') as TeamKey;
 
   const totalSpend = rosters.reduce((n, r) => n + r.spent, 0);
@@ -282,6 +292,68 @@ export function SCCLeague() {
                 <p className="text-[10px] text-slate-400 mt-3">
                   1 point a run, 20 a wicket, 10 a dismissal.
                 </p>
+              </div>
+            )}
+
+            {/* ── VALUE FOR MONEY ──────────────────────────────────────────
+                The argument the auction exists to create. Empty until matches
+                have been played — ranking everyone at zero would say nothing. */}
+            {maha.value.length > 0 && (
+              <div className="glass rounded-3xl p-5">
+                <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-1
+                              inline-flex items-center gap-1.5">
+                  <Gavel className="w-4 h-4" /> Value for money
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-white/50 mb-3.5 leading-snug">
+                  MVP points per ₹ crore paid at the auction. Who's earning their price?
+                </p>
+
+                <div className="space-y-2">
+                  {maha.value.slice(0, 6).map((r, i) => (
+                    <div key={r.member.id} className="flex items-center gap-3">
+                      <span className={`w-6 text-center font-display text-lg font-extrabold ${
+                        i === 0 ? 'text-emerald-500' : 'text-slate-300 dark:text-white/25'}`}>{i + 1}</span>
+                      <Avatar member={r.member} size={32} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                          {r.member.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          {formatPrice(r.price)} · {r.points} pts
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-black tabular-nums text-slate-900 dark:text-white">
+                          {Math.round(r.perCrore)}
+                        </p>
+                        <p className={`text-[10px] font-bold ${
+                          r.vsAverage >= 1 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {r.vsAverage.toFixed(1)}× avg
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* the flip side — worth naming, it's the funnier half */}
+                {maha.value.length > 3 && (
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                      Still earning it
+                    </p>
+                    {maha.value.slice(-2).reverse().map(r => (
+                      <div key={r.member.id} className="flex items-center gap-3 py-1">
+                        <Avatar member={r.member} size={26} />
+                        <span className="flex-1 min-w-0 truncate text-[12px] font-bold
+                                         text-slate-700 dark:text-white/70">{r.member.name}</span>
+                        <span className="text-[11px] text-slate-400">{formatPrice(r.price)}</span>
+                        <span className="text-[11px] font-black text-slate-500 w-12 text-right">
+                          {Math.round(r.perCrore)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

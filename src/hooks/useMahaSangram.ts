@@ -40,6 +40,15 @@ export interface MvpRow {
   points: number;
 }
 
+export interface ValueRow extends MvpRow {
+  /** What the auction paid, in ₹ lakh. Captains are their retention price. */
+  price: number;
+  /** MVP points per ₹ crore spent — the whole point of the index. */
+  perCrore: number;
+  /** Ratio against the squad average, so 2.0 = twice the going rate. */
+  vsAverage: number;
+}
+
 export interface MahaSangram {
   fixtures: Match[];
   played: number;
@@ -49,6 +58,11 @@ export interface MahaSangram {
   leader: InternalTeam | null;
   seriesScore: string;     // "2–1"
   mvps: MvpRow[];
+  /**
+   * Value for money. Only meaningful once matches have been played, so it's
+   * empty until then rather than ranking everyone at zero.
+   */
+  value: ValueRow[];
 }
 
 const emptyStanding = (side: InternalTeam): SideStanding => ({
@@ -69,6 +83,8 @@ export function useMahaSangram(
   matches: Match[],
   members: Member[],
   scorecards: MatchScorecard[] | null,
+  /** memberId → auction price in ₹ lakh. Omit and the value index stays empty. */
+  priceOf?: Record<string, number>,
 ): MahaSangram {
   return useMemo(() => {
     const fixtures = matches
@@ -174,6 +190,25 @@ export function useMahaSangram(
       .filter(r => r.points > 0)
       .sort((x, y) => y.points - x.points || y.runs - x.runs);
 
+    /**
+     * Value for money: MVP points per ₹ crore paid at auction. The argument the
+     * auction format exists to create — a ₹20 L player outscoring a ₹5 Cr one
+     * per rupee is the story, and next year's captains get to bid with the
+     * receipts in front of them.
+     */
+    const priced = mvps
+      .map(r => {
+        const price = priceOf?.[r.member.id] ?? 0;
+        return { ...r, price, perCrore: price > 0 ? r.points / (price / 100) : 0, vsAverage: 0 };
+      })
+      .filter(r => r.price > 0);
+    const avgPerCrore = priced.length
+      ? priced.reduce((n, r) => n + r.perCrore, 0) / priced.length
+      : 0;
+    const value = priced
+      .map(r => ({ ...r, vsAverage: avgPerCrore > 0 ? r.perCrore / avgPerCrore : 0 }))
+      .sort((x, y) => y.perCrore - x.perCrore);
+
     return {
       fixtures,
       played: decided.length,
@@ -182,6 +217,7 @@ export function useMahaSangram(
       leader,
       seriesScore: `${a.won}–${b.won}`,
       mvps,
+      value,
     };
-  }, [matches, members, scorecards]);
+  }, [matches, members, scorecards, priceOf]);
 }
