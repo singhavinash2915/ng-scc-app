@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Gavel, UserMinus, ScrollText, ChevronDown, Crown, Trophy, ExternalLink, Wallet, CalendarDays } from 'lucide-react';
+import { Gavel, UserMinus, ScrollText, ChevronDown, Crown, Trophy, ExternalLink, Wallet, CalendarDays, Flame } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { TeamCrest } from '../components/TeamCrest';
 import { useMatches } from '../hooks/useMatches';
+import { useAllScorecards } from '../hooks/useAllScorecards';
+import { useMahaSangram } from '../hooks/useMahaSangram';
+import { teamIdentity } from '../config/teamLogos';
 import { useMembers } from '../hooks/useMembers';
 import {
   useSCCLeague, PURSE_LAKH, SQUAD_SIZE, SQUAD_TARGET, formatPrice,
@@ -106,6 +109,11 @@ export function SCCLeague() {
   );
   const playedCount = fixtures.filter(f => f.result !== 'upcoming').length;
 
+  // The competition, scored: table, series score and MVP race.
+  const { scorecards } = useAllScorecards();
+  const maha = useMahaSangram(matches, members, scorecards);
+  const sideOf = (k: string) => (k === 'brahmos' ? 'team1' : 'team2') as TeamKey;
+
   const totalSpend = rosters.reduce((n, r) => n + r.spent, 0);
 
 
@@ -186,6 +194,96 @@ export function SCCLeague() {
                 </div>
               ))}
             </div>
+
+            {/* ── STANDINGS ────────────────────────────────────────────── */}
+            {maha.played > 0 && (
+              <div className="glass rounded-3xl p-5">
+                <div className="flex items-baseline justify-between mb-4">
+                  <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400
+                                inline-flex items-center gap-1.5">
+                    <Trophy className="w-4 h-4" /> Standings
+                  </p>
+                  <span className="text-[11px] font-bold text-slate-400">
+                    {maha.played} played · series {maha.seriesScore}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {[...maha.standings].sort((x, y) => y.points - x.points).map(st => {
+                    const tk = sideOf(st.side);
+                    const id = teamIdentity(tk);
+                    const top = maha.leader === st.side;
+                    return (
+                      <div key={st.side}
+                        className={`flex items-center gap-3 rounded-2xl px-3.5 py-3 border-2 ${
+                          top ? '' : 'border-transparent bg-white/60 dark:bg-white/5'}`}
+                        style={top ? { borderColor: id.color, background: `${id.color}12` } : undefined}>
+                        <TeamCrest team={tk} size={36} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-black text-sm text-slate-900 dark:text-white truncate">
+                            {id.name}{top && ' 👑'}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {st.won}W · {st.lost}L{st.noResult > 0 ? ` · ${st.noResult}NR` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {st.form.map((f, i) => (
+                            <span key={i}
+                              className={`w-5 h-5 rounded-md text-[9px] font-black flex items-center justify-center ${
+                                f === 'W' ? 'bg-emerald-500 text-white'
+                                : f === 'L' ? 'bg-rose-500 text-white'
+                                : 'bg-slate-300 text-slate-600'}`}>{f}</span>
+                          ))}
+                        </div>
+                        <span className="font-display text-2xl font-extrabold tabular-nums flex-shrink-0"
+                          style={{ color: id.color }}>{st.points}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2.5">
+                  2 points a win, 1 for no result.
+                </p>
+              </div>
+            )}
+
+            {/* ── MVP RACE ─────────────────────────────────────────────────
+                Scoped to MahaSangram only, so a ₹20 L signing can top it
+                without competing against ten years of club history. */}
+            {maha.mvps.length > 0 && (
+              <div className="glass rounded-3xl p-5">
+                <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-3
+                              inline-flex items-center gap-1.5">
+                  <Flame className="w-4 h-4" /> MVP race
+                </p>
+                <div className="space-y-2">
+                  {maha.mvps.slice(0, 8).map((r, i) => (
+                    <div key={r.member.id} className="flex items-center gap-3">
+                      <span className={`w-6 text-center font-display text-lg font-extrabold ${
+                        i === 0 ? 'text-amber-500' : 'text-slate-300 dark:text-white/25'}`}>{i + 1}</span>
+                      <Avatar member={r.member} size={32} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                          {r.member.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          {r.runs} runs · {r.wickets} wkts
+                          {r.dismissals > 0 && ` · ${r.dismissals} dis`}
+                        </p>
+                      </div>
+                      {r.side && <TeamCrest team={sideOf(r.side)} size={18} />}
+                      <span className="font-black tabular-nums text-slate-900 dark:text-white w-12 text-right">
+                        {r.points}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-3">
+                  1 point a run, 20 a wicket, 10 a dismissal.
+                </p>
+              </div>
+            )}
 
             {/* ── FIXTURES ─────────────────────────────────────────────── */}
             <div className="glass rounded-3xl p-5">
