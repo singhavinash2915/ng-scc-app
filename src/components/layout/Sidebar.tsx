@@ -40,6 +40,7 @@ const publicNavItems = [
   // month. The route still works, so any existing link keeps resolving.
   // { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
   { to: '/scc-mahasangram', icon: Gavel, label: 'MahaSangram' },
+  { to: '/fantasy', icon: Sparkles, label: 'Fantasy Draft' },
   { to: '/awards', icon: Award, label: 'Season Awards' },
   { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
   { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },

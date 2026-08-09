@@ -11,8 +11,8 @@ export const FEATURES = {
   /** Season Finale + Awards Night reveal. Done for 2025-26 — the Champions
    *  page (/awards) carries the winners from here on. */
   seasonFinale: false,
-  /** Fantasy Draft league. Off for now; flip on to relaunch. */
-  fantasy: false,
+  /** Fantasy Draft league. LIVE for 2026-27 — drafting open until the first ball. */
+  fantasy: true,
   /** Pre-season Kickoff Hub (countdown, predictions, goals, market values). */
   seasonKickoff: true,
   /** Season Awards champions showcase. */

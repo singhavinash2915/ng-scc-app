@@ -2,8 +2,11 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Member, MemberCricketStats } from '../types';
 import { useFantasyPoints } from './useFantasyPoints';
+import { PLAYING_SIZE } from '../config/season2';
 
-export const SQUAD_SIZE = 11;
+// The club fields twelve, so a fantasy side is a XII too — picking 11 would
+// mean one player in every real XII could never be drafted.
+export const SQUAD_SIZE = PLAYING_SIZE;
 export const BUDGET = 100;
 
 export interface FantasyTeamRow {

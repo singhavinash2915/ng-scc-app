@@ -157,9 +157,11 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
           return members.filter(m => ids.has(m.id));
         })()
       : members.filter(m => m.status === 'active');
-    // Exclude the predicting member
-    return base.filter(m => m.id !== memberId);
-  }, [members, match.players, isInternal, memberId]);
+    // Backing yourself is allowed — a player who thinks they'll top-score
+    // should be able to say so, and it makes the tally more honest than a rule
+    // that quietly removed the one person with the most confidence.
+    return base;
+  }, [members, match.players, isInternal]);
 
   const memberOptions = useMemo(() => [
     { value: '', label: '— Skip / not sure —' },
@@ -190,7 +192,6 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
       return [
         { value: '', label: '— Skip / not sure —' },
         ...pool
-          .filter(m => m.id !== memberId)         // keep the no-self-prediction rule
           .sort((a, b) => a.name.localeCompare(b.name))
           .map(m => ({ value: m.id, label: m.name })),
       ];
