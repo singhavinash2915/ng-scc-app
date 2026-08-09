@@ -362,7 +362,7 @@ export function SeasonKickoff() {
             style={{ background: 'linear-gradient(120deg,#7c3aed,#2563eb)' }}>
             <p className="text-2xl">🧢</p>
             <p className="font-black text-base mt-1">Fantasy Draft {SEASON_NEW}</p>
-            <p className="text-white/80 text-xs mt-0.5">Draft your XI before the first ball — prices set by last season's form. →</p>
+            <p className="text-white/80 text-xs mt-0.5">Draft your side before the first ball — prices set by last season's form. →</p>
           </Link>
           <div className="rounded-2xl p-4 text-white shadow-lg" style={{ background: 'linear-gradient(120deg,#92400e,#d97706)' }}>
             <p className="text-2xl"><Gavel className="w-7 h-7" /></p>

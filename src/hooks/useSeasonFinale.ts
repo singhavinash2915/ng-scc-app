@@ -8,6 +8,7 @@ import { useFantasyPoints } from './useFantasyPoints';
 import { useAllScorecards } from './useAllScorecards';
 import { useSccRankings, type RankingMode } from './useSccRankings';
 import { outfieldDismissals, keeperDismissals, hasKept } from '../utils/fielding';
+import { PLAYING_SIZE } from '../config/season2';
 
 export interface XIPlayer {
   member: Member;
@@ -75,7 +76,8 @@ export function useSeasonFinale(season = '2025-26', prevSeason = '2024-25'): Sea
       .sort((a, b) => b.fielding_stumpings - a.fielding_stumpings)[0];
     const keeperId = keeperStat?.member_id;
 
-    const top = ranked.slice(0, 11);
+    // SCC fields twelve, so the team of the season is a XII.
+    const top = ranked.slice(0, PLAYING_SIZE);
     const bestXI: XIPlayer[] = top.map((f, i) => {
       const s = f.stats;
       const isKeeper = s.member_id === keeperId;

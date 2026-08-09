@@ -9,6 +9,7 @@ import { useAIInsight } from '../hooks/useAIInsight';
 import { useScorecardHighlights } from '../hooks/useScorecardHighlights';
 import { useAuth } from '../context/AuthContext';
 import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
+import { PLAYING_LABEL } from '../config/season2';
 
 const SCC_TEAM_ID = 7927431;
 
@@ -530,7 +531,7 @@ export function AIInsights() {
               </h3>
               <div className="space-y-3">
                 {[
-                  { label: 'Squad Selector', desc: 'Best XI for next match', tab: 'squad' as Tab },
+                  { label: 'Squad Selector', desc: `Best ${PLAYING_LABEL} for next match`, tab: 'squad' as Tab },
                   { label: 'Cricket DNA Cards', desc: 'Player personality analysis', tab: 'identity' as Tab },
                   { label: 'Club AI Chat', desc: 'Ask anything about SCC', tab: 'chat' as Tab },
                 ].map(item => (
@@ -712,10 +713,10 @@ export function AIInsights() {
                 <Button onClick={() => handleSquadSelector()} disabled={loadingInsight.squad} className="w-full">
                   <Sparkles className="w-4 h-4 mr-2" />
                   {loadingInsight.squad
-                    ? (hasSquad ? 'Analysing selected squad…' : 'AI is selecting best XI…')
+                    ? (hasSquad ? 'Analysing selected squad…' : `AI is selecting best ${PLAYING_LABEL}…`)
                     : (hasSquad
                         ? `Analyse Selected Squad (${sel!.players!.length})`
-                        : 'Generate Smart Best XI')}
+                        : `Generate Smart Best ${PLAYING_LABEL}`)}
                 </Button>
               );
             })()}

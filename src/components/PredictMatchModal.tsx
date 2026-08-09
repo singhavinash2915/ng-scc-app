@@ -5,7 +5,7 @@ import { Button } from './ui/Button';
 import { Select } from './ui/Input';
 import { usePredictions, type PredictionInput, type PredictionWinner } from '../hooks/usePredictions';
 import { useMembers } from '../hooks/useMembers';
-import type { Match } from '../types';
+import type { Match, InternalTeam } from '../types';
 import { internalSides } from '../utils/internalTeams';
 
 interface Props {
@@ -37,7 +37,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
   const [pinError, setPinError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<PredictionInput>({
-    winner: match.match_type === 'internal' ? 'dhurandars' : 'scc',
+    winner: match.match_type === 'internal'
+      ? (/brahmos|agni/i.test(match.opponent ?? '') ? 'brahmos' : 'dhurandars')
+      : 'scc',
     top_scorer_id: null,
     top_wicket_taker_id: null,
     mom_id: null,
@@ -101,7 +103,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     setMemberId('');
     setPinDigits('');
     setPinError('');
-    setForm({ winner: isInternal ? 'dhurandars' : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, three_wicket_haul: null, internal_most_sixes: null, internal_margin: null, internal_milestone: null, internal_highest_team: null, internal_duck: null, int_dhur_top_scorer_id: null, int_baz_top_scorer_id: null, int_dhur_top_wicket_id: null, int_baz_top_wicket_id: null });
+    setForm({ winner: isInternal ? sideKeys[0] : 'scc', top_scorer_id: null, top_wicket_taker_id: null, mom_id: null, score_range: null, fifty_scored: null, three_wicket_haul: null, internal_most_sixes: null, internal_margin: null, internal_milestone: null, internal_highest_team: null, internal_duck: null, int_dhur_top_scorer_id: null, int_baz_top_scorer_id: null, int_dhur_top_wicket_id: null, int_baz_top_wicket_id: null });
   };
 
   const handleClose = () => { handleReset(); onClose(); };
@@ -169,8 +171,18 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
   // Per-team options for internal matches. If the squad has been assigned
   // (match.players with a `team` field), filter to that team. Otherwise the
   // squad isn't set yet → fall back to all active members so prediction still works.
+  /**
+   * Which two sides this fixture is between. MahaSangram and the old rivalry
+   * are both match_type='internal', so the questions used to ask about
+   * Dhurandars and Bazigars even for a Brahmos vs Agni tie — and any answer
+   * would then have been graded against teams that never played.
+   */
+  const sideKeys: [InternalTeam, InternalTeam] = /brahmos|agni/i.test(match.opponent ?? '')
+    ? ['brahmos', 'agni'] : ['dhurandars', 'bazigars'];
+  const sideNames = internalSides(match);
+
   const teamOptions = useMemo(() => {
-    const buildFor = (team: 'dhurandars' | 'bazigars') => {
+    const buildFor = (team: InternalTeam) => {
       const assigned = (match.players || []).filter(p => p.team === team).map(p => p.member_id);
       const pool = assigned.length > 0
         ? members.filter(m => assigned.includes(m.id))
@@ -183,8 +195,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
           .map(m => ({ value: m.id, label: m.name })),
       ];
     };
-    return { dhurandars: buildFor('dhurandars'), bazigars: buildFor('bazigars') };
-  }, [members, match.players, memberId]);
+    return { a: buildFor(sideKeys[0]), b: buildFor(sideKeys[1]) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members, match.players, memberId, match.opponent]);
 
   // Aggregate of others' predictions for social signal
   const tally = useMemo(() => {
@@ -198,9 +211,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
   // Winner options depend on match type
   const winnerOptions: Array<{ value: PredictionWinner; label: string; color: string }> = isInternal
     ? [
-        { value: 'dhurandars', label: '🔴 Dhurandars', color: 'text-red-600 dark:text-red-400' },
-        { value: 'draw',        label: 'DRAW',           color: 'text-gray-500' },
-        { value: 'bazigars',   label: '🔵 Bazigars',    color: 'text-blue-600 dark:text-blue-400' },
+        { value: sideKeys[0], label: `🔴 ${sideNames.home}`, color: 'text-red-600 dark:text-red-400' },
+        { value: 'draw',      label: 'DRAW',                color: 'text-gray-500' },
+        { value: sideKeys[1], label: `🔵 ${sideNames.away}`, color: 'text-blue-600 dark:text-blue-400' },
       ]
     : [
         { value: 'scc',      label: 'SCC',                                                       color: 'text-emerald-600 dark:text-emerald-400' },
@@ -374,35 +387,35 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
               <p className="text-[10px] font-black uppercase tracking-[2px] text-gray-500">⭐ Team Stars</p>
               <div>
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
-                  🦁 Dhurandars top scorer? <span className="text-gray-400 font-normal">+5</span>
+                  🦁 {sideNames.home} top scorer? <span className="text-gray-400 font-normal">+5</span>
                 </label>
                 <Select value={form.int_dhur_top_scorer_id || ''}
                   onChange={(e) => setForm({ ...form, int_dhur_top_scorer_id: e.target.value || null })}
-                  options={teamOptions.dhurandars} disabled={isLocked} />
+                  options={teamOptions.a} disabled={isLocked} />
               </div>
               <div>
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1.5">
-                  🐅 Bazigars top scorer? <span className="text-gray-400 font-normal">+5</span>
+                  🐅 {sideNames.away} top scorer? <span className="text-gray-400 font-normal">+5</span>
                 </label>
                 <Select value={form.int_baz_top_scorer_id || ''}
                   onChange={(e) => setForm({ ...form, int_baz_top_scorer_id: e.target.value || null })}
-                  options={teamOptions.bazigars} disabled={isLocked} />
+                  options={teamOptions.b} disabled={isLocked} />
               </div>
               <div>
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
-                  🦁 Dhurandars top wicket-taker? <span className="text-gray-400 font-normal">+5</span>
+                  🦁 {sideNames.home} top wicket-taker? <span className="text-gray-400 font-normal">+5</span>
                 </label>
                 <Select value={form.int_dhur_top_wicket_id || ''}
                   onChange={(e) => setForm({ ...form, int_dhur_top_wicket_id: e.target.value || null })}
-                  options={teamOptions.dhurandars} disabled={isLocked} />
+                  options={teamOptions.a} disabled={isLocked} />
               </div>
               <div>
                 <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1.5">
-                  🐅 Bazigars top wicket-taker? <span className="text-gray-400 font-normal">+5</span>
+                  🐅 {sideNames.away} top wicket-taker? <span className="text-gray-400 font-normal">+5</span>
                 </label>
                 <Select value={form.int_baz_top_wicket_id || ''}
                   onChange={(e) => setForm({ ...form, int_baz_top_wicket_id: e.target.value || null })}
-                  options={teamOptions.bazigars} disabled={isLocked} />
+                  options={teamOptions.b} disabled={isLocked} />
               </div>
             </div>
           )}
@@ -517,9 +530,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {([
-                    { v: 'dhurandars', l: '🦁 Dhurandars', c: 'text-red-600 dark:text-red-400' },
+                    { v: sideKeys[0], l: `🦁 ${sideNames.home}`, c: 'text-red-600 dark:text-red-400' },
                     { v: 'tie',        l: '🤝 Tie',        c: 'text-gray-500' },
-                    { v: 'bazigars',   l: '🐅 Bazigars',   c: 'text-blue-600 dark:text-blue-400' },
+                    { v: sideKeys[1], l: `🐅 ${sideNames.away}`, c: 'text-blue-600 dark:text-blue-400' },
                   ] as const).map(opt => {
                     const sel = form.internal_most_sixes === opt.v;
                     return (
@@ -595,9 +608,9 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {([
-                    { v: 'dhurandars', l: '🦁 Dhurandars', c: 'text-red-600 dark:text-red-400' },
+                    { v: sideKeys[0], l: `🦁 ${sideNames.home}`, c: 'text-red-600 dark:text-red-400' },
                     { v: 'tie',        l: '🤝 Tie',        c: 'text-gray-500' },
-                    { v: 'bazigars',   l: '🐅 Bazigars',   c: 'text-blue-600 dark:text-blue-400' },
+                    { v: sideKeys[1], l: `🐅 ${sideNames.away}`, c: 'text-blue-600 dark:text-blue-400' },
                   ] as const).map(opt => {
                     const sel = form.internal_highest_team === opt.v;
                     return (

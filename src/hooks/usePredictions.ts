@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import type { InternalTeam } from '../types';
 
 // 'dhurandars' / 'bazigars' are used for internal (SCC vs SCC) matches
-export type PredictionWinner = 'scc' | 'opponent' | 'draw' | 'dhurandars' | 'bazigars';
+export type PredictionWinner = 'scc' | 'opponent' | 'draw' | InternalTeam;
 
 // Bonus prediction option types
 export type ScoreRange     = 'under_100' | '100_110' | '110_125' | 'over_125';
 export type YesNo          = 'yes' | 'no';
 // Internal-match bonus types
-export type SixesTeam      = 'dhurandars' | 'bazigars' | 'tie';
+export type SixesTeam      = InternalTeam | 'tie';
 export type MarginType     = 'thriller' | 'comfortable' | 'dominant';
 
 export interface MatchPrediction {

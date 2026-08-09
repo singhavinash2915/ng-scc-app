@@ -7,7 +7,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useFantasyDraft, SQUAD_SIZE, BUDGET } from '../hooks/useFantasyDraft';
-import { SEASON_NEW, SEASON_PREV, SEASON_NEW_START, SEASON_NEW_END } from '../config/season2';
+import { PLAYING_LABEL, SEASON_NEW, SEASON_PREV, SEASON_NEW_START, SEASON_NEW_END } from '../config/season2';
 
 const PROFILE_KEY = 'scc-my-profile-id';
 const SEASON = SEASON_NEW;
@@ -72,7 +72,7 @@ export function Fantasy() {
     if (!myId || !valid || seasonStarted) return;
     setSaving(true); setMsg(null);
     try {
-      await saveTeam(myId, teamName || 'My XI', [...selected], captain);
+      await saveTeam(myId, teamName || `My ${PLAYING_LABEL}`, [...selected], captain);
       setMsg('✓ Team saved! Your score updates automatically as matches are played.');
     } catch {
       setMsg('Could not save — the fantasy table may not be set up yet.');
@@ -83,7 +83,7 @@ export function Fantasy() {
 
   return (
     <div>
-      <Header title="Fantasy Draft League" subtitle="Draft your XI · earn points from real performances" />
+      <Header title="Fantasy Draft League" subtitle={`Draft your ${PLAYING_LABEL} · earn points from real performances`} />
       <div className="p-4 lg:p-8 space-y-4 max-w-3xl mx-auto">
 
         {/* Hero / rules */}
@@ -202,14 +202,14 @@ export function Fantasy() {
           {loading ? (
             <p className="p-4 text-sm text-gray-400">Loading…</p>
           ) : leaderboard.length === 0 ? (
-            <p className="p-4 text-sm text-gray-400">No teams yet — be the first to draft your XI! 🏏</p>
+            <p className="p-4 text-sm text-gray-400">No teams yet — be the first to draft your side! 🏏</p>
           ) : (
             <div className="divide-y divide-gray-50 dark:divide-gray-800">
               {leaderboard.map((e, i) => (
                 <div key={e.team.id} className={`flex items-center gap-3 px-4 py-2.5 ${e.manager?.id === myId ? 'bg-violet-50/60 dark:bg-violet-900/15' : ''}`}>
                   <span className={`w-6 text-center font-black tabular-nums ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-orange-400' : 'text-gray-300'}`}>{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{e.team.team_name || 'My XI'}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{e.team.team_name || `My ${PLAYING_LABEL}`}</p>
                     <p className="text-[11px] text-gray-400 truncate">{e.manager?.name || 'Unknown'}{e.captainName ? ` · © ${e.captainName.split(' ')[0]}` : ''}</p>
                   </div>
                   <span className="text-sm font-black tabular-nums text-emerald-600 dark:text-emerald-400">{e.score.toLocaleString('en-IN')}</span>

@@ -5,11 +5,12 @@
 import type { Match } from '../types';
 import type { MatchScorecard, BatterRow, BowlerRow } from '../hooks/useMatchScorecard';
 import type { ScoreRange, YesNo, SixesTeam, MarginType } from '../hooks/usePredictions';
+import type { InternalTeam } from '../types';
 
 const SCC_TEAM_ID = 7927431;
 
 export interface MatchOutcome {
-  winner: 'scc' | 'opponent' | 'draw' | 'dhurandars' | 'bazigars';
+  winner: 'scc' | 'opponent' | 'draw' | InternalTeam;
   top_scorer_id: string | null;
   top_wicket_taker_id: string | null;
   mom_id: string | null;
@@ -36,11 +37,26 @@ function bucketScore(runs: number): ScoreRange {
 }
 
 // Identify which internal SCC team an innings belongs to from the team name.
-function internalTeamOf(teamName: string | null): 'dhurandars' | 'bazigars' | null {
+// Covers both competitions: the original rivalry and MahaSangram.
+function internalTeamOf(teamName: string | null): InternalTeam | null {
   const n = (teamName || '').toLowerCase();
   if (n.includes('dhurand')) return 'dhurandars';
   if (n.includes('baazig') || n.includes('bazig')) return 'bazigars';
+  if (n.includes('brahmos')) return 'brahmos';
+  if (n.includes('agni')) return 'agni';
   return null;
+}
+
+/**
+ * The two sides of an internal fixture, in a fixed order, so scoring can talk
+ * about "side A" and "side B" without caring which competition it is. Grading
+ * used to compare against the literals 'dhurandars'/'bazigars', which silently
+ * scored every MahaSangram bonus question wrong.
+ */
+function sidesOf(a: InternalTeam | null, b: InternalTeam | null): [InternalTeam, InternalTeam] | null {
+  if (!a || !b || a === b) return null;
+  const maha = a === 'brahmos' || a === 'agni';
+  return maha ? ['brahmos', 'agni'] : ['dhurandars', 'bazigars'];
 }
 
 function sumSixes(rows: BatterRow[] | null): number {
@@ -73,7 +89,7 @@ export function deriveOutcome(
   // For internal matches, winner is whichever SCC team won
   let winner: MatchOutcome['winner'];
   if (match.match_type === 'internal') {
-    winner = (match.winning_team as 'dhurandars' | 'bazigars' | null) || 'draw';
+    winner = (match.winning_team as InternalTeam | null) || 'draw';
   } else {
     winner = match.result === 'won' ? 'scc' : match.result === 'lost' ? 'opponent' : 'draw';
   }
@@ -155,10 +171,13 @@ export function deriveOutcome(
 
     // Map each team to its batting + bowling rows.
     // A team BOWLS in the OTHER team's batting innings.
-    const dhurBat  = inn1Team === 'dhurandars' ? inn1Bat : inn2Bat;
-    const bazBat   = inn1Team === 'dhurandars' ? inn2Bat : inn1Bat;
-    const dhurBowl = inn1Team === 'dhurandars' ? scorecard.innings2_bowling : scorecard.innings1_bowling;
-    const bazBowl  = inn1Team === 'dhurandars' ? scorecard.innings1_bowling : scorecard.innings2_bowling;
+    // Which of the two sides batted first — works for either competition.
+    const sides = sidesOf(inn1Team, inn2Team);
+    const firstIsSideA = !!sides && inn1Team === sides[0];
+    const dhurBat  = firstIsSideA ? inn1Bat : inn2Bat;
+    const bazBat   = firstIsSideA ? inn2Bat : inn1Bat;
+    const dhurBowl = firstIsSideA ? scorecard.innings2_bowling : scorecard.innings1_bowling;
+    const bazBowl  = firstIsSideA ? scorecard.innings1_bowling : scorecard.innings2_bowling;
 
     const topScorerOf = (rows: BatterRow[] | null): BatterRow | null =>
       rows && rows.length ? [...rows].filter(b => (b.balls || 0) > 0).sort((a, b) => b.runs - a.runs)[0] || null : null;
@@ -177,14 +196,14 @@ export function deriveOutcome(
     if (inn1Team && inn2Team && (inn1Bat || inn2Bat)) {
       const sixesD = sumSixes(dhurBat);
       const sixesB = sumSixes(bazBat);
-      internal_most_sixes = sixesD === sixesB ? 'tie' : sixesD > sixesB ? 'dhurandars' : 'bazigars';
+      internal_most_sixes = sixesD === sixesB ? 'tie' : sixesD > sixesB ? sides![0] : sides![1];
     }
 
     // Highest individual score — which team has the bigger single knock
     if (inn1Team && inn2Team && (inn1Bat || inn2Bat)) {
       const hiD = maxRunsOf(dhurBat);
       const hiB = maxRunsOf(bazBat);
-      internal_highest_team = hiD === hiB ? 'tie' : hiD > hiB ? 'dhurandars' : 'bazigars';
+      internal_highest_team = hiD === hiB ? 'tie' : hiD > hiB ? sides![0] : sides![1];
     }
 
     // Winning margin (run-difference based — robust for internal matches that

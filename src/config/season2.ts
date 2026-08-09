@@ -66,3 +66,10 @@ export const MAHASANGRAM = {
     team2: 14361070,   // SCC Agni
   },
 } as const;
+
+// ─── How many take the field ───────────────────────────────────────────────────
+// SCC plays TWELVE, not eleven — a club rule, so more of the squad gets a game.
+// Anything that picks a side (Best XII, AI squad selector, fantasy) should size
+// itself from here rather than assuming the standard eleven.
+export const PLAYING_SIZE = 12;
+export const PLAYING_LABEL = 'XII';
