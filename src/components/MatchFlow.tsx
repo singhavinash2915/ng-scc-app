@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Coins, Trophy, ChevronRight } from 'lucide-react';
-import { battingCard, bowlingCard, type Ball, type MatchFormat } from '../lib/cricketRules';
+import { suggestMom } from '../lib/momSuggest';
+import type { Ball, MatchFormat } from '../lib/cricketRules';
 import type { Member } from '../types';
 
 // ─── The match around the scoring pad ──────────────────────────────────────────
@@ -113,10 +114,12 @@ export function InningsBreak({ battingTeam, chasingTeam, runs, wickets, overs, o
 }
 
 // ── 3. Result + Man of the Match ───────────────────────────────────────────────
-export function MatchResult({ first, second, allBalls, members, format, onFinish, saving }: {
+export function MatchResult({ first, second, allBalls, secondBalls, members, format, onFinish, saving }: {
   first: { team: string; runs: number; wickets: number; overs: string };
   second: { team: string; runs: number; wickets: number; overs: string };
   allBalls: Ball[];
+  /** Second-innings balls only — used to work out who was on the winning side. */
+  secondBalls: Ball[];
   members: Member[];
   format: MatchFormat;
   onFinish: (winner: string | null, momId: string | null) => void;
@@ -131,25 +134,25 @@ export function MatchResult({ first, second, allBalls, members, format, onFinish
     : winner ? `${first.runs - second.runs} runs` : '';
 
   /**
-   * Suggested Man of the Match — runs plus twenty a wicket, the same weighting
-   * the MVP race uses. Only a suggestion: the scorer picks, because a match-
-   * winning catch or a rearguard thirty never shows up in a formula.
+   * Suggested Man of the Match. Judged against THIS match's run rate rather than
+   * fixed thresholds, and weighted towards the winning side — a hard 30 on a low
+   * pitch and a chase-sealing spell are exactly what a flat runs+wickets tally
+   * misses. Still only a suggestion: the scorer picks, because a match-winning
+   * catch or a rearguard stand never fully shows up in a formula.
    */
   const suggestions = useMemo(() => {
-    const bat = battingCard(allBalls), bowl = bowlingCard(allBalls);
-    const impact = new Map<string, { runs: number; wkts: number; score: number }>();
-    for (const [id, l] of bat) impact.set(id, { runs: l.runs, wkts: 0, score: l.runs });
-    for (const [id, l] of bowl) {
-      const cur = impact.get(id) ?? { runs: 0, wkts: 0, score: 0 };
-      cur.wkts = l.wickets; cur.score += l.wickets * 20;
-      impact.set(id, cur);
-    }
-    return [...impact.entries()]
-      .map(([id, v]) => ({ member: members.find(m => m.id === id), ...v }))
-      .filter(x => x.member && x.score > 0)
-      .sort((a, b) => b.score - a.score)
+    // The chasing side bats in the second innings; if they lost, the winners are
+    // the side that bowled it.
+    const winningSide = winner
+      ? [...new Set(secondBalls.flatMap(b => (chased
+          ? [b.striker_id, b.non_striker_id]
+          : [b.bowler_id, b.fielder_id])).filter(Boolean) as string[])]
+      : [];
+    return suggestMom({ balls: allBalls, winningSide })
+      .map(s => ({ ...s, member: members.find(m => m.id === s.memberId) }))
+      .filter(s => s.member)
       .slice(0, 5);
-  }, [allBalls, members]);
+  }, [allBalls, secondBalls, members, winner, chased]);
 
   return (
     <div className="space-y-3">
@@ -179,8 +182,8 @@ export function MatchResult({ first, second, allBalls, members, format, onFinish
           <Trophy className="w-3.5 h-3.5" /> Man of the Match
         </p>
         <p className="text-[11px] text-slate-500 mt-1 mb-3">
-          Top performers by runs and wickets — but a match-winning catch never shows
-          in a formula, so it's your call.
+          Ranked on impact in this match — runs, wickets, catches, and how they went
+          against the match run rate. It's still your call.
         </p>
         <div className="space-y-1.5">
           {suggestions.map(s => (
@@ -193,7 +196,7 @@ export function MatchResult({ first, second, allBalls, members, format, onFinish
                 {s.member!.name}
               </span>
               <span className="text-[11px] text-slate-400 tabular-nums">
-                {s.runs} runs{s.wkts ? ` · ${s.wkts} wkt${s.wkts > 1 ? 's' : ''}` : ''}
+                {s.line}
               </span>
             </button>
           ))}

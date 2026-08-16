@@ -202,10 +202,67 @@ export function useScoring(
     writeQueue(readQueue().filter(b => b.seq !== last.seq));
   }, [balls, matchId, innings, readQueue, writeQueue]);
 
+  /**
+   * The scorer picked the wrong batter and only noticed a few balls later.
+   *
+   * Undo would mean unwinding every good ball in between just to fix a name, so
+   * instead we rewrite the balls the wrong player is on — but only for their
+   * CURRENT stay at the crease. Anything before they came in belongs to a
+   * genuinely different batter and must not be touched, which is why this walks
+   * back from the last ball to find where the run of their name starts.
+   *
+   * dismissed_id is deliberately left alone: someone at the crease to be
+   * corrected hasn't been dismissed, so any such row is a different event.
+   */
+  const correctBatter = useCallback(async (wrongId: string, rightId: string) => {
+    if (!matchId || wrongId === rightId) return;
+    const onIt = (b: Ball) => b.striker_id === wrongId || b.non_striker_id === wrongId;
+
+    // Walk back while the wrong player is continuously at the crease.
+    let from = balls.length;
+    while (from > 0 && onIt(balls[from - 1])) from--;
+    if (from >= balls.length) return;              // never actually faced
+
+    const touched = balls.slice(from).filter(onIt);
+    const fix = (b: Ball): Ball => ({
+      ...b,
+      striker_id: b.striker_id === wrongId ? rightId : b.striker_id,
+      non_striker_id: b.non_striker_id === wrongId ? rightId : b.non_striker_id,
+    });
+    setBalls(prev => prev.map(b => (b.seq >= balls[from].seq && onIt(b) ? fix(b) : b)));
+
+    for (const b of touched) {
+      const f = fix(b);
+      await supabase.from('scc_ball_by_ball')
+        .update({ striker_id: f.striker_id, non_striker_id: f.non_striker_id })
+        .eq('match_id', matchId).eq('innings', innings).eq('seq', b.seq);
+    }
+  }, [matchId, innings, balls]);
+
+  /**
+   * Reassign a delivery to a different bowler — the injury case, where a
+   * replacement finishes someone else's over.
+   *
+   * Nothing special is needed to split the over between them: figures are
+   * aggregated per ball by bowler_id, so changing the owner of the remaining
+   * balls gives both bowlers exactly the deliveries they sent down.
+   */
+  const reassignBowler = useCallback(async (fromSeq: number, bowlerId: string) => {
+    if (!matchId) return;
+    const affected = balls.filter(b => b.seq >= fromSeq);
+    if (!affected.length) return;
+    setBalls(prev => prev.map(b => (b.seq >= fromSeq ? { ...b, bowler_id: bowlerId } : b)));
+    for (const b of affected) {
+      await supabase.from('scc_ball_by_ball').update({ bowler_id: bowlerId })
+        .eq('match_id', matchId).eq('innings', innings).eq('seq', b.seq);
+    }
+  }, [matchId, innings, balls]);
+
   return {
     balls, state, ctx, freeHit, loading, tableMissing,
     lockHolder, lockFresh, claimLock, releaseLock, heartbeat,
-    scoreBall, undoBall, pending, flush, refetch: fetchBalls,
+    scoreBall, undoBall, correctBatter, reassignBowler,
+    pending, flush, refetch: fetchBalls,
     HEARTBEAT_MS,
   };
 }

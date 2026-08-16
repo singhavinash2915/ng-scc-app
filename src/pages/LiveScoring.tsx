@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Undo2, Radio, WifiOff, Lock, Users } from 'lucide-react';
+import { Undo2, Radio, WifiOff, Lock, Users, Wrench, ClipboardList, Repeat } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useScoring } from '../hooks/useScoring';
@@ -141,6 +142,40 @@ export function LiveScoring() {
       // and no-balls don't end an over, hence the extras guard.
       setNeedBowler(true);
     }
+  };
+
+  /**
+   * The things that go wrong mid-match. Every one of these is otherwise only
+   * fixable by undoing good deliveries back to the mistake, which is how a
+   * scorer loses an innings.
+   */
+  const [tool, setTool] = useState<'strike' | 'batter' | 'bowler' | 'overs' | 'card' | null>(null);
+  const [fixWho, setFixWho] = useState<string | null>(null);
+  const [newOvers, setNewOvers] = useState(String(format.oversPerInnings));
+
+  /**
+   * Manual strike change. The engine rotates correctly by the rules, but
+   * overthrows, short runs and byes all produce endings only the umpire knows —
+   * so the scorer has to be able to say otherwise. No write needed: the next
+   * ball records whoever is on strike, and the engine carries on from there.
+   */
+  const swapStrike = () => {
+    setStriker(nonStriker);
+    setNonStriker(striker);
+    setTool(null);
+  };
+
+  /** Overs cut for rain or a late start. Can't go below what's already bowled. */
+  const applyOvers = async () => {
+    const n = Number(newOvers);
+    const bowled = Math.ceil(S.state.legalBalls / 6);
+    if (!Number.isFinite(n) || n < 1) return alert('Enter a number of overs.');
+    if (n < bowled) return alert(`${bowled} overs are already bowled — can't cut below that.`);
+    const { error } = await supabase.from('matches')
+      .update({ overs_per_innings: n }).eq('id', matchId);
+    if (error) return alert(error.message);
+    setTool(null);
+    window.location.reload();
   };
 
   /** Everyone who has already batted or is at the crease. */
@@ -316,6 +351,7 @@ export function LiveScoring() {
             second={{ team: sideName(M.second.batting_team), runs: st.runs,
                       wickets: st.wickets, overs: st.overs }}
             allBalls={[...firstInnings.balls, ...S.balls]}
+            secondBalls={S.balls}
             members={members} format={format} saving={saving}
             onFinish={async (winner, momId) => {
               setSaving(true);
@@ -456,10 +492,39 @@ export function LiveScoring() {
               ))}
             </div>
 
-            <button onClick={() => S.releaseLock()}
-              className="w-full text-[11px] font-bold text-slate-400 py-1">
-              Hand over scoring
-            </button>
+            {/* ── Fix it ─────────────────────────────────────────────────
+                Undo only walks back one ball at a time, so without these the
+                only way to correct a name three overs later is to destroy three
+                overs of good scoring. Kept small and out of the way: these are
+                rare taps, and nothing here should compete with the run buttons. */}
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { k: 'strike' as const, icon: Repeat, label: 'Strike' },
+                { k: 'batter' as const, icon: Users, label: 'Batter' },
+                { k: 'bowler' as const, icon: Wrench, label: 'Bowler' },
+                { k: 'card' as const, icon: ClipboardList, label: 'Card' },
+              ].map(t => (
+                <button key={t.k} onClick={() => { setFixWho(null); setTool(t.k); }}
+                  className="h-12 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200
+                             dark:border-white/10 text-slate-500 dark:text-white/60
+                             inline-flex flex-col items-center justify-center gap-0.5
+                             active:scale-95 transition-transform">
+                  <t.icon className="w-4 h-4" />
+                  <span className="text-[9px] font-black uppercase tracking-wider">{t.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <button onClick={() => { setNewOvers(String(format.oversPerInnings)); setTool('overs'); }}
+                className="text-[11px] font-bold text-slate-400 py-1">
+                Change overs ({format.oversPerInnings})
+              </button>
+              <button onClick={() => S.releaseLock()}
+                className="text-[11px] font-bold text-slate-400 py-1">
+                Hand over scoring
+              </button>
+            </div>
           </div>
         )}
 
@@ -622,6 +687,197 @@ export function LiveScoring() {
 
               <button onClick={() => setWicketSheet(null)}
                 className="w-full text-[11px] font-bold text-slate-400 pt-1">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── CORRECTIONS + FULL CARD ──────────────────────────────────── */}
+        {tool && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center
+                          justify-center p-3" onClick={() => setTool(null)}>
+            <div onClick={e => e.stopPropagation()}
+              className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl bg-white dark:bg-slate-900
+                         border border-slate-200 dark:border-white/10 p-5 space-y-3">
+
+              {tool === 'strike' && (
+                <>
+                  <h3 className="font-black text-slate-900 dark:text-white">Change strike</h3>
+                  <p className="text-[12px] text-slate-500">
+                    Overthrows, short runs and byes can leave the batters at ends the
+                    rules alone don't predict. This puts them where the umpire says.
+                  </p>
+                  <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-3 text-sm">
+                    <p><span className="text-emerald-500">●</span> <b>{name(striker)}</b> on strike</p>
+                    <p className="text-slate-500">{name(nonStriker)} at the other end</p>
+                  </div>
+                  <button onClick={swapStrike}
+                    className="w-full py-3 rounded-2xl bg-emerald-500 text-white font-black">
+                    Swap them over
+                  </button>
+                </>
+              )}
+
+              {tool === 'batter' && (
+                <>
+                  <h3 className="font-black text-slate-900 dark:text-white">Wrong batter</h3>
+                  <p className="text-[12px] text-slate-500">
+                    Picks the right player and rewrites the balls faced during this
+                    stay at the crease. Earlier innings by the same name aren't touched.
+                  </p>
+                  <div className="flex gap-2">
+                    {[striker, nonStriker].map(id => (
+                      <button key={String(id)} onClick={() => setFixWho(id)}
+                        className={`flex-1 py-2.5 rounded-2xl text-[12px] font-black border-2 ${
+                          fixWho === id
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
+                            : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70'}`}>
+                        {name(id)}
+                      </button>
+                    ))}
+                  </div>
+                  {fixWho && (
+                    <>
+                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 pt-1">
+                        Should have been
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {squad.filter(m => m.id !== striker && m.id !== nonStriker && !usedBatters.has(m.id))
+                          .map(m => (
+                            <button key={m.id}
+                              onClick={async () => {
+                                await S.correctBatter(fixWho, m.id);
+                                if (striker === fixWho) setStriker(m.id); else setNonStriker(m.id);
+                                setTool(null);
+                              }}
+                              className="py-2.5 rounded-2xl border border-slate-200 dark:border-white/10
+                                         text-[12px] font-bold text-slate-700 dark:text-white/80 truncate px-2">
+                              {m.name}
+                            </button>
+                          ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {tool === 'bowler' && (
+                <>
+                  <h3 className="font-black text-slate-900 dark:text-white">Replace bowler</h3>
+                  <p className="text-[12px] text-slate-500">
+                    For an injury mid-over. The replacement finishes the over and the
+                    figures split between them — each keeps the balls they bowled.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {squad.filter(m => m.id !== bowler).map(m => (
+                      <button key={m.id}
+                        onClick={async () => {
+                          // Only the balls still to come change hands. Anything
+                          // already bowled stays with whoever bowled it.
+                          setBowler(m.id);
+                          setTool(null);
+                        }}
+                        className="py-2.5 rounded-2xl border border-slate-200 dark:border-white/10
+                                   text-[12px] font-bold text-slate-700 dark:text-white/80 truncate px-2">
+                        {m.name}
+                      </button>
+                    ))}
+                  </div>
+                  {st.thisOver.length > 0 && bowler && (
+                    <button
+                      onClick={async () => {
+                        // Scorer had the wrong name on this over from the start:
+                        // hand the whole over over, rather than splitting it.
+                        const first = st.thisOver[0].seq;
+                        const to = window.prompt('Reassign this whole over to which bowler? Type the name exactly.');
+                        const m = squad.find(x => x.name.toLowerCase() === (to ?? '').trim().toLowerCase());
+                        if (!m) return alert('No member with that name.');
+                        await S.reassignBowler(first, m.id);
+                        setBowler(m.id);
+                        setTool(null);
+                      }}
+                      className="w-full text-[11px] font-bold text-slate-400 pt-1">
+                      Wrong bowler for this whole over?
+                    </button>
+                  )}
+                </>
+              )}
+
+              {tool === 'overs' && (
+                <>
+                  <h3 className="font-black text-slate-900 dark:text-white">Change overs</h3>
+                  <p className="text-[12px] text-slate-500">
+                    Rain, a late start, or teams agreeing to cut it short. Applies to
+                    both innings — it can't go below the overs already bowled.
+                  </p>
+                  <input type="number" inputMode="numeric" value={newOvers}
+                    onChange={e => setNewOvers(e.target.value)}
+                    className="w-full text-center font-display text-4xl font-extrabold py-3 rounded-2xl
+                               bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10
+                               text-slate-900 dark:text-white" />
+                  <button onClick={applyOvers}
+                    className="w-full py-3 rounded-2xl bg-emerald-500 text-white font-black">
+                    Set overs
+                  </button>
+                </>
+              )}
+
+              {tool === 'card' && (
+                <>
+                  <h3 className="font-black text-slate-900 dark:text-white">
+                    Full scorecard · {sideName(M.rows.find(r => r.innings === shown)?.batting_team)}
+                  </h3>
+                  <table className="w-full text-[12px]">
+                    <thead>
+                      <tr className="text-slate-400 text-[9px] uppercase tracking-wider">
+                        <th className="text-left py-1">Batter</th><th className="text-right">R</th>
+                        <th className="text-right">B</th><th className="text-right">4s</th>
+                        <th className="text-right">6s</th><th className="text-right">SR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...battingCard(S.balls).values()].map(b => (
+                        <tr key={b.memberId} className="border-t border-slate-100 dark:border-white/5">
+                          <td className="py-1.5 font-bold text-slate-800 dark:text-white/85 truncate max-w-[120px]">
+                            {name(b.memberId)}
+                            {!b.out && <span className="text-emerald-500 font-normal"> *</span>}
+                          </td>
+                          <td className="text-right font-black tabular-nums">{b.runs}</td>
+                          <td className="text-right tabular-nums text-slate-500">{b.balls}</td>
+                          <td className="text-right tabular-nums text-slate-500">{b.fours}</td>
+                          <td className="text-right tabular-nums text-slate-500">{b.sixes}</td>
+                          <td className="text-right tabular-nums text-slate-500">{b.strikeRate.toFixed(0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <table className="w-full text-[12px] pt-2">
+                    <thead>
+                      <tr className="text-slate-400 text-[9px] uppercase tracking-wider">
+                        <th className="text-left py-1">Bowler</th><th className="text-right">O</th>
+                        <th className="text-right">M</th><th className="text-right">R</th>
+                        <th className="text-right">W</th><th className="text-right">Econ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...bowlingCard(S.balls).values()].map(b => (
+                        <tr key={b.memberId} className="border-t border-slate-100 dark:border-white/5">
+                          <td className="py-1.5 font-bold text-slate-800 dark:text-white/85 truncate max-w-[120px]">
+                            {name(b.memberId)}
+                          </td>
+                          <td className="text-right tabular-nums">{b.overs}</td>
+                          <td className="text-right tabular-nums text-slate-500">{b.maidens}</td>
+                          <td className="text-right tabular-nums">{b.runs}</td>
+                          <td className="text-right font-black tabular-nums">{b.wickets}</td>
+                          <td className="text-right tabular-nums text-slate-500">{b.economy.toFixed(1)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+
+              <button onClick={() => setTool(null)}
+                className="w-full text-[11px] font-bold text-slate-400 pt-1">Close</button>
             </div>
           </div>
         )}
