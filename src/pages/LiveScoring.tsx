@@ -590,20 +590,33 @@ export function LiveScoring() {
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-5 gap-2">
-                  {[0, 1, 2, 3, 4].map(extra => (
-                    <button key={extra}
-                      onClick={() => record({
-                        extraType: wicketSheet as ExtraType,
-                        // A wide or no-ball is one run plus anything run.
-                        extraRuns: (wicketSheet === 'wd' || wicketSheet === 'nb') ? extra + 1 : extra,
-                        runsOffBat: 0,
-                      })}
-                      className="h-14 rounded-2xl border-2 border-slate-200 dark:border-white/10
-                                 font-display text-xl font-extrabold text-slate-900 dark:text-white">
-                      {(wicketSheet === 'wd' || wicketSheet === 'nb') ? `+${extra + 1}` : extra}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Same +0..+5 grid for every extra, labelled the way it's
+                      called: "wd+2" is a wide the batters ran two off. For a
+                      wide or no-ball the +1 penalty is added on top; for byes
+                      and leg-byes the number IS the runs, since there's no
+                      penalty. Uniform grid, correct arithmetic underneath. */}
+                  {[0, 1, 2, 3, 4, 5].map(n => {
+                    const penalty = wicketSheet === 'wd' || wicketSheet === 'nb' ? 1 : 0;
+                    return (
+                      <button key={n}
+                        onClick={() => record({
+                          extraType: wicketSheet as ExtraType,
+                          extraRuns: penalty + n,
+                          runsOffBat: 0,
+                        })}
+                        className="h-16 rounded-2xl border-2 border-amber-200 dark:border-amber-400/20
+                                   bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300
+                                   active:scale-95 transition-transform">
+                        <span className="block font-display text-xl font-extrabold">
+                          {wicketSheet}+{n}
+                        </span>
+                        <span className="block text-[9px] font-bold opacity-70">
+                          {penalty + n} run{penalty + n === 1 ? '' : 's'}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
