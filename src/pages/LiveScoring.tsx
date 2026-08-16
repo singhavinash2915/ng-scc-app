@@ -151,6 +151,7 @@ export function LiveScoring() {
    */
   const [tool, setTool] = useState<'strike' | 'batter' | 'bowler' | 'overs' | 'card' | null>(null);
   const [fixWho, setFixWho] = useState<string | null>(null);
+  const [bowlerScope, setBowlerScope] = useState<'rest' | 'over'>('rest');
   const [newOvers, setNewOvers] = useState(String(format.oversPerInnings));
 
   /**
@@ -767,12 +768,31 @@ export function LiveScoring() {
                     For an injury mid-over. The replacement finishes the over and the
                     figures split between them — each keeps the balls they bowled.
                   </p>
+                  <div className="flex gap-2">
+                    {[
+                      { k: 'rest' as const, l: 'From here on', h: 'injury mid-over' },
+                      { k: 'over' as const, l: 'This whole over', h: 'wrong name all along' },
+                    ].map(o => (
+                      <button key={o.k} onClick={() => setBowlerScope(o.k)}
+                        className={`flex-1 py-2 rounded-2xl border-2 ${
+                          bowlerScope === o.k
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
+                            : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70'}`}>
+                        <span className="block text-[12px] font-black">{o.l}</span>
+                        <span className="block text-[9px] opacity-70">{o.h}</span>
+                      </button>
+                    ))}
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     {squad.filter(m => m.id !== bowler).map(m => (
                       <button key={m.id}
                         onClick={async () => {
-                          // Only the balls still to come change hands. Anything
-                          // already bowled stays with whoever bowled it.
+                          // "From here on" needs no rewrite — the next ball simply
+                          // records the new name, and figures aggregate per ball.
+                          // "This whole over" hands back the balls already bowled.
+                          if (bowlerScope === 'over' && st.thisOver.length) {
+                            await S.reassignBowler(st.thisOver[0].seq, m.id);
+                          }
                           setBowler(m.id);
                           setTool(null);
                         }}
@@ -782,23 +802,6 @@ export function LiveScoring() {
                       </button>
                     ))}
                   </div>
-                  {st.thisOver.length > 0 && bowler && (
-                    <button
-                      onClick={async () => {
-                        // Scorer had the wrong name on this over from the start:
-                        // hand the whole over over, rather than splitting it.
-                        const first = st.thisOver[0].seq;
-                        const to = window.prompt('Reassign this whole over to which bowler? Type the name exactly.');
-                        const m = squad.find(x => x.name.toLowerCase() === (to ?? '').trim().toLowerCase());
-                        if (!m) return alert('No member with that name.');
-                        await S.reassignBowler(first, m.id);
-                        setBowler(m.id);
-                        setTool(null);
-                      }}
-                      className="w-full text-[11px] font-bold text-slate-400 pt-1">
-                      Wrong bowler for this whole over?
-                    </button>
-                  )}
                 </>
               )}
 
