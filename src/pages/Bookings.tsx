@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMatchBookings } from '../hooks/useMatchBookings';
 import { useAuth } from '../context/AuthContext';
 import type { MatchBooking, MatchBookingStatus, MatchSlot } from '../types';
+import { notifyTeamUrl } from '../utils/bookingMessages';
 import {
+  MessageCircle,
   CalendarDays,
   CheckCircle2,
   XCircle,
@@ -96,6 +98,11 @@ export function Bookings() {
     revenue:   bookings.filter(b => b.payment_status === 'verified').reduce((s, b) => s + b.amount, 0),
   };
 
+  /** Set after confirming or rejecting, so the admin is offered the message. */
+  const [notify, setNotify] = useState<{
+    booking: MatchBooking; kind: 'confirmed' | 'rejected'; reason?: string;
+  } | null>(null);
+
   async function handleConfirm() {
     if (!selectedBooking) return;
     setActionLoading(true);
@@ -103,6 +110,9 @@ export function Bookings() {
     const result = await confirmBookingAndCreateMatch(selectedBooking.id, adminNotes || undefined);
     setActionLoading(false);
     if (result.success) {
+      // Don't close yet — offer the confirmation message first. A booking
+      // confirmed only in our database is a team still waiting to hear.
+      setNotify({ booking: selectedBooking, kind: 'confirmed', reason: adminNotes || undefined });
       setSelectedBooking(null);
       setAdminNotes('');
     } else {
@@ -117,6 +127,7 @@ export function Bookings() {
     const result = await updateBookingStatus(selectedBooking.id, 'rejected', adminNotes || undefined);
     setActionLoading(false);
     if (result.success) {
+      setNotify({ booking: selectedBooking, kind: 'rejected', reason: adminNotes || undefined });
       setSelectedBooking(null);
       setAdminNotes('');
     } else {
@@ -578,6 +589,55 @@ export function Bookings() {
           </div>
         )}
       </Modal>
+
+      {/* ── TELL THE TEAM ────────────────────────────────────────────────
+          Confirming in our database doesn't tell the opponent anything, and a
+          team left guessing books elsewhere next time. One tap sends it from
+          the admin's own WhatsApp — the message is already written. */}
+      {notify && (
+        <Modal isOpen onClose={() => setNotify(null)}
+          title={notify.kind === 'confirmed' ? 'Booking confirmed' : 'Booking rejected'} size="sm">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {notify.kind === 'confirmed'
+                ? <>Now let <b>{notify.booking.team_name}</b> know they're on.</>
+                : <>Let <b>{notify.booking.team_name}</b> know, and keep the door open for another date.</>}
+            </p>
+
+            {(() => {
+              const url = notifyTeamUrl({
+                teamName: notify.booking.team_name,
+                contactName: notify.booking.contact_name,
+                contactPhone: notify.booking.contact_phone,
+                date: notify.booking.slot?.date ?? '',
+                venue: 'Four Star Cricket Ground',
+                amount: notify.booking.amount,
+                bookingId: notify.booking.id,
+              }, notify.kind, notify.reason);
+
+              return url ? (
+                <a href={url} target="_blank" rel="noopener noreferrer"
+                  onClick={() => setNotify(null)}
+                  className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#25D366]
+                             text-white font-black py-4 shadow-lg">
+                  <MessageCircle className="w-5 h-5" />
+                  Message {notify.booking.contact_name} on WhatsApp
+                </a>
+              ) : (
+                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                  Their number ({notify.booking.contact_phone}) isn't a valid Indian mobile,
+                  so WhatsApp can't be opened automatically — you'll need to contact them directly.
+                </p>
+              );
+            })()}
+
+            <button onClick={() => setNotify(null)}
+              className="w-full text-xs font-bold text-gray-400 py-1">
+              Skip — I'll tell them myself
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {/* ── Manual (admin) booking modal ──────────────────────────────────── */}
       <ManualBookingModal

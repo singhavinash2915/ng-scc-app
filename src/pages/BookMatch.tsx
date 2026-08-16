@@ -7,6 +7,7 @@ import { useGroundSettings } from '../hooks/useGroundSettings';
 import { useDayHolds, holdMeta, OPEN_KIND, type DayHold } from '../hooks/useDayHolds';
 import { DayHoldModal, type DateBlocker } from '../components/DayHoldModal';
 import type { MatchSlot } from '../types';
+import { notifyAdminUrl } from '../utils/bookingMessages';
 import {
   CalendarDays,
   CheckCircle2,
@@ -1319,6 +1320,31 @@ export function BookMatch() {
         {/* ══ STEP 4: Success ═══════════════════════════════════════════════ */}
         {step === 'success' && selectedSlot && bookingId && (
           <div className="space-y-5">
+            {/* ── TELL SCC ON WHATSAPP ────────────────────────────────────
+                First thing on the success screen, because a booking sitting
+                unseen in a database helps nobody — the admin watches WhatsApp,
+                not the admin page. One tap sends it from the booker's own
+                number, which also gives us a real contact to reply to. */}
+            {(() => {
+              const url = notifyAdminUrl({
+                teamName, contactName, contactPhone,
+                date: selectedSlot.date, venue: ground.name,
+                amount: selectedSlot.price, bookingId,
+              });
+              if (!url) return null;
+              return (
+                <a href={url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#25D366]
+                             text-white font-black py-4 shadow-lg hover:-translate-y-0.5 transition-transform">
+                  <MessageCircle className="w-5 h-5" />
+                  Send booking to SCC on WhatsApp
+                </a>
+              );
+            })()}
+            <p className="text-center text-xs text-gray-500 -mt-3">
+              Tap above so we see it straight away — your slot is held either way.
+            </p>
+
             <div className="text-center">
               <div className="flex justify-center mb-4">
                 <div className={`w-20 h-20 rounded-full border-2 flex items-center justify-center ${
