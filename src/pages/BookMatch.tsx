@@ -342,7 +342,10 @@ export function BookMatch() {
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [chTeamId, setChTeamId]       = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'upi'|'razorpay'>('upi');
+  // QR only. 'Pay Online' promised a payment link an admin then had to send by
+  // hand, so it was slower than the QR and left bookings sitting unpaid — the
+  // type is kept so the booking API and screenshot verification are unchanged.
+  const paymentMethod = 'upi' as const;
   const [screenshotFile, setScreenshotFile]   = useState<File|null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string|null>(null);
   const [formErrors, setFormErrors]   = useState<Record<string,string>>({});
@@ -484,6 +487,22 @@ export function BookMatch() {
       setAutoVerified(result.autoVerified ?? false);
       setValidationReason(result.validationReason ?? null);
       setStep('success');
+
+      /**
+       * Send the details to SCC as part of confirming, not as an optional
+       * button afterwards — a booking nobody sees isn't a booking. Opened in a
+       * new tab so the success screen stays put behind it.
+       *
+       * Worth being honest about the limit: this opens WhatsApp with the
+       * message written, it can't make anyone press send. The success screen
+       * therefore keeps a 'Send again' button rather than assuming it went.
+       */
+      const url = notifyAdminUrl({
+        teamName, contactName, contactPhone,
+        date: selectedSlot.date, venue: ground.name,
+        amount: selectedSlot.price, bookingId: result.bookingId ?? null,
+      });
+      if (url) window.open(url, '_blank', 'noopener');
     }
     else setSubmitError(result.error ?? 'Booking failed. Please try again.');
   }
@@ -513,7 +532,7 @@ export function BookMatch() {
   function handleReset() {
     setStep('calendar'); setSelectedSlot(null);
     setTeamName(''); setContactName(''); setContactPhone(''); setChTeamId('');
-    setPaymentMethod('upi'); setScreenshotFile(null); setScreenshotPreview(null);
+    setScreenshotFile(null); setScreenshotPreview(null);
     setFormErrors({}); setPaymentError(null); setSubmitError(null); setBookingId(null);
   }
 
@@ -1182,18 +1201,6 @@ export function BookMatch() {
               </div>
             </div>
 
-            {/* Method tabs */}
-            <div className="flex gap-2 bg-gray-100 rounded-xl p-1">
-              {(['upi','razorpay'] as const).map(m => (
-                <button key={m} onClick={()=>{ setPaymentMethod(m); setPaymentError(null); }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-                    paymentMethod===m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}>
-                  {m==='upi' ? 'UPI / QR Code' : 'Pay Online'}
-                </button>
-              ))}
-            </div>
-
             {/* UPI panel */}
             {paymentMethod==='upi' && (
               <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
@@ -1272,21 +1279,6 @@ export function BookMatch() {
               </div>
             )}
 
-            {/* Razorpay panel */}
-            {paymentMethod==='razorpay' && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3 text-center">
-                <div className="text-4xl">💳</div>
-                <p className="font-semibold text-gray-900">Pay Online</p>
-                <p className="text-sm text-gray-500">
-                  Submit your booking. SCC admin will send a secure payment link to <strong>{contactPhone}</strong> within a few hours.
-                </p>
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 text-left flex gap-2">
-                  <Info className="w-4 h-4 shrink-0 mt-0.5"/>
-                  Your date is held for 24 hours. Booking confirmed only after payment.
-                </div>
-              </div>
-            )}
-
             {/* Confirmation note */}
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2">
               <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5"/>
@@ -1337,12 +1329,12 @@ export function BookMatch() {
                   className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#25D366]
                              text-white font-black py-4 shadow-lg hover:-translate-y-0.5 transition-transform">
                   <MessageCircle className="w-5 h-5" />
-                  Send booking to SCC on WhatsApp
+                  Send again on WhatsApp
                 </a>
               );
             })()}
             <p className="text-center text-xs text-gray-500 -mt-3">
-              Tap above so we see it straight away — your slot is held either way.
+              WhatsApp should have opened with your booking — tap send there. Not opened? Use the button above.
             </p>
 
             <div className="text-center">
