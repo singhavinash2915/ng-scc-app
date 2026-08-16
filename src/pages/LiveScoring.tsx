@@ -5,6 +5,9 @@ import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useScoring } from '../hooks/useScoring';
+import { useMatchInnings } from '../hooks/useMatchInnings';
+import { TossSheet, InningsBreak, MatchResult, type Side } from '../components/MatchFlow';
+import { internalSides } from '../utils/internalTeams';
 import { DEFAULT_FORMAT, battingCard, bowlingCard, type WicketType, type ExtraType } from '../lib/cricketRules';
 
 // ─── Live scoring ──────────────────────────────────────────────────────────────
@@ -49,8 +52,35 @@ export function LiveScoring() {
       ?? DEFAULT_FORMAT.maxOversPerBowler,
   }), [match]);
 
-  const [innings, setInnings] = useState<1 | 2>(1);
-  const S = useScoring(matchId ?? null, innings, format);
+  const M = useMatchInnings(matchId ?? null);
+  /** The two sides, named from the fixture — "SCC Brahmos", not "Team 1". */
+  const sides = useMemo<[Side, Side]>(() => {
+    const s2 = internalSides(match ?? null);
+    return match?.match_type === 'internal'
+      ? [{ key: 'home', name: s2.home }, { key: 'away', name: s2.away }]
+      : [{ key: 'home', name: 'Sangria CC' }, { key: 'away', name: match?.opponent || 'Opponent' }];
+  }, [match]);
+  const sideName = (k: string | undefined) => sides.find(x => x.key === k)?.name ?? k ?? '—';
+
+  // Which innings is live follows the match record rather than a toggle — the
+  // scorer shouldn't be able to put balls in the wrong innings by mistake.
+  const innings: 1 | 2 = (M.current?.innings ?? 1) as 1 | 2;
+  const [viewing, setViewing] = useState<1 | 2 | null>(null);
+  const shown: 1 | 2 = viewing ?? innings;
+  const S = useScoring(matchId ?? null, shown, format, M.rows.find(r => r.innings === shown)?.target);
+  const [saving, setSaving] = useState(false);
+  /**
+   * The first innings, read-only. The result screen needs both totals and every
+   * ball from the match to suggest a Man of the Match, and the pad itself only
+   * ever holds the innings being viewed.
+   */
+  const I1 = useScoring(matchId ?? null, 1, format);
+  const firstInnings = {
+    balls: I1.balls,
+    runs: I1.state.runs,
+    wickets: I1.state.wickets,
+    overs: I1.state.overs,
+  };
 
   const iAmScoring = !!myId && S.lockHolder === myId && S.lockFresh;
   const someoneElse = S.lockFresh && S.lockHolder && S.lockHolder !== myId;
@@ -228,17 +258,70 @@ export function LiveScoring() {
           </div>
         </div>
 
-        {/* innings switch — viewers want the first innings back after the break */}
-        <div className="grid grid-cols-2 gap-2">
-          {([1, 2] as const).map(i => (
-            <button key={i} onClick={() => setInnings(i)}
-              className={`rounded-2xl py-2.5 text-[12px] font-black border-2 ${
-                innings === i ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700'
-                : 'border-slate-200 dark:border-white/10 text-slate-500'}`}>
-              Innings {i}
-            </button>
-          ))}
-        </div>
+        {/* ── TOSS ─────────────────────────────────────────────────────
+            Nothing can be scored until somebody has batted first. */}
+        {iAmScoring && M.notStarted && (
+          <TossSheet sides={sides}
+            onStart={async (battingFirst, bowlingFirst) => {
+              const err = await M.startMatch(battingFirst, bowlingFirst);
+              if (err) alert(err);
+            }} />
+        )}
+
+        {/* ── INNINGS BREAK ────────────────────────────────────────────
+            First innings done and no chase started yet. */}
+        {iAmScoring && M.first && !M.second && st.isComplete && (
+          <InningsBreak
+            battingTeam={sideName(M.first.batting_team)}
+            chasingTeam={sideName(M.first.bowling_team)}
+            runs={st.runs} wickets={st.wickets} overs={st.overs}
+            onStart={async () => {
+              const err = await M.startSecondInnings(st.runs);
+              if (err) alert(err); else { setViewing(null); setStriker(null); setNonStriker(null); setBowler(null); }
+            }} />
+        )}
+
+        {/* ── RESULT ───────────────────────────────────────────────────
+            Both innings done: declare it and pick a Man of the Match. */}
+        {iAmScoring && M.second && shown === 2 && st.isComplete && (
+          <MatchResult
+            first={{ team: sideName(M.first?.batting_team), runs: firstInnings.runs,
+                     wickets: firstInnings.wickets, overs: firstInnings.overs }}
+            second={{ team: sideName(M.second.batting_team), runs: st.runs,
+                      wickets: st.wickets, overs: st.overs }}
+            allBalls={[...firstInnings.balls, ...S.balls]}
+            members={members} format={format} saving={saving}
+            onFinish={async (winner, momId) => {
+              setSaving(true);
+              const ourFirst = M.first?.batting_team === 'home';
+              const err = await M.finishMatch({
+                winningTeam: match?.match_type === 'internal'
+                  ? (winner === sides[0].name ? 'brahmos' : 'agni') : null,
+                ourScore: ourFirst ? `${firstInnings.runs}/${firstInnings.wickets}` : `${st.runs}/${st.wickets}`,
+                opponentScore: ourFirst ? `${st.runs}/${st.wickets}` : `${firstInnings.runs}/${firstInnings.wickets}`,
+                momId,
+                result: match?.match_type === 'internal' ? 'draw'
+                  : winner === sides[0].name ? 'won' : 'lost',
+              });
+              setSaving(false);
+              if (err) alert(err); else { await M.closeInnings(2); alert('Result published'); }
+            }} />
+        )}
+
+        {/* which innings am I looking at — read-only once both exist */}
+        {M.rows.length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {M.rows.map(r => (
+              <button key={r.innings} onClick={() => setViewing(r.innings as 1 | 2)}
+                className={`rounded-2xl py-2.5 text-[12px] font-black border-2 truncate px-2 ${
+                  shown === r.innings
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700'
+                    : 'border-slate-200 dark:border-white/10 text-slate-500'}`}>
+                {sideName(r.batting_team)} batting
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* ── WHO IS SCORING ───────────────────────────────────────────── */}
         {!iAmScoring && (
