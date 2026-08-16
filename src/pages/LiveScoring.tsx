@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Undo2, Radio, WifiOff, Lock, Users } from 'lucide-react';
 import { Header } from '../components/layout/Header';
+import { useAuth } from '../context/AuthContext';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useScoring } from '../hooks/useScoring';
@@ -35,8 +36,15 @@ const WICKETS: Array<{ key: WicketType; label: string }> = [
   { key: 'hit_wicket', label: 'Hit wicket' },
 ];
 
+// ─── Trial gate ────────────────────────────────────────────────────────────────
+// Admin-only while the module is being trialled, so members don't stumble onto a
+// half-tested scorer mid-season. The club's decision is that ANY member scores —
+// flip this to false when the trial is done and the pad opens up as designed.
+const ADMIN_ONLY_TRIAL = true;
+
 export function LiveScoring() {
   const { matchId } = useParams<{ matchId: string }>();
+  const { isAdmin } = useAuth();
   const { members } = useMembers();
   const { matches } = useMatches();
   const myId = typeof window !== 'undefined'
@@ -146,6 +154,24 @@ export function LiveScoring() {
     if (nonStriker) ids.add(nonStriker);
     return ids;
   }, [S.balls, striker, nonStriker]);
+
+  if (ADMIN_ONLY_TRIAL && !isAdmin) {
+    return (
+      <div>
+        <Header title="Live Scoring" subtitle="In testing" />
+        <div className="p-8 max-w-md mx-auto mt-12 text-center">
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
+            <Lock className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">Being tested</h2>
+            <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
+              In-app scoring is on trial with the admins. It opens to every member
+              once it's proven on a real match 🏏
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (S.tableMissing) {
     return (
