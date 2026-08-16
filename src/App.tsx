@@ -25,6 +25,7 @@ const SeasonAwards = lazy(() => import('./pages/SeasonAwards').then(m => ({ defa
 const SeasonKickoff = lazy(() => import('./pages/SeasonKickoff').then(m => ({ default: m.SeasonKickoff })));
 const Honours = lazy(() => import('./pages/Honours').then(m => ({ default: m.Honours })));
 const SCCLeague = lazy(() => import('./pages/SCCLeague').then(m => ({ default: m.SCCLeague })));
+const LiveScoring = lazy(() => import('./pages/LiveScoring'));
 const LeagueResult = lazy(() => import('./pages/LeagueResult').then(m => ({ default: m.LeagueResult })));
 const AuctionLive = lazy(() => import('./pages/AuctionLive').then(m => ({ default: m.AuctionLive })));
 const AuctionCentre = lazy(() => import('./pages/AuctionCentre').then(m => ({ default: m.AuctionCentre })));
@@ -116,6 +117,9 @@ const AppRoutes = () => (
         <Route path="/league"        element={<Suspense fallback={<PageLoader />}><SeasonLeague /></Suspense>} />
         <Route path="/awards"        element={<Suspense fallback={<PageLoader />}><SeasonAwards /></Suspense>} />
         <Route path="/kickoff"       element={<Suspense fallback={<PageLoader />}><SeasonKickoff /></Suspense>} />
+        {/* Live scoring — any member with a profile can score; everyone else
+            sees the same page as a live scoreboard. */}
+        <Route path="/score/:matchId" element={<Suspense fallback={<PageLoader />}><LiveScoring /></Suspense>} />
         <Route path="/scc-mahasangram" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><SCCLeague /></Suspense> : <Navigate to="/" replace />} />
         {/* The page was /scc-league before it was named. Anyone holding that
             link — including the WhatsApp messages sent during registration —
