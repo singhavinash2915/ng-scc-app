@@ -5,7 +5,7 @@ import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useScoring } from '../hooks/useScoring';
-import { DEFAULT_FORMAT, type WicketType, type ExtraType } from '../lib/cricketRules';
+import { DEFAULT_FORMAT, battingCard, bowlingCard, type WicketType, type ExtraType } from '../lib/cricketRules';
 
 // ─── Live scoring ──────────────────────────────────────────────────────────────
 // One page, two faces. Whoever holds the lock gets the scoring pad; everyone
@@ -17,7 +17,6 @@ import { DEFAULT_FORMAT, type WicketType, type ExtraType } from '../lib/cricketR
 // one tap away because mis-taps are constant when you're watching the cricket
 // rather than the phone.
 
-const RUNS = [0, 1, 2, 3, 4, 6];
 const EXTRAS: Array<{ key: ExtraType; label: string; hint: string }> = [
   { key: 'wd', label: 'Wide',   hint: '+1, re-bowled' },
   { key: 'nb', label: 'No ball', hint: '+1, free hit' },
@@ -102,6 +101,18 @@ export function LiveScoring() {
   }
 
   const st = S.state;
+  // Live figures so the scorer sees runs(balls) beside each name, the way every
+  // scoring app shows it — a name alone tells you nothing mid-over.
+  const bat = battingCard(S.balls);
+  const bowl = bowlingCard(S.balls);
+  const batLine = (id: string | null) => {
+    const l = id ? bat.get(id) : null;
+    return l ? `${l.runs} (${l.balls})` : '0 (0)';
+  };
+  const bowlLine = (id: string | null) => {
+    const l = id ? bowl.get(id) : null;
+    return l ? `${l.overs}-${l.maidens}-${l.runs}-${l.wickets}` : '0.0-0-0-0';
+  };
 
   return (
     <div className="min-h-screen">
@@ -129,18 +140,23 @@ export function LiveScoring() {
               {st.overs} / {format.oversPerInnings} overs · RR {st.runRate.toFixed(2)}
             </p>
 
-            {/* batters + bowler */}
-            <div className="grid grid-cols-3 gap-2 mt-5 text-left">
-              {[
-                { l: 'Striker', v: name(striker) },
-                { l: 'Non-striker', v: name(nonStriker) },
-                { l: 'Bowler', v: name(bowler) },
-              ].map(x => (
-                <div key={x.l} className="rounded-2xl bg-white/10 border border-white/15 px-3 py-2">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-white/45">{x.l}</p>
-                  <p className="text-[13px] font-bold truncate">{x.v}</p>
+            {/* batters + bowler — figures inline, striker marked */}
+            <div className="grid grid-cols-2 gap-2 mt-5 text-left">
+              {[[striker, true], [nonStriker, false]].map(([id, onStrike]) => (
+                <div key={String(id) + String(onStrike)}
+                  className={`rounded-2xl px-3 py-2.5 border ${
+                    onStrike ? 'bg-white/15 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
+                  <p className="text-[13px] font-bold truncate flex items-center gap-1.5">
+                    {onStrike && <span className="text-emerald-400">●</span>}
+                    {name(id as string | null)}
+                  </p>
+                  <p className="text-[11px] text-white/55 tabular-nums">{batLine(id as string | null)}</p>
                 </div>
               ))}
+            </div>
+            <div className="mt-2 rounded-2xl bg-white/5 border border-white/10 px-3 py-2 text-left">
+              <p className="text-[12px] font-bold truncate">🏐 {name(bowler)}</p>
+              <p className="text-[11px] text-white/55 tabular-nums">{bowlLine(bowler)}</p>
             </div>
 
             {/* this over */}
@@ -243,44 +259,61 @@ export function LiveScoring() {
               </div>
             )}
 
-            {/* runs — the 80% case, one tap */}
-            <div className="grid grid-cols-6 gap-2">
-              {RUNS.map(r => (
-                <button key={r} onClick={() => record({ runsOffBat: r })}
-                  disabled={st.isComplete}
-                  className={`h-16 rounded-2xl font-display text-2xl font-extrabold shadow-sm
-                    disabled:opacity-30 active:scale-95 transition-transform ${
-                    r === 4 || r === 6 ? 'bg-emerald-500 text-white'
-                    : 'bg-white dark:bg-white/10 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-white/10'}`}>
+            {/* ── KEYPAD ────────────────────────────────────────────────
+                Laid out like the scoring apps everyone already knows: numbers
+                in a grid, boundaries called out, extras along the bottom, OUT
+                and undo down the right where the thumb rests. */}
+            <div className="grid grid-cols-4 gap-2">
+              {/* numbers 0–3 */}
+              {[0, 1, 2].map(r => (
+                <button key={r} onClick={() => record({ runsOffBat: r })} disabled={st.isComplete}
+                  className="h-16 rounded-2xl bg-white dark:bg-white/10 border-2 border-slate-200
+                             dark:border-white/10 font-display text-2xl font-extrabold
+                             text-slate-900 dark:text-white disabled:opacity-30 active:scale-95 transition-transform">
                   {r}
                 </button>
               ))}
-            </div>
+              <button onClick={() => S.undoBall()} disabled={S.balls.length === 0}
+                className="h-16 rounded-2xl bg-slate-100 dark:bg-white/10 border-2 border-slate-200
+                           dark:border-white/10 text-slate-500 disabled:opacity-30
+                           inline-flex items-center justify-center active:scale-95 transition-transform">
+                <Undo2 className="w-5 h-5" />
+              </button>
 
-            {/* extras + wicket */}
-            <div className="grid grid-cols-5 gap-2">
-              {EXTRAS.map(x => (
-                <button key={x.key} onClick={() => setWicketSheet(x.key)}
-                  disabled={st.isComplete}
-                  className="h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-200
-                             dark:border-amber-400/20 text-amber-700 dark:text-amber-300 font-black text-[11px]
-                             disabled:opacity-30 active:scale-95 transition-transform">
-                  {x.label}
+              <button onClick={() => record({ runsOffBat: 3 })} disabled={st.isComplete}
+                className="h-16 rounded-2xl bg-white dark:bg-white/10 border-2 border-slate-200
+                           dark:border-white/10 font-display text-2xl font-extrabold
+                           text-slate-900 dark:text-white disabled:opacity-30 active:scale-95 transition-transform">
+                3
+              </button>
+              {[4, 6].map(r => (
+                <button key={r} onClick={() => record({ runsOffBat: r })} disabled={st.isComplete}
+                  className={`h-16 rounded-2xl font-display text-2xl font-extrabold text-white
+                              disabled:opacity-30 active:scale-95 transition-transform ${
+                    r === 4 ? 'bg-amber-500' : 'bg-emerald-500'}`}>
+                  {r}
+                  <span className="block text-[8px] font-bold tracking-widest opacity-80">BOUNDARY</span>
                 </button>
               ))}
               <button onClick={() => setWicketSheet('W')} disabled={st.isComplete}
-                className="h-14 rounded-2xl bg-rose-500 text-white font-black text-sm
+                className="h-16 rounded-2xl bg-rose-500 text-white font-black text-lg
                            disabled:opacity-30 active:scale-95 transition-transform">
                 OUT
               </button>
             </div>
 
-            <button onClick={() => S.undoBall()} disabled={S.balls.length === 0}
-              className="w-full rounded-2xl border-2 border-slate-200 dark:border-white/10 py-3
-                         font-black text-[12px] text-slate-600 dark:text-white/70 disabled:opacity-30
-                         inline-flex items-center justify-center gap-2">
-              <Undo2 className="w-4 h-4" /> Undo last ball
-            </button>
+            {/* extras */}
+            <div className="grid grid-cols-4 gap-2">
+              {EXTRAS.map(x => (
+                <button key={x.key} onClick={() => setWicketSheet(x.key)} disabled={st.isComplete}
+                  className="h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-200
+                             dark:border-amber-400/20 text-amber-700 dark:text-amber-300
+                             disabled:opacity-30 active:scale-95 transition-transform">
+                  <span className="block font-black text-[13px] uppercase">{x.key}</span>
+                  <span className="block text-[8px] font-bold opacity-70">{x.label}</span>
+                </button>
+              ))}
+            </div>
 
             <button onClick={() => S.releaseLock()}
               className="w-full text-[11px] font-bold text-slate-400 py-1">
