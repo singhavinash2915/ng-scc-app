@@ -25,6 +25,7 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  Radio,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
@@ -1189,6 +1190,17 @@ export function Matches() {
                           >
                             <Camera className="w-4 h-4" /> Photos ({getPhotosByMatch(match.id).length})
                           </button>
+                          {/* Score in the app. Offered on EVERY match, not just
+                              today's: matches get scored late, and a fixture
+                              already marked won/lost may still need its ball-by-
+                              ball entering for the records. */}
+                          <Link
+                            to={`/score/${match.id}`}
+                            onClick={() => setMenuOpen(null)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold"
+                          >
+                            <Radio className="w-4 h-4" /> 🔴 Score in App
+                          </Link>
                           {match.result === 'upcoming' && (
                             <button
                               onClick={() => {

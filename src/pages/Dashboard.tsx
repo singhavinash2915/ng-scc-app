@@ -24,6 +24,7 @@ import { RenewalReminderBanner } from '../components/RenewalReminderBanner';
 import { ElClasicoChampionBanner } from '../components/ElClasicoChampionBanner';
 import { useWeather } from '../hooks/useWeather';
 import { useLiveScore } from '../hooks/useLiveScore';
+import { useAppLiveMatch } from '../hooks/useAppLiveMatch';
 import { LiveScorecard } from '../components/LiveScorecard';
 import { MatchSummaryCard } from '../components/MatchSummaryCard';
 import { useMembers } from '../hooks/useMembers';
@@ -88,6 +89,7 @@ export function Dashboard() {
   const { activeCount, isActive } = useMemberActivity(members, matches);
   const league = useSeasonLeague();
   const liveStream = useLiveStream();
+  const appLive = useAppLiveMatch();
   // Match Day mode — an upcoming match dated today takes over the top banner
   const { todaysMatch } = useMemo(() => {
     const now = new Date();
@@ -266,7 +268,42 @@ export function Dashboard() {
     <div className="aurora-bg min-h-screen">
       <Header title="Dashboard" subtitle="Sangria Cricket Club" />
 
-      {/* ── LIVE SCORECARD — pinned to the very top while a match is live ── */}
+      {/* ── SCORED IN THE APP — the very first thing on the page ─────────
+          Above the CricHeroes block on purpose: when we're scoring a match
+          ourselves this is the live score, and it's the one page element that
+          everyone opening the app mid-match is looking for. */}
+      {appLive.live && (
+        <div className="px-4 lg:px-8 pt-4">
+          <Link to={`/score/${appLive.live.matchId}`}
+            className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            style={{ background: 'linear-gradient(110deg,#064e3b,#059669 55%,#10b981)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0">
+                <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[2px] text-white/75">
+                  🔴 Live · Innings {appLive.live.innings}
+                </p>
+                <p className="text-white font-black text-lg leading-tight truncate">
+                  {appLive.live.battingTeam} {appLive.live.runs}/{appLive.live.wickets}
+                  <span className="text-white/70 font-bold text-sm">
+                    {' '}({Math.floor(appLive.live.legalBalls / 6)}.{appLive.live.legalBalls % 6})
+                  </span>
+                </p>
+                <p className="text-white/85 text-xs font-medium truncate">
+                  {appLive.live.target
+                    ? `Need ${Math.max(0, appLive.live.target - appLive.live.runs)} to beat ${appLive.live.bowlingTeam}`
+                    : `v ${appLive.live.bowlingTeam} — tap for ball by ball`}
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {/* ── LIVE SCORECARD — CricHeroes-scored matches ─────────────────── */}
       {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result) && (
         <div className="px-4 lg:px-8 pt-4">
           <LiveScorecardWidget match={liveMatchToday} />
