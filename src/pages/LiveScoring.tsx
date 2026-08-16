@@ -67,6 +67,14 @@ export function LiveScoring() {
   const [nonStriker, setNonStriker] = useState<string | null>(null);
   const [bowler, setBowler] = useState<string | null>(null);
   const [wicketSheet, setWicketSheet] = useState<ExtraType | 'W' | null>(null);
+  /**
+   * After a wicket the scorer must say who's in, and at the end of an over who's
+   * bowling. Prompting beats leaving them to find a dropdown mid-over — that's
+   * where a scorer loses the thread and the next ball goes down wrong.
+   */
+  const [newBatterFor, setNewBatterFor] = useState<'striker' | 'nonStriker' | null>(null);
+  const [pickedBatter, setPickedBatter] = useState<string | null>(null);
+  const [needBowler, setNeedBowler] = useState(false);
 
   useEffect(() => {
     if (S.state.strikerId) setStriker(S.state.strikerId);
@@ -83,7 +91,31 @@ export function LiveScoring() {
   const record = (input: Parameters<typeof S.scoreBall>[0]) => {
     void S.scoreBall(input, { strikerId: striker, nonStrikerId: nonStriker, bowlerId: bowler }, myId);
     setWicketSheet(null);
+
+    // A wicket empties one end — ask who replaces the man who's out. Which end
+    // depends on who was actually dismissed, since a run out can take the
+    // non-striker.
+    if (input.wicketType && input.wicketType !== 'retired') {
+      setNewBatterFor(input.dismissedId === nonStriker ? 'nonStriker' : 'striker');
+      setPickedBatter(null);
+    } else if (S.ctx.ballNo + 1 >= 6 && !input.extraType) {
+      // Sixth legal ball: the over is done, so a new bowler is needed. Wides
+      // and no-balls don't end an over, hence the extras guard.
+      setNeedBowler(true);
+    }
   };
+
+  /** Everyone who has already batted or is at the crease. */
+  const usedBatters = useMemo(() => {
+    const ids = new Set<string>();
+    S.balls.forEach(b => {
+      if (b.striker_id) ids.add(b.striker_id);
+      if (b.non_striker_id) ids.add(b.non_striker_id);
+    });
+    if (striker) ids.add(striker);
+    if (nonStriker) ids.add(nonStriker);
+    return ids;
+  }, [S.balls, striker, nonStriker]);
 
   if (S.tableMissing) {
     return (
@@ -319,6 +351,106 @@ export function LiveScoring() {
               className="w-full text-[11px] font-bold text-slate-400 py-1">
               Hand over scoring
             </button>
+          </div>
+        )}
+
+        {/* ── NEXT BATTER ──────────────────────────────────────────────
+            Two questions, in the order the scorer answers them out loud: who's
+            coming in, then which end. The end matters — on a run out the batters
+            may have crossed, so the new man doesn't always take strike. */}
+        {newBatterFor && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60" />
+            <div className="relative w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto">
+              <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">
+                Wicket · {st.wickets} down
+              </p>
+              <p className="font-black text-lg text-slate-900 dark:text-white mt-0.5">
+                {pickedBatter ? 'Which end?' : 'Who’s in next?'}
+              </p>
+
+              {!pickedBatter ? (
+                <div className="mt-3 space-y-1.5">
+                  {squad.filter(m => !usedBatters.has(m.id)).map(m => (
+                    <button key={m.id} onClick={() => setPickedBatter(m.id)}
+                      className="w-full text-left rounded-xl border-2 border-slate-200 dark:border-white/10
+                                 px-3.5 py-3 font-bold text-[13px] text-slate-800 dark:text-white/85
+                                 active:scale-[0.99] transition-transform">
+                      {m.name}
+                    </button>
+                  ))}
+                  {squad.filter(m => !usedBatters.has(m.id)).length === 0 && (
+                    <p className="text-sm text-slate-500 py-3">
+                      Everyone has batted — the innings is done.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  <p className="text-[12px] text-slate-500">
+                    <b className="text-slate-900 dark:text-white">{name(pickedBatter)}</b> comes in.
+                  </p>
+                  <button onClick={() => {
+                    // New batter takes strike; whoever survived goes to the other end.
+                    const survivor = newBatterFor === 'striker' ? nonStriker : striker;
+                    setStriker(pickedBatter); setNonStriker(survivor);
+                    setPickedBatter(null); setNewBatterFor(null);
+                  }}
+                    className="w-full rounded-2xl bg-emerald-500 text-white font-black py-3.5 text-sm">
+                    On strike
+                  </button>
+                  <button onClick={() => {
+                    const survivor = newBatterFor === 'striker' ? nonStriker : striker;
+                    setStriker(survivor); setNonStriker(pickedBatter);
+                    setPickedBatter(null); setNewBatterFor(null);
+                  }}
+                    className="w-full rounded-2xl border-2 border-slate-200 dark:border-white/10
+                               font-black py-3.5 text-sm text-slate-700 dark:text-white/80">
+                    At the non-striker’s end
+                  </button>
+                  <button onClick={() => setPickedBatter(null)}
+                    className="w-full text-[11px] font-bold text-slate-400 pt-1">Back</button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── NEXT BOWLER ──────────────────────────────────────────────
+            Anyone ineligible is filtered out rather than shown and rejected —
+            the scorer shouldn't have to remember who bowled last over or who's
+            reached their quota. */}
+        {needBowler && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60" />
+            <div className="relative w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto">
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                End of over {S.ctx.overNo}
+              </p>
+              <p className="font-black text-lg text-slate-900 dark:text-white mt-0.5">
+                Who’s bowling?
+              </p>
+              <div className="mt-3 space-y-1.5">
+                {squad.filter(m => !S.ctx.ineligibleBowlers.includes(m.id)).map(m => {
+                  const l = bowl.get(m.id);
+                  return (
+                    <button key={m.id} onClick={() => { setBowler(m.id); setNeedBowler(false); }}
+                      className="w-full flex items-center justify-between rounded-xl border-2
+                                 border-slate-200 dark:border-white/10 px-3.5 py-3 active:scale-[0.99] transition-transform">
+                      <span className="font-bold text-[13px] text-slate-800 dark:text-white/85">{m.name}</span>
+                      {l && (
+                        <span className="text-[11px] tabular-nums text-slate-400">
+                          {l.overs}-{l.maidens}-{l.runs}-{l.wickets}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-3">
+                Last over’s bowler and anyone at their {format.maxOversPerBowler}-over limit are hidden.
+              </p>
+            </div>
           </div>
         )}
 
