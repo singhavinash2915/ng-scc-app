@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Card } from '../components/ui/Card';
 import { useMatchBookings } from '../hooks/useMatchBookings';
 import { useAuth } from '../context/AuthContext';
 import type { MatchBooking, MatchBookingStatus, MatchSlot } from '../types';
@@ -237,10 +238,10 @@ export function Bookings() {
           <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       ) : error ? (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 r-card p-4 flex gap-3">
+        <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 p-4 flex gap-3">
           <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
           <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-        </div>
+        </Card>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-gray-400 dark:text-gray-500">
           <CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-30" />
@@ -248,7 +249,7 @@ export function Bookings() {
           <p className="text-sm mt-1">Share the booking link to start receiving requests.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <Card className="overflow-hidden">
           {/* Mobile cards / Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
@@ -355,7 +356,7 @@ export function Bookings() {
               );
             })}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* ── Review Modal ──────────────────────────────────────────────────── */}
@@ -481,10 +482,10 @@ export function Bookings() {
             </div>
 
             {actionError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 r-card p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
+              <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 {actionError}
-              </div>
+              </Card>
             )}
 
             {/* Actions */}
@@ -512,10 +513,10 @@ export function Bookings() {
             )}
 
             {selectedBooking.status === 'confirmed' && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 r-card p-3 text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
+              <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 p-3 text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
                 Booking confirmed. Match has been created in the Matches page.
-              </div>
+              </Card>
             )}
 
             {(selectedBooking.status === 'rejected' || selectedBooking.status === 'cancelled') && (
@@ -534,7 +535,7 @@ export function Bookings() {
                   <Trash2 className="w-3.5 h-3.5" /> Delete this booking permanently
                 </button>
               ) : (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 r-card p-3 space-y-2">
+                <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 p-3 space-y-2">
                   <p className="text-sm font-medium text-red-700 dark:text-red-400">
                     Are you sure? This will permanently delete the booking and release the slot.
                   </p>
@@ -557,7 +558,7 @@ export function Bookings() {
                       Yes, Delete
                     </button>
                   </div>
-                </div>
+                </Card>
               )}
             </div>
           </div>
@@ -832,9 +833,9 @@ function ManualBookingModal({
           </label>
 
           {err && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 r-card p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
+            <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /> {err}
-            </div>
+            </Card>
           )}
 
           <div className="flex gap-3 pt-1">

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Card } from '../components/ui/Card';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Trophy, Crown, Star, ChevronLeft, Camera, Calendar as CalIcon,
@@ -423,9 +424,9 @@ export function MemberProfile() {
                 </div>
               </div>
             ) : (
-              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
+              <Card className="border-dashed p-6 text-center">
                 <p className="text-sm text-gray-500">No stats yet for this season — wait for the first match to be played!</p>
-              </div>
+              </Card>
             )}
 
             {/* ─── TOP 3 KNOCKS + TOP 3 BOWLING SPELLS ─── */}
@@ -489,12 +490,12 @@ export function MemberProfile() {
 
             {/* Recent form strip */}
             {form && form.length > 0 && (
-              <div className="r-card p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center gap-3">
+              <Card className="p-4 flex items-center gap-3">
                 <span className="t-micro font-black uppercase tracking-[2px] text-gray-500 dark:text-gray-400">
                   Recent Form (last 5)
                 </span>
                 <FormBlocks form={form} />
-              </div>
+              </Card>
             )}
 
             {/* Skill Radar */}
@@ -587,10 +588,10 @@ export function MemberProfile() {
         {tab === 'photos' && (
           <div>
             {memberPhotos.length === 0 ? (
-              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+              <Card className="border-dashed p-8 text-center">
                 <Camera className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">No match photos featuring {member.name.split(' ')[0]} yet.</p>
-              </div>
+              </Card>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                 {memberPhotos.map(p => (
@@ -613,11 +614,11 @@ export function MemberProfile() {
         {tab === 'memories' && (
           <div>
             {memories.length === 0 ? (
-              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+              <Card className="border-dashed p-8 text-center">
                 <Cake className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">No matches on this date in past years (yet!).</p>
                 <p className="text-xs text-gray-400 mt-1">Check back another day — every match becomes a memory eventually.</p>
-              </div>
+              </Card>
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-gray-500">
@@ -632,9 +633,9 @@ export function MemberProfile() {
         {tab === 'matches' && (
           <div>
             {matchesPlayed.length === 0 ? (
-              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+              <Card className="border-dashed p-8 text-center">
                 <p className="text-sm text-gray-500">No matches played yet.</p>
-              </div>
+              </Card>
             ) : (
               <div className="space-y-1.5">
                 {matchesPlayed.slice(0, 50).map(m => (
@@ -679,10 +680,10 @@ export function MemberProfile() {
 // ── Helpers ─────────────────────────────────────────────────────────────
 function Pill({ v, label, color }: { v: number | string; label: string; color: string }) {
   return (
-    <div className="bg-white/5 border border-white/10 r-card px-3 py-2.5">
+    <Card className="bg-white/5 border-white/10 px-3 py-2.5">
       <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${color}`}>{v}</p>
       <p className="t-micro text-gray-500 uppercase tracking-widest mt-1.5 font-bold">{label}</p>
-    </div>
+    </Card>
   );
 }
 
@@ -790,7 +791,7 @@ function WalletCard({ balance, feesPaid }: { balance: number; feesPaid: number }
 function MemoryCard({ memory }: { memory: { match: import('../types').Match; yearsAgo: number } }) {
   const m = memory.match;
   return (
-    <div className="r-card border border-pink-200 dark:border-pink-900/30 bg-pink-50 dark:bg-pink-900/10 p-3 flex items-center gap-3">
+    <Card className="border-pink-200 dark:border-pink-900/30 bg-pink-50 dark:bg-pink-900/10 p-3 flex items-center gap-3">
       <div className="w-10 h-10 r-card bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center flex-shrink-0">
         <span className="text-lg">🗓️</span>
       </div>
@@ -808,7 +809,7 @@ function MemoryCard({ memory }: { memory: { match: import('../types').Match; yea
           <p className="t-meta text-gray-500 truncate">{m.our_score} {m.opponent_score && `vs ${m.opponent_score}`}</p>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 

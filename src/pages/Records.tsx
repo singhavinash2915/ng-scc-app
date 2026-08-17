@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Card } from '../components/ui/Card';
 import {
   Trophy, Crown, Award, Zap, Shield, TrendingUp, TrendingDown,
   Flame, Star, Sword, CalendarDays, Plus, X, Trash2,
@@ -207,9 +208,9 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-400/15 rounded-full blur-3xl" />
           <div className="absolute top-4 right-8 text-7xl opacity-[0.06] select-none pointer-events-none">🏆</div>
           <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 r-card bg-amber-400/20 border-2 border-amber-400/40 flex items-center justify-center flex-shrink-0">
+            <Card className="w-14 h-14 bg-amber-400/20 border-amber-400/40 flex items-center justify-center flex-shrink-0">
               <Trophy className="w-7 h-7 text-amber-300" />
-            </div>
+            </Card>
             <div>
               <h2 className="text-2xl lg:text-3xl font-black text-white">Hall of Fame</h2>
               <p className="text-amber-200/60 text-sm mt-0.5">{teamRecords.total} matches · {teamRecords.won}W · {teamRecords.lost}L · {teamRecords.drawn}NR</p>
@@ -411,9 +412,9 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                       <img src={playerOfWeek.member.avatar_url} alt=""
                            className="w-16 h-16 lg:w-20 lg:h-20 r-card object-cover border-2 border-pink-400/40 shadow-xl shadow-pink-500/30 flex-shrink-0" />
                     ) : (
-                      <div className="w-16 h-16 lg:w-20 lg:h-20 r-card bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-xl shadow-pink-500/30">
+                      <Card className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-pink-400 to-rose-600 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-xl shadow-pink-500/30">
                         <span className="text-2xl font-black text-pink-950">{playerOfWeek.member.name.charAt(0)}</span>
-                      </div>
+                      </Card>
                     )}
                     <div className="min-w-0 flex-1">
                       <h3 className="text-xl lg:text-2xl font-black text-white truncate">{playerOfWeek.member.name}</h3>
@@ -447,9 +448,9 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                       <img src={playerOfMonth.member.avatar_url} alt=""
                            className="w-16 h-16 lg:w-20 lg:h-20 r-card object-cover border-2 border-amber-400/50 shadow-xl shadow-amber-500/30 flex-shrink-0" />
                     ) : (
-                      <div className="w-16 h-16 lg:w-20 lg:h-20 r-card bg-gradient-to-br from-amber-400 to-yellow-600 border-2 border-amber-400/50 flex items-center justify-center flex-shrink-0 shadow-xl shadow-amber-500/30">
+                      <Card className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400/50 flex items-center justify-center flex-shrink-0 shadow-xl shadow-amber-500/30">
                         <span className="text-2xl font-black text-yellow-950">{playerOfMonth.member.name.charAt(0)}</span>
-                      </div>
+                      </Card>
                     )}
                     <div className="min-w-0 flex-1">
                       <h3 className="text-xl lg:text-2xl font-black text-white truncate">{playerOfMonth.member.name}</h3>
@@ -465,7 +466,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
 
             {/* 6-month history timeline */}
             {monthlyHistory.some(m => m.winner) && (
-              <div className="mt-4 r-card border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+              <Card className="mt-4 p-4">
                 <p className="t-micro font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
                   <Crown className="w-3 h-3 text-amber-400" fill="currentColor" />
                   Last 6 Months · Player of the Month
@@ -494,7 +495,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         )}
@@ -506,7 +507,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
               <Sword className="w-3.5 h-3.5 text-rose-400" />
               Head-to-Head Records
             </h3>
-            <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <Card className="overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -553,7 +554,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
           </div>
         )}
 
@@ -574,9 +575,9 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
             )}
           </div>
           {awards.length === 0 ? (
-            <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-400 dark:text-gray-500">
+            <Card className="border-dashed p-6 text-center text-sm text-gray-400 dark:text-gray-500">
               {isAdmin ? 'No custom awards yet. Click "+ Grant Award" to recognise a player.' : 'No custom awards yet.'}
-            </div>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {awards.map(a => (
@@ -584,9 +585,9 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                      style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #0a1019 100%)' }}>
                   <div className="absolute inset-0 border border-violet-500/25 r-card pointer-events-none" />
                   <div className="relative flex items-center gap-3">
-                    <div className="w-12 h-12 r-card bg-violet-500/20 border border-violet-400/40 flex items-center justify-center flex-shrink-0 text-2xl">
+                    <Card className="w-12 h-12 bg-violet-500/20 border-violet-400/40 flex items-center justify-center flex-shrink-0 text-2xl">
                       {a.icon || '🌟'}
-                    </div>
+                    </Card>
                     <div className="min-w-0 flex-1">
                       <p className="text-violet-300/80 t-micro font-bold uppercase tracking-[1.5px]">{a.award_name}</p>
                       {a.member && (

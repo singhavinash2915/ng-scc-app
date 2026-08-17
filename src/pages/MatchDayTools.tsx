@@ -145,12 +145,12 @@ export function MatchDayTools() {
 
       <div className="p-4 md:p-6 space-y-6">
         {/* Info Banner */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 r-card p-4 flex items-start gap-3">
+        <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 p-4 flex items-start gap-3">
           <Megaphone className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-blue-700 dark:text-blue-300">
             Fill in the match details and select players to generate squad graphics or match day messages. No match will be created and no balance will be affected.
           </p>
-        </div>
+        </Card>
 
         {/* Form */}
         <Card>
@@ -282,7 +282,7 @@ export function MatchDayTools() {
                         ))}
                       </div>
                     </div>
-                    <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 r-card p-2 space-y-1">
+                    <Card className="max-h-64 overflow-y-auto p-2 space-y-1">
                       {filteredMembers.map(member => (
                         <button
                           key={member.id}
@@ -318,14 +318,14 @@ export function MatchDayTools() {
                           </span>
                         </button>
                       ))}
-                    </div>
+                    </Card>
                   </div>
                 ) : (
                   /* Internal Match - Team Assignment UI */
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       {/* Dhurandars Team */}
-                      <div className="border-2 border-blue-200 dark:border-blue-800 r-card p-3 bg-blue-50/50 dark:bg-blue-900/10">
+                      <Card className="border-blue-200 dark:border-blue-800 p-3 bg-blue-50/50 dark:bg-blue-900/10">
                         <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2 text-sm">
                           🦁 {TEAM_NAMES.dhurandars} ({getPlayersByTeam('dhurandars').length})
                         </h4>
@@ -342,10 +342,10 @@ export function MatchDayTools() {
                             ) : null;
                           })}
                         </div>
-                      </div>
+                      </Card>
 
                       {/* Bazigars Team */}
-                      <div className="border-2 border-purple-200 dark:border-purple-800 r-card p-3 bg-purple-50/50 dark:bg-purple-900/10">
+                      <Card className="border-purple-200 dark:border-purple-800 p-3 bg-purple-50/50 dark:bg-purple-900/10">
                         <h4 className="font-semibold text-purple-700 dark:text-purple-300 mb-2 text-sm">
                           🐅 {TEAM_NAMES.bazigars} ({getPlayersByTeam('bazigars').length})
                         </h4>
@@ -362,7 +362,7 @@ export function MatchDayTools() {
                             ) : null;
                           })}
                         </div>
-                      </div>
+                      </Card>
                     </div>
 
                     {/* Available Players */}
@@ -388,7 +388,7 @@ export function MatchDayTools() {
                           ))}
                         </div>
                       </div>
-                      <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 r-card p-2 space-y-1">
+                      <Card className="max-h-48 overflow-y-auto p-2 space-y-1">
                         {filteredMembers.filter(m => !playerTeams[m.id]).map(member => (
                           <div key={member.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
                             <span className="flex-1 text-sm flex items-center gap-1.5">
@@ -420,7 +420,7 @@ export function MatchDayTools() {
                             </button>
                           </div>
                         ))}
-                      </div>
+                      </Card>
                     </div>
                   </div>
                 )}

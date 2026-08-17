@@ -1145,7 +1145,7 @@ export function Settings() {
 
               {/* Add/Edit Sponsor Form */}
               {showSponsorForm && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 r-card border border-blue-200 dark:border-blue-800 space-y-3">
+                <Card className="p-4 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 space-y-3">
                   <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     {editingSponsorId ? 'Edit Sponsor' : 'New Sponsor'}
                   </p>
@@ -1213,7 +1213,7 @@ export function Settings() {
                       Cancel
                     </Button>
                   </div>
-                </div>
+                </Card>
               )}
             </CardContent>
           </Card>
@@ -1236,7 +1236,7 @@ export function Settings() {
               </p>
 
               {/* Upload new photo */}
-              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-4 space-y-3">
+              <Card className="border-dashed p-4 space-y-3">
                 <Input
                   label="Caption (optional)"
                   placeholder="e.g. SCC vs Yashwin Stars — Champions Trophy 2026"
@@ -1273,7 +1273,7 @@ export function Settings() {
                   />
                 </label>
                 <p className="t-micro text-gray-400 text-center">PNG / JPG / WebP. Landscape 16:9 looks best on the carousel.</p>
-              </div>
+              </Card>
 
               {galleryMsg && (
                 <div className={`flex items-center gap-2 px-3 py-2 r-card text-sm border ${
@@ -1509,13 +1509,13 @@ export function Settings() {
                 </label>
                 <div className="flex gap-3 items-start">
                   {/* Preview */}
-                  <div className="w-28 h-28 r-card border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <Card className="w-28 h-28 border-dashed bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {upi.qr_code_url ? (
                       <img src={upi.qr_code_url} alt="UPI QR" className="w-full h-full object-contain bg-white" />
                     ) : (
                       <QrCode className="w-10 h-10 text-gray-300" />
                     )}
-                  </div>
+                  </Card>
                   {/* Actions */}
                   <div className="flex-1 space-y-2">
                     <label className="flex items-center justify-center gap-2 px-3 py-2 r-control bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
@@ -1562,9 +1562,9 @@ export function Settings() {
               />
 
               {upiSavedMsg && (
-                <div className="flex items-center gap-2 px-3 py-2 r-card bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
+                <Card className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
                   {upiSavedMsg}
-                </div>
+                </Card>
               )}
 
               <Button onClick={handleSaveUpi} disabled={groundSaving || !upiIdInput.trim()} className="w-full">
@@ -1640,7 +1640,7 @@ export function Settings() {
 
               {/* Add form */}
               {showAddTestForm && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 r-card border border-blue-200 dark:border-blue-800 space-y-3">
+                <Card className="p-4 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 space-y-3">
                   <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">New Testimonial</p>
 
                   <Input
@@ -1691,7 +1691,7 @@ export function Settings() {
                       Cancel
                     </Button>
                   </div>
-                </div>
+                </Card>
               )}
 
               {testMsg && !showAddTestForm && (
@@ -1732,7 +1732,7 @@ export function Settings() {
               </p>
 
               {/* ── Import Match IDs from CricHeroes Team ─────────────────── */}
-              <div className="r-card border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 p-4 space-y-3">
+              <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <ExternalLink className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                   <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">Import Match IDs from CricHeroes</p>
@@ -1798,7 +1798,7 @@ export function Settings() {
                     </div>
 
                     {/* Scrollable match list */}
-                    <div className="max-h-72 overflow-y-auto r-card border border-emerald-200 dark:border-emerald-800 divide-y divide-emerald-100 dark:divide-emerald-900">
+                    <Card className="max-h-72 overflow-y-auto border-emerald-200 dark:border-emerald-800 divide-y divide-emerald-100 dark:divide-emerald-900">
                       {teamSyncState.chMatches.map(ch => (
                         <div key={ch.chMatchId} className={`flex items-center gap-2 px-3 py-2 text-xs ${
                           ch.status === 'already'      ? 'bg-blue-50/50 dark:bg-blue-900/10' :
@@ -1833,7 +1833,7 @@ export function Settings() {
                           <span className="text-gray-400 font-mono flex-shrink-0">#{ch.chMatchId}</span>
                         </div>
                       ))}
-                    </div>
+                    </Card>
 
                     {/* Save matched IDs button */}
                     {teamSyncState.chMatches.some(c => c.status === 'matched') && (
@@ -1862,10 +1862,10 @@ export function Settings() {
                     )}
                   </div>
                 )}
-              </div>
+              </Card>
 
               {/* ── Auto-Sync from CricHeroes ──────────────────────────────── */}
-              <div className="r-card border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/10 p-4 space-y-3">
+              <Card className="border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/10 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <Brain className="w-4 h-4 text-purple-500 flex-shrink-0" />
                   <p className="text-sm font-bold text-purple-700 dark:text-purple-300">Auto-Sync from CricHeroes</p>
@@ -1912,7 +1912,7 @@ export function Settings() {
                           <p className="text-xs text-gray-500">No completed matches found in {syncMode} date range.</p>
                         );
                         return (
-                          <div className="r-card bg-white/60 dark:bg-gray-800/60 border border-purple-200 dark:border-purple-800 p-2.5 space-y-1.5">
+                          <Card className="bg-white/60 dark:bg-gray-800/60 border-purple-200 dark:border-purple-800 p-2.5 space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-600 dark:text-gray-400">CricHeroes coverage — {syncMode}</span>
                               <span className="font-bold text-purple-700 dark:text-purple-300">{withId}/{seasonMatches.length} matches</span>
@@ -1932,7 +1932,7 @@ export function Settings() {
                             {missing === 0 && withId > 0 && (
                               <p className="t-meta text-emerald-600 dark:text-emerald-400">✓ All matches have CricHeroes IDs</p>
                             )}
-                          </div>
+                          </Card>
                         );
                       })()}
                     </div>
@@ -2051,7 +2051,7 @@ export function Settings() {
                 </Button>
 
                 {/* Delete stats */}
-                <div className="r-card border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 p-3 space-y-2">
+                <Card className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 p-3 space-y-2">
                   <p className="text-xs font-bold text-red-700 dark:text-red-400">🗑 Clear Stats (before re-sync)</p>
                   <div className="flex gap-2 items-center">
                     <select
@@ -2078,9 +2078,9 @@ export function Settings() {
                       {deleteMsg}
                     </p>
                   )}
-                </div>
+                </Card>
 
-              </div>
+              </Card>
 
               {/* Stats feedback */}
               {statsError && (

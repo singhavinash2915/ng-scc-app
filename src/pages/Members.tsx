@@ -408,9 +408,9 @@ export function Members() {
                     <img src={showcase.avatar_url} alt={showcase.name}
                       className="w-16 h-16 r-card object-cover border-2 border-emerald-400/40 ring-2 ring-emerald-400/15 shadow-md group-hover:scale-105 transition-transform" />
                   ) : (
-                    <div className="w-16 h-16 r-card bg-gradient-to-br from-emerald-500 to-teal-600 border-2 border-emerald-400/40 flex items-center justify-center shadow-md">
+                    <Card className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 border-emerald-400/40 flex items-center justify-center shadow-md">
                       <span className="text-emerald-50 font-black text-xl">{showcase.name.charAt(0)}</span>
-                    </div>
+                    </Card>
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="font-black text-gray-900 dark:text-white text-base leading-tight">{showcase.name}</p>
@@ -593,7 +593,7 @@ export function Members() {
                       <MoreVertical className="w-5 h-5 text-gray-500" />
                     </button>
                     {menuOpen === member.id && (
-                      <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 r-card shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-30">
+                      <Card className="absolute left-0 mt-2 w-48 shadow-lg py-1 z-30">
                         <button
                           onClick={() => openEditModal(member)}
                           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -630,7 +630,7 @@ export function Members() {
                         >
                           <Trash2 className="w-4 h-4" /> Delete
                         </button>
-                      </div>
+                      </Card>
                     )}
                   </div>
                 )}
@@ -723,12 +723,12 @@ export function Members() {
                 </div>
                 {/* Ground advance contribution badge */}
                 {(memberContributions.get(member.id) ?? 0) > 0 && (
-                  <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 r-card bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                  <Card className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800">
                     <Landmark className="w-3 h-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                       Ground advance: ₹{(memberContributions.get(member.id) ?? 0).toLocaleString('en-IN')}
                     </span>
-                  </div>
+                  </Card>
                 )}
               </CardContent>
             </Card>
@@ -780,7 +780,7 @@ export function Members() {
           </div>
 
           {/* Cricket player attributes */}
-          <div className="r-card border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+          <Card className="p-3 space-y-3">
             <p className="t-meta font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
             <Select
               label="Role"
@@ -821,7 +821,7 @@ export function Members() {
                 ]}
               />
             </div>
-          </div>
+          </Card>
 
           {/* Membership tier + renewal */}
           <div className="grid grid-cols-2 gap-3">
@@ -898,7 +898,7 @@ export function Members() {
           </div>
 
           {/* Cricket player attributes */}
-          <div className="r-card border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+          <Card className="p-3 space-y-3">
             <p className="t-meta font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
             <Select
               label="Role"
@@ -939,7 +939,7 @@ export function Members() {
                 ]}
               />
             </div>
-          </div>
+          </Card>
 
           {/* Membership tier + renewal */}
           <div className="grid grid-cols-2 gap-3">
@@ -1225,11 +1225,11 @@ export function Members() {
       {/* Balance Adjustment Modal */}
       <Modal isOpen={showAdjustModal} onClose={() => { setShowAdjustModal(false); setAdjustMember(null); }} title="Correct Balance">
         <form onSubmit={handleAdjustBalance} className="space-y-4">
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 r-card p-4 mb-4">
+          <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 p-4 mb-4">
             <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
               Use this to fix incorrect balances (e.g., old app migration issues where contributions were migrated but match fees were not).
             </p>
-          </div>
+          </Card>
 
           <div className="bg-gray-50 dark:bg-gray-900 r-card p-4">
             <p className="text-sm text-gray-500">Correcting balance for</p>

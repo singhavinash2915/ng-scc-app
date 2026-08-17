@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
 import {
   Crown, Trophy, Target, TrendingUp, ChevronRight, ChevronDown, Sparkles, Medal,
@@ -228,9 +229,9 @@ export function Predictions() {
           <div className="absolute inset-0 border border-purple-500/30 r-card pointer-events-none" />
           <div className="absolute -top-12 -right-12 w-48 h-48 bg-purple-400/20 rounded-full blur-3xl" />
           <div className="relative flex items-center gap-5 flex-wrap">
-            <div className="w-16 h-16 r-card bg-purple-400/20 border-2 border-purple-400/40 flex items-center justify-center flex-shrink-0">
+            <Card className="w-16 h-16 bg-purple-400/20 border-purple-400/40 flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-8 h-8 text-purple-300" />
-            </div>
+            </Card>
             <div className="flex-1 min-w-0">
               <h2 className="text-2xl lg:text-3xl font-black text-white">Predict & Win</h2>
               <p className="text-purple-200/70 text-sm mt-1">
@@ -242,14 +243,14 @@ export function Predictions() {
         </div>
 
         {scoredCount !== null && scoredCount > 0 && (
-          <div className="r-card p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 text-sm text-emerald-700 dark:text-emerald-300 font-semibold text-center">
+          <Card className="p-3 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700 text-sm text-emerald-700 dark:text-emerald-300 font-semibold text-center">
             ✓ Scored {scoredCount} prediction{scoredCount > 1 ? 's' : ''} · refreshing…
-          </div>
+          </Card>
         )}
         {scoring && scoredCount === null && (
-          <div className="r-card p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-sm text-blue-700 dark:text-blue-300 text-center">
+          <Card className="p-3 bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-sm text-blue-700 dark:text-blue-300 text-center">
             ⏳ Scoring predictions…
-          </div>
+          </Card>
         )}
 
         {/* ── SEASON PRIZES ── */}
@@ -363,7 +364,7 @@ export function Predictions() {
               <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
               Season Predictor Leaderboard
             </h3>
-            <div className="r-card overflow-x-auto border border-gray-200 dark:border-gray-700">
+            <Card className="overflow-x-auto">
               <table className="w-full min-w-[480px]">
                 <thead className="bg-gray-50 dark:bg-gray-800 text-xs uppercase tracking-widest text-gray-500">
                   <tr>
@@ -406,13 +407,13 @@ export function Predictions() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </Card>
             <p className="t-micro text-gray-400 mt-1.5 px-1">Ties are broken by most correct picks, then fewest matches needed — equal on both share the same rank.</p>
           </div>
         )}
 
         {/* MY PREDICTIONS STATS */}
-        <div className="r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <Card className="overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 px-4 py-3.5 flex items-center gap-2.5 border-b border-gray-200 dark:border-gray-700">
             <div className="w-7 h-7 r-card bg-indigo-500/20 flex items-center justify-center">
@@ -460,7 +461,7 @@ export function Predictions() {
 
                 {/* Best match */}
                 {myStats.bestMatch && (
-                  <div className="r-card bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-4 py-3 flex items-center gap-3">
+                  <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700/40 px-4 py-3 flex items-center gap-3">
                     <Star className="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" />
                     <div className="flex-1 min-w-0">
                       <p className="t-micro font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Best Prediction</p>
@@ -469,7 +470,7 @@ export function Predictions() {
                       </p>
                     </div>
                     <span className="text-lg font-black text-amber-600 dark:text-amber-400 tabular-nums">+{myStats.best.points_earned}pts</span>
-                  </div>
+                  </Card>
                 )}
 
                 {/* Last 5 history */}
@@ -499,7 +500,7 @@ export function Predictions() {
               </>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* RECENT MATCHES PREDICTION SUMMARY */}
         {settledWithPredictions.length > 0 && (
@@ -518,7 +519,7 @@ export function Predictions() {
                 }).length;
                 return (
                   <Link to={`/matches?focus=${match.id}`} key={match.id}>
-                    <div className="r-card p-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
+                    <Card className="p-3.5 flex items-center justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
                       <div className="flex-1 min-w-0">
                         <p className="t-micro font-bold uppercase tracking-widest text-gray-400">
                           {fmtDate(match.date)} · {match.result.toUpperCase()}
@@ -531,7 +532,7 @@ export function Predictions() {
                         </p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </div>
+                    </Card>
                   </Link>
                 );
               })}
@@ -540,18 +541,18 @@ export function Predictions() {
         )}
 
         {leaderboard.length === 0 && upcomingMatches.length === 0 && (
-          <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-10 text-center">
+          <Card className="border-dashed p-10 text-center">
             <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 font-medium">No predictions yet</p>
             <p className="text-xs text-gray-400 mt-1">
               Once an upcoming match is scheduled, members can predict and earn points.
             </p>
-          </div>
+          </Card>
         )}
 
         {/* ── ALL PREDICTIONS (settled matches — visible to everyone) ── */}
         {allPredictions.length > 0 && (
-          <div className="r-card overflow-hidden border border-gray-200 dark:border-gray-700">
+          <Card className="overflow-hidden">
             <button
               onClick={() => setAdminViewOpen(o => !o)}
               className="w-full flex items-center gap-3 px-4 py-3.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors text-left"
@@ -629,7 +630,7 @@ export function Predictions() {
                           <div className="bg-gray-50 dark:bg-gray-800/30 px-4 py-3 space-y-2">
                             {/* ACTUAL RESULT — the correct answers, so picks below can be judged */}
                             {outcome && (
-                              <div className="r-card border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-900/20 p-3">
+                              <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-900/20 p-3">
                                 <p className="t-micro font-black uppercase tracking-[2px] text-emerald-700 dark:text-emerald-300 mb-1.5 flex items-center gap-1">
                                   <Trophy className="w-3 h-3" /> Actual Result
                                 </p>
@@ -661,7 +662,7 @@ export function Predictions() {
                                     </>
                                   )}
                                 </div>
-                              </div>
+                              </Card>
                             )}
                             {picks
                               .sort((a, b) => (b.points_earned ?? -1) - (a.points_earned ?? -1))
@@ -741,7 +742,7 @@ export function Predictions() {
                 })()}
               </div>
             )}
-          </div>
+          </Card>
         )}
 
       </div>

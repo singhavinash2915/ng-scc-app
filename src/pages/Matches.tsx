@@ -988,7 +988,7 @@ export function Matches() {
                       return (
                         <div className="mt-3 grid grid-cols-2 gap-2">
                           {/* Dhurandars */}
-                          <div className="r-card bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-2">
+                          <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/50 p-2">
                             <p className="t-micro font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1.5">
                               🦁 Dhurandars <span className="font-normal opacity-60">({dPlayers.length})</span>
                             </p>
@@ -1003,9 +1003,9 @@ export function Matches() {
                                 ) : null;
                               })}
                             </div>
-                          </div>
+                          </Card>
                           {/* Bazigars */}
-                          <div className="r-card bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/50 p-2">
+                          <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800/50 p-2">
                             <p className="t-micro font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">
                               🐅 Bazigars <span className="font-normal opacity-60">({bPlayers.length})</span>
                             </p>
@@ -1020,7 +1020,7 @@ export function Matches() {
                                 ) : null;
                               })}
                             </div>
-                          </div>
+                          </Card>
                           {noTeam.length > 0 && (
                             <div className="col-span-2">
                               <p className="t-micro text-gray-400">
@@ -1313,14 +1313,14 @@ export function Matches() {
           </div>
 
           {formData.match_type === 'internal' && (
-            <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 r-card border border-blue-200 dark:border-blue-800">
+            <Card className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
               <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 🏏 {TEAM_NAMES.dhurandars} vs {TEAM_NAMES.bazigars}
               </p>
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                 Select players and assign them to teams below
               </p>
-            </div>
+            </Card>
           )}
 
           <div className="grid grid-cols-2 gap-4">
@@ -1480,7 +1480,7 @@ export function Matches() {
               )}
               {/* Man of the Match - Only show for Won matches */}
               {formData.result === 'won' && (
-                <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 r-card border border-amber-200 dark:border-amber-800">
+                <Card className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800">
                   <div className="flex items-center gap-2 mb-3">
                     <Star className="w-5 h-5 text-amber-500" />
                     <label className="text-sm font-medium text-amber-700 dark:text-amber-300">
@@ -1510,7 +1510,7 @@ export function Matches() {
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
                     The Man of the Match will be featured on the Dashboard!
                   </p>
-                </div>
+                </Card>
               )}
             </div>
           )}
@@ -1599,7 +1599,7 @@ export function Matches() {
 
           {/* Captain — internal matches: per-team; external: single captain/vc */}
           {formData.match_type === 'internal' ? (
-            <div className="p-3 r-card border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
+            <Card className="p-3 border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Team Captains</p>
               <div className="grid grid-cols-2 gap-3">
                 <Select
@@ -1643,9 +1643,9 @@ export function Matches() {
                   ]}
                 />
               </div>
-            </div>
+            </Card>
           ) : (
-            <div className="grid grid-cols-2 gap-3 p-3 r-card border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
+            <Card className="grid grid-cols-2 gap-3 p-3 border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
               <Select
                 label="🅒 Captain"
                 value={formData.captain_id}
@@ -1676,12 +1676,12 @@ export function Matches() {
                   ),
                 ]}
               />
-            </div>
+            </Card>
           )}
 
           {/* Availability Poll - Only for future matches */}
           {!isCurrentOrPastDate && (
-            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 r-card space-y-3 border border-indigo-200 dark:border-indigo-800">
+            <Card className="p-4 bg-indigo-50 dark:bg-indigo-900/20 space-y-3 border-indigo-200 dark:border-indigo-800">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -1707,7 +1707,7 @@ export function Matches() {
                   onChange={(e) => setFormData({ ...formData, polling_deadline: e.target.value })}
                 />
               )}
-            </div>
+            </Card>
           )}
 
           {/* Player Selection - Different UI for Internal vs External matches */}
@@ -1734,7 +1734,7 @@ export function Matches() {
                   ))}
                 </div>
               </div>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 r-card p-2 space-y-1">
+              <Card className="max-h-48 overflow-y-auto p-2 space-y-1">
                 {filteredMembers.map(member => (
                   <button
                     key={member.id}
@@ -1772,14 +1772,14 @@ export function Matches() {
                     )}
                   </button>
                 ))}
-              </div>
+              </Card>
             </div>
           ) : (
             /* Internal Match - Team Assignment UI */
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 {/* Dhurandars Team */}
-                <div className="border-2 border-blue-200 dark:border-blue-800 r-card p-3 bg-blue-50/50 dark:bg-blue-900/10">
+                <Card className="border-blue-200 dark:border-blue-800 p-3 bg-blue-50/50 dark:bg-blue-900/10">
                   <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2 text-sm">
                     🦁 {TEAM_NAMES.dhurandars} ({getPlayersByTeam('dhurandars').length})
                   </h4>
@@ -1796,10 +1796,10 @@ export function Matches() {
                       ) : null;
                     })}
                   </div>
-                </div>
+                </Card>
 
                 {/* Bazigars Team */}
-                <div className="border-2 border-purple-200 dark:border-purple-800 r-card p-3 bg-purple-50/50 dark:bg-purple-900/10">
+                <Card className="border-purple-200 dark:border-purple-800 p-3 bg-purple-50/50 dark:bg-purple-900/10">
                   <h4 className="font-semibold text-purple-700 dark:text-purple-300 mb-2 text-sm">
                     🐅 {TEAM_NAMES.bazigars} ({getPlayersByTeam('bazigars').length})
                   </h4>
@@ -1816,7 +1816,7 @@ export function Matches() {
                       ) : null;
                     })}
                   </div>
-                </div>
+                </Card>
               </div>
 
               {/* Available Players */}
@@ -1842,7 +1842,7 @@ export function Matches() {
                     ))}
                   </div>
                 </div>
-                <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 r-card p-2 space-y-1">
+                <Card className="max-h-40 overflow-y-auto p-2 space-y-1">
                   {filteredMembers.filter(m => !playerTeams[m.id]).map(member => (
                     <div key={member.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
                       <span className="flex-1 text-sm flex items-center gap-1.5">
@@ -1876,7 +1876,7 @@ export function Matches() {
                       </button>
                     </div>
                   ))}
-                </div>
+                </Card>
               </div>
             </div>
           )}
@@ -2025,7 +2025,7 @@ export function Matches() {
 
           {/* Captain — internal matches: per-team; external: single captain/vc (Edit) */}
           {formData.match_type === 'internal' ? (
-            <div className="p-3 r-card border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
+            <Card className="p-3 border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Team Captains</p>
               <div className="grid grid-cols-2 gap-3">
                 <Select
@@ -2069,9 +2069,9 @@ export function Matches() {
                   ]}
                 />
               </div>
-            </div>
+            </Card>
           ) : (
-            <div className="grid grid-cols-2 gap-3 p-3 r-card border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
+            <Card className="grid grid-cols-2 gap-3 p-3 border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
               <Select
                 label="🅒 Captain"
                 value={formData.captain_id}
@@ -2102,7 +2102,7 @@ export function Matches() {
                   ),
                 ]}
               />
-            </div>
+            </Card>
           )}
 
           {/* Player Selection */}
@@ -2128,7 +2128,7 @@ export function Matches() {
                 ))}
               </div>
             </div>
-            <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 r-card p-2 space-y-1">
+            <Card className="max-h-48 overflow-y-auto p-2 space-y-1">
               {filteredMembers.map(member => (
                 <button
                   key={member.id}
@@ -2166,7 +2166,7 @@ export function Matches() {
                   )}
                 </button>
               ))}
-            </div>
+            </Card>
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -2276,7 +2276,7 @@ export function Matches() {
 
           {/* Man of the Match - Only show for Won matches */}
           {resultData.result === 'won' && (
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 r-card border border-amber-200 dark:border-amber-800">
+            <Card className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800">
               <div className="flex items-center gap-2 mb-3">
                 <Star className="w-5 h-5 text-amber-500" />
                 <label className="text-sm font-medium text-amber-700 dark:text-amber-300">
@@ -2300,7 +2300,7 @@ export function Matches() {
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
                 The Man of the Match will be featured on the Dashboard until the next match!
               </p>
-            </div>
+            </Card>
           )}
 
           <div className="flex gap-3 pt-4">

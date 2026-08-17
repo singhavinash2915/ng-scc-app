@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Card } from '../components/ui/Card';
 import { useParams } from 'react-router-dom';
 import { Undo2, Radio, WifiOff, Lock, Users, Wrench, ClipboardList, Repeat } from 'lucide-react';
 import { Header } from '../components/layout/Header';
@@ -207,14 +208,14 @@ export function LiveScoring() {
       <div>
         <Header title="Live Scoring" subtitle="In testing" />
         <div className="p-8 max-w-md mx-auto mt-12 text-center">
-          <div className="r-card border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
+          <Card className="p-8">
             <Lock className="w-10 h-10 text-amber-500 mx-auto mb-3" />
             <h2 className="text-lg font-black text-slate-900 dark:text-white">Being tested</h2>
             <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
               In-app scoring is on trial with the admins. It opens to every member
               once it's proven on a real match 🏏
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -224,13 +225,13 @@ export function LiveScoring() {
     return (
       <div>
         <Header title="Live Scoring" subtitle="Not set up yet" />
-        <div className="p-8 max-w-lg mx-auto mt-10 r-card bg-amber-50 border border-amber-200 p-6">
+        <Card className="p-8 max-w-lg mx-auto mt-10 bg-amber-50 border-amber-200 p-6">
           <p className="font-black text-amber-900">Scoring tables not created yet</p>
           <p className="text-sm text-amber-800/80 mt-1.5">
             Run <code className="font-mono">supabase/migrations/add_scoring_module.sql</code> in the
             Supabase SQL editor, then reload.
           </p>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -289,10 +290,10 @@ export function LiveScoring() {
                 </div>
               ))}
             </div>
-            <div className="mt-2 r-card bg-white/5 border border-white/10 px-3 py-2 text-left">
+            <Card className="mt-2 bg-white/5 border-white/10 px-3 py-2 text-left">
               <p className="t-body font-bold truncate">🏐 {name(bowler)}</p>
               <p className="t-meta text-white/55 tabular-nums">{bowlLine(bowler)}</p>
-            </div>
+            </Card>
 
             {/* this over */}
             <div className="flex items-center justify-center gap-1.5 mt-4 flex-wrap">
@@ -399,7 +400,7 @@ export function LiveScoring() {
 
         {/* ── WHO IS SCORING ───────────────────────────────────────────── */}
         {!iAmScoring && (
-          <div className="r-card border-2 border-slate-200 dark:border-white/10 p-4">
+          <Card className="p-4">
             {!myId ? (
               <p className="text-sm text-slate-500 inline-flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -422,7 +423,7 @@ export function LiveScoring() {
                 Start scoring this match
               </button>
             )}
-          </div>
+          </Card>
         )}
 
         {/* ── THE VIEWER ───────────────────────────────────────────────
@@ -438,7 +439,7 @@ export function LiveScoring() {
           <div className="space-y-2.5">
             {/* who's in — only needed at the start of an innings or after a wicket */}
             {(!striker || !nonStriker || !bowler) && (
-              <div className="r-card border-2 border-amber-300 bg-amber-50 dark:bg-amber-500/10 p-4 space-y-2">
+              <Card className="border-amber-300 bg-amber-50 dark:bg-amber-500/10 p-4 space-y-2">
                 <p className="t-meta font-black uppercase tracking-widest text-amber-700">
                   Set the players
                 </p>
@@ -453,7 +454,7 @@ export function LiveScoring() {
                     {squad.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
                 ))}
-              </div>
+              </Card>
             )}
 
             {/* ── KEYPAD ────────────────────────────────────────────────
