@@ -580,7 +580,7 @@ export function Members() {
                 {/* OVR badge (top-right) */}
                 {statMap[member.id] && (
                   <div className="absolute top-3 right-4 text-right leading-none">
-                    <span className="font-display text-2xl font-extrabold text-gray-900 dark:text-white tabular-nums">{statMap[member.id].ovr}</span>
+                    <span className="t-num text-2xl text-gray-900 dark:text-white">{statMap[member.id].ovr}</span>
                     <span className="t-micro font-bold text-gray-400 align-top ml-0.5">OVR</span>
                   </div>
                 )}
@@ -667,12 +667,12 @@ export function Members() {
                 {statMap[member.id] && (statMap[member.id].runs > 0 || statMap[member.id].wkts > 0) && (
                   <div className="mt-4 mb-4 flex items-center justify-center gap-8">
                     <div className="text-center">
-                      <p className="font-display text-xl font-extrabold text-gray-900 dark:text-white tabular-nums leading-none">{statMap[member.id].runs.toLocaleString()}</p>
+                      <p className="t-num text-xl text-gray-900 dark:text-white leading-none">{statMap[member.id].runs.toLocaleString()}</p>
                       <p className="t-micro uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mt-1">Runs</p>
                     </div>
                     <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
                     <div className="text-center">
-                      <p className="font-display text-xl font-extrabold text-gray-900 dark:text-white tabular-nums leading-none">{statMap[member.id].wkts}</p>
+                      <p className="t-num text-xl text-gray-900 dark:text-white leading-none">{statMap[member.id].wkts}</p>
                       <p className="t-micro uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mt-1">Wkts</p>
                     </div>
                   </div>

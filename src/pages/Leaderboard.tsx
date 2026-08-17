@@ -373,7 +373,7 @@ export function Leaderboard() {
         <div className="mx-4 sm:mx-0 r-card bg-accent-grad p-4 sm:px-5 flex items-center justify-between gap-3 flex-wrap shadow-accent">
           <div>
             <p className="t-meta font-bold uppercase tracking-widest opacity-80">Your rank · {tabs.find(t => t.id === tab)?.label}</p>
-            <p className="font-display text-2xl sm:text-[26px] font-extrabold tabular-nums">#{myRank.rank} · {myRank.value.toLocaleString()} {metricUnit}</p>
+            <p className="t-num text-2xl sm:text-[26px]">#{myRank.rank} · {myRank.value.toLocaleString()} {metricUnit}</p>
           </div>
           <div className="text-right t-body font-bold leading-tight">
             {myRank.gap > 0 && myRank.aboveName

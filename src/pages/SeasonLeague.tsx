@@ -56,7 +56,7 @@ export function SeasonLeague() {
               { label: 'Points', value: lg.points, tone: 'text-amber-600 dark:text-amber-300' },
             ].map(s => (
               <div key={s.label} className="r-card bg-white/60 dark:bg-white/5 p-2.5 text-center">
-                <p className={`font-display text-xl font-extrabold tabular-nums ${s.tone}`}>{s.value}</p>
+                <p className={`t-num text-xl${s.tone}`}>{s.value}</p>
                 <p className="t-micro font-bold uppercase tracking-wide text-slate-400 dark:text-white/50 mt-0.5">{s.label}</p>
               </div>
             ))}

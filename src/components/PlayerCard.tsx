@@ -63,7 +63,7 @@ export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props
             { k: 'Mat', v: stats.matches },
           ].map(s => (
             <div key={s.k} className="text-center">
-              <p className="font-display text-lg font-extrabold text-slate-900 dark:text-white tabular-nums leading-none">
+              <p className="t-num text-lg text-slate-900 dark:text-white leading-none">
                 {s.v}
               </p>
               <p className="t-micro font-black uppercase tracking-wider text-slate-400 mt-0.5">{s.k}</p>

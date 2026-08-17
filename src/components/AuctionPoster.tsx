@@ -87,7 +87,7 @@ export function AuctionPoster() {
         <div className="grid grid-cols-4 gap-2 mt-4 max-w-sm">
           {CELLS.map(([v, l]) => (
             <div key={l} className="bg-white/10 border border-white/15 r-card py-2.5 text-center">
-              <p className="font-display text-2xl sm:text-3xl font-extrabold tabular-nums leading-none">{two(v)}</p>
+              <p className="t-num text-2xl sm:text-3xl leading-none">{two(v)}</p>
               <p className="t-micro font-bold uppercase tracking-widest text-white/55 mt-1">{l}</p>
             </div>
           ))}

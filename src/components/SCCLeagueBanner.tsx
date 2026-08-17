@@ -38,7 +38,7 @@ export function SCCLeagueBanner() {
 
           {/* The count, big enough to actually register at a glance */}
           <div className="flex items-baseline gap-1.5 mt-0.5">
-            <span className="font-display text-2xl font-extrabold text-white tabular-nums leading-none">
+            <span className="t-num text-2xl text-white leading-none">
               {inCount}
             </span>
             <span className="text-white/70 text-xs font-bold">of {SQUAD_TARGET} in</span>

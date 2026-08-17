@@ -67,13 +67,13 @@ export function DemoScorecard() {
           <span className="text-xs font-bold text-gray-300">SCC vs Tinsel County</span>
         </div>
         <div className="flex items-end gap-3 flex-wrap">
-          <div className="font-display text-4xl font-extrabold text-white tabular-nums leading-none">
+          <div className="t-num text-4xl text-white leading-none">
             {runs}<span className="text-2xl text-gray-400">/4</span>
           </div>
           <div className="text-sm text-gray-400 font-semibold pb-1">({overs} ov)</div>
           <div className="ml-auto text-right pb-1">
             <p className="t-micro uppercase tracking-wider text-gray-500 font-bold">Run rate</p>
-            <p className="font-display text-lg font-extrabold text-emerald-400 tabular-nums">{crr}</p>
+            <p className="t-num text-lg text-emerald-400">{crr}</p>
           </div>
         </div>
         <p className="text-xs text-amber-300 font-semibold mt-2">
@@ -107,7 +107,7 @@ export function DemoScorecard() {
               <span className={`flex-1 truncate ${b.onStrike ? 'text-emerald-400 font-bold' : 'text-gray-200 font-medium'}`}>
                 {b.name}{b.onStrike ? ' *' : ''}
               </span>
-              <span className="font-display font-extrabold text-white tabular-nums w-10 text-right">{b.runs}</span>
+              <span className="t-num text-white w-10 text-right">{b.runs}</span>
               <span className="text-gray-500 text-xs tabular-nums w-10 text-right">{b.balls}b</span>
               <span className="text-gray-600 t-meta tabular-nums w-14 text-right">{b.fours}×4 {b.sixes}×6</span>
             </div>
@@ -117,7 +117,7 @@ export function DemoScorecard() {
               <span className="flex-1 truncate text-gray-400">
                 {b.name} <span className="t-micro text-gray-600">{b.how}</span>
               </span>
-              <span className="font-display font-bold text-gray-300 tabular-nums w-10 text-right">{b.runs}</span>
+              <span className="t-num text-gray-300 w-10 text-right">{b.runs}</span>
               <span className="text-gray-600 text-xs tabular-nums w-10 text-right">{b.balls}b</span>
             </div>
           ))}
@@ -135,7 +135,7 @@ export function DemoScorecard() {
               </span>
               <span className="text-gray-500 text-xs tabular-nums w-10 text-right">{b.overs}</span>
               <span className="text-gray-500 text-xs tabular-nums w-8 text-right">{b.runs}r</span>
-              <span className="font-display font-extrabold text-emerald-400 tabular-nums w-8 text-right">{b.wkts}w</span>
+              <span className="t-num text-emerald-400 w-8 text-right">{b.wkts}w</span>
             </div>
           ))}
         </div>

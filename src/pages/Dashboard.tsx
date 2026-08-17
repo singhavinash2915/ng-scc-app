@@ -537,7 +537,7 @@ export function Dashboard() {
               <Users className="w-3.5 h-3.5 text-blue-400" />
               <span className="text-blue-300/80 t-micro font-bold uppercase tracking-[1.5px]">Members</span>
             </div>
-            <p className="font-display text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">{animatedMembers}</p>
+            <p className="t-num text-4xl lg:text-5xl text-slate-900 dark:text-white relative leading-none">{animatedMembers}</p>
             <p className="text-slate-500 dark:text-gray-400 t-meta mt-2 relative">of {stats.totalMembers} · <span className="text-blue-300">active</span></p>
           </div>
 
@@ -548,7 +548,7 @@ export function Dashboard() {
               <IndianRupee className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-emerald-300/80 t-micro font-bold uppercase tracking-[1.5px]">Club Funds</span>
             </div>
-            <p className="font-display text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">
+            <p className="t-num text-4xl lg:text-5xl text-slate-900 dark:text-white relative leading-none">
               ₹{animatedFunds >= 1000 ? `${(animatedFunds / 1000).toFixed(1)}k` : animatedFunds.toLocaleString('en-IN')}
             </p>
             {/* Season growth trend pill */}
@@ -709,7 +709,7 @@ export function Dashboard() {
               <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
               <span className="text-emerald-300/80 t-micro font-bold uppercase tracking-[1.5px]">This Month</span>
             </div>
-            <p className="font-display text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">
+            <p className="t-num text-3xl lg:text-4xl text-slate-900 dark:text-white relative leading-none">
               <span className={monthSummary.deposits - monthSummary.expenses >= 0 ? 'text-emerald-300' : 'text-red-300'}>
                 {monthSummary.deposits - monthSummary.expenses >= 0 ? '+' : '−'}₹{Math.abs(monthSummary.deposits - monthSummary.expenses).toLocaleString('en-IN')}
               </span>

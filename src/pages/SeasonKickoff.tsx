@@ -28,7 +28,7 @@ function Countdown({ target }: { target: string }) {
     m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
   const cell = (v: number, l: string) => (
     <div className="text-center bg-white/15 backdrop-blur r-card px-3 py-2 min-w-[62px]">
-      <div className="font-display text-2xl font-extrabold tabular-nums leading-none">{String(v).padStart(2, '0')}</div>
+      <div className="t-num text-2xl leading-none">{String(v).padStart(2, '0')}</div>
       <div className="t-micro font-bold uppercase tracking-widest mt-1 text-white/70">{l}</div>
     </div>
   );

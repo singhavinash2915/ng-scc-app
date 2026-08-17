@@ -9,7 +9,7 @@ const Kicker = ({ children }: { children: React.ReactNode }) => (
   <p className="text-white/70 text-sm font-bold uppercase tracking-[3px]">{children}</p>
 );
 const Big = ({ children }: { children: React.ReactNode }) => (
-  <p className="font-display text-6xl sm:text-7xl font-extrabold text-white tabular-nums leading-none my-3">{children}</p>
+  <p className="t-num text-6xl sm:text-7xl text-white leading-none my-3">{children}</p>
 );
 const Sub = ({ children }: { children: React.ReactNode }) => (
   <p className="text-white/80 text-base font-medium mt-3 leading-snug max-w-xs mx-auto">{children}</p>
@@ -60,7 +60,7 @@ export function ClubWrappedStory({ data, onClose }: Props) {
     )});
     if (data.elClasico) list.push({ bg: 'linear-gradient(160deg,#e11d48,#3b0764 60%,#0a0f1a)', content: (
       <><Kicker>El Clásico verdict</Kicker>
-        <p className="font-display text-5xl font-extrabold text-white tabular-nums my-3">{data.elClasico.dhur}<span className="text-white/40 text-3xl"> – </span>{data.elClasico.baz}</p>
+        <p className="t-num text-5xl text-white my-3">{data.elClasico.dhur}<span className="text-white/40 text-3xl"> – </span>{data.elClasico.baz}</p>
         <p className="text-white/80 text-sm font-semibold">Dhurandhars vs Baazigars</p>
         <Sub>{data.elClasico.verdict} 🔥</Sub></>
     )});
@@ -74,7 +74,7 @@ export function ClubWrappedStory({ data, onClose }: Props) {
             { v: data.mvp?.name?.split(' ')[0] ?? '—', l: 'MVP' }, { v: data.elClasico ? `${data.elClasico.dhur}-${data.elClasico.baz}` : '—', l: 'Clásico' },
           ].map(s => (
             <div key={s.l} className="r-card bg-white/10 border border-white/15 py-3">
-              <p className="font-display text-xl font-extrabold text-white tabular-nums leading-none truncate px-1">{s.v}</p>
+              <p className="t-num text-xl text-white leading-none truncate px-1">{s.v}</p>
               <p className="text-white/60 t-micro font-bold uppercase tracking-wider mt-1">{s.l}</p>
             </div>
           ))}

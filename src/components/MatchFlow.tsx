@@ -93,7 +93,7 @@ export function InningsBreak({ battingTeam, chasingTeam, runs, wickets, overs, o
       <div className="p-6 text-center">
         <p className="t-micro font-black uppercase tracking-[2px] text-white/60">Innings break</p>
         <p className="font-display text-2xl font-extrabold mt-2">{battingTeam}</p>
-        <p className="font-display text-5xl font-extrabold tabular-nums mt-1">
+        <p className="t-num text-5xl mt-1">
           {runs}<span className="text-white/40">/</span>{wickets}
         </p>
         <p className="text-white/55 text-sm mt-1">in {overs} overs</p>
@@ -167,7 +167,7 @@ export function MatchResult({ first, second, allBalls, secondBalls, members, for
             {[first, second].map(i => (
               <div key={i.team} className="r-card bg-white/10 border border-white/15 px-3 py-2.5">
                 <p className="t-meta text-white/60 truncate">{i.team}</p>
-                <p className="font-display text-xl font-extrabold tabular-nums">
+                <p className="t-num text-xl">
                   {i.runs}/{i.wickets}
                 </p>
                 <p className="t-micro text-white/45">{i.overs} ov</p>

@@ -264,7 +264,7 @@ function RankRow({ player, tab }: { player: RankedPlayer; tab: Tab }) {
           <p className="t-micro text-gray-500 truncate mt-1">{sub} · {player.matchesCounted} matches{player.momBonus ? ` · ⭐${Math.round((player.momBonus || 0) / 50)} MOM` : ''}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="font-display text-lg font-black text-gray-900 dark:text-white tabular-nums leading-none">{player.rating}</p>
+          <p className="t-num text-lg text-gray-900 dark:text-white leading-none">{player.rating}</p>
           <p className="t-micro text-gray-400 uppercase tracking-wider mt-0.5">rating</p>
         </div>
       </div>

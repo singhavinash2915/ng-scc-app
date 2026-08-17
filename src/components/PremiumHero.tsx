@@ -134,7 +134,7 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
           <div key={i} className="rounded-[18px] p-4
             bg-white border border-slate-200/80 shadow-[0_18px_44px_-26px_rgba(20,33,61,0.22)]
             dark:bg-white/[0.05] dark:border-white/10 dark:shadow-none">
-            <div className={`font-display text-[28px] lg:text-[30px] font-extrabold tabular-nums leading-none ${s.accent ? 'accent-grad' : 'text-slate-900 dark:text-white'}`}>{s.v}</div>
+            <div className={`t-num text-[28px] lg:text-[30px] leading-none${s.accent ? 'accent-grad' : 'text-slate-900 dark:text-white'}`}>{s.v}</div>
             <div className="text-slate-500 dark:text-gray-400 text-[12.5px] font-semibold mt-1">{s.l}</div>
             <span className="inline-block mt-2.5 t-meta font-bold px-2.5 py-1 rounded-full accent-soft text-accent">{s.tag}</span>
           </div>

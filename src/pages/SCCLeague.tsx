@@ -246,7 +246,7 @@ export function SCCLeague() {
                                 : 'bg-slate-300 text-slate-600'}`}>{f}</span>
                           ))}
                         </div>
-                        <span className="font-display text-2xl font-extrabold tabular-nums flex-shrink-0"
+                        <span className="t-num text-2xl flex-shrink-0"
                           style={{ color: id.color }}>{st.points}</span>
                       </div>
                     );

@@ -86,3 +86,51 @@ export function tierFor(s: CardStats, all: CardStats[]): CardTier {
   if (pct < 0.60) return TIERS.pro;
   return TIERS.squad;
 }
+
+// ─── The same language, for matches ───────────────────────────────────────────
+// A player card says what someone IS through a coloured ring and a chip. A
+// match card should say what a match WAS the same way, so the two read as one
+// system rather than two designers' work.
+//
+// Deliberately the same shape as CardTier — ring, chip, glow — so a screen
+// styles a match exactly as it styles a player and nothing has to be learned
+// twice.
+
+export type ResultKey = 'won' | 'lost' | 'draw' | 'upcoming' | 'cancelled';
+
+export const RESULT_TONE: Record<ResultKey, CardTier> = {
+  won: {
+    key: 'legend', label: 'Won',
+    ring: 'border-emerald-400/60 dark:border-emerald-300/50',
+    chip: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-200',
+    glow: 'from-emerald-200/50 to-transparent dark:from-emerald-400/20',
+  },
+  lost: {
+    key: 'squad', label: 'Lost',
+    ring: 'border-rose-300/60 dark:border-rose-400/30',
+    chip: 'bg-rose-100 text-rose-700 dark:bg-rose-400/20 dark:text-rose-200',
+    glow: 'from-rose-200/40 to-transparent dark:from-rose-400/15',
+  },
+  draw: {
+    key: 'pro', label: 'No result',
+    ring: 'border-slate-300 dark:border-white/15',
+    chip: 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70',
+    glow: 'from-slate-200/40 to-transparent dark:from-white/10',
+  },
+  upcoming: {
+    key: 'elite', label: 'Upcoming',
+    ring: 'border-sky-400/60 dark:border-sky-300/50',
+    chip: 'bg-sky-100 text-sky-800 dark:bg-sky-400/20 dark:text-sky-200',
+    glow: 'from-sky-200/50 to-transparent dark:from-sky-400/20',
+  },
+  cancelled: {
+    key: 'squad', label: 'Cancelled',
+    ring: 'border-slate-300 dark:border-white/15',
+    chip: 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/50',
+    glow: 'from-slate-200/30 to-transparent dark:from-white/5',
+  },
+};
+
+/** Falls back to "no result" for anything unexpected in the data. */
+export const resultTone = (r: string | null | undefined): CardTier =>
+  RESULT_TONE[(r ?? 'draw') as ResultKey] ?? RESULT_TONE.draw;

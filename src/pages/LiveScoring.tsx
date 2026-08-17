@@ -268,7 +268,7 @@ export function LiveScoring() {
                 </span>
               )}
             </span>
-            <p className="font-display text-6xl font-extrabold tabular-nums mt-2 leading-none">
+            <p className="t-num text-6xl mt-2 leading-none">
               {st.runs}<span className="text-white/40">/</span>{st.wickets}
             </p>
             <p className="text-white/60 text-sm mt-1.5">

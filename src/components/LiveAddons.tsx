@@ -95,7 +95,7 @@ export function LiveAddons({ videoId, matchId, name, memberId, isAdmin }: Props)
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {marks.map(m => (
               <div key={m.id} className="flex items-center gap-2 text-xs">
-                <span className="font-display font-bold text-amber-300 tabular-nums w-12">{formatTime(m.seconds)}</span>
+                <span className="t-num text-amber-300 w-12">{formatTime(m.seconds)}</span>
                 <span className="flex-1 truncate text-white/80">{m.label || 'Moment'}</span>
                 <span className="text-white/40 t-micro truncate max-w-[70px]">{m.marked_by}</span>
                 {m.converted && <span className="text-emerald-400 t-micro font-bold">✓ clipped</span>}

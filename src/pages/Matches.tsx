@@ -776,7 +776,7 @@ export function Matches() {
                 </p>
               </div>
               <div className="text-center bg-white/15 r-card px-5 py-3">
-                <p className="font-display text-3xl lg:text-4xl font-extrabold tabular-nums leading-none">{nextMatchDaysAway}</p>
+                <p className="t-num text-3xl lg:text-4xl leading-none">{nextMatchDaysAway}</p>
                 <p className="t-micro font-bold uppercase tracking-widest mt-1 text-white/85">{nextMatchDaysAway === 1 ? 'day to go' : 'days to go'}</p>
               </div>
             </div>

@@ -110,7 +110,7 @@ export function SeasonQuiz({ awards, clubWrapped, members, season, onClose }: Pr
       ) : (
         <div className="text-center animate-[pop_.5s_cubic-bezier(.34,1.56,.64,1)]">
           <p className="text-6xl mb-3">{score >= quiz.length * 0.7 ? '🏆' : '🏏'}</p>
-          <p className="font-display text-5xl font-extrabold tabular-nums">{score}<span className="text-white/40 text-3xl">/{quiz.length}</span></p>
+          <p className="t-num text-5xl">{score}<span className="text-white/40 text-3xl">/{quiz.length}</span></p>
           <p className="text-lg font-bold text-cyan-300 mt-3">{verdict}</p>
           <div className="flex items-center justify-center gap-3 mt-8">
             <button onClick={restart} className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/10 border border-white/20 font-bold"><RotateCcw className="w-4 h-4" /> Play again</button>

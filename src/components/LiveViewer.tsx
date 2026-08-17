@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Radio } from 'lucide-react';
 import { commentaryFor, winProbability, chaseLine, keyMoments, overByOver } from '../lib/liveMatch';
 import type { Ball, MatchFormat } from '../lib/cricketRules';
+import { resultTone } from '../lib/playerCard';
 
 // ─── Live viewer ──────────────────────────────────────────────────────────────
 // What everyone not at the ground sees. Deliberately source-agnostic: it takes
@@ -38,6 +39,7 @@ export function LiveViewer({ view, format, name }: {
     oversPerInnings: format.oversPerInnings, playersPerSide: format.playersPerSide,
   } : null;
 
+  const live = resultTone('upcoming');   // a live match is still to be decided
   const pct = chase ? Math.round(winProbability(chase) * 100) : null;
   const overs = `${Math.floor(view.legalBalls / 6)}.${view.legalBalls % 6}`;
 
@@ -50,7 +52,9 @@ export function LiveViewer({ view, format, name }: {
   return (
     <div className="space-y-3">
       {/* ── Score ── */}
-      <div className="relative overflow-hidden r-card text-white shadow-2xl"
+      {/* Ringed like a player card: same system, so a live match and a squad
+          card are visibly the same family rather than two separate designs. */}
+      <div className={`relative overflow-hidden r-card text-white shadow-2xl border-2 ${live.ring}`}
         style={{ background: 'linear-gradient(150deg,#052e16,#020617)' }}>
         <div className="p-6 text-center">
           <span className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-[2px] text-emerald-300">

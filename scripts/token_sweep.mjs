@@ -26,10 +26,35 @@ const TEXT = {
   'text-[14px]': 't-lead', 'text-[15px]': 't-lead',
 };
 
+/**
+ * Collapse the number face. `font-display … font-extrabold … tabular-nums`
+ * appeared in 21 files with the weight and tracking guessed each time, so
+ * scores and stats never quite matched between screens. t-num carries all of
+ * it, and — crucially — tabular figures, so a live score doesn't jitter as the
+ * digits tick over.
+ *
+ * Only collapses when BOTH font-display and tabular-nums are present: that
+ * pairing is what marks a number display. tabular-nums alone is inside tables
+ * where the surrounding type is deliberately not the display face.
+ */
+function numberFace(tokens) {
+  const has = t => tokens.includes(t);
+  if (!(has('font-display') && has('tabular-nums'))) return null;
+  const drop = new Set(['font-display', 'tabular-nums', 'font-extrabold', 'font-black', 'font-bold']);
+  return ['t-num', ...tokens.filter(t => t.trim() && !drop.has(t))];
+}
+
 /** Rewrite one class string given the element it sits on. */
 function rewrite(value, elementName, stats) {
   const isControl = CONTROL.has(elementName);
-  const out = value.split(/(\s+)/).map(tok => {
+  const parts = value.split(/(\s+)/);
+  const face = numberFace(parts);
+  if (face) {
+    stats['t-num'] = (stats['t-num'] ?? 0) + 1;
+    // Re-run the radius/text pass over the collapsed list.
+    return rewrite(face.join(' '), elementName, stats);
+  }
+  const out = parts.map(tok => {
     const kind = RADIUS[tok];
     if (kind) {
       // The ELEMENT decides, never the old class. An <input> that happened to
