@@ -96,7 +96,7 @@ export function Payment() {
                 />
 
                 {selectedMember && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 r-control">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Current Balance</span>
                     <span className={`font-bold text-lg ${
                       selectedMember.balance < 500
@@ -136,7 +136,7 @@ export function Payment() {
                           setAmount(quickAmount.toString());
                           setPaymentStatus('idle');
                         }}
-                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`py-2 px-3 r-control text-sm font-medium transition-colors ${
                           amount === quickAmount.toString()
                             ? 'bg-primary-500 text-white'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'

@@ -27,7 +27,7 @@ function MOMBadge({ count }: { count: number }) {
   return (
     <span
       title={`${count} Man of the Match award${count > 1 ? 's' : ''} this season`}
-      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold whitespace-nowrap"
+      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 t-micro font-bold whitespace-nowrap"
     >
       <Crown className="w-2.5 h-2.5" fill="currentColor" />
       {count}
@@ -144,7 +144,7 @@ function RankChangeBadge({ change }: { change: number }) {
   return (
     <span
       title={up ? `Moved up ${change} place${change > 1 ? 's' : ''}` : `Moved down ${Math.abs(change)} place${Math.abs(change) > 1 ? 's' : ''}`}
-      className={`inline-flex items-center gap-0 text-[10px] font-black leading-none ${up ? 'text-emerald-500' : 'text-red-400'}`}
+      className={`inline-flex items-center gap-0 t-micro font-black leading-none ${up ? 'text-emerald-500' : 'text-red-400'}`}
     >
       {up ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
       {Math.abs(change)}
@@ -333,9 +333,9 @@ export function Leaderboard() {
       <Header title="Leaderboard" subtitle={SEASONS.find(s => s.value === season)?.label ?? season} />
 
       {/* Season banner */}
-      <div className="mx-4 sm:mx-0 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-700 dark:to-primary-900 p-5 text-white flex items-center justify-between flex-wrap gap-3">
+      <div className="mx-4 sm:mx-0 r-card bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-700 dark:to-primary-900 p-5 text-white flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+          <div className="w-12 h-12 r-control bg-white/20 flex items-center justify-center">
             <Trophy className="w-6 h-6 text-yellow-300" />
           </div>
           <div>
@@ -351,7 +351,7 @@ export function Leaderboard() {
           <select
             value={season}
             onChange={e => setSeason(e.target.value)}
-            className="text-sm font-semibold rounded-xl bg-white/20 hover:bg-white/30 border border-white/20 text-white px-3 py-2 outline-none cursor-pointer"
+            className="text-sm font-semibold r-control bg-white/20 hover:bg-white/30 border border-white/20 text-white px-3 py-2 outline-none cursor-pointer"
           >
             {SEASONS.map(s => (
               <option key={s.value} value={s.value} className="text-gray-900">{s.label}</option>
@@ -370,12 +370,12 @@ export function Leaderboard() {
 
       {/* ── Your Rank — personal hook ──────────────────────────────────── */}
       {myRank && (
-        <div className="mx-4 sm:mx-0 rounded-2xl bg-accent-grad p-4 sm:px-5 flex items-center justify-between gap-3 flex-wrap shadow-accent">
+        <div className="mx-4 sm:mx-0 r-card bg-accent-grad p-4 sm:px-5 flex items-center justify-between gap-3 flex-wrap shadow-accent">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">Your rank · {tabs.find(t => t.id === tab)?.label}</p>
+            <p className="t-meta font-bold uppercase tracking-widest opacity-80">Your rank · {tabs.find(t => t.id === tab)?.label}</p>
             <p className="font-display text-2xl sm:text-[26px] font-extrabold tabular-nums">#{myRank.rank} · {myRank.value.toLocaleString()} {metricUnit}</p>
           </div>
-          <div className="text-right text-[13px] font-bold leading-tight">
+          <div className="text-right t-body font-bold leading-tight">
             {myRank.gap > 0 && myRank.aboveName
               ? <>Just <span className="tabular-nums">{myRank.gap.toLocaleString()}</span> {metricUnit} to overtake<br /><span className="opacity-85 font-semibold">{myRank.aboveName} ↑</span></>
               : <>🏆 You're #1 — top of the board!</>}
@@ -384,7 +384,7 @@ export function Leaderboard() {
       )}
 
       {/* Tab bar */}
-      <div className="mx-4 sm:mx-0 flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+      <div className="mx-4 sm:mx-0 flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 r-control">
         {tabs.map(t => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -392,7 +392,7 @@ export function Leaderboard() {
             <button
               key={t.id}
               onClick={() => handleTabChange(t.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 r-control text-sm font-semibold transition-all ${
                 active
                   ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -407,7 +407,7 @@ export function Leaderboard() {
 
       {/* Best Wicket-Keeper highlight (fielding tab only) */}
       {tab === 'fielding' && topKeeper && (
-        <div className="mx-4 sm:mx-0 flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/15 px-4 py-3">
+        <div className="mx-4 sm:mx-0 flex items-center gap-3 r-control border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/15 px-4 py-3">
           {(topKeeper.player.member as { avatar_url?: string } | undefined)?.avatar_url ? (
             <img src={(topKeeper.player.member as { avatar_url?: string }).avatar_url} alt="" className="w-11 h-11 rounded-full object-cover" />
           ) : (
@@ -416,7 +416,7 @@ export function Leaderboard() {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">🧤 Best Wicket-Keeper</p>
+            <p className="t-micro uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">🧤 Best Wicket-Keeper</p>
             <p className="font-bold text-gray-900 dark:text-white truncate">{(topKeeper.player.member as { name?: string } | undefined)?.name || 'Player'}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {topKeeper.total} dismissals · {topKeeper.player.fielding_caught_behind ?? 0} ct behind · {topKeeper.player.fielding_stumpings} st
@@ -441,7 +441,7 @@ export function Leaderboard() {
             return (
               <div
                 key={player.id}
-                className={`relative rounded-2xl p-3 text-center flex flex-col items-center gap-1 ${
+                className={`relative r-card p-3 text-center flex flex-col items-center gap-1 ${
                   realRank === 1
                     ? 'bg-gradient-to-b from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-2 border-yellow-300 dark:border-yellow-600 -mt-2'
                     : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'

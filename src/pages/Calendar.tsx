@@ -176,7 +176,7 @@ export function Calendar() {
                 <div className="flex items-center justify-between mb-6">
                   <button
                     onClick={goToPrevMonth}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 r-control transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   </button>
@@ -192,7 +192,7 @@ export function Calendar() {
 
                   <button
                     onClick={goToNextMonth}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 r-control transition-colors"
                   >
                     <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   </button>
@@ -223,7 +223,7 @@ export function Calendar() {
                         onClick={() => day.date && setSelectedDate(day.date)}
                         disabled={!day.isCurrentMonth}
                         className={`
-                          aspect-square p-1 rounded-lg relative flex flex-col items-center justify-center
+                          aspect-square p-1 r-control relative flex flex-col items-center justify-center
                           transition-all duration-200
                           ${day.isCurrentMonth
                             ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
@@ -326,7 +326,7 @@ export function Calendar() {
                     {selectedDateMatches.map(match => (
                       <div
                         key={match.id}
-                        className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl"
+                        className="p-4 bg-gray-50 dark:bg-gray-700/50 r-control"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div>
@@ -407,7 +407,7 @@ export function Calendar() {
                       .map(match => (
                         <div
                           key={match.id}
-                          className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg cursor-pointer"
+                          className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 r-control cursor-pointer"
                           onClick={() => setSelectedDate(match.date)}
                         >
                           <div>

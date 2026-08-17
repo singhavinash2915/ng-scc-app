@@ -66,7 +66,7 @@ function FormBlocks({ form }: { form: FormResult[] | FormResult[] | undefined })
   return (
     <span className="inline-flex gap-1">
       {ordered.map((r, i) => (
-        <span key={i} className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-black text-white ${
+        <span key={i} className={`w-7 h-7 r-control flex items-center justify-center t-meta font-black text-white ${
           r === 'won' ? 'bg-emerald-500' : r === 'lost' ? 'bg-red-500' : 'bg-amber-500'
         }`}>
           {r === 'won' ? 'W' : r === 'lost' ? 'L' : 'D'}
@@ -82,15 +82,15 @@ function AchievementCard({ a }: { a: Achievement }) {
   const pct = a.progress ? Math.min(100, (a.progress.current / a.progress.target) * 100) : (a.unlocked ? 100 : 0);
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl p-4 transition-all ${a.unlocked ? '' : 'opacity-50 grayscale'}`}
+    <div className={`relative overflow-hidden r-card p-4 transition-all ${a.unlocked ? '' : 'opacity-50 grayscale'}`}
          style={{ background: a.unlocked ? tierColor : 'linear-gradient(135deg, #1f2937 0%, #0a1019 100%)' }}>
-      <div className="absolute inset-0 rounded-2xl pointer-events-none"
+      <div className="absolute inset-0 r-card pointer-events-none"
            style={{ border: `1px solid ${a.unlocked ? tierBorder : 'rgba(75,85,99,0.3)'}` }} />
       <div className="relative">
         <div className="flex items-start justify-between">
           <div className="text-3xl mb-2">{a.unlocked ? a.emoji : '🔒'}</div>
           {a.tier && a.unlocked && (
-            <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-white/80">
+            <span className="t-micro uppercase font-black tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-white/80">
               {a.tier}
             </span>
           )}
@@ -98,7 +98,7 @@ function AchievementCard({ a }: { a: Achievement }) {
         <h4 className={`font-black text-sm leading-tight ${a.unlocked ? 'text-white' : 'text-gray-400'}`}>
           {a.title}
         </h4>
-        <p className={`text-[11px] mt-1 leading-snug ${a.unlocked ? 'text-white/60' : 'text-gray-500'}`}>
+        <p className={`t-meta mt-1 leading-snug ${a.unlocked ? 'text-white/60' : 'text-gray-500'}`}>
           {a.desc}
         </p>
         {a.progress && !a.unlocked && (
@@ -106,7 +106,7 @@ function AchievementCard({ a }: { a: Achievement }) {
             <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
               <div className="h-full bg-emerald-400 transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
-            <p className="text-[10px] text-emerald-400 mt-1 tabular-nums">
+            <p className="t-micro text-emerald-400 mt-1 tabular-nums">
               {a.progress.current} / {a.progress.target}
             </p>
           </>
@@ -247,17 +247,17 @@ export function MemberProfile() {
         </button>
 
         {/* ── HERO ─────────────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-3xl shadow-2xl"
+        <div className="relative overflow-hidden r-card shadow-2xl"
              style={{ background: 'radial-gradient(800px circle at 0% 0%, rgba(16,185,129,0.3), transparent 50%), radial-gradient(600px circle at 100% 100%, rgba(59,130,246,0.25), transparent 60%), linear-gradient(135deg, #061122 0%, #0a1019 100%)' }}>
-          <div className="absolute inset-0 border border-emerald-500/20 rounded-3xl pointer-events-none" />
+          <div className="absolute inset-0 border border-emerald-500/20 r-card pointer-events-none" />
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-400/15 rounded-full blur-3xl" />
 
           <div className="relative p-6 lg:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-5">
             {member.avatar_url ? (
               <img src={member.avatar_url} alt={member.name}
-                   className="w-28 h-28 lg:w-32 lg:h-32 rounded-3xl object-cover border-[3px] border-emerald-400/40 shadow-xl shadow-emerald-500/30 flex-shrink-0" />
+                   className="w-28 h-28 lg:w-32 lg:h-32 r-card object-cover border-[3px] border-emerald-400/40 shadow-xl shadow-emerald-500/30 flex-shrink-0" />
             ) : (
-              <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 border-[3px] border-emerald-400/40 flex items-center justify-center shadow-xl shadow-emerald-500/30 flex-shrink-0">
+              <div className="w-28 h-28 lg:w-32 lg:h-32 r-card bg-gradient-to-br from-emerald-400 to-teal-600 border-[3px] border-emerald-400/40 flex items-center justify-center shadow-xl shadow-emerald-500/30 flex-shrink-0">
                 <span className="text-5xl font-black text-emerald-950">{member.name.charAt(0)}</span>
               </div>
             )}
@@ -265,7 +265,7 @@ export function MemberProfile() {
             <div className="flex-1 min-w-0 text-center sm:text-left">
               {/* Same tier the squad cards show — the profile is where a player
                   comes to check it, so it must agree with /members exactly. */}
-              <span className={`inline-block text-[9px] font-black uppercase tracking-[1.5px]
+              <span className={`inline-block t-micro font-black uppercase tracking-[1.5px]
                                 px-2 py-0.5 rounded-full ${myTier.chip}`}>
                 {myTier.label} · {role(myCard)}
               </span>
@@ -275,7 +275,7 @@ export function MemberProfile() {
               </h1>
 
               {/* Identity line 1: bowling/batting style · #jersey · Joined year */}
-              <p className="text-gray-300 text-[13px] mt-1.5 font-medium">
+              <p className="text-gray-300 t-body mt-1.5 font-medium">
                 {[
                   member.bowling_style && member.bowling_style !== 'none' && BOWLING_LABEL[member.bowling_style],
                   !member.bowling_style && member.batting_style && BATTING_LABEL[member.batting_style],
@@ -286,7 +286,7 @@ export function MemberProfile() {
 
               {/* Identity line 2: role · Born DD MMM */}
               {(member.role || member.birthday) && (
-                <p className="text-gray-400 text-[13px] mt-0.5 font-medium">
+                <p className="text-gray-400 t-body mt-0.5 font-medium">
                   {[
                     member.role && (ROLE_LABEL[member.role] || member.role),
                     member.birthday && `Born ${new Date(member.birthday).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`,
@@ -298,13 +298,13 @@ export function MemberProfile() {
               {(moms > 0 || member.status === 'inactive') && (
                 <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start flex-wrap">
                   {moms > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[11px] font-black">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 t-meta font-black">
                       <Crown className="w-3 h-3" fill="currentColor" />
                       {moms} MOM{moms > 1 ? 's' : ''}
                     </span>
                   )}
                   {member.status === 'inactive' && (
-                    <span className="px-2 py-0.5 rounded-full bg-gray-500/15 border border-gray-500/30 text-gray-300 text-[11px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-gray-500/15 border border-gray-500/30 text-gray-300 t-meta font-bold">
                       Inactive
                     </span>
                   )}
@@ -343,9 +343,9 @@ export function MemberProfile() {
 
               {form && form.length > 0 && (
                 <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start flex-wrap">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Last {form.length} matches</span>
+                  <span className="t-micro text-gray-500 uppercase tracking-widest font-bold">Last {form.length} matches</span>
                   <FormBlocks form={form} />
-                  <span className="text-[9px] text-gray-600 font-medium">← older · newer →</span>
+                  <span className="t-micro text-gray-600 font-medium">← older · newer →</span>
                 </div>
               )}
             </div>
@@ -353,14 +353,14 @@ export function MemberProfile() {
         </div>
 
         {/* ── TABS ───────────────────────────────────────────────────── */}
-        <div className="flex gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-x-auto">
+        <div className="flex gap-1.5 p-1 r-control bg-gray-100 dark:bg-gray-800 overflow-x-auto">
           {tabs.map(t => {
             const active = tab === t.id;
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex-1 min-w-fit flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`flex-1 min-w-fit flex items-center justify-center gap-1.5 py-2 px-3 r-control text-xs font-semibold transition-colors whitespace-nowrap ${
                   active
                     ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white'
                     : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
@@ -369,7 +369,7 @@ export function MemberProfile() {
                 {t.icon}
                 <span>{t.label}</span>
                 {t.count != null && t.count > 0 && (
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${active ? 'bg-primary-100 text-primary-700' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>
+                  <span className={`t-micro font-black px-1.5 py-0.5 rounded-full ${active ? 'bg-primary-100 text-primary-700' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'}`}>
                     {t.count}
                   </span>
                 )}
@@ -383,10 +383,10 @@ export function MemberProfile() {
           <div className="space-y-4">
             {/* ─── THIS SEASON (compact stat lines, mockup-style) ─── */}
             {memberStats ? (
-              <div className="relative overflow-hidden rounded-2xl p-5"
+              <div className="relative overflow-hidden r-card p-5"
                    style={{ background: 'linear-gradient(135deg, #061a14 0%, #0a1019 100%)' }}>
-                <div className="absolute inset-0 rounded-2xl pointer-events-none border border-emerald-500/15" />
-                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[3px] mb-3 relative">
+                <div className="absolute inset-0 r-card pointer-events-none border border-emerald-500/15" />
+                <h3 className="t-micro font-black text-emerald-400 uppercase tracking-[3px] mb-3 relative">
                   This Season
                 </h3>
                 <div className="space-y-2.5 relative">
@@ -423,7 +423,7 @@ export function MemberProfile() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
+              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
                 <p className="text-sm text-gray-500">No stats yet for this season — wait for the first match to be played!</p>
               </div>
             )}
@@ -432,10 +432,10 @@ export function MemberProfile() {
             {(topKnocks.length > 0 || topSpells.length > 0) && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {topKnocks.length > 0 && (
-                  <div className="relative overflow-hidden rounded-2xl p-5"
+                  <div className="relative overflow-hidden r-card p-5"
                        style={{ background: 'linear-gradient(135deg, #0c1e3a 0%, #0a1019 100%)' }}>
-                    <div className="absolute inset-0 rounded-2xl pointer-events-none border border-blue-500/15" />
-                    <h3 className="text-[10px] font-black text-blue-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
+                    <div className="absolute inset-0 r-card pointer-events-none border border-blue-500/15" />
+                    <h3 className="t-micro font-black text-blue-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
                       <TrendingUp className="w-3 h-3" /> Top 3 Knocks
                     </h3>
                     <div className="space-y-2 relative">
@@ -444,8 +444,8 @@ export function MemberProfile() {
                           <span className="font-black text-base tabular-nums w-16 flex-shrink-0">
                             {k.runs} <span className="text-white/50 text-xs font-bold">({k.balls})</span>
                           </span>
-                          <span className="text-[12px] text-gray-300 flex-1 truncate">vs {k.opponent}</span>
-                          <span className="text-[11px] text-gray-500 tabular-nums flex-shrink-0">{fmtShortDate(k.date)}</span>
+                          <span className="t-body text-gray-300 flex-1 truncate">vs {k.opponent}</span>
+                          <span className="t-meta text-gray-500 tabular-nums flex-shrink-0">{fmtShortDate(k.date)}</span>
                         </div>
                       ))}
                     </div>
@@ -453,10 +453,10 @@ export function MemberProfile() {
                 )}
 
                 {topSpells.length > 0 && (
-                  <div className="relative overflow-hidden rounded-2xl p-5"
+                  <div className="relative overflow-hidden r-card p-5"
                        style={{ background: 'linear-gradient(135deg, #3a0c1a 0%, #0a1019 100%)' }}>
-                    <div className="absolute inset-0 rounded-2xl pointer-events-none border border-red-500/15" />
-                    <h3 className="text-[10px] font-black text-red-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
+                    <div className="absolute inset-0 r-card pointer-events-none border border-red-500/15" />
+                    <h3 className="t-micro font-black text-red-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
                       <Zap className="w-3 h-3" fill="currentColor" /> Top 3 Bowling Spells
                     </h3>
                     <div className="space-y-2 relative">
@@ -465,8 +465,8 @@ export function MemberProfile() {
                           <span className="font-black text-base tabular-nums w-16 flex-shrink-0">
                             {s.wickets}/{s.runs}
                           </span>
-                          <span className="text-[12px] text-gray-300 flex-1 truncate">vs {s.opponent}</span>
-                          <span className="text-[11px] text-gray-500 tabular-nums flex-shrink-0">{fmtShortDate(s.date)}</span>
+                          <span className="t-body text-gray-300 flex-1 truncate">vs {s.opponent}</span>
+                          <span className="t-meta text-gray-500 tabular-nums flex-shrink-0">{fmtShortDate(s.date)}</span>
                         </div>
                       ))}
                     </div>
@@ -489,8 +489,8 @@ export function MemberProfile() {
 
             {/* Recent form strip */}
             {form && form.length > 0 && (
-              <div className="rounded-2xl p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center gap-3">
-                <span className="text-[10px] font-black uppercase tracking-[2px] text-gray-500 dark:text-gray-400">
+              <div className="r-card p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                <span className="t-micro font-black uppercase tracking-[2px] text-gray-500 dark:text-gray-400">
                   Recent Form (last 5)
                 </span>
                 <FormBlocks form={form} />
@@ -498,10 +498,10 @@ export function MemberProfile() {
             )}
 
             {/* Skill Radar */}
-            <div className="relative overflow-hidden rounded-2xl p-5"
+            <div className="relative overflow-hidden r-card p-5"
                  style={{ background: 'linear-gradient(135deg, #061a14 0%, #0a1019 100%)' }}>
-              <div className="absolute inset-0 rounded-2xl pointer-events-none border border-emerald-500/15" />
-              <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[3px] mb-2 relative">
+              <div className="absolute inset-0 r-card pointer-events-none border border-emerald-500/15" />
+              <h3 className="t-micro font-black text-emerald-400 uppercase tracking-[3px] mb-2 relative">
                 Skill Radar
               </h3>
               <div className="relative">
@@ -512,7 +512,7 @@ export function MemberProfile() {
             {/* Latest unlocks */}
             {unlockedCount > 0 && (
               <div>
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 flex items-center gap-1.5">
+                <h3 className="t-meta font-bold text-gray-400 uppercase tracking-[2px] mb-2 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   Recent achievements
                 </h3>
@@ -527,7 +527,7 @@ export function MemberProfile() {
             {/* My highlight clips */}
             {myClips.length > 0 && (
               <div>
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 flex items-center gap-1.5">
+                <h3 className="t-meta font-bold text-gray-400 uppercase tracking-[2px] mb-2 flex items-center gap-1.5">
                   <Film className="w-3.5 h-3.5 text-violet-400" />
                   My highlights
                 </h3>
@@ -538,7 +538,7 @@ export function MemberProfile() {
                       href={videoWatchUrl(c)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group relative flex-shrink-0 w-36 rounded-lg overflow-hidden bg-gray-900"
+                      className="group relative flex-shrink-0 w-36 r-control overflow-hidden bg-gray-900"
                     >
                       <img src={videoThumb(c.video_id)} alt="" loading="lazy"
                         className="w-full h-[80px] object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -547,7 +547,7 @@ export function MemberProfile() {
                           <Play className="w-4 h-4 text-gray-900 ml-0.5" fill="currentColor" />
                         </span>
                       </span>
-                      <span className="block px-1.5 py-1 text-[10px] font-semibold text-gray-200 bg-gray-900 truncate">
+                      <span className="block px-1.5 py-1 t-micro font-semibold text-gray-200 bg-gray-900 truncate">
                         {c.title || 'Highlight'}
                       </span>
                     </a>
@@ -559,7 +559,7 @@ export function MemberProfile() {
             {/* This-day memories */}
             {memories.length > 0 && (
               <div>
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[2px] mb-2 flex items-center gap-1.5">
+                <h3 className="t-meta font-bold text-gray-400 uppercase tracking-[2px] mb-2 flex items-center gap-1.5">
                   <CalIcon className="w-3.5 h-3.5 text-pink-400" />
                   On this day
                 </h3>
@@ -587,7 +587,7 @@ export function MemberProfile() {
         {tab === 'photos' && (
           <div>
             {memberPhotos.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
                 <Camera className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">No match photos featuring {member.name.split(' ')[0]} yet.</p>
               </div>
@@ -595,12 +595,12 @@ export function MemberProfile() {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                 {memberPhotos.map(p => (
                   <a key={p.id} href={p.photo_url} target="_blank" rel="noopener noreferrer"
-                     className="group relative aspect-square rounded-xl overflow-hidden">
+                     className="group relative aspect-square r-control overflow-hidden">
                     <img src={p.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     {p.match && (
                       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                        <p className="text-[10px] text-white font-bold truncate">vs {p.match.opponent || '—'}</p>
-                        <p className="text-[9px] text-white/60">{new Date(p.match.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}</p>
+                        <p className="t-micro text-white font-bold truncate">vs {p.match.opponent || '—'}</p>
+                        <p className="t-micro text-white/60">{new Date(p.match.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}</p>
                       </div>
                     )}
                   </a>
@@ -613,7 +613,7 @@ export function MemberProfile() {
         {tab === 'memories' && (
           <div>
             {memories.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
                 <Cake className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">No matches on this date in past years (yet!).</p>
                 <p className="text-xs text-gray-400 mt-1">Check back another day — every match becomes a memory eventually.</p>
@@ -632,14 +632,14 @@ export function MemberProfile() {
         {tab === 'matches' && (
           <div>
             {matchesPlayed.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
+              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center">
                 <p className="text-sm text-gray-500">No matches played yet.</p>
               </div>
             ) : (
               <div className="space-y-1.5">
                 {matchesPlayed.slice(0, 50).map(m => (
-                  <Link key={m.id} to="/matches" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${
+                  <Link key={m.id} to="/matches" className="flex items-center gap-3 px-3 py-2.5 r-control hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <div className={`w-7 h-7 r-control flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${
                       m.result === 'won' ? 'bg-emerald-500'
                       : m.result === 'lost' ? 'bg-red-500'
                       : 'bg-amber-500'
@@ -648,7 +648,7 @@ export function MemberProfile() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">vs {m.opponent || 'TBD'}</p>
-                      <p className="text-[10px] text-gray-400">
+                      <p className="t-micro text-gray-400">
                         {new Date(m.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         {m.our_score && ` · ${m.our_score}`}
                       </p>
@@ -679,9 +679,9 @@ export function MemberProfile() {
 // ── Helpers ─────────────────────────────────────────────────────────────
 function Pill({ v, label, color }: { v: number | string; label: string; color: string }) {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5">
+    <div className="bg-white/5 border border-white/10 r-control px-3 py-2.5">
       <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${color}`}>{v}</p>
-      <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1.5 font-bold">{label}</p>
+      <p className="t-micro text-gray-500 uppercase tracking-widest mt-1.5 font-bold">{label}</p>
     </div>
   );
 }
@@ -697,7 +697,7 @@ function SeasonLine({ emoji, primary, extras }: {
       <span className="text-base flex-shrink-0">{emoji}</span>
       <span className="font-black text-white tabular-nums">{primary}</span>
       {visible.length > 0 && (
-        <span className="text-gray-400 text-[12px] truncate">· {visible.join(' · ')}</span>
+        <span className="text-gray-400 t-body truncate">· {visible.join(' · ')}</span>
       )}
     </div>
   );
@@ -722,10 +722,10 @@ function MilestoneCard({ runs, wickets, matches }: { runs: number; wickets: numb
 
   if (milestones.length === 0) {
     return (
-      <div className="relative overflow-hidden rounded-2xl p-5"
+      <div className="relative overflow-hidden r-card p-5"
            style={{ background: 'linear-gradient(135deg, #1a0b2e 0%, #0a1019 100%)' }}>
-        <div className="absolute inset-0 rounded-2xl pointer-events-none border border-purple-500/15" />
-        <h3 className="text-[10px] font-black text-purple-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
+        <div className="absolute inset-0 r-card pointer-events-none border border-purple-500/15" />
+        <h3 className="t-micro font-black text-purple-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
           <Target className="w-3 h-3" /> Milestone Progress
         </h3>
         <p className="text-sm text-gray-400 relative">🏆 You've passed every career milestone. Living legend.</p>
@@ -734,10 +734,10 @@ function MilestoneCard({ runs, wickets, matches }: { runs: number; wickets: numb
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl p-5"
+    <div className="relative overflow-hidden r-card p-5"
          style={{ background: 'linear-gradient(135deg, #1a0b2e 0%, #0a1019 100%)' }}>
-      <div className="absolute inset-0 rounded-2xl pointer-events-none border border-purple-500/15" />
-      <h3 className="text-[10px] font-black text-purple-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
+      <div className="absolute inset-0 r-card pointer-events-none border border-purple-500/15" />
+      <h3 className="t-micro font-black text-purple-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
         <Target className="w-3 h-3" /> Milestone Progress
       </h3>
       <div className="space-y-3 relative">
@@ -746,7 +746,7 @@ function MilestoneCard({ runs, wickets, matches }: { runs: number; wickets: numb
           const pct = Math.min(100, (m.current / m.target) * 100);
           return (
             <div key={i}>
-              <p className="text-[13px] text-white font-medium">
+              <p className="t-body text-white font-medium">
                 {m.emoji} <span className="font-black tabular-nums text-purple-200">{away}</span> {m.label === 'matches played' ? 'matches' : m.label === 'career runs' ? 'runs' : 'wickets'} away from{' '}
                 <span className="font-black tabular-nums">{m.target}</span> {m.label}
               </p>
@@ -765,21 +765,21 @@ function MilestoneCard({ runs, wickets, matches }: { runs: number; wickets: numb
 function WalletCard({ balance, feesPaid }: { balance: number; feesPaid: number }) {
   const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
   return (
-    <div className="relative overflow-hidden rounded-2xl p-5"
+    <div className="relative overflow-hidden r-card p-5"
          style={{ background: 'linear-gradient(135deg, #1a1306 0%, #0a1019 100%)' }}>
-      <div className="absolute inset-0 rounded-2xl pointer-events-none border border-amber-500/15" />
-      <h3 className="text-[10px] font-black text-amber-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
+      <div className="absolute inset-0 r-card pointer-events-none border border-amber-500/15" />
+      <h3 className="t-micro font-black text-amber-300 uppercase tracking-[3px] mb-3 flex items-center gap-1.5 relative">
         <Wallet className="w-3 h-3" /> Wallet
       </h3>
       <div className="flex items-baseline gap-4 relative">
         <div>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Balance</p>
+          <p className="t-micro text-gray-500 uppercase tracking-wider font-bold">Balance</p>
           <p className={`text-2xl font-black tabular-nums ${balance < 0 ? 'text-red-400' : 'text-emerald-300'}`}>
             {inr(balance)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Match Fees Paid</p>
+          <p className="t-micro text-gray-500 uppercase tracking-wider font-bold">Match Fees Paid</p>
           <p className="text-2xl font-black tabular-nums text-amber-200">{inr(feesPaid)}</p>
         </div>
       </div>
@@ -790,12 +790,12 @@ function WalletCard({ balance, feesPaid }: { balance: number; feesPaid: number }
 function MemoryCard({ memory }: { memory: { match: import('../types').Match; yearsAgo: number } }) {
   const m = memory.match;
   return (
-    <div className="rounded-xl border border-pink-200 dark:border-pink-900/30 bg-pink-50 dark:bg-pink-900/10 p-3 flex items-center gap-3">
-      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center flex-shrink-0">
+    <div className="r-control border border-pink-200 dark:border-pink-900/30 bg-pink-50 dark:bg-pink-900/10 p-3 flex items-center gap-3">
+      <div className="w-10 h-10 r-control bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center flex-shrink-0">
         <span className="text-lg">🗓️</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-pink-600 dark:text-pink-400">
+        <p className="t-micro font-bold uppercase tracking-widest text-pink-600 dark:text-pink-400">
           {memory.yearsAgo === 1 ? '1 year ago' : `${memory.yearsAgo} years ago`}
         </p>
         <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
@@ -805,7 +805,7 @@ function MemoryCard({ memory }: { memory: { match: import('../types').Match; yea
           }`}>{m.result.toUpperCase()}</span>
         </p>
         {m.our_score && (
-          <p className="text-[11px] text-gray-500 truncate">{m.our_score} {m.opponent_score && `vs ${m.opponent_score}`}</p>
+          <p className="t-meta text-gray-500 truncate">{m.our_score} {m.opponent_score && `vs ${m.opponent_score}`}</p>
         )}
       </div>
     </div>
