@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useCardStats } from '../hooks/useCardStats';
+import { tierFor } from '../lib/playerCard';
 import {
   Users, Check, X, Crown, Star, ChevronUp, ChevronDown,
   CheckCircle2, HelpCircle, XCircle, Send, Save, Sparkles, Loader2,
@@ -38,6 +40,10 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
   const [viceCaptainId, setViceCaptainId] = useState<string>('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'available' | 'maybe'>('all');
+  // Same tier the squad cards and profiles show, from the same shared source —
+  // a captain picking a squad must see what the player sees on their own page.
+  const { all: cardAll, statsFor } = useCardStats();
+  const tierOf = (id: string) => tierFor(statsFor(id), cardAll);
   const [saving, setSaving] = useState(false);
 
   // Hydrate from existing match data
@@ -247,6 +253,10 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+                          <span className={`inline-block mr-1.5 text-[8px] font-black uppercase tracking-wider
+                                            px-1.5 py-0.5 rounded-full align-middle ${tierOf(m.id).chip}`}>
+                            {tierOf(m.id).label}
+                          </span>
                           {m.name}
                           {m.role && <span className="ml-1 text-gray-400">{ROLE_ICON[m.role]}</span>}
                           {captainId === id && <span className="ml-1 text-[9px] font-black text-amber-600">C</span>}

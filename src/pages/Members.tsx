@@ -13,7 +13,7 @@ import { MyProfileModal } from '../components/MyProfileModal';
 import { useMembers } from '../hooks/useMembers';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { PlayerCard } from '../components/PlayerCard';
-import type { CardStats } from '../lib/playerCard';
+import { useCardStats } from '../hooks/useCardStats';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
 import { useMemberActivity } from '../hooks/useMemberActivity';
@@ -52,16 +52,8 @@ export function Members() {
     });
     return m;
   }, [cricketStats]);
-  /** Card data for the whole squad — a tier is a position among peers, so the
-   *  card needs everyone's numbers, not just the one being drawn. */
-  const cardStats = useMemo<CardStats[]>(() => cricketStats.map(s => ({
-    memberId: s.member_id,
-    runs: s.batting_runs,
-    wickets: s.bowling_wickets,
-    matches: s.batting_matches ?? 0,
-  })), [cricketStats]);
-  const cardFor = (id: string): CardStats =>
-    cardStats.find(c => c.memberId === id) ?? { memberId: id, runs: 0, wickets: 0, matches: 0 };
+  // Shared with the profile page, so a player's tier can't differ between them.
+  const { all: cardStats, statsFor: cardFor } = useCardStats();
 
   const { seasons, payments, fetchPayments } = useSeasonFund();
   const avatarInputRef = useRef<HTMLInputElement>(null);

@@ -6,6 +6,8 @@ import {
   CheckCircle2, Target, Wallet, CreditCard, ArrowLeftRight, Film, Play,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
+import { useCardStats } from '../hooks/useCardStats';
+import { tierFor, role } from '../lib/playerCard';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useCricketStats } from '../hooks/useCricketStats';
@@ -134,6 +136,10 @@ export function MemberProfile() {
   const [showCard, setShowCard] = useState(false);
 
   const member = members.find(m => m.id === id);
+  // Tier is a position among peers, so this needs the whole squad's numbers.
+  const { all: cardAll, statsFor } = useCardStats();
+  const myCard = statsFor(id ?? '');
+  const myTier = tierFor(myCard, cardAll);
   const seasonStats = stats.find(s => s.member_id === id);
 
   // Fallback: if there's no 2025-26 row (e.g. the daily sync only writes the
@@ -257,7 +263,13 @@ export function MemberProfile() {
             )}
 
             <div className="flex-1 min-w-0 text-center sm:text-left">
-              <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight"
+              {/* Same tier the squad cards show — the profile is where a player
+                  comes to check it, so it must agree with /members exactly. */}
+              <span className={`inline-block text-[9px] font-black uppercase tracking-[1.5px]
+                                px-2 py-0.5 rounded-full ${myTier.chip}`}>
+                {myTier.label} · {role(myCard)}
+              </span>
+              <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight mt-1.5"
                   style={{ background: 'linear-gradient(180deg, #fff, #6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 {member.name}
               </h1>
