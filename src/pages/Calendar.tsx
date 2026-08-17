@@ -326,7 +326,7 @@ export function Calendar() {
                     {selectedDateMatches.map(match => (
                       <div
                         key={match.id}
-                        className="p-4 bg-gray-50 dark:bg-gray-700/50 r-control"
+                        className="p-4 bg-gray-50 dark:bg-gray-700/50 r-card"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div>
@@ -407,7 +407,7 @@ export function Calendar() {
                       .map(match => (
                         <div
                           key={match.id}
-                          className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 r-control cursor-pointer"
+                          className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 r-card cursor-pointer"
                           onClick={() => setSelectedDate(match.date)}
                         >
                           <div>

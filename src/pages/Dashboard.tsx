@@ -422,7 +422,7 @@ export function Dashboard() {
           href="/book-match"
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-2.5 px-3.5 py-2 r-control bg-slate-100 dark:bg-white/5 hover:bg-white/8 border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-colors"
+          className="group flex items-center gap-2.5 px-3.5 py-2 r-card bg-slate-100 dark:bg-white/5 hover:bg-white/8 border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-colors"
         >
           <span className="t-lead flex-shrink-0">📣</span>
           <span className="flex-1 t-meta text-slate-500 dark:text-gray-400 group-hover:text-slate-600 dark:text-gray-300">
@@ -435,8 +435,8 @@ export function Dashboard() {
 
         {/* ── LIVE TICKER ──────────────────────────────────────────────── */}
         {tickerItems.length > 0 && (
-          <div className="glass flex items-center gap-3 overflow-x-auto py-2 px-3.5 r-control">
-            <span className="flex items-center gap-1 px-2 py-0.5 bg-red-500 text-white t-micro font-black uppercase tracking-widest r-control flex-shrink-0">
+          <div className="glass flex items-center gap-3 overflow-x-auto py-2 px-3.5 r-card">
+            <span className="flex items-center gap-1 px-2 py-0.5 bg-red-500 text-white t-micro font-black uppercase tracking-widest r-card flex-shrink-0">
               <Radio className="w-2.5 h-2.5 animate-pulse" />
               Live
             </span>
@@ -492,7 +492,7 @@ export function Dashboard() {
                 </div>
                 <div className="flex gap-2 mt-5 relative">
                   {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
-                    <div key={l} className="flex flex-col items-center bg-slate-100 dark:bg-white/5 backdrop-blur-sm r-control px-3 py-2.5 min-w-[56px] border border-slate-200 dark:border-white/8">
+                    <div key={l} className="flex flex-col items-center bg-slate-100 dark:bg-white/5 backdrop-blur-sm r-card px-3 py-2.5 min-w-[56px] border border-slate-200 dark:border-white/8">
                       <span className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
                       <span className="text-slate-400 dark:text-gray-500 t-micro font-semibold uppercase tracking-[1.5px] mt-1">{l}</span>
                     </div>
@@ -503,9 +503,9 @@ export function Dashboard() {
                 {showManOfMatch?.man_of_match && (
                   <div className="relative mt-6 pt-5 border-t border-slate-200 dark:border-white/8 flex items-center gap-3">
                     {showManOfMatch.man_of_match.avatar_url ? (
-                      <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-10 h-10 r-control object-cover border border-yellow-400/40" />
+                      <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-10 h-10 r-card object-cover border border-yellow-400/40" />
                     ) : (
-                      <div className="w-10 h-10 r-control bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center">
+                      <div className="w-10 h-10 r-card bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center">
                         <span className="text-sm font-black text-yellow-200">{showManOfMatch.man_of_match.name?.charAt(0)}</span>
                       </div>
                     )}
@@ -605,7 +605,7 @@ export function Dashboard() {
                     <div className="flex gap-1.5">
                       {lastFiveResults.map(m => (
                         <div key={m.id}
-                          className={`w-6 h-6 r-control flex items-center justify-center t-micro font-black text-white shadow-md ${
+                          className={`w-6 h-6 r-card flex items-center justify-center t-micro font-black text-white shadow-md ${
                             m.result === 'won' ? 'bg-gradient-to-br from-green-400 to-green-600' :
                             m.result === 'lost' ? 'bg-gradient-to-br from-red-400 to-red-600' :
                             'bg-gradient-to-br from-amber-400 to-amber-600'
@@ -644,7 +644,7 @@ export function Dashboard() {
               <div className="space-y-1 relative">
                 {topMOMs.map((entry, idx) => (
                   <div key={entry.member!.id} className="flex items-center gap-2.5 py-1.5 border-t border-white/6 first:border-0">
-                    <div className={`w-6 h-6 r-control flex-shrink-0 flex items-center justify-center t-micro font-black ${
+                    <div className={`w-6 h-6 r-card flex-shrink-0 flex items-center justify-center t-micro font-black ${
                       idx === 0 ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-yellow-950 shadow-lg shadow-amber-500/30' :
                       idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-900' :
                       idx === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-500 text-orange-950' :
@@ -685,9 +685,9 @@ export function Dashboard() {
               </div>
               <div className="flex items-center gap-3 relative">
                 {featuredPlayer.member.avatar_url ? (
-                  <img src={featuredPlayer.member.avatar_url} alt="" className="w-14 h-14 r-control object-cover border-2 border-pink-400/40 shadow-lg shadow-pink-500/30 flex-shrink-0" />
+                  <img src={featuredPlayer.member.avatar_url} alt="" className="w-14 h-14 r-card object-cover border-2 border-pink-400/40 shadow-lg shadow-pink-500/30 flex-shrink-0" />
                 ) : (
-                  <div className="w-14 h-14 r-control bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-pink-500/30">
+                  <div className="w-14 h-14 r-card bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-pink-500/30">
                     <span className="text-xl font-black text-pink-950">{featuredPlayer.member.name.charAt(0)}</span>
                   </div>
                 )}

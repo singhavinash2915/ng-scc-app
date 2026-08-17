@@ -96,7 +96,7 @@ export function Payment() {
                 />
 
                 {selectedMember && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 r-control">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 r-card">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Current Balance</span>
                     <span className={`font-bold text-lg ${
                       selectedMember.balance < 500

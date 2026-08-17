@@ -153,17 +153,17 @@ export function Wrapped() {
 
         <div className="flex items-center gap-2 mt-3">
           <button onClick={() => setI(n => Math.max(0, n - 1))} disabled={i === 0}
-            className="p-3 r-card border border-slate-200 dark:border-white/10 disabled:opacity-30">
+            className="p-3 r-control border border-slate-200 dark:border-white/10 disabled:opacity-30">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button onClick={share}
-            className="flex-1 py-3 r-card bg-emerald-500 text-white font-black text-sm
+            className="flex-1 py-3 r-control bg-emerald-500 text-white font-black text-sm
                        inline-flex items-center justify-center gap-2">
             <Share2 className="w-4 h-4" /> Share this
           </button>
           <button onClick={() => setI(n => Math.min(cards.length - 1, n + 1))}
             disabled={i === cards.length - 1}
-            className="p-3 r-card border border-slate-200 dark:border-white/10 disabled:opacity-30">
+            className="p-3 r-control border border-slate-200 dark:border-white/10 disabled:opacity-30">
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>

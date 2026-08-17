@@ -335,7 +335,7 @@ export function Leaderboard() {
       {/* Season banner */}
       <div className="mx-4 sm:mx-0 r-card bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-700 dark:to-primary-900 p-5 text-white flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 r-control bg-white/20 flex items-center justify-center">
+          <div className="w-12 h-12 r-card bg-white/20 flex items-center justify-center">
             <Trophy className="w-6 h-6 text-yellow-300" />
           </div>
           <div>
@@ -384,7 +384,7 @@ export function Leaderboard() {
       )}
 
       {/* Tab bar */}
-      <div className="mx-4 sm:mx-0 flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 r-control">
+      <div className="mx-4 sm:mx-0 flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 r-card">
         {tabs.map(t => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -407,7 +407,7 @@ export function Leaderboard() {
 
       {/* Best Wicket-Keeper highlight (fielding tab only) */}
       {tab === 'fielding' && topKeeper && (
-        <div className="mx-4 sm:mx-0 flex items-center gap-3 r-control border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/15 px-4 py-3">
+        <div className="mx-4 sm:mx-0 flex items-center gap-3 r-card border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/15 px-4 py-3">
           {(topKeeper.player.member as { avatar_url?: string } | undefined)?.avatar_url ? (
             <img src={(topKeeper.player.member as { avatar_url?: string }).avatar_url} alt="" className="w-11 h-11 rounded-full object-cover" />
           ) : (

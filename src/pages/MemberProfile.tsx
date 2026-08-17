@@ -66,7 +66,7 @@ function FormBlocks({ form }: { form: FormResult[] | FormResult[] | undefined })
   return (
     <span className="inline-flex gap-1">
       {ordered.map((r, i) => (
-        <span key={i} className={`w-7 h-7 r-control flex items-center justify-center t-meta font-black text-white ${
+        <span key={i} className={`w-7 h-7 r-card flex items-center justify-center t-meta font-black text-white ${
           r === 'won' ? 'bg-emerald-500' : r === 'lost' ? 'bg-red-500' : 'bg-amber-500'
         }`}>
           {r === 'won' ? 'W' : r === 'lost' ? 'L' : 'D'}
@@ -353,7 +353,7 @@ export function MemberProfile() {
         </div>
 
         {/* ── TABS ───────────────────────────────────────────────────── */}
-        <div className="flex gap-1.5 p-1 r-control bg-gray-100 dark:bg-gray-800 overflow-x-auto">
+        <div className="flex gap-1.5 p-1 r-card bg-gray-100 dark:bg-gray-800 overflow-x-auto">
           {tabs.map(t => {
             const active = tab === t.id;
             return (
@@ -538,7 +538,7 @@ export function MemberProfile() {
                       href={videoWatchUrl(c)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group relative flex-shrink-0 w-36 r-control overflow-hidden bg-gray-900"
+                      className="group relative flex-shrink-0 w-36 r-card overflow-hidden bg-gray-900"
                     >
                       <img src={videoThumb(c.video_id)} alt="" loading="lazy"
                         className="w-full h-[80px] object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -595,7 +595,7 @@ export function MemberProfile() {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                 {memberPhotos.map(p => (
                   <a key={p.id} href={p.photo_url} target="_blank" rel="noopener noreferrer"
-                     className="group relative aspect-square r-control overflow-hidden">
+                     className="group relative aspect-square r-card overflow-hidden">
                     <img src={p.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     {p.match && (
                       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2">
@@ -638,8 +638,8 @@ export function MemberProfile() {
             ) : (
               <div className="space-y-1.5">
                 {matchesPlayed.slice(0, 50).map(m => (
-                  <Link key={m.id} to="/matches" className="flex items-center gap-3 px-3 py-2.5 r-control hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className={`w-7 h-7 r-control flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${
+                  <Link key={m.id} to="/matches" className="flex items-center gap-3 px-3 py-2.5 r-card hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <div className={`w-7 h-7 r-card flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${
                       m.result === 'won' ? 'bg-emerald-500'
                       : m.result === 'lost' ? 'bg-red-500'
                       : 'bg-amber-500'
@@ -679,7 +679,7 @@ export function MemberProfile() {
 // ── Helpers ─────────────────────────────────────────────────────────────
 function Pill({ v, label, color }: { v: number | string; label: string; color: string }) {
   return (
-    <div className="bg-white/5 border border-white/10 r-control px-3 py-2.5">
+    <div className="bg-white/5 border border-white/10 r-card px-3 py-2.5">
       <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${color}`}>{v}</p>
       <p className="t-micro text-gray-500 uppercase tracking-widest mt-1.5 font-bold">{label}</p>
     </div>
@@ -790,8 +790,8 @@ function WalletCard({ balance, feesPaid }: { balance: number; feesPaid: number }
 function MemoryCard({ memory }: { memory: { match: import('../types').Match; yearsAgo: number } }) {
   const m = memory.match;
   return (
-    <div className="r-control border border-pink-200 dark:border-pink-900/30 bg-pink-50 dark:bg-pink-900/10 p-3 flex items-center gap-3">
-      <div className="w-10 h-10 r-control bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center flex-shrink-0">
+    <div className="r-card border border-pink-200 dark:border-pink-900/30 bg-pink-50 dark:bg-pink-900/10 p-3 flex items-center gap-3">
+      <div className="w-10 h-10 r-card bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center flex-shrink-0">
         <span className="text-lg">🗓️</span>
       </div>
       <div className="flex-1 min-w-0">
