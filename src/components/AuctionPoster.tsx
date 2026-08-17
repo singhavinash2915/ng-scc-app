@@ -128,7 +128,7 @@ export function AuctionPoster() {
                        font-black py-3 text-sm">
             <Video className="w-4 h-4" /> Join the Meet
           </a>
-          <Link to="/auction-centre"
+          <Link to="/auction"
             className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-white/15
                        border border-white/25 font-black py-3 text-sm">
             Auction Centre <ChevronRight className="w-4 h-4" />

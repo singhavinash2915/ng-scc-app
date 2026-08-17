@@ -10,7 +10,7 @@ import type { Member } from '../types';
 // ─── Auction Centre ────────────────────────────────────────────────────────────
 // The public side of auction night, modelled on the IPL trackers: what's live,
 // what each squad has spent, and every player with the full bid trail behind
-// their price. Read-only — the auctioneer's controls stay on /auction-live.
+// their price. Read-only — the auctioneer’s controls stay on /auction/live.
 
 type Tab = 'live' | 'teams' | 'players';
 

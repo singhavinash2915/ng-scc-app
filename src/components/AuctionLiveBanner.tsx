@@ -128,7 +128,7 @@ export function AuctionLiveBanner() {
           ))}
         </div>
 
-        <Link to="/auction-centre"
+        <Link to="/auction"
           className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-white/15
                      border border-white/20 py-2 text-[11px] font-black">
           Open the Auction Centre <ChevronRight className="w-3.5 h-3.5" />

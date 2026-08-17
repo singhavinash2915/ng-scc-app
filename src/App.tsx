@@ -21,13 +21,11 @@ const Matches      = lazy(() => import('./pages/Matches').then(m => ({ default: 
 const Calendar     = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
 const Tournaments  = lazy(() => import('./pages/Tournaments').then(m => ({ default: m.Tournaments })));
 const SeasonLeague = lazy(() => import('./pages/SeasonLeague').then(m => ({ default: m.SeasonLeague })));
-const SeasonAwardsVote = lazy(() => import('./pages/SeasonAwardsVote').then(m => ({ default: m.SeasonAwardsVote })));
 const SeasonAwards = lazy(() => import('./pages/SeasonAwards').then(m => ({ default: m.SeasonAwards })));
 const SeasonKickoff = lazy(() => import('./pages/SeasonKickoff').then(m => ({ default: m.SeasonKickoff })));
 const Honours = lazy(() => import('./pages/Honours').then(m => ({ default: m.Honours })));
 const SCCLeague = lazy(() => import('./pages/SCCLeague').then(m => ({ default: m.SCCLeague })));
 const LiveScoring = lazy(() => import('./pages/LiveScoring'));
-const LeagueResult = lazy(() => import('./pages/LeagueResult').then(m => ({ default: m.LeagueResult })));
 const AuctionLive = lazy(() => import('./pages/AuctionLive').then(m => ({ default: m.AuctionLive })));
 const AuctionCentre = lazy(() => import('./pages/AuctionCentre').then(m => ({ default: m.AuctionCentre })));
 const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
@@ -47,14 +45,10 @@ const Auction      = lazy(() => import('./pages/Auction').then(m => ({ default: 
 const Predictions  = lazy(() => import('./pages/Predictions').then(m => ({ default: m.Predictions })));
 const MemberProfile = lazy(() => import('./pages/MemberProfile').then(m => ({ default: m.MemberProfile })));
 const AnnualReport = lazy(() => import('./pages/AnnualReport').then(m => ({ default: m.AnnualReport })));
-const Compare   = lazy(() => import('./pages/Compare').then(m => ({ default: m.Compare })));
 const Bookings  = lazy(() => import('./pages/Bookings').then(m => ({ default: m.Bookings })));
 const WhatsNew  = lazy(() => import('./pages/WhatsNew').then(m => ({ default: m.WhatsNew })));
-const EngagementHub = lazy(() => import('./pages/EngagementHub').then(m => ({ default: m.EngagementHub })));
 const Fantasy = lazy(() => import('./pages/Fantasy').then(m => ({ default: m.Fantasy })));
-const SeasonFinale = lazy(() => import('./pages/SeasonFinale').then(m => ({ default: m.SeasonFinale })));
 const LiveMatch = lazy(() => import('./pages/LiveMatch').then(m => ({ default: m.LiveMatch })));
-const Scout = lazy(() => import('./pages/Scout').then(m => ({ default: m.Scout })));
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -103,7 +97,6 @@ const AppRoutes = () => (
     <Routes>
       {/* Standalone pages — no sidebar/layout */}
       <Route path="/poll/:matchId" element={<MatchPoll />} />
-      <Route path="/vote" element={<Suspense fallback={<PageLoader />}><SeasonAwardsVote /></Suspense>} />
       <Route path="/watch" element={<Suspense fallback={<PageLoader />}><Watch /></Suspense>} />
       <Route path="/book-match" element={<Suspense fallback={<PageLoader />}><BookMatch /></Suspense>} />
       <Route path="/live/:chMatchId" element={<Suspense fallback={<PageLoader />}><LiveMatch /></Suspense>} />
@@ -127,11 +120,10 @@ const AppRoutes = () => (
             still lands in the right place. */}
         <Route path="/scc-league"    element={<Navigate to="/scc-mahasangram" replace />} />
         {/* Election reveal — admin-gated inside the page, kept out of the nav */}
-        <Route path="/league-result" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><LeagueResult /></Suspense> : <Navigate to="/" replace />} />
         {/* Live auction — public to watch, admin-only to run */}
-        <Route path="/auction-live" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><AuctionLive /></Suspense> : <Navigate to="/" replace />} />
+        <Route path="/auction/live" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><AuctionLive /></Suspense> : <Navigate to="/" replace />} />
         {/* Public side of auction night — live picks, team spend, full bid trails */}
-        <Route path="/auction-centre" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><AuctionCentre /></Suspense> : <Navigate to="/" replace />} />
+        <Route path="/auction" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><AuctionCentre /></Suspense> : <Navigate to="/" replace />} />
         <Route path="/pressure"      element={<Navigate to="/honours?tab=pressure" replace />} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />
@@ -140,11 +132,13 @@ const AppRoutes = () => (
         <Route path="/ai-insights"   element={<Suspense fallback={<PageLoader />}><AIInsights /></Suspense>} />
         <Route path="/leaderboard"   element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
         <Route path="/records"       element={<Navigate to="/honours?tab=records" replace />} />
-        <Route path="/auction"       element={<Suspense fallback={<PageLoader />}><Auction /></Suspense>} />
+        <Route path="/auction/register" element={<Suspense fallback={<PageLoader />}><Auction /></Suspense>} />
+        {/* Old top-level auction URLs — anything shared in WhatsApp still lands. */}
+        <Route path="/auction-centre" element={<Navigate to="/auction" replace />} />
+        <Route path="/auction-live"   element={<Navigate to="/auction/live" replace />} />
         <Route path="/predictions"   element={<Suspense fallback={<PageLoader />}><Predictions /></Suspense>} />
         <Route path="/profile/:id"   element={<Suspense fallback={<PageLoader />}><MemberProfile /></Suspense>} />
         <Route path="/annual-report" element={<Suspense fallback={<PageLoader />}><AnnualReport /></Suspense>} />
-        <Route path="/compare"       element={<Suspense fallback={<PageLoader />}><Compare /></Suspense>} />
         <Route path="/payment"       element={<Suspense fallback={<PageLoader />}><Payment /></Suspense>} />
         <Route path="/analytics"     element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
         <Route path="/bookings" element={<Suspense fallback={<PageLoader />}><Bookings /></Suspense>} />
@@ -153,12 +147,9 @@ const AppRoutes = () => (
         <Route path="/feedback"      element={<Suspense fallback={<PageLoader />}><Feedback /></Suspense>} />
         <Route path="/about"         element={<Suspense fallback={<PageLoader />}><About /></Suspense>} />
         <Route path="/whats-new"     element={<Suspense fallback={<PageLoader />}><WhatsNew /></Suspense>} />
-        <Route path="/hub"           element={<Suspense fallback={<PageLoader />}><EngagementHub /></Suspense>} />
         <Route path="/honours"       element={<Suspense fallback={<PageLoader />}><Honours /></Suspense>} />
         <Route path="/rankings"      element={<Navigate to="/honours" replace />} />
         <Route path="/fantasy"       element={FEATURES.fantasy ? <Suspense fallback={<PageLoader />}><Fantasy /></Suspense> : <Navigate to="/" replace />} />
-        <Route path="/season"        element={FEATURES.seasonFinale ? <Suspense fallback={<PageLoader />}><SeasonFinale /></Suspense> : <Navigate to="/awards" replace />} />
-        <Route path="/scout"         element={<Suspense fallback={<PageLoader />}><Scout /></Suspense>} />
       </Route>
     </Routes>
   </>
