@@ -12,6 +12,8 @@ import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { MyProfileModal } from '../components/MyProfileModal';
 import { useMembers } from '../hooks/useMembers';
 import { useCricketStats } from '../hooks/useCricketStats';
+import { PlayerCard } from '../components/PlayerCard';
+import type { CardStats } from '../lib/playerCard';
 import { useMatches } from '../hooks/useMatches';
 import { useTransactions } from '../hooks/useTransactions';
 import { useMemberActivity } from '../hooks/useMemberActivity';
@@ -50,6 +52,17 @@ export function Members() {
     });
     return m;
   }, [cricketStats]);
+  /** Card data for the whole squad — a tier is a position among peers, so the
+   *  card needs everyone's numbers, not just the one being drawn. */
+  const cardStats = useMemo<CardStats[]>(() => cricketStats.map(s => ({
+    memberId: s.member_id,
+    runs: s.batting_runs,
+    wickets: s.bowling_wickets,
+    matches: s.batting_matches ?? 0,
+  })), [cricketStats]);
+  const cardFor = (id: string): CardStats =>
+    cardStats.find(c => c.memberId === id) ?? { memberId: id, runs: 0, wickets: 0, matches: 0 };
+
   const { seasons, payments, fetchPayments } = useSeasonFund();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useAuth();
@@ -548,6 +561,22 @@ export function Members() {
                 WhatsApp Reminders
               </Button>
             )}
+          </div>
+        </div>
+
+        {/* ── Squad cards ────────────────────────────────────────────────
+            The club's own trading cards: tier, role and season numbers, all
+            earned from match data rather than assigned. The admin list below
+            still holds everything editable — this is the members' view. */}
+        <div className="mb-6">
+          <p className="text-[10px] font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
+            The squad
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filteredMembers.map(member => (
+              <PlayerCard key={member.id} member={member}
+                stats={cardFor(member.id)} all={cardStats} />
+            ))}
           </div>
         </div>
 
