@@ -57,8 +57,8 @@ export function MyStatsButton({ compact = false }: { compact?: boolean }) {
       <button
         onClick={handleClick}
         className={compact
-          ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold transition-colors"
-          : "inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-400/30 text-emerald-200 text-sm font-bold transition-all backdrop-blur-sm shadow-lg"
+          ? "inline-flex items-center gap-1.5 px-3 py-1.5 r-control bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold transition-colors"
+          : "inline-flex items-center gap-2 px-3.5 py-2 r-control bg-gradient-to-br from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-400/30 text-emerald-200 text-sm font-bold transition-all backdrop-blur-sm shadow-lg"
         }
       >
         {savedMember?.avatar_url ? (
@@ -72,7 +72,7 @@ export function MyStatsButton({ compact = false }: { compact?: boolean }) {
         {savedMember && (
           <span
             onClick={handleSwitch}
-            className="text-[10px] opacity-60 hover:opacity-100 underline ml-0.5"
+            className="t-micro opacity-60 hover:opacity-100 underline ml-0.5"
             title="Switch profile"
           >
             switch
@@ -82,7 +82,7 @@ export function MyStatsButton({ compact = false }: { compact?: boolean }) {
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Who are you?">
         <div className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+          <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 r-card border border-emerald-200 dark:border-emerald-800">
             <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
               <User className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>

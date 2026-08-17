@@ -36,18 +36,18 @@ export function About() {
       <div className="p-4 lg:p-8 space-y-6 max-w-6xl mx-auto">
 
         {/* ── HERO ────────────────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-3xl shadow-2xl">
+        <div className="relative overflow-hidden r-card shadow-2xl">
           <div className="absolute inset-0"
                style={{ background: 'radial-gradient(800px circle at 0% 0%, rgba(16,185,129,0.35), transparent 50%), radial-gradient(600px circle at 100% 100%, rgba(20,184,166,0.25), transparent 60%), linear-gradient(135deg, #061122 0%, #0a1019 100%)' }} />
           <div className="absolute inset-0 opacity-[0.06]" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='40' cy='40' r='30' fill='none' stroke='white' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='15' fill='none' stroke='white' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='3' fill='white'/%3E%3C/svg%3E")`,
             backgroundSize: '80px 80px',
           }} />
-          <div className="absolute inset-0 border border-emerald-500/20 rounded-3xl pointer-events-none" />
+          <div className="absolute inset-0 border border-emerald-500/20 r-card pointer-events-none" />
 
           <div className="relative p-6 lg:p-12 text-center">
             <img src="/scc-logo.jpg" alt="SCC"
-                 className="w-24 h-24 lg:w-32 lg:h-32 rounded-3xl mx-auto mb-6 shadow-2xl shadow-emerald-500/30 border-2 border-emerald-400/30" />
+                 className="w-24 h-24 lg:w-32 lg:h-32 r-card mx-auto mb-6 shadow-2xl shadow-emerald-500/30 border-2 border-emerald-400/30" />
             <h1 className="text-4xl lg:text-6xl font-black text-white tracking-tight"
                 style={{ background: 'linear-gradient(180deg, #fff 30%, #6ee7b7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Sangria Cricket Club
@@ -72,10 +72,10 @@ export function About() {
 
         {/* ── OUR STORY ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 relative overflow-hidden rounded-2xl p-6 lg:p-7"
+          <div className="lg:col-span-2 relative overflow-hidden r-card p-6 lg:p-7"
                style={{ background: 'linear-gradient(135deg, #064e3b 0%, #0a1019 100%)' }}>
-            <div className="absolute inset-0 border border-emerald-500/25 rounded-2xl pointer-events-none" />
-            <h2 className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[2px] flex items-center gap-2">
+            <div className="absolute inset-0 border border-emerald-500/25 r-card pointer-events-none" />
+            <h2 className="text-emerald-300/80 t-micro font-bold uppercase tracking-[2px] flex items-center gap-2">
               <Heart className="w-3.5 h-3.5" fill="currentColor" />
               Our Story
             </h2>
@@ -116,7 +116,7 @@ export function About() {
 
         {/* ── BY THE NUMBERS ───────────────────────────────────────────────── */}
         <div>
-          <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+          <h2 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
             <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
             Season 2025–26 · By the numbers
           </h2>
@@ -133,10 +133,10 @@ export function About() {
         </div>
 
         {/* ── WHAT THIS APP DOES ─────────────────────────────────────────── */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-6 lg:p-7 bg-white dark:bg-gray-900">
+        <div className="r-card border border-gray-200 dark:border-gray-700 p-6 lg:p-7 bg-white dark:bg-gray-900">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-3.5 h-3.5 text-primary-500" />
-            <span className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400 dark:text-gray-500">
+            <span className="t-micro font-bold uppercase tracking-[2px] text-gray-400 dark:text-gray-500">
               The SCC App
             </span>
           </div>
@@ -156,7 +156,7 @@ export function About() {
               { icon: '👑', title: 'Hall of Fame', text: 'Club records, MOM tally, Player of the Month, and custom awards' },
               { icon: '🤖', title: 'AI Coach Chat', text: 'Ask the AI about player form, match analysis, or who to pick' },
             ].map(f => (
-              <div key={f.title} className="rounded-xl border border-gray-100 dark:border-gray-800 p-4 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
+              <div key={f.title} className="r-card border border-gray-100 dark:border-gray-800 p-4 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
                 <div className="text-2xl mb-2">{f.icon}</div>
                 <h4 className="font-bold text-gray-900 dark:text-white text-sm">{f.title}</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{f.text}</p>
@@ -180,17 +180,17 @@ export function About() {
 
         {/* ── JOIN BANNER ─────────────────────────────────────────────────── */}
         <Link to="/requests" className="block group">
-          <div className="relative overflow-hidden rounded-2xl shadow-xl">
+          <div className="relative overflow-hidden r-card shadow-xl">
             <div className="absolute inset-0"
                  style={{ background: 'linear-gradient(135deg, #047857 0%, #065f46 50%, #022c22 100%)' }} />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-            <div className="absolute inset-0 border border-emerald-400/30 rounded-2xl pointer-events-none" />
+            <div className="absolute inset-0 border border-emerald-400/30 r-card pointer-events-none" />
             <div className="relative p-6 lg:p-8 flex items-center gap-5 flex-wrap">
-              <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20">
+              <div className="flex-shrink-0 w-14 h-14 r-card bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20">
                 <Send className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-emerald-300 text-[10px] font-bold uppercase tracking-[2px]">Join SCC</p>
+                <p className="text-emerald-300 t-micro font-bold uppercase tracking-[2px]">Join SCC</p>
                 <h3 className="text-xl lg:text-2xl font-black text-white mt-1">Want to play with us?</h3>
                 <p className="text-emerald-100/70 text-sm mt-1">Submit a membership request — we'd love to have you on the squad.</p>
               </div>
@@ -202,17 +202,17 @@ export function About() {
         {/* ── SPONSOR ─────────────────────────────────────────────────────── */}
         {sponsors && sponsors.length > 0 && (
           <div>
-            <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+            <h2 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
               <Building2 className="w-3.5 h-3.5 text-primary-500" />
               Powered By
             </h2>
             <div className="space-y-3">
               {sponsors.map(s => (
-                <div key={s.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 flex items-center gap-4">
+                <div key={s.id} className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 flex items-center gap-4">
                   {s.logo_url ? (
-                    <img src={s.logo_url} alt={s.name} className="w-16 h-16 object-contain rounded-xl bg-gray-50 dark:bg-gray-800 p-2 flex-shrink-0" />
+                    <img src={s.logo_url} alt={s.name} className="w-16 h-16 object-contain r-card bg-gray-50 dark:bg-gray-800 p-2 flex-shrink-0" />
                   ) : (
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center flex-shrink-0">
+                    <div className="w-16 h-16 r-card bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center flex-shrink-0">
                       <Building2 className="w-7 h-7 text-gray-400" />
                     </div>
                   )}
@@ -223,7 +223,7 @@ export function About() {
                   </div>
                   {s.website_url && (
                     <a href={s.website_url} target="_blank" rel="noopener noreferrer"
-                       className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors flex-shrink-0">
+                       className="p-2.5 r-card bg-gray-100 dark:bg-gray-800 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors flex-shrink-0">
                       <ExternalLink className="w-4 h-4 text-gray-500 hover:text-primary-500" />
                     </a>
                   )}
@@ -235,8 +235,8 @@ export function About() {
 
         {/* ── CONTACT & SOCIAL ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900">
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
+          <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900">
+            <h3 className="t-micro font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
               <Phone className="w-3 h-3" /> Reach Out
             </h3>
             <div className="space-y-2 text-sm">
@@ -260,26 +260,26 @@ export function About() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900">
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
+          <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900">
+            <h3 className="t-micro font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
               <Trophy className="w-3 h-3" /> Find Us On
             </h3>
             <div className="grid grid-cols-2 gap-2.5">
               <a href="https://cricheroes.in/team-profile/7927431/sangria-cricket-club" target="_blank" rel="noopener noreferrer"
-                 className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
+                 className="flex items-center gap-2 px-3 py-2 r-card border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
                 <span className="text-xl">🏏</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold text-gray-900 dark:text-white truncate">CricHeroes</p>
-                  <p className="text-[10px] text-gray-400">Live scorecards</p>
+                  <p className="t-micro text-gray-400">Live scorecards</p>
                 </div>
                 <ExternalLink className="w-3 h-3 text-gray-400" />
               </a>
               <a href="https://www.instagram.com/sangriacricket" target="_blank" rel="noopener noreferrer"
-                 className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-pink-300 dark:hover:border-pink-700 transition-colors">
+                 className="flex items-center gap-2 px-3 py-2 r-card border border-gray-200 dark:border-gray-700 hover:border-pink-300 dark:hover:border-pink-700 transition-colors">
                 <Instagram className="w-5 h-5 text-pink-500" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold text-gray-900 dark:text-white truncate">@sangriacricket</p>
-                  <p className="text-[10px] text-gray-400">Match highlights</p>
+                  <p className="t-micro text-gray-400">Match highlights</p>
                 </div>
                 <ExternalLink className="w-3 h-3 text-gray-400" />
               </a>
@@ -292,7 +292,7 @@ export function About() {
           <p className="text-xs text-gray-400 dark:text-gray-500">
             🏏 Made with passion for cricket
           </p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+          <p className="t-micro text-gray-400 dark:text-gray-500 mt-1">
             Sangria Cricket Club · Est. 2024 · Pune, India
           </p>
         </div>
@@ -304,20 +304,20 @@ export function About() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function StatPill({ value, label, color }: { value: string | number; label: string; color: string }) {
   return (
-    <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
+    <div className="bg-white/5 border border-white/10 backdrop-blur-sm r-card px-4 py-3">
       <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${color}`}>{value}</p>
-      <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1.5 font-bold">{label}</p>
+      <p className="t-micro text-gray-500 uppercase tracking-widest mt-1.5 font-bold">{label}</p>
     </div>
   );
 }
 
 function ValueCard({ icon, label, text, gradient, border }: { icon: React.ReactNode; label: string; text: string; gradient: string; border: string }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl p-4" style={{ background: gradient }}>
-      <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ border: `1px solid ${border}` }} />
+    <div className="relative overflow-hidden r-card p-4" style={{ background: gradient }}>
+      <div className="absolute inset-0 r-card pointer-events-none" style={{ border: `1px solid ${border}` }} />
       <div className="flex items-center gap-2 text-white relative">
         {icon}
-        <span className="text-[10px] font-bold uppercase tracking-[1.5px]">{label}</span>
+        <span className="t-micro font-bold uppercase tracking-[1.5px]">{label}</span>
       </div>
       <p className="relative text-sm text-gray-300 mt-2 leading-relaxed">{text}</p>
     </div>
@@ -326,11 +326,11 @@ function ValueCard({ icon, label, text, gradient, border }: { icon: React.ReactN
 
 function BigStat({ icon, value, label, gradient, border, accent }: { icon: React.ReactNode; value: string | number; label: string; gradient: string; border: string; accent: string }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: gradient }}>
-      <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ border: `1px solid ${border}` }} />
+    <div className="relative overflow-hidden r-card p-5" style={{ background: gradient }}>
+      <div className="absolute inset-0 r-card pointer-events-none" style={{ border: `1px solid ${border}` }} />
       <div className={`flex items-center gap-1.5 mb-2 relative ${accent}`}>
         {icon}
-        <span className="text-[10px] font-bold uppercase tracking-[1.5px]">{label}</span>
+        <span className="t-micro font-bold uppercase tracking-[1.5px]">{label}</span>
       </div>
       <p className="text-3xl lg:text-4xl font-black text-white tabular-nums relative leading-none">{value}</p>
     </div>
@@ -339,11 +339,11 @@ function BigStat({ icon, value, label, gradient, border, accent }: { icon: React
 
 function PillarCard({ icon, title, value, subtitle, gradient, border, accent }: { icon: React.ReactNode; title: string; value: string; subtitle: string; gradient: string; border: string; accent: string }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: gradient }}>
-      <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ border: `1px solid ${border}` }} />
+    <div className="relative overflow-hidden r-card p-5" style={{ background: gradient }}>
+      <div className="absolute inset-0 r-card pointer-events-none" style={{ border: `1px solid ${border}` }} />
       <div className={`flex items-center gap-1.5 mb-2 relative ${accent}`}>
         {icon}
-        <span className="text-[10px] font-bold uppercase tracking-[1.5px]">{title}</span>
+        <span className="t-micro font-bold uppercase tracking-[1.5px]">{title}</span>
       </div>
       <p className="text-xl lg:text-2xl font-black text-white tracking-tight relative">{value}</p>
       <p className="text-xs text-gray-400 mt-1 relative">{subtitle}</p>

@@ -64,12 +64,12 @@ export function DayHoldModal({
                       max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-violet-500">
+            <p className="t-micro font-black uppercase tracking-widest text-violet-500">
               {existing ? 'Edit hold' : blocker ? 'Manage this date' : 'Block this date'}
             </p>
             <h3 className="font-black text-lg text-gray-900">{formatDate(date)}</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
+          <button onClick={onClose} className="p-1.5 r-control hover:bg-gray-100">
             <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -80,8 +80,8 @@ export function DayHoldModal({
               Opponents cancel and fixtures move, so every one of these needs a
               one-tap way back to available. */}
           {blocker && (
-            <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-3.5 space-y-2.5">
-              <p className="text-[11px] font-black uppercase tracking-widest text-amber-700">
+            <div className="r-card border-2 border-amber-200 bg-amber-50 p-3.5 space-y-2.5">
+              <p className="t-meta font-black uppercase tracking-widest text-amber-700">
                 {blocker.kind === 'auto' ? 'Held for the SCC League'
                   : blocker.kind === 'booking' ? `Booked · ${blocker.status}`
                   : 'Closed for bookings'}
@@ -103,7 +103,7 @@ export function DayHoldModal({
                 </p>
               )}
               <button onClick={onFree} disabled={busy}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl
+                className="w-full inline-flex items-center justify-center gap-1.5 r-control
                            bg-emerald-500 text-white font-black py-3 text-sm disabled:opacity-40">
                 <CalendarCheck className="w-4 h-4" />
                 {busy ? 'Freeing…' : 'Make this date available'}
@@ -112,7 +112,7 @@ export function DayHoldModal({
           )}
 
           {blocker && (
-            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 pt-1">
+            <p className="t-meta font-black uppercase tracking-widest text-gray-400 pt-1">
               …or hold it for something else
             </p>
           )}
@@ -121,7 +121,7 @@ export function DayHoldModal({
           <div className="space-y-2">
             {HOLD_KINDS.map(k => (
               <button key={k.key} onClick={() => setKind(k.key)}
-                className={`w-full flex items-start gap-3 rounded-2xl border-2 p-3 text-left transition-all ${
+                className={`w-full flex items-start gap-3 r-control border-2 p-3 text-left transition-all ${
                   kind === k.key
                     ? 'border-violet-400 bg-violet-50'
                     : 'border-gray-200 hover:border-gray-300'
@@ -131,7 +131,7 @@ export function DayHoldModal({
                   <span className={`block text-sm font-black ${kind === k.key ? 'text-violet-900' : 'text-gray-800'}`}>
                     {k.label}
                   </span>
-                  <span className="block text-[11px] text-gray-500 leading-snug">{k.blurb}</span>
+                  <span className="block t-meta text-gray-500 leading-snug">{k.blurb}</span>
                 </span>
               </button>
             ))}
@@ -139,8 +139,8 @@ export function DayHoldModal({
 
           {/* an offline booking is a real booking — capture who and how much */}
           {kind === 'offline' && (
-            <div className="space-y-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5">
-              <p className="text-[11px] font-black uppercase tracking-widest text-emerald-700">
+            <div className="space-y-2.5 r-card bg-emerald-50 border border-emerald-200 p-3.5">
+              <p className="t-meta font-black uppercase tracking-widest text-emerald-700">
                 Who booked it
               </p>
               <input value={teamName} onChange={e => setTeamName(e.target.value)}
@@ -153,14 +153,14 @@ export function DayHoldModal({
                   placeholder={suggestedPrice ? String(suggestedPrice) : 'Amount paid'}
                   inputMode="numeric" className={`${input} pl-7`} />
               </div>
-              <p className="text-[10px] text-emerald-700/70">
+              <p className="t-micro text-emerald-700/70">
                 External teams just see this date as <b>Booked</b> — the amount is admin-only.
               </p>
             </div>
           )}
 
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+            <label className="t-micro font-black uppercase tracking-widest text-gray-400">
               Note (optional)
             </label>
             <input value={note} onChange={e => setNote(e.target.value)}
@@ -171,13 +171,13 @@ export function DayHoldModal({
           <div className="flex gap-2.5 pt-1">
             {existing && (
               <button onClick={onRelease} disabled={busy}
-                className="inline-flex items-center justify-center gap-1.5 rounded-2xl border-2
+                className="inline-flex items-center justify-center gap-1.5 r-control border-2
                            border-rose-200 text-rose-600 font-black px-4 py-3 text-sm disabled:opacity-40">
                 <Trash2 className="w-4 h-4" /> Release
               </button>
             )}
             <button onClick={save} disabled={busy}
-              className="flex-1 rounded-2xl bg-gradient-to-r from-violet-600 to-pink-600 text-white
+              className="flex-1 r-control bg-gradient-to-r from-violet-600 to-pink-600 text-white
                          font-black py-3 text-sm disabled:opacity-40">
               {busy ? 'Saving…' : existing ? 'Update hold' : 'Block this date'}
             </button>

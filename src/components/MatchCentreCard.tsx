@@ -15,9 +15,9 @@ interface Props {
 
 const Initials = ({ name, url, ring }: { name: string; url: string | null; ring: string }) =>
   url ? (
-    <img src={url} alt="" className={`w-9 h-9 rounded-xl object-cover border ${ring}`} />
+    <img src={url} alt="" className={`w-9 h-9 r-card object-cover border ${ring}`} />
   ) : (
-    <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${ring} bg-white/8`}>
+    <div className={`w-9 h-9 r-card flex items-center justify-center border ${ring} bg-white/8`}>
       <span className="text-xs font-black text-white">{name.charAt(0)}</span>
     </div>
   );
@@ -53,24 +53,24 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
 
   return (
     <div
-      className="w-full relative overflow-hidden rounded-2xl p-5 lg:p-6 shadow-2xl"
+      className="w-full relative overflow-hidden r-card p-5 lg:p-6 shadow-2xl"
       style={{
         background:
           'radial-gradient(700px circle at 100% 0%, rgba(139,92,246,0.28), transparent 55%), radial-gradient(600px circle at 0% 100%, rgba(16,185,129,0.20), transparent 60%), linear-gradient(180deg, #0b1020, #0a0f1a)',
       }}
     >
-      <div className="absolute inset-0 border border-violet-500/25 rounded-2xl pointer-events-none" />
+      <div className="absolute inset-0 border border-violet-500/25 r-card pointer-events-none" />
 
       {/* Header */}
       <div className="relative flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-violet-300" />
-          <span className="text-violet-300 text-[10px] font-bold uppercase tracking-[2px]">Match Centre</span>
+          <span className="text-violet-300 t-micro font-bold uppercase tracking-[2px]">Match Centre</span>
         </div>
         {isInternal ? (
-          <span className="text-[9px] font-black uppercase tracking-[1.5px] text-amber-300 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-full">🏆 El Clásico</span>
+          <span className="t-micro font-black uppercase tracking-[1.5px] text-amber-300 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-full">🏆 El Clásico</span>
         ) : (
-          <span className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/40">Pre-match analytics</span>
+          <span className="t-micro font-bold uppercase tracking-[1.5px] text-white/40">Pre-match analytics</span>
         )}
       </div>
 
@@ -88,8 +88,8 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       </div>
 
       {/* Storyline */}
-      <div className="relative mb-4 rounded-xl bg-white/5 border border-white/10 px-3.5 py-2.5">
-        <p className="text-[12px] lg:text-[13px] text-gray-200 leading-snug font-medium">{storyline}</p>
+      <div className="relative mb-4 r-card bg-white/5 border border-white/10 px-3.5 py-2.5">
+        <p className="t-body lg:text-[13px] text-gray-200 leading-snug font-medium">{storyline}</p>
       </div>
 
       {/* El Clásico head-to-head (internal) */}
@@ -97,20 +97,20 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
         const { dhur, baz, played: ip, lastWinner, form: ifrm } = internalH2H;
         const dhurPct = dhur + baz > 0 ? Math.round((dhur / (dhur + baz)) * 100) : 50;
         return (
-          <div className="relative mb-4 rounded-xl bg-white/5 border border-white/10 p-3.5">
+          <div className="relative mb-4 r-card bg-white/5 border border-white/10 p-3.5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/50">Rivalry · all-time</span>
-              <span className="text-[9px] font-semibold text-white/40">{ip} clásicos</span>
+              <span className="t-micro font-bold uppercase tracking-[1.5px] text-white/50">Rivalry · all-time</span>
+              <span className="t-micro font-semibold text-white/40">{ip} clásicos</span>
             </div>
             <div className="flex items-center justify-between mb-2">
               <div className="text-center flex-1">
                 <p className="text-rose-300 text-3xl font-black tabular-nums leading-none">{dhur}</p>
-                <p className="text-rose-300/70 text-[9px] font-bold uppercase tracking-wider mt-1">{sides.home}</p>
+                <p className="text-rose-300/70 t-micro font-bold uppercase tracking-wider mt-1">{sides.home}</p>
               </div>
               <span className="text-white/30 text-lg font-black px-2">–</span>
               <div className="text-center flex-1">
                 <p className="text-sky-300 text-3xl font-black tabular-nums leading-none">{baz}</p>
-                <p className="text-sky-300/70 text-[9px] font-bold uppercase tracking-wider mt-1">{sides.away}</p>
+                <p className="text-sky-300/70 t-micro font-bold uppercase tracking-wider mt-1">{sides.away}</p>
               </div>
             </div>
             {/* rivalry meter */}
@@ -120,15 +120,15 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
             {/* recent winners + last result */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <span className="text-[8px] font-bold uppercase tracking-wider text-white/40 mr-1">Last 5</span>
+                <span className="t-micro font-bold uppercase tracking-wider text-white/40 mr-1">Last 5</span>
                 {ifrm.map((w, i) => (
-                  <span key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black ${
+                  <span key={i} className={`w-5 h-5 r-card flex items-center justify-center t-micro font-black ${
                     w === 'D' ? 'bg-rose-500/30 text-rose-200' : 'bg-sky-500/30 text-sky-200'
                   }`}>{w}</span>
                 ))}
               </div>
               {lastWinner && (
-                <span className="text-[10px] font-semibold text-white/50">
+                <span className="t-micro font-semibold text-white/50">
                   Last: <span className={lastWinner === 'dhurandars' ? 'text-rose-300' : 'text-sky-300'}>
                     {lastWinner === 'dhurandars' ? sides.home : sides.away}
                   </span>
@@ -148,9 +148,9 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
             { v: lost, l: 'Lost', c: 'text-rose-300' },
             { v: firstMeeting ? '—' : `${winRate}%`, l: 'Win Rate', c: 'text-amber-300' },
           ].map(({ v, l, c }) => (
-            <div key={l} className="flex flex-col items-center bg-white/5 rounded-xl py-2 border border-white/8">
+            <div key={l} className="flex flex-col items-center bg-white/5 r-card py-2 border border-white/8">
               <span className={`text-xl lg:text-2xl font-black tabular-nums leading-none ${c}`}>{v}</span>
-              <span className="text-gray-500 text-[8px] font-bold uppercase tracking-[1px] mt-1">{l}</span>
+              <span className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mt-1">{l}</span>
             </div>
           ))}
         </div>
@@ -158,15 +158,15 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
 
       {/* Avg runs us vs them */}
       {!isInternal && avgRunsUs != null && avgRunsThem != null && (
-        <div className="relative mb-4 flex items-center justify-between rounded-xl bg-white/5 border border-white/8 px-3.5 py-2.5">
+        <div className="relative mb-4 flex items-center justify-between r-card bg-white/5 border border-white/8 px-3.5 py-2.5">
           <div className="text-center flex-1">
             <p className="text-emerald-300 text-lg font-black tabular-nums leading-none">{avgRunsUs}</p>
-            <p className="text-gray-500 text-[8px] font-bold uppercase tracking-[1px] mt-1">Our avg</p>
+            <p className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mt-1">Our avg</p>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-[1.5px] text-white/40 px-2">Avg runs</span>
+          <span className="t-micro font-bold uppercase tracking-[1.5px] text-white/40 px-2">Avg runs</span>
           <div className="text-center flex-1">
             <p className="text-rose-300 text-lg font-black tabular-nums leading-none">{avgRunsThem}</p>
-            <p className="text-gray-500 text-[8px] font-bold uppercase tracking-[1px] mt-1">Their avg</p>
+            <p className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mt-1">Their avg</p>
           </div>
         </div>
       )}
@@ -175,7 +175,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       {!isInternal && (
       <div className="relative mb-4">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-[1.5px] text-white/50 flex items-center gap-1">
+          <span className="t-micro font-bold uppercase tracking-[1.5px] text-white/50 flex items-center gap-1">
             <Target className="w-3 h-3" /> Win probability
           </span>
           <span className={`text-sm font-black tabular-nums ${probColor.text}`}>{winProbability}%</span>
@@ -192,8 +192,8 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       {/* Form + venue */}
       {!isInternal && (
       <div className="relative grid grid-cols-2 gap-2 mb-4">
-        <div className="rounded-xl bg-white/5 border border-white/8 px-3 py-2.5">
-          <p className="text-gray-500 text-[8px] font-bold uppercase tracking-[1px] mb-1.5 flex items-center gap-1">
+        <div className="r-card bg-white/5 border border-white/8 px-3 py-2.5">
+          <p className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mb-1.5 flex items-center gap-1">
             <Activity className="w-3 h-3" /> Recent form
           </p>
           <div className="flex gap-1">
@@ -201,7 +201,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
             {form.map((f, i) => (
               <span
                 key={i}
-                className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${
+                className={`w-5 h-5 r-card flex items-center justify-center t-micro font-black ${
                   f === 'W' ? 'bg-emerald-500/25 text-emerald-300'
                   : f === 'L' ? 'bg-rose-500/25 text-rose-300'
                   : 'bg-white/10 text-gray-300'
@@ -212,8 +212,8 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
             ))}
           </div>
         </div>
-        <div className="rounded-xl bg-white/5 border border-white/8 px-3 py-2.5">
-          <p className="text-gray-500 text-[8px] font-bold uppercase tracking-[1px] mb-1.5 flex items-center gap-1">
+        <div className="r-card bg-white/5 border border-white/8 px-3 py-2.5">
+          <p className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mb-1.5 flex items-center gap-1">
             <MapPin className="w-3 h-3" /> At {venueName || 'venue'}
           </p>
           {venuePlayed > 0 ? (
@@ -221,7 +221,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
               <span className="text-emerald-300">{venueWon}W</span>
               <span className="text-gray-500 mx-1">·</span>
               <span className="text-rose-300">{venueLost}L</span>
-              <span className="text-gray-500 text-[10px] font-semibold ml-1.5">/ {venuePlayed}</span>
+              <span className="text-gray-500 t-micro font-semibold ml-1.5">/ {venuePlayed}</span>
             </p>
           ) : (
             <p className="text-gray-500 text-xs">First time here</p>
@@ -234,26 +234,26 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       {(keyBatsman || keyBowler) && (
         <div className="relative grid grid-cols-2 gap-2 mb-4">
           {keyBatsman && (
-            <div className="rounded-xl bg-white/5 border border-white/8 px-3 py-2.5 flex items-center gap-2.5">
+            <div className="r-card bg-white/5 border border-white/8 px-3 py-2.5 flex items-center gap-2.5">
               <Initials name={keyBatsman.name} url={keyBatsman.avatar_url} ring="border-emerald-400/40" />
               <div className="min-w-0">
-                <p className="text-emerald-300 text-[8px] font-bold uppercase tracking-[1px] flex items-center gap-1">
+                <p className="text-emerald-300 t-micro font-bold uppercase tracking-[1px] flex items-center gap-1">
                   <TrendingUp className="w-2.5 h-2.5" /> Top bat
                 </p>
                 <p className="text-white text-xs font-black truncate leading-tight">{keyBatsman.name}</p>
-                <p className="text-gray-400 text-[10px] font-semibold tabular-nums">{keyBatsman.value} {keyBatsman.label.replace(' this season', '')}</p>
+                <p className="text-gray-400 t-micro font-semibold tabular-nums">{keyBatsman.value} {keyBatsman.label.replace(' this season', '')}</p>
               </div>
             </div>
           )}
           {keyBowler && (
-            <div className="rounded-xl bg-white/5 border border-white/8 px-3 py-2.5 flex items-center gap-2.5">
+            <div className="r-card bg-white/5 border border-white/8 px-3 py-2.5 flex items-center gap-2.5">
               <Initials name={keyBowler.name} url={keyBowler.avatar_url} ring="border-violet-400/40" />
               <div className="min-w-0">
-                <p className="text-violet-300 text-[8px] font-bold uppercase tracking-[1px] flex items-center gap-1">
+                <p className="text-violet-300 t-micro font-bold uppercase tracking-[1px] flex items-center gap-1">
                   <Crown className="w-2.5 h-2.5" /> Top bowl
                 </p>
                 <p className="text-white text-xs font-black truncate leading-tight">{keyBowler.name}</p>
-                <p className="text-gray-400 text-[10px] font-semibold tabular-nums">{keyBowler.value} {keyBowler.label.replace(' this season', '')}</p>
+                <p className="text-gray-400 t-micro font-semibold tabular-nums">{keyBowler.value} {keyBowler.label.replace(' this season', '')}</p>
               </div>
             </div>
           )}
@@ -263,9 +263,9 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       {/* Community prediction CTA */}
       <Link
         to="/predictions"
-        className="relative flex items-center justify-between rounded-xl bg-violet-500/15 border border-violet-400/30 px-3.5 py-2.5 hover:bg-violet-500/25 transition-colors"
+        className="relative flex items-center justify-between r-card bg-violet-500/15 border border-violet-400/30 px-3.5 py-2.5 hover:bg-violet-500/25 transition-colors"
       >
-        <span className="text-[12px] font-bold text-violet-100">
+        <span className="t-body font-bold text-violet-100">
           {predictTotal > 0
             ? (isInternal
                 ? `🎰 ${predictTotal} member${predictTotal === 1 ? '' : 's'} have predicted`

@@ -51,7 +51,7 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
         <div className="absolute -top-12 -right-8 w-56 h-56 rounded-full accent-glow blur-3xl opacity-50 pointer-events-none" />
         <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full accent-soft text-accent">
+            <span className="inline-flex items-center gap-1.5 t-meta sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full accent-soft text-accent">
               <span className="w-2 h-2 rounded-full" style={{ background: 'var(--a1)' }} />
               Season 2025–26 · live
             </span>
@@ -66,7 +66,7 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
           </div>
 
           {/* Win-rate donut — compact, inline on every screen */}
-          <div className="shrink-0 text-center rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3
+          <div className="shrink-0 text-center r-card px-3 py-2.5 sm:px-4 sm:py-3
             bg-slate-50 border border-slate-200/70 dark:bg-white/[0.04] dark:border-white/10">
             <div className="relative w-[78px] h-[78px] sm:w-[104px] sm:h-[104px] mx-auto">
               <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
@@ -79,11 +79,11 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
               </svg>
               <div className="absolute inset-0 flex items-center justify-center font-display text-xl sm:text-[26px] font-extrabold text-slate-900 dark:text-white">{winRate}%</div>
             </div>
-            <div className="text-[10px] sm:text-xs text-slate-400 dark:text-gray-500 font-semibold mt-0.5 sm:mt-1 whitespace-nowrap">Win · {won}W–{lost}L</div>
+            <div className="t-micro sm:text-xs text-slate-400 dark:text-gray-500 font-semibold mt-0.5 sm:mt-1 whitespace-nowrap">Win · {won}W–{lost}L</div>
           </div>
         </div>
 
-        <p className="relative text-slate-500 dark:text-gray-400 text-[13px] sm:text-[15px] mt-3 max-w-md">
+        <p className="relative text-slate-500 dark:text-gray-400 t-body sm:text-[15px] mt-3 max-w-md">
           Your club at a glance — {activeMembers} active members
           {streak && streak.count >= 2 ? `, a ${streak.count}-match ${streak.result === 'won' ? 'win' : 'losing'} streak` : ''}.
         </p>
@@ -98,17 +98,17 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
           <div className="relative mt-5 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
               {avatarUrl
-                ? <img src={avatarUrl} alt="" className="w-11 h-11 rounded-xl object-cover border-2 border-[color:var(--a1)]/40" />
-                : <div className="w-11 h-11 rounded-xl bg-accent-grad flex items-center justify-center font-black">{(firstName || '?')[0]}</div>}
+                ? <img src={avatarUrl} alt="" className="w-11 h-11 r-card object-cover border-2 border-[color:var(--a1)]/40" />
+                : <div className="w-11 h-11 r-card bg-accent-grad flex items-center justify-center font-black">{(firstName || '?')[0]}</div>}
               <div className="min-w-0">
                 <p className="font-display font-bold text-slate-900 dark:text-white text-base leading-tight">Hey, {firstName}! 🏏</p>
-                <p className="text-[12px] mt-0.5">
+                <p className="t-body mt-0.5">
                   <span className="text-slate-500 dark:text-gray-300">{myRuns ?? 0} runs · {myWkts ?? 0} wkts</span>
                   {myMoms > 0 && <span className="text-amber-500 dark:text-amber-300 font-bold"> · {myMoms} MOM</span>}
                   <span className="text-slate-400 dark:text-gray-500"> this season</span>
                 </p>
                 {milestone && (
-                  <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-200 text-[10px] font-bold">
+                  <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 r-card bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-200 t-micro font-bold">
                     <Target className="w-3 h-3" /> {milestone.away} more to {milestone.label}
                   </span>
                 )}
@@ -136,7 +136,7 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
             dark:bg-white/[0.05] dark:border-white/10 dark:shadow-none">
             <div className={`font-display text-[28px] lg:text-[30px] font-extrabold tabular-nums leading-none ${s.accent ? 'accent-grad' : 'text-slate-900 dark:text-white'}`}>{s.v}</div>
             <div className="text-slate-500 dark:text-gray-400 text-[12.5px] font-semibold mt-1">{s.l}</div>
-            <span className="inline-block mt-2.5 text-[11px] font-bold px-2.5 py-1 rounded-full accent-soft text-accent">{s.tag}</span>
+            <span className="inline-block mt-2.5 t-meta font-bold px-2.5 py-1 rounded-full accent-soft text-accent">{s.tag}</span>
           </div>
         ))}
       </div>
@@ -144,9 +144,9 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
       {/* ── Form strip ── */}
       {lastFive.length > 0 && (
         <div className="flex items-center gap-1.5 px-1">
-          <span className="text-slate-400 dark:text-gray-500 text-[9px] font-bold uppercase tracking-widest mr-1">Form</span>
+          <span className="text-slate-400 dark:text-gray-500 t-micro font-bold uppercase tracking-widest mr-1">Form</span>
           {lastFive.map(m => (
-            <div key={m.id} className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-sm ${
+            <div key={m.id} className={`w-6 h-6 r-card flex items-center justify-center t-micro font-black text-white shadow-sm ${
               m.result === 'won' ? 'bg-emerald-500' : m.result === 'lost' ? 'bg-rose-500' : 'bg-amber-500'}`}>
               {m.result === 'won' ? 'W' : m.result === 'lost' ? 'L' : 'D'}
             </div>

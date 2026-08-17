@@ -676,7 +676,7 @@ export function Settings() {
           <CardContent>
             {isAdmin ? (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 r-card">
                   <Check className="w-5 h-5 text-green-500" />
                   <div>
                     <p className="font-medium text-green-700 dark:text-green-400">
@@ -694,7 +694,7 @@ export function Settings() {
               </div>
             ) : (
               <form onSubmit={handleLogin} className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 r-card">
                   <Lock className="w-5 h-5 text-yellow-500" />
                   <div>
                     <p className="font-medium text-yellow-700 dark:text-yellow-400">
@@ -790,7 +790,7 @@ export function Settings() {
             </p>
 
             {/* Data Summary */}
-            <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 r-card">
               <div>
                 <p className="text-xs text-gray-500">Members</p>
                 <p className="font-semibold text-gray-900 dark:text-white">{members.length}</p>
@@ -831,13 +831,13 @@ export function Settings() {
             </div>
 
             {success && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 r-card text-green-700 dark:text-green-400 text-sm">
                 <Check className="w-4 h-4" />
                 {success}
               </div>
             )}
 
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 r-card">
               <p className="text-sm text-blue-700 dark:text-blue-400">
                 <strong>Tip:</strong> JSON format includes all data with relationships. CSV format is
                 spreadsheet-compatible for easy viewing in Excel or Google Sheets.
@@ -977,7 +977,7 @@ export function Settings() {
                 onChange={e => setLiveStreamChannel(e.target.value)}
               />
 
-              <label className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-3 cursor-pointer">
+              <label className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 r-control p-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={liveStreamOn}
@@ -1068,12 +1068,12 @@ export function Settings() {
 
               {/* Existing Sponsors List */}
               {sponsors.map(s => (
-                <div key={s.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div key={s.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 r-card border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-3">
                     {s.logo_url ? (
-                      <img src={s.logo_url} alt={s.name} className="w-14 h-14 object-contain rounded-lg bg-white dark:bg-gray-700 p-1.5 flex-shrink-0" />
+                      <img src={s.logo_url} alt={s.name} className="w-14 h-14 object-contain r-card bg-white dark:bg-gray-700 p-1.5 flex-shrink-0" />
                     ) : (
-                      <div className="w-14 h-14 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-14 h-14 bg-gray-200 dark:bg-gray-600 r-card flex items-center justify-center flex-shrink-0">
                         <Building2 className="w-6 h-6 text-gray-400" />
                       </div>
                     )}
@@ -1084,13 +1084,13 @@ export function Settings() {
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {s.website_url && (
-                        <a href={s.website_url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-400 hover:text-primary-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <a href={s.website_url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-400 hover:text-primary-500 r-card hover:bg-gray-100 dark:hover:bg-gray-700">
                           <ExternalLink className="w-4 h-4" />
                         </a>
                       )}
                       <button
                         onClick={() => { logoUploadSponsorIdRef.current = s.id; logoInputRef.current?.click(); }}
-                        className="p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="p-1.5 text-gray-400 hover:text-blue-500 r-control hover:bg-gray-100 dark:hover:bg-gray-700"
                         title={sponsorLogoUploading ? 'Uploading...' : 'Upload logo'}
                         disabled={sponsorLogoUploading}
                       >
@@ -1099,7 +1099,7 @@ export function Settings() {
                       {s.logo_url && (
                         <button
                           onClick={() => handleRemoveLogo(s.id)}
-                          className="p-1.5 text-gray-400 hover:text-orange-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                          className="p-1.5 text-gray-400 hover:text-orange-500 r-control hover:bg-gray-100 dark:hover:bg-gray-700"
                           title="Remove logo"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1107,14 +1107,14 @@ export function Settings() {
                       )}
                       <button
                         onClick={() => startEditSponsor(s)}
-                        className="p-1.5 text-gray-400 hover:text-amber-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="p-1.5 text-gray-400 hover:text-amber-500 r-control hover:bg-gray-100 dark:hover:bg-gray-700"
                         title="Edit"
                       >
                         <Save className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleRemoveSponsor(s.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="p-1.5 text-gray-400 hover:text-red-500 r-control hover:bg-gray-100 dark:hover:bg-gray-700"
                         title="Remove"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1130,14 +1130,14 @@ export function Settings() {
 
               {/* Feedback Messages */}
               {sponsorError && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 r-card text-red-700 dark:text-red-400 text-sm">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                   {sponsorError}
                 </div>
               )}
 
               {sponsorMsg && !showSponsorForm && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 r-card text-green-700 dark:text-green-400 text-sm">
                   <Check className="w-4 h-4 flex-shrink-0" />
                   {sponsorMsg}
                 </div>
@@ -1145,7 +1145,7 @@ export function Settings() {
 
               {/* Add/Edit Sponsor Form */}
               {showSponsorForm && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-800 space-y-3">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 r-card border border-blue-200 dark:border-blue-800 space-y-3">
                   <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     {editingSponsorId ? 'Edit Sponsor' : 'New Sponsor'}
                   </p>
@@ -1191,14 +1191,14 @@ export function Settings() {
                   />
 
                   {sponsorError && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 r-card text-red-700 dark:text-red-400 text-sm">
                       <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                       {sponsorError}
                     </div>
                   )}
 
                   {sponsorMsg && (
-                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 r-card text-green-700 dark:text-green-400 text-sm">
                       <Check className="w-4 h-4 flex-shrink-0" />
                       {sponsorMsg}
                     </div>
@@ -1236,14 +1236,14 @@ export function Settings() {
               </p>
 
               {/* Upload new photo */}
-              <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-4 space-y-3">
+              <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-4 space-y-3">
                 <Input
                   label="Caption (optional)"
                   placeholder="e.g. SCC vs Yashwin Stars — Champions Trophy 2026"
                   value={newPhotoCaption}
                   onChange={e => setNewPhotoCaption(e.target.value)}
                 />
-                <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
+                <label className="flex items-center justify-center gap-2 px-4 py-3 r-control bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
                   <Upload className="w-4 h-4" />
                   {galleryUploading ? 'Uploading…' : 'Upload Photo'}
                   <input
@@ -1272,11 +1272,11 @@ export function Settings() {
                     }}
                   />
                 </label>
-                <p className="text-[10px] text-gray-400 text-center">PNG / JPG / WebP. Landscape 16:9 looks best on the carousel.</p>
+                <p className="t-micro text-gray-400 text-center">PNG / JPG / WebP. Landscape 16:9 looks best on the carousel.</p>
               </div>
 
               {galleryMsg && (
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm border ${
+                <div className={`flex items-center gap-2 px-3 py-2 r-card text-sm border ${
                   galleryMsg.startsWith('✓')
                     ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
                     : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
@@ -1288,10 +1288,10 @@ export function Settings() {
               {/* Current photos grid */}
               {teamGallery.photos.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">In carousel ({teamGallery.photos.length})</p>
+                  <p className="t-meta font-bold uppercase tracking-widest text-gray-500">In carousel ({teamGallery.photos.length})</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {teamGallery.photos.map((p, i) => (
-                      <div key={p.url} className="relative group rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                      <div key={p.url} className="relative group r-card overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                         <div className="aspect-[4/3] overflow-hidden">
                           <img src={p.url} alt={p.caption || `Photo ${i + 1}`} className="w-full h-full object-cover" />
                         </div>
@@ -1302,7 +1302,7 @@ export function Settings() {
                                 value={editingCaptionText}
                                 onChange={e => setEditingCaptionText(e.target.value)}
                                 placeholder="Caption…"
-                                className="flex-1 text-[11px] bg-transparent border-0 focus:outline-none text-gray-700 dark:text-gray-300"
+                                className="flex-1 t-meta bg-transparent border-0 focus:outline-none text-gray-700 dark:text-gray-300"
                                 autoFocus
                               />
                               <button
@@ -1329,7 +1329,7 @@ export function Settings() {
                                 setEditingCaptionUrl(p.url);
                                 setEditingCaptionText(p.caption || '');
                               }}
-                              className="text-left w-full text-[11px] text-gray-600 dark:text-gray-400 truncate hover:text-gray-900 dark:hover:text-gray-200"
+                              className="text-left w-full t-meta text-gray-600 dark:text-gray-400 truncate hover:text-gray-900 dark:hover:text-gray-200"
                               title="Click to edit caption"
                             >
                               {p.caption || <span className="italic text-gray-400">Add caption…</span>}
@@ -1387,7 +1387,7 @@ export function Settings() {
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {ground.image_urls.map((url, i) => (
-                    <div key={url} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
+                    <div key={url} className="relative group w-24 h-24 r-card overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
                       <img src={url} alt={`Ground photo ${i + 1}`} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <button
@@ -1399,14 +1399,14 @@ export function Settings() {
                         </button>
                       </div>
                       {i === 0 && (
-                        <div className="absolute bottom-1 left-1 text-[9px] font-bold bg-primary-500 text-white rounded px-1">MAIN</div>
+                        <div className="absolute bottom-1 left-1 t-micro font-bold bg-primary-500 text-white rounded px-1">MAIN</div>
                       )}
                     </div>
                   ))}
                   {ground.image_urls.length < 6 && (
                     <div
                       onClick={() => groundImageRef.current?.click()}
-                      className={`w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition ${groundImageUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                      className={`w-24 h-24 r-card border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition ${groundImageUploading ? 'opacity-50 pointer-events-none' : ''}`}
                     >
                       {groundImageUploading ? (
                         <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
@@ -1468,13 +1468,13 @@ export function Settings() {
               />
 
               {groundFormError && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 r-card text-red-700 dark:text-red-400 text-sm">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                   {groundFormError}
                 </div>
               )}
               {groundMsg && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 r-card text-green-700 dark:text-green-400 text-sm">
                   <Check className="w-4 h-4 flex-shrink-0" />
                   {groundMsg}
                 </div>
@@ -1509,7 +1509,7 @@ export function Settings() {
                 </label>
                 <div className="flex gap-3 items-start">
                   {/* Preview */}
-                  <div className="w-28 h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-28 h-28 r-card border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {upi.qr_code_url ? (
                       <img src={upi.qr_code_url} alt="UPI QR" className="w-full h-full object-contain bg-white" />
                     ) : (
@@ -1518,7 +1518,7 @@ export function Settings() {
                   </div>
                   {/* Actions */}
                   <div className="flex-1 space-y-2">
-                    <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
+                    <label className="flex items-center justify-center gap-2 px-3 py-2 r-control bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900/30 transition">
                       <Upload className="w-3.5 h-3.5" />
                       {qrUploading ? 'Uploading…' : (upi.qr_code_url ? 'Replace QR' : 'Upload QR')}
                       <input
@@ -1536,13 +1536,13 @@ export function Settings() {
                     {upi.qr_code_url && (
                       <button
                         onClick={handleRemoveQr}
-                        className="flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+                        className="flex items-center justify-center gap-1.5 w-full px-3 py-2 r-control bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Remove
                       </button>
                     )}
-                    <p className="text-[10px] text-gray-400">PNG/JPG, max ~2MB. Crisp square images work best.</p>
+                    <p className="t-micro text-gray-400">PNG/JPG, max ~2MB. Crisp square images work best.</p>
                   </div>
                 </div>
               </div>
@@ -1562,7 +1562,7 @@ export function Settings() {
               />
 
               {upiSavedMsg && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
+                <div className="flex items-center gap-2 px-3 py-2 r-card bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm">
                   {upiSavedMsg}
                 </div>
               )}
@@ -1604,7 +1604,7 @@ export function Settings() {
 
               <div className="space-y-3">
                 {testimonials.map(t => (
-                  <div key={t.id} className={`p-3 rounded-xl border transition-opacity ${t.active ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' : 'border-dashed border-gray-300 dark:border-gray-600 opacity-60'}`}>
+                  <div key={t.id} className={`p-3 r-card border transition-opacity ${t.active ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50' : 'border-dashed border-gray-300 dark:border-gray-600 opacity-60'}`}>
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -1621,13 +1621,13 @@ export function Settings() {
                         <button
                           onClick={() => handleToggleTestimonial(t.id, t.active)}
                           title={t.active ? 'Hide from booking page' : 'Show on booking page'}
-                          className={`p-1.5 rounded-lg transition-colors text-xs font-medium ${t.active ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                          className={`p-1.5 r-control transition-colors text-xs font-medium ${t.active ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                         >
                           {t.active ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                         </button>
                         <button
                           onClick={() => handleDeleteTestimonial(t.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-red-500 r-control hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1640,7 +1640,7 @@ export function Settings() {
 
               {/* Add form */}
               {showAddTestForm && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-800 space-y-3">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 r-card border border-blue-200 dark:border-blue-800 space-y-3">
                   <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">New Testimonial</p>
 
                   <Input
@@ -1676,7 +1676,7 @@ export function Settings() {
                   </div>
 
                   {testError && (
-                    <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                    <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 r-card text-red-700 dark:text-red-400 text-sm">
                       <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                       {testError}
                     </div>
@@ -1695,7 +1695,7 @@ export function Settings() {
               )}
 
               {testMsg && !showAddTestForm && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 r-card text-green-700 dark:text-green-400 text-sm">
                   <Check className="w-4 h-4 flex-shrink-0" />
                   {testMsg}
                 </div>
@@ -1717,7 +1717,7 @@ export function Settings() {
                   <select
                     value={statsSeason}
                     onChange={e => setStatsSeason(e.target.value)}
-                    className="text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1"
+                    className="text-xs r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1"
                   >
                     {['2025-26', '2024-25', '2023-24'].map(s => (
                       <option key={s} value={s}>{s}</option>
@@ -1732,7 +1732,7 @@ export function Settings() {
               </p>
 
               {/* ── Import Match IDs from CricHeroes Team ─────────────────── */}
-              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 p-4 space-y-3">
+              <div className="r-card border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <ExternalLink className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                   <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">Import Match IDs from CricHeroes</p>
@@ -1753,7 +1753,7 @@ export function Settings() {
                       setChTeamId(e.target.value);
                       localStorage.setItem('scc-ch-team-id', e.target.value);
                     }}
-                    className="flex-1 text-sm rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 outline-none focus:border-emerald-500"
+                    className="flex-1 text-sm r-control border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 outline-none focus:border-emerald-500"
                   />
                   <Button
                     onClick={() => { resetTeamSync(); fetchTeamMatches(chTeamId, matches); }}
@@ -1798,7 +1798,7 @@ export function Settings() {
                     </div>
 
                     {/* Scrollable match list */}
-                    <div className="max-h-72 overflow-y-auto rounded-lg border border-emerald-200 dark:border-emerald-800 divide-y divide-emerald-100 dark:divide-emerald-900">
+                    <div className="max-h-72 overflow-y-auto r-card border border-emerald-200 dark:border-emerald-800 divide-y divide-emerald-100 dark:divide-emerald-900">
                       {teamSyncState.chMatches.map(ch => (
                         <div key={ch.chMatchId} className={`flex items-center gap-2 px-3 py-2 text-xs ${
                           ch.status === 'already'      ? 'bg-blue-50/50 dark:bg-blue-900/10' :
@@ -1865,7 +1865,7 @@ export function Settings() {
               </div>
 
               {/* ── Auto-Sync from CricHeroes ──────────────────────────────── */}
-              <div className="rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/10 p-4 space-y-3">
+              <div className="r-card border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/10 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <Brain className="w-4 h-4 text-purple-500 flex-shrink-0" />
                   <p className="text-sm font-bold text-purple-700 dark:text-purple-300">Auto-Sync from CricHeroes</p>
@@ -1888,7 +1888,7 @@ export function Settings() {
                           <button
                             key={key}
                             onClick={() => { setSyncMode(key); resetSync(); setDeleteMsg(null); }}
-                            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold border transition-colors ${
+                            className={`flex-1 py-1.5 px-3 r-control text-xs font-bold border transition-colors ${
                               syncMode === key
                                 ? 'bg-purple-600 text-white border-purple-600'
                                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600'
@@ -1912,7 +1912,7 @@ export function Settings() {
                           <p className="text-xs text-gray-500">No completed matches found in {syncMode} date range.</p>
                         );
                         return (
-                          <div className="rounded-lg bg-white/60 dark:bg-gray-800/60 border border-purple-200 dark:border-purple-800 p-2.5 space-y-1.5">
+                          <div className="r-card bg-white/60 dark:bg-gray-800/60 border border-purple-200 dark:border-purple-800 p-2.5 space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-600 dark:text-gray-400">CricHeroes coverage — {syncMode}</span>
                               <span className="font-bold text-purple-700 dark:text-purple-300">{withId}/{seasonMatches.length} matches</span>
@@ -1924,13 +1924,13 @@ export function Settings() {
                               />
                             </div>
                             {missing > 0 && (
-                              <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                              <p className="t-meta text-amber-600 dark:text-amber-400">
                                 ⚠️ {missing} match{missing > 1 ? 'es' : ''} missing CricHeroes ID — go to{' '}
                                 <span className="font-bold">Matches → Edit</span> to add them, then re-sync.
                               </p>
                             )}
                             {missing === 0 && withId > 0 && (
-                              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">✓ All matches have CricHeroes IDs</p>
+                              <p className="t-meta text-emerald-600 dark:text-emerald-400">✓ All matches have CricHeroes IDs</p>
                             )}
                           </div>
                         );
@@ -1972,7 +1972,7 @@ export function Settings() {
                       if (syncProgress.unmatched.length === 0) return null;
 
                       return (
-                        <details className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 overflow-hidden">
+                        <details className="r-card bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 overflow-hidden">
                           <summary className="px-3 py-2 cursor-pointer text-xs font-bold text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30">
                             {pendingUnmatched.length > 0
                               ? `⚠️ ${pendingUnmatched.length} unmatched name${pendingUnmatched.length > 1 ? 's' : ''} (old members?) — tap to map or ignore`
@@ -1996,7 +1996,7 @@ export function Settings() {
                                         setNameMap(updated);
                                         saveNameMap(updated);
                                       }}
-                                      className="flex-1 text-xs rounded-lg border border-yellow-300 dark:border-yellow-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1"
+                                      className="flex-1 text-xs r-control border border-yellow-300 dark:border-yellow-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1"
                                     >
                                       <option value="">— pick member —</option>
                                       {[...members].sort((a,b) => a.name.localeCompare(b.name)).map(m => (
@@ -2013,7 +2013,7 @@ export function Settings() {
                                         // Force re-render
                                         setNameMap(prev => ({ ...prev }));
                                       }}
-                                      className="text-[10px] text-gray-400 hover:text-red-400 flex-shrink-0"
+                                      className="t-micro text-gray-400 hover:text-red-400 flex-shrink-0"
                                       title="Ignore — not a current member"
                                     >
                                       skip
@@ -2051,13 +2051,13 @@ export function Settings() {
                 </Button>
 
                 {/* Delete stats */}
-                <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 p-3 space-y-2">
+                <div className="r-card border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 p-3 space-y-2">
                   <p className="text-xs font-bold text-red-700 dark:text-red-400">🗑 Clear Stats (before re-sync)</p>
                   <div className="flex gap-2 items-center">
                     <select
                       value={deleteTarget}
                       onChange={e => setDeleteTarget(e.target.value as typeof deleteTarget)}
-                      className="flex-1 text-xs rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1.5"
+                      className="flex-1 text-xs r-control border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1.5"
                     >
                       <option value="all">All seasons</option>
                       <option value="2025-26">Season 2025–26 only</option>
@@ -2084,13 +2084,13 @@ export function Settings() {
 
               {/* Stats feedback */}
               {statsError && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 r-card text-red-700 dark:text-red-400 text-sm">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                   {statsError}
                 </div>
               )}
               {statsMsg && !editingStatsId && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 r-card text-green-700 dark:text-green-400 text-sm">
                   <Check className="w-4 h-4 flex-shrink-0" />
                   {statsMsg}
                 </div>
@@ -2102,7 +2102,7 @@ export function Settings() {
                   const memberStats = cricketStats.find(s => s.member_id === member.id);
                   const isEditing = editingStatsId === member.id;
                   return (
-                    <div key={member.id} className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                    <div key={member.id} className="border border-gray-200 dark:border-gray-700 r-card overflow-hidden">
                       <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50">
                         {member.avatar_url ? (
                           <img src={member.avatar_url} alt={member.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
@@ -2124,7 +2124,7 @@ export function Settings() {
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={() => isEditing ? setEditingStatsId(null) : openStatsEdit(member.id)}
-                            className="p-1.5 text-gray-400 hover:text-primary-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-primary-500 r-control hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                             title={isEditing ? 'Close' : 'Edit stats'}
                           >
                             {isEditing ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
@@ -2132,7 +2132,7 @@ export function Settings() {
                           {memberStats && !isEditing && (
                             <button
                               onClick={() => handleDeleteStats(member.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                              className="p-1.5 text-gray-400 hover:text-red-500 r-control hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                               title="Delete stats"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -2167,7 +2167,7 @@ export function Settings() {
                                     type={type}
                                     value={(statsForm[field] as string | number) ?? 0}
                                     onChange={e => updateStatsField(field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
-                                    className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    className="w-full text-sm r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                     min="0"
                                     step={field.includes('average') || field.includes('strike_rate') ? '0.01' : '1'}
                                   />
@@ -2197,7 +2197,7 @@ export function Settings() {
                                     type={type}
                                     value={(statsForm[field] as string | number) ?? 0}
                                     onChange={e => updateStatsField(field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
-                                    className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    className="w-full text-sm r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                     min="0"
                                     step={field.includes('economy') || field.includes('average') || field.includes('strike_rate') ? '0.01' : '1'}
                                   />
@@ -2210,7 +2210,7 @@ export function Settings() {
                                   value={(statsForm.bowling_best_figures as string) ?? '0/0'}
                                   onChange={e => updateStatsField('bowling_best_figures', e.target.value)}
                                   placeholder="e.g. 4/22"
-                                  className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                  className="w-full text-sm r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 />
                               </div>
                             </div>
@@ -2231,7 +2231,7 @@ export function Settings() {
                                     type="number"
                                     value={(statsForm[field] as number) ?? 0}
                                     onChange={e => updateStatsField(field, parseInt(e.target.value) || 0)}
-                                    className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    className="w-full text-sm r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
                                     min="0"
                                   />
                                 </div>
@@ -2247,19 +2247,19 @@ export function Settings() {
                               value={(statsForm.cricheroes_profile_url as string) ?? ''}
                               onChange={e => updateStatsField('cricheroes_profile_url', e.target.value)}
                               placeholder="https://cricheroes.com/player/..."
-                              className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              className="w-full text-sm r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
 
                           {/* Save feedback */}
                           {statsError && (
-                            <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-400 text-xs">
+                            <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 r-card text-red-700 dark:text-red-400 text-xs">
                               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                               {statsError}
                             </div>
                           )}
                           {statsMsg && (
-                            <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 text-xs">
+                            <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 r-card text-green-700 dark:text-green-400 text-xs">
                               <Check className="w-3.5 h-3.5 flex-shrink-0" />
                               {statsMsg}
                             </div>
@@ -2295,7 +2295,7 @@ export function Settings() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-primary-500 rounded-xl flex items-center justify-center">
+              <div className="w-16 h-16 bg-primary-500 r-card flex items-center justify-center">
                 <span className="text-white font-bold text-2xl">S</span>
               </div>
               <div>

@@ -87,7 +87,7 @@ export function CalendarWidget({ matches }: CalendarWidgetProps) {
                 >
                   {/* Date Block */}
                   <div className={`
-                    flex flex-col items-center justify-center w-14 h-14 rounded-xl
+                    flex flex-col items-center justify-center w-14 h-14 r-card
                     ${isUrgent
                       ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
                       : 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'

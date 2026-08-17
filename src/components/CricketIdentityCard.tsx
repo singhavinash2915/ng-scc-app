@@ -54,7 +54,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
 
   if (loading) {
     return (
-      <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-br ${gradient} p-6 text-white shadow-xl min-h-64`}>
+      <div className={`relative r-card overflow-hidden bg-gradient-to-br ${gradient} p-6 text-white shadow-xl min-h-64`}>
         <div className="animate-pulse space-y-3">
           <div className="h-8 bg-white/20 rounded w-3/4" />
           <div className="h-4 bg-white/20 rounded w-1/2" />
@@ -66,7 +66,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
   }
 
   return (
-    <div ref={cardRef} className={`relative rounded-2xl overflow-hidden bg-gradient-to-br ${gradient} shadow-xl text-white`}>
+    <div ref={cardRef} className={`relative r-card overflow-hidden bg-gradient-to-br ${gradient} shadow-xl text-white`}>
       {/* Header */}
       <div className="p-5 pb-3">
         <div className="flex items-start justify-between">
@@ -88,7 +88,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
             </div>
           </div>
           <div className="text-right">
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 text-center border border-white/20">
+            <div className="bg-white/20 backdrop-blur-sm r-card px-3 py-2 text-center border border-white/20">
               <p className="text-xs text-white/60 uppercase tracking-wide">Season</p>
               <p className="font-bold text-sm">2025-26</p>
             </div>
@@ -96,7 +96,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
         </div>
 
         {dna?.dnaType && (
-          <div className="mt-3 bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+          <div className="mt-3 bg-white/15 backdrop-blur-sm r-card p-3 border border-white/20">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-yellow-300" />
               <span className="text-xs text-white/70 uppercase tracking-wider">Cricket DNA</span>
@@ -116,7 +116,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
               { label: 'Wickets', value: stats.bowling_wickets, sub: stats.bowling_best_figures },
               { label: 'Catches', value: stats.fielding_catches + stats.fielding_stumpings + stats.fielding_run_outs, sub: 'Fielding' },
             ].map((stat) => (
-              <div key={stat.label} className="bg-white/10 rounded-xl p-2 text-center border border-white/10">
+              <div key={stat.label} className="bg-white/10 r-card p-2 text-center border border-white/10">
                 <p className="text-2xl font-bold leading-none">{stat.value}</p>
                 <p className="text-xs text-white/80 mt-0.5">{stat.label}</p>
                 <p className="text-xs text-white/50 mt-0.5">{stat.sub}</p>
@@ -130,7 +130,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
       {dna && (
         <div className="px-5 py-3 space-y-2">
           {dna.strengths.length > 0 && (
-            <div className="bg-white/10 rounded-xl p-3 border border-white/10">
+            <div className="bg-white/10 r-card p-3 border border-white/10">
               <div className="flex items-center gap-1 mb-1.5">
                 <Target className="w-3.5 h-3.5 text-yellow-300" />
                 <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">Strengths</span>
@@ -141,7 +141,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
             </div>
           )}
           {dna.wisdom && (
-            <div className="bg-white/10 rounded-xl p-3 border border-white/10">
+            <div className="bg-white/10 r-card p-3 border border-white/10">
               <p className="text-xs text-white/60 italic">"{dna.wisdom}"</p>
             </div>
           )}
@@ -167,7 +167,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
         </div>
         <button
           onClick={handleShare}
-          className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 transition-colors rounded-lg px-3 py-1.5 text-xs font-medium border border-white/20"
+          className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 transition-colors r-control px-3 py-1.5 text-xs font-medium border border-white/20"
         >
           <Share2 className="w-3.5 h-3.5" />
           Share

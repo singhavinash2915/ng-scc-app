@@ -52,12 +52,12 @@ export function LiveMatch() {
         <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
           {/* Header */}
           <Link to="/" className="flex items-center gap-3 mb-5">
-            <img src={SCC_LOGO_DATA_URL} alt="SCC" className="w-11 h-11 rounded-xl object-cover" />
+            <img src={SCC_LOGO_DATA_URL} alt="SCC" className="w-11 h-11 r-card object-cover" />
             <div className="flex-1">
               <h1 className="text-lg font-extrabold leading-tight">{CLUB_NAME}</h1>
-              <p className="text-[11px] text-gray-400">Live Match Centre</p>
+              <p className="t-meta text-gray-400">Live Match Centre</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-500/15 text-red-300 border border-red-500/30">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full t-meta font-bold bg-red-500/15 text-red-300 border border-red-500/30">
               <Radio className={`w-3 h-3 ${isOver ? '' : 'animate-pulse'}`} />
               {isOver ? 'FULL TIME' : 'LIVE'}
             </span>
@@ -68,7 +68,7 @@ export function LiveMatch() {
           {showStream && streamVideoId && (
             <div className="mb-5">
               <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">
+                <span className="inline-flex items-center gap-1.5 bg-rose-600 text-white t-micro font-black uppercase tracking-widest px-2.5 py-1 r-card">
                   <Radio className="w-3 h-3 animate-pulse" /> Live stream
                 </span>
                 {stream.title && <span className="text-xs font-bold text-gray-300 truncate">{stream.title}</span>}
@@ -98,7 +98,7 @@ export function LiveMatch() {
           )}
 
           {/* Growth CTA — the hook for other clubs */}
-          <div className="mt-6 rounded-2xl p-5 bg-gradient-to-br from-violet-600/90 via-blue-600/80 to-[#0a1019] border border-white/10">
+          <div className="mt-6 r-card p-5 bg-gradient-to-br from-violet-600/90 via-blue-600/80 to-[#0a1019] border border-white/10">
             <p className="text-sm font-extrabold text-white">
               📱 This is our own club app — live ball-by-ball, stats, predictions &amp; more.
             </p>
@@ -108,18 +108,18 @@ export function LiveMatch() {
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
                 to="/"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white text-gray-900 text-sm font-bold hover:bg-gray-100 transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 r-card bg-white text-gray-900 text-sm font-bold hover:bg-gray-100 transition"
               >
                 Explore the app <ArrowRight className="w-4 h-4" />
               </Link>
               <a
                 href="/book-match"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/10 text-white text-sm font-bold border border-white/15 hover:bg-white/15 transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 r-card bg-white/10 text-white text-sm font-bold border border-white/15 hover:bg-white/15 transition"
               >
                 🏏 Book a match vs SCC
               </a>
             </div>
-            <p className="text-[11px] text-white/60 mt-3">📲 {INSTAGRAM}</p>
+            <p className="t-meta text-white/60 mt-3">📲 {INSTAGRAM}</p>
           </div>
         </div>
       </div>

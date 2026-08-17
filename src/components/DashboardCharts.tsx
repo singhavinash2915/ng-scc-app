@@ -75,17 +75,17 @@ export function DashboardCharts({ members, totalFunds, winRate, matchResultData,
         </div>
         <CardContent className="p-4">
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 r-card">
               <p className="text-lg font-black text-green-600 dark:text-green-400">₹{totalFunds >= 1000 ? `${(totalFunds / 1000).toFixed(1)}k` : totalFunds}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Club Bank</p>
+              <p className="t-micro text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Club Bank</p>
             </div>
-            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 r-card">
               <p className="text-lg font-black text-blue-600 dark:text-blue-400">₹{thisMonthFinance.deposits >= 1000 ? `${(thisMonthFinance.deposits / 1000).toFixed(1)}k` : thisMonthFinance.deposits}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">This Month</p>
+              <p className="t-micro text-gray-500 dark:text-gray-400 mt-0.5 font-medium">This Month</p>
             </div>
-            <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+            <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 r-card">
               <p className="text-lg font-black text-purple-600 dark:text-purple-400">₹{avgBalance >= 1000 ? `${(avgBalance / 1000).toFixed(1)}k` : avgBalance}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Avg / Member</p>
+              <p className="t-micro text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Avg / Member</p>
             </div>
           </div>
           <div className="h-36" style={{ minHeight: 144, minWidth: 0 }}>
@@ -103,8 +103,8 @@ export function DashboardCharts({ members, totalFunds, winRate, matchResultData,
             </ResponsiveContainer>
           </div>
           <div className="flex justify-center gap-5 mt-1">
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-[10px] text-gray-400">Deposits</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[10px] text-gray-400">Expenses</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500" /><span className="t-micro text-gray-400">Deposits</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="t-micro text-gray-400">Expenses</span></div>
           </div>
         </CardContent>
       </Card>
@@ -144,21 +144,21 @@ export function DashboardCharts({ members, totalFunds, winRate, matchResultData,
               ))}
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
                 <div className="flex justify-between">
-                  <span className="text-[10px] text-gray-400">Win Rate</span>
-                  <span className="text-[10px] font-black text-green-600">{Math.round(winRate)}%</span>
+                  <span className="t-micro text-gray-400">Win Rate</span>
+                  <span className="t-micro font-black text-green-600">{Math.round(winRate)}%</span>
                 </div>
               </div>
             </div>
           </div>
           {topContributors.length > 0 && (
             <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+              <p className="t-micro font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                 <Award className="w-3 h-3" /> Top Contributors
               </p>
               <div className="space-y-2">
                 {topContributors.map((c, i) => (
                   <div key={c.name} className="flex items-center gap-2">
-                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 ${i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : 'bg-orange-100 text-orange-700'}`}>{i + 1}</span>
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center t-micro font-black flex-shrink-0 ${i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : 'bg-orange-100 text-orange-700'}`}>{i + 1}</span>
                     <span className="text-xs text-gray-700 dark:text-gray-300 flex-1 truncate">{c.name}</span>
                     <span className="text-xs font-bold text-green-600">₹{c.total.toLocaleString('en-IN')}</span>
                   </div>

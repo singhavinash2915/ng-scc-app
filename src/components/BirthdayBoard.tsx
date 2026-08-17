@@ -59,15 +59,15 @@ export function BirthdayBoard({ members }: { members: Member[] }) {
 
   return (
     <>
-      <div className="glass rounded-2xl p-4">
+      <div className="glass r-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🎂</span>
-          <span className="text-pink-500 dark:text-pink-400 text-[10px] font-bold uppercase tracking-[2px]">Birthdays</span>
+          <span className="text-pink-500 dark:text-pink-400 t-micro font-bold uppercase tracking-[2px]">Birthdays</span>
         </div>
         <div className="space-y-2">
           {shown.map(u => (
             <div key={u.member.id}
-              className={`flex items-center gap-3 rounded-xl p-2 ${u.isToday ? 'bg-pink-500/10 ring-1 ring-pink-400/40' : ''}`}>
+              className={`flex items-center gap-3 r-card p-2 ${u.isToday ? 'bg-pink-500/10 ring-1 ring-pink-400/40' : ''}`}>
               {u.member.avatar_url ? (
                 <img src={u.member.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
               ) : (
@@ -79,11 +79,11 @@ export function BirthdayBoard({ members }: { members: Member[] }) {
                 <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
                   {u.member.name}{u.turning ? <span className="text-slate-400 dark:text-white/50 font-normal"> · turns {u.turning}</span> : null}
                 </p>
-                <p className="text-[11px] text-slate-400 dark:text-white/50">{u.dateLabel} · {relativeLabel(u.daysUntil)}</p>
+                <p className="t-meta text-slate-400 dark:text-white/50">{u.dateLabel} · {relativeLabel(u.daysUntil)}</p>
               </div>
               {u.daysUntil <= 3 && (
                 <button onClick={() => setWishFor(u)}
-                  className="flex items-center gap-1 text-[11px] font-bold text-white bg-pink-500 hover:bg-pink-600 rounded-full px-2.5 py-1.5 shrink-0">
+                  className="flex items-center gap-1 t-meta font-bold text-white bg-pink-500 hover:bg-pink-600 rounded-full px-2.5 py-1.5 shrink-0">
                   <Gift className="w-3 h-3" /> Wish
                 </button>
               )}
@@ -147,7 +147,7 @@ function WishCardModal({ bday, onClose }: { bday: UpcomingBday; onClose: () => v
   return (
     <Modal isOpen onClose={onClose} title="Birthday Wish" size="md">
       <div className="flex flex-col items-center gap-4">
-        <div className="overflow-hidden rounded-2xl shadow-xl" style={{ width: 300 }}>
+        <div className="overflow-hidden r-card shadow-xl" style={{ width: 300 }}>
           <div ref={cardRef} style={{
             width: 300, aspectRatio: '4 / 5', position: 'relative',
             background: 'linear-gradient(160deg,#ec4899 0%,#f97316 55%,#fbbf24 100%)',

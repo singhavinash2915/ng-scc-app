@@ -50,7 +50,7 @@ export function WhatsNew() {
                     {release.title}
                   </h2>
                   {ri === 0 && (
-                    <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider rounded-full">
+                    <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 t-micro font-black uppercase tracking-wider rounded-full">
                       Latest
                     </span>
                   )}
@@ -58,14 +58,14 @@ export function WhatsNew() {
                 {release.subtitle && (
                   <p className="text-xs text-gray-500 mt-0.5">{release.subtitle}</p>
                 )}
-                <p className="text-[10px] text-gray-400 mt-0.5 font-medium">
+                <p className="t-micro text-gray-400 mt-0.5 font-medium">
                   {release.date} · v{release.version}
                 </p>
               </div>
             </div>
 
             {/* Notes */}
-            <div className={`ml-11 rounded-2xl overflow-hidden border ${
+            <div className={`ml-11 r-card overflow-hidden border ${
               ri === 0
                 ? 'border-emerald-200 dark:border-emerald-900/50'
                 : 'border-gray-100 dark:border-gray-800'
@@ -86,7 +86,7 @@ export function WhatsNew() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold text-gray-900 dark:text-white">{note.title}</p>
                         {tagCfg && (
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${tagCfg.cls}`}>
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full t-micro font-black uppercase tracking-wider ${tagCfg.cls}`}>
                             <tagCfg.Icon className="w-2.5 h-2.5" />
                             {tagCfg.label}
                           </span>

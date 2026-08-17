@@ -169,7 +169,7 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
       <div className="space-y-4">
 
         {/* Customise header */}
-        <div className="space-y-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="space-y-3 p-3 r-card border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <Input label="Title (e.g. SCC MATCH DAY)" value={tournamentName} onChange={e => setTournamentName(e.target.value)} />
           {squadSize === 0 && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
@@ -179,7 +179,7 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
         </div>
 
         {/* The actual poster — portrait list format */}
-        <div className="overflow-x-auto rounded-2xl bg-black">
+        <div className="overflow-x-auto r-card bg-black">
           <div
             ref={posterRef}
             style={{
@@ -596,7 +596,7 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
           </a>
         )}
 
-        <p className="text-[11px] text-gray-400 text-center">
+        <p className="t-meta text-gray-400 text-center">
           💡 Portrait poster ≈ 500–800 KB · WhatsApp & Instagram story friendly.
         </p>
       </div>

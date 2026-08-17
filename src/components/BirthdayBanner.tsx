@@ -26,7 +26,7 @@ export function BirthdayBanner({ members }: BirthdayBannerProps) {
   if (todaysBirthdays.length === 0) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl shadow-lg">
+    <div className="relative overflow-hidden r-card shadow-lg">
       {/* Layered gradient + party glow */}
       <div className="absolute inset-0"
            style={{ background: 'linear-gradient(135deg, #ec4899 0%, #f97316 50%, #fbbf24 100%)' }} />
@@ -45,7 +45,7 @@ export function BirthdayBanner({ members }: BirthdayBannerProps) {
       <div className="relative p-4 lg:p-5 flex items-center gap-4 flex-wrap">
         {/* Cake icon with bounce */}
         <div className="flex-shrink-0">
-          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-lg animate-bounce-in"
+          <div className="w-12 h-12 lg:w-14 lg:h-14 r-card bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-lg animate-bounce-in"
                style={{ animationDuration: '2s', animationIterationCount: 'infinite' }}>
             <Cake className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
           </div>
@@ -55,7 +55,7 @@ export function BirthdayBanner({ members }: BirthdayBannerProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
             <PartyPopper className="w-3.5 h-3.5 text-white/90" />
-            <span className="text-white/90 text-[10px] font-bold uppercase tracking-[2px]">
+            <span className="text-white/90 t-micro font-bold uppercase tracking-[2px]">
               Happy Birthday
             </span>
           </div>

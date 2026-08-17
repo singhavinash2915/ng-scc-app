@@ -55,13 +55,13 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
 
       <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-4">
         {/* ── Premium hero banner ────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, var(--a1), var(--a3) 130%)' }}>
+        <div className="relative overflow-hidden r-card p-5 text-white" style={{ background: 'linear-gradient(135deg, var(--a1), var(--a3) 130%)' }}>
           <div className="absolute -top-10 -right-8 w-44 h-44 rounded-full bg-white/15 blur-3xl pointer-events-none" />
           <div className="relative flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[2px] opacity-85">🏆 SCC Player Rankings</p>
+              <p className="t-meta font-bold uppercase tracking-[2px] opacity-85">🏆 SCC Player Rankings</p>
               <h1 className="font-display text-2xl lg:text-3xl font-extrabold mt-1 leading-tight">ICC-style ratings</h1>
-              <p className="text-[12px] opacity-90 mt-1">{list.length} players rated · weighted by opposition, result &amp; form</p>
+              <p className="t-body opacity-90 mt-1">{list.length} players rated · weighted by opposition, result &amp; form</p>
             </div>
             <button
               onClick={() => setShowInfo(true)}
@@ -78,7 +78,7 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
             <button
               key={m.id}
               onClick={() => setMode(m.id)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full t-meta font-bold whitespace-nowrap transition-all ${
                 mode === m.id
                   ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -90,12 +90,12 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
 
         {/* ── Tab bar ────────────────────────────────────────────────────── */}
-        <div className="flex gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-2xl p-1">
+        <div className="flex gap-1.5 bg-gray-100 dark:bg-gray-800 r-card p-1">
           {TABS.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 r-control text-xs font-bold transition-all ${
                 tab === t.id
                   ? `bg-gradient-to-br ${t.color} text-white shadow-lg`
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
@@ -117,7 +117,7 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
 
         {/* ── Empty state ────────────────────────────────────────────────── */}
         {!loading && list.length === 0 && (
-          <div className="text-center py-12 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-700">
+          <div className="text-center py-12 r-card bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-700">
             <Trophy className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-sm font-bold text-gray-600 dark:text-gray-400">No ranked players yet</p>
             <p className="text-xs text-gray-400 mt-1">
@@ -133,7 +133,7 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
 
         {/* ── Rest of the table (4 onwards) ──────────────────────────────── */}
         {!loading && rest.length > 0 && (
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
             {rest.map(p => (
               <RankRow key={p.member.id} player={p} tab={tab} />
             ))}
@@ -142,7 +142,7 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
 
         {/* ── Bottom note ────────────────────────────────────────────────── */}
         {!loading && list.length > 0 && (
-          <p className="text-[11px] text-gray-400 text-center pt-2">
+          <p className="t-meta text-gray-400 text-center pt-2">
             Ratings normalised 0–1000 · top-rated player = 1000 · recalculated on every page load
           </p>
         )}
@@ -178,7 +178,7 @@ function Podium({ top3, tab }: { top3: RankedPlayer[]; tab: Tab }) {
 function ChampionCard({ player, gradient, tab }: { player: RankedPlayer; gradient: string; tab: Tab }) {
   return (
     <Link to={`/profile/${player.member.id}`} className="block">
-      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-5 shadow-2xl`}>
+      <div className={`relative overflow-hidden r-card bg-gradient-to-br ${gradient} p-5 shadow-2xl`}>
         <div className="absolute -top-4 -right-4 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         <div className="absolute top-3 right-3">
           <Crown className="w-5 h-5 text-yellow-300" fill="currentColor" />
@@ -186,20 +186,20 @@ function ChampionCard({ player, gradient, tab }: { player: RankedPlayer; gradien
         <div className="relative flex items-center gap-4">
           {player.member.avatar_url ? (
             <img src={player.member.avatar_url} alt={player.member.name}
-                 className="w-20 h-20 rounded-2xl object-cover border-3 border-white/40 shadow-xl flex-shrink-0" />
+                 className="w-20 h-20 r-card object-cover border-3 border-white/40 shadow-xl flex-shrink-0" />
           ) : (
-            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-20 h-20 r-card bg-white/20 flex items-center justify-center flex-shrink-0">
               <span className="text-2xl font-black text-white">{player.member.name.charAt(0)}</span>
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-white/70 text-[10px] font-black uppercase tracking-[2px]">Rank #1 · {tab === 'batting' ? 'Batter' : tab === 'bowling' ? 'Bowler' : 'All-Rounder'}</p>
+            <p className="text-white/70 t-micro font-black uppercase tracking-[2px]">Rank #1 · {tab === 'batting' ? 'Batter' : tab === 'bowling' ? 'Bowler' : 'All-Rounder'}</p>
             <h3 className="text-white text-xl font-black truncate">{player.member.name}</h3>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-4xl font-black text-white">{player.rating}</span>
               <span className="text-white/60 text-xs">/ 1000</span>
             </div>
-            <p className="text-white/50 text-[10px] mt-1">{player.matchesCounted} matches counted</p>
+            <p className="text-white/50 t-micro mt-1">{player.matchesCounted} matches counted</p>
           </div>
         </div>
       </div>
@@ -210,17 +210,17 @@ function ChampionCard({ player, gradient, tab }: { player: RankedPlayer; gradien
 function RunnerUpCard({ player, gradient, icon }: { player: RankedPlayer; gradient: string; icon: React.ReactNode }) {
   return (
     <Link to={`/profile/${player.member.id}`} className="block">
-      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-3.5 shadow-lg`}>
+      <div className={`relative overflow-hidden r-card bg-gradient-to-br ${gradient} p-3.5 shadow-lg`}>
         <div className="absolute top-2 right-2 text-white">{icon}</div>
         <div className="flex flex-col items-center text-center gap-1">
           {player.member.avatar_url ? (
-            <img src={player.member.avatar_url} alt="" className="w-12 h-12 rounded-xl object-cover border-2 border-white/40" />
+            <img src={player.member.avatar_url} alt="" className="w-12 h-12 r-card object-cover border-2 border-white/40" />
           ) : (
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+            <div className="w-12 h-12 r-card bg-white/20 flex items-center justify-center">
               <span className="text-lg font-black text-white">{player.member.name.charAt(0)}</span>
             </div>
           )}
-          <p className="text-white text-[10px] font-black uppercase tracking-wider">#{player.rank}</p>
+          <p className="text-white t-micro font-black uppercase tracking-wider">#{player.rank}</p>
           <p className="text-white text-sm font-bold truncate w-full leading-tight">{player.member.name.split(' ')[0]}</p>
           <p className="text-2xl font-black text-white tabular-nums leading-none">{player.rating}</p>
         </div>
@@ -255,17 +255,17 @@ function RankRow({ player, tab }: { player: RankedPlayer; tab: Tab }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{player.member.name}</p>
-            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0 ${tier.cls}`}>{tier.label}</span>
+            <span className={`t-micro font-black px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0 ${tier.cls}`}>{tier.label}</span>
           </div>
           {/* Rating bar (0–1000) */}
           <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
             <div className="h-full rounded-full" style={{ width: `${Math.min(100, player.rating / 10)}%`, background: 'linear-gradient(90deg, var(--a1), var(--a3))' }} />
           </div>
-          <p className="text-[10px] text-gray-500 truncate mt-1">{sub} · {player.matchesCounted} matches{player.momBonus ? ` · ⭐${Math.round((player.momBonus || 0) / 50)} MOM` : ''}</p>
+          <p className="t-micro text-gray-500 truncate mt-1">{sub} · {player.matchesCounted} matches{player.momBonus ? ` · ⭐${Math.round((player.momBonus || 0) / 50)} MOM` : ''}</p>
         </div>
         <div className="text-right flex-shrink-0">
           <p className="font-display text-lg font-black text-gray-900 dark:text-white tabular-nums leading-none">{player.rating}</p>
-          <p className="text-[9px] text-gray-400 uppercase tracking-wider mt-0.5">rating</p>
+          <p className="t-micro text-gray-400 uppercase tracking-wider mt-0.5">rating</p>
         </div>
       </div>
     </Link>
@@ -278,7 +278,7 @@ function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="How SCC Rankings Work" size="lg">
       <div className="space-y-4 text-sm">
-        <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 p-3.5">
+        <div className="r-card bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 p-3.5">
           <p className="text-xs leading-relaxed text-emerald-900 dark:text-emerald-300">
             <strong>ICC-style weighted rating.</strong> Each player earns points from every match — adjusted for opposition quality and win/loss. Final rating normalised 0–1000.
           </p>
@@ -340,15 +340,15 @@ function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           <Bullet>Rating = geometric mean of bat + bowl totals (favours balance over extreme one-sided stats)</Bullet>
         </Section>
 
-        <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3.5">
-          <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
+        <div className="r-card bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3.5">
+          <p className="t-meta text-gray-600 dark:text-gray-400 leading-relaxed">
             <strong>Final rating</strong> = sum of (match points × opposition × result × time-decay) for every external match a player participated in. Internal matches (Dhurandars vs Bazigars) are excluded so the rating measures performance against real opposition.
           </p>
         </div>
 
         <button
           onClick={onClose}
-          className="w-full py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-colors flex items-center justify-center gap-1.5"
+          className="w-full py-2.5 r-control bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-colors flex items-center justify-center gap-1.5"
         >
           <X className="w-4 h-4" /> Got it
         </button>

@@ -72,7 +72,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
       <div className="space-y-4">
         {/* Grounds */}
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[2px] text-gray-400 dark:text-gray-500 flex items-center gap-1.5 mb-2">
+          <p className="t-micro font-black uppercase tracking-[2px] text-gray-400 dark:text-gray-500 flex items-center gap-1.5 mb-2">
             <MapPin className="w-3 h-3" /> Ground Win Rates
           </p>
           <div className="space-y-2">
@@ -81,7 +81,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-xs text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">{g.name}</span>
                   <span className={`text-xs font-black tabular-nums ${g.winRate >= 60 ? 'text-emerald-500' : g.winRate >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
-                    {g.winRate}% <span className="text-[10px] font-normal text-gray-400">({g.played})</span>
+                    {g.winRate}% <span className="t-micro font-normal text-gray-400">({g.played})</span>
                   </span>
                 </div>
                 <WinRateBar won={g.won} lost={g.lost} draw={g.draw} />
@@ -94,24 +94,24 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
         {(opponentStats.best.length > 0 || opponentStats.worst.length > 0) && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-emerald-500 flex items-center gap-1 mb-1.5">
+              <p className="t-micro font-black uppercase tracking-[2px] text-emerald-500 flex items-center gap-1 mb-1.5">
                 <TrendingUp className="w-3 h-3" /> Strong vs
               </p>
               {opponentStats.best.slice(0, 5).map(o => (
                 <div key={o.name} className="flex items-center justify-between py-0.5">
-                  <span className="text-[11px] text-gray-700 dark:text-gray-300 truncate flex-1 mr-1">{o.name}</span>
-                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 tabular-nums flex-shrink-0">{o.winRate}%</span>
+                  <span className="t-meta text-gray-700 dark:text-gray-300 truncate flex-1 mr-1">{o.name}</span>
+                  <span className="t-meta font-bold text-emerald-600 dark:text-emerald-400 tabular-nums flex-shrink-0">{o.winRate}%</span>
                 </div>
               ))}
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-red-500 flex items-center gap-1 mb-1.5">
+              <p className="t-micro font-black uppercase tracking-[2px] text-red-500 flex items-center gap-1 mb-1.5">
                 <TrendingDown className="w-3 h-3" /> Tough vs
               </p>
               {opponentStats.worst.slice(0, 5).map(o => (
                 <div key={o.name} className="flex items-center justify-between py-0.5">
-                  <span className="text-[11px] text-gray-700 dark:text-gray-300 truncate flex-1 mr-1">{o.name}</span>
-                  <span className="text-[11px] font-bold text-red-600 dark:text-red-400 tabular-nums flex-shrink-0">{o.winRate}%</span>
+                  <span className="t-meta text-gray-700 dark:text-gray-300 truncate flex-1 mr-1">{o.name}</span>
+                  <span className="t-meta font-bold text-red-600 dark:text-red-400 tabular-nums flex-shrink-0">{o.winRate}%</span>
                 </div>
               ))}
             </div>
@@ -125,7 +125,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
   return (
     <div className="space-y-6">
       {/* Ground-wise */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary-500" />
@@ -140,7 +140,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
             <div key={g.name} className="px-5 py-3.5">
               <div className="flex items-center justify-between gap-3 mb-2">
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center t-micro font-black ${
                     idx === 0 ? 'bg-amber-400 text-white'
                     : idx === 1 ? 'bg-gray-400 text-white'
                     : idx === 2 ? 'bg-orange-400 text-white'
@@ -148,7 +148,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
                   }`}>{idx + 1}</span>
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{g.name}</p>
-                    <p className="text-[10px] text-gray-500">{g.played} matches · W{g.won} L{g.lost}{g.draw > 0 ? ` NR${g.draw}` : ''}</p>
+                    <p className="t-micro text-gray-500">{g.played} matches · W{g.won} L{g.lost}{g.draw > 0 ? ` NR${g.draw}` : ''}</p>
                   </div>
                 </div>
                 <div className="flex-shrink-0 text-right">
@@ -165,7 +165,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
 
       {/* Opponent analysis */}
       {(opponentStats.best.length > 0 || opponentStats.worst.length > 0) && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
             <Users className="w-4 h-4 text-primary-500" />
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Opponent Analysis</h3>
@@ -175,7 +175,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
             {/* Best */}
             <div className="p-5">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <div className="w-7 h-7 r-card bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                   <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <p className="font-bold text-sm text-gray-800 dark:text-white">Best Win Rate vs</p>
@@ -185,11 +185,11 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
                   <div key={o.name}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] font-black text-gray-400 w-4">{i + 1}</span>
+                        <span className="t-micro font-black text-gray-400 w-4">{i + 1}</span>
                         <span className="text-sm font-medium text-gray-800 dark:text-white truncate">{o.name}</span>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        <span className="text-[10px] text-gray-400">{o.played}P · {o.won}W{o.lost}L</span>
+                        <span className="t-micro text-gray-400">{o.played}P · {o.won}W{o.lost}L</span>
                         <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{o.winRate}%</span>
                       </div>
                     </div>
@@ -203,7 +203,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
             {/* Worst */}
             <div className="p-5">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <div className="w-7 h-7 r-card bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                   <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
                 </div>
                 <p className="font-bold text-sm text-gray-800 dark:text-white">Toughest Opponents</p>
@@ -213,11 +213,11 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
                   <div key={o.name}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] font-black text-gray-400 w-4">{i + 1}</span>
+                        <span className="t-micro font-black text-gray-400 w-4">{i + 1}</span>
                         <span className="text-sm font-medium text-gray-800 dark:text-white truncate">{o.name}</span>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        <span className="text-[10px] text-gray-400">{o.played}P · {o.won}W{o.lost}L</span>
+                        <span className="t-micro text-gray-400">{o.played}P · {o.won}W{o.lost}L</span>
                         <span className="text-sm font-black text-red-600 dark:text-red-400 tabular-nums">{o.winRate}%</span>
                       </div>
                     </div>

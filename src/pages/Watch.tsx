@@ -39,7 +39,7 @@ export function Watch() {
           </Link>
 
           <div className="flex items-center gap-3 mb-5">
-            <img src={SCC_LOGO_DATA_URL} alt="SCC" className="w-11 h-11 rounded-xl" />
+            <img src={SCC_LOGO_DATA_URL} alt="SCC" className="w-11 h-11 r-card" />
             <div>
               <p className="font-display text-lg font-extrabold leading-tight">Sangria Cricket Club</p>
               <p className="text-white/50 text-xs font-semibold">Live stream</p>
@@ -51,7 +51,7 @@ export function Watch() {
           ) : isLive && videoId ? (
             <>
               <div className="flex items-center gap-2 mb-3">
-                <span className="inline-flex items-center gap-1.5 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">
+                <span className="inline-flex items-center gap-1.5 bg-rose-600 text-white t-micro font-black uppercase tracking-widest px-2.5 py-1 r-card">
                   <Radio className="w-3 h-3 animate-pulse" /> Live
                 </span>
                 {stream.title && <span className="text-sm font-bold text-white truncate">{stream.title}</span>}
@@ -70,7 +70,7 @@ export function Watch() {
               </div>
             </>
           ) : (
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-8 text-center">
+            <div className="r-card bg-white/5 border border-white/10 p-8 text-center">
               <Tv className="w-10 h-10 mx-auto text-white/25" />
               <p className="font-display text-lg font-extrabold mt-3">No live stream right now</p>
               <p className="text-white/55 text-sm mt-1.5">
@@ -94,7 +94,7 @@ export function Watch() {
               href={stream.channel_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 flex items-center gap-2.5 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/8 transition-colors"
+              className="mt-5 flex items-center gap-2.5 r-card bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/8 transition-colors"
             >
               <Youtube className="w-5 h-5 text-rose-500 flex-shrink-0" />
               <span className="flex-1 text-sm font-semibold">Subscribe to the SCC channel</span>

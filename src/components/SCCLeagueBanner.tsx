@@ -23,11 +23,11 @@ export function SCCLeagueBanner() {
   return (
     <Link
       to="/scc-league"
-      className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+      className="block relative overflow-hidden r-card px-5 py-4 shadow-lg group"
       style={{ background: 'linear-gradient(110deg,#4c1d95,#7c3aed 55%,#db2777)' }}
     >
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl">
+        <div className="w-11 h-11 r-card bg-white/25 flex items-center justify-center flex-shrink-0 text-xl">
           🔨
         </div>
 
@@ -43,7 +43,7 @@ export function SCCLeagueBanner() {
             </span>
             <span className="text-white/70 text-xs font-bold">of {SQUAD_TARGET} in</span>
             {outCount > 0 && (
-              <span className="text-white/50 text-[11px] font-bold">· {outCount} out</span>
+              <span className="text-white/50 t-meta font-bold">· {outCount} out</span>
             )}
           </div>
 
@@ -54,7 +54,7 @@ export function SCCLeagueBanner() {
             />
           </div>
 
-          <p className="text-white/90 text-[11px] font-medium mt-1.5">
+          <p className="text-white/90 t-meta font-medium mt-1.5">
             {full
               ? 'Captains elected · auction night is next 🔨 Tap to see the pool'
               : votesOpen

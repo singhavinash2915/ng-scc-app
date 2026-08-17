@@ -57,7 +57,7 @@ export function MatchVideos({ matchId, isAdmin, members, api }: Props) {
         <div className="mt-2">
           <div className="flex items-center gap-1.5 mb-1.5">
             <Film className="w-3 h-3 text-violet-500" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+            <span className="t-micro font-bold uppercase tracking-wider text-gray-400">
               Highlights · {clips.length}
             </span>
           </div>
@@ -66,7 +66,7 @@ export function MatchVideos({ matchId, isAdmin, members, api }: Props) {
               <button
                 key={c.id}
                 onClick={() => setPlaying(c)}
-                className="group relative flex-shrink-0 w-32 rounded-lg overflow-hidden bg-gray-900 text-left"
+                className="group relative flex-shrink-0 w-32 r-control overflow-hidden bg-gray-900 text-left"
               >
                 <img
                   src={videoThumb(c.video_id)}
@@ -80,11 +80,11 @@ export function MatchVideos({ matchId, isAdmin, members, api }: Props) {
                   </span>
                 </span>
                 {c.start_seconds != null && (
-                  <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                  <span className="absolute bottom-1 right-1 bg-black/80 text-white t-micro font-bold px-1.5 py-0.5 rounded">
                     {formatTime(c.start_seconds)}
                   </span>
                 )}
-                <span className="block px-1.5 py-1 text-[10px] font-semibold text-gray-200 bg-gray-900 truncate">
+                <span className="block px-1.5 py-1 t-micro font-semibold text-gray-200 bg-gray-900 truncate">
                   {c.title || 'Highlight'}
                 </span>
               </button>
@@ -97,7 +97,7 @@ export function MatchVideos({ matchId, isAdmin, members, api }: Props) {
       {playing && (
         <Modal isOpen onClose={() => setPlaying(null)} title={playing.title || (playing.kind === 'replay' ? 'Full match' : 'Highlight')} size="lg">
           <div className="space-y-3">
-            <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ aspectRatio: '16 / 9' }}>
+            <div className="relative w-full overflow-hidden r-card bg-black" style={{ aspectRatio: '16 / 9' }}>
               <iframe
                 src={videoEmbedUrl(playing)}
                 title={playing.title || 'Match video'}
@@ -169,7 +169,7 @@ function AddVideoModal({ matchId, members, api, existingReplay, onClose }: {
             <button
               key={k}
               onClick={() => setKind(k)}
-              className={`flex-1 rounded-xl py-2 text-sm font-bold transition ${
+              className={`flex-1 r-control py-2 text-sm font-bold transition ${
                 kind === k ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
               }`}
             >

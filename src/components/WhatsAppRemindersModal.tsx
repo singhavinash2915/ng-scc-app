@@ -42,7 +42,7 @@ export function WhatsAppRemindersModal({
     <Modal isOpen={isOpen} onClose={onClose} title="WhatsApp Reminders" size="lg">
       <div className="space-y-4">
 
-        <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+        <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 r-card">
           <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
           <p className="text-sm text-green-700 dark:text-green-300">
             {membersWithPhone.length} member{membersWithPhone.length !== 1 ? 's' : ''} with
@@ -57,7 +57,7 @@ export function WhatsAppRemindersModal({
               return (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 r-card"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -104,7 +104,7 @@ export function WhatsAppRemindersModal({
               {membersWithoutPhone.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between p-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg opacity-60"
+                  className="flex items-center justify-between p-2 px-3 bg-gray-50 dark:bg-gray-800 r-card opacity-60"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">

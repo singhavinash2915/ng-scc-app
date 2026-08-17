@@ -42,7 +42,7 @@ export function PhotoCarousel({ photos, autoPlayInterval = 5000 }: PhotoCarousel
 
   if (photos.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8 text-center">
+      <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 r-card p-8 text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 mb-4">
           <Camera className="w-8 h-8 text-gray-400" />
         </div>
@@ -60,7 +60,7 @@ export function PhotoCarousel({ photos, autoPlayInterval = 5000 }: PhotoCarousel
   const match = currentPhoto.match;
 
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-black group">
+    <div className="relative r-card overflow-hidden bg-black group">
       {/* Main Image */}
       <div className="relative aspect-[16/9] md:aspect-[21/9]">
         <img
@@ -166,7 +166,7 @@ export function PhotoCarousel({ photos, autoPlayInterval = 5000 }: PhotoCarousel
             <button
               key={photo.id}
               onClick={() => goToSlide(index)}
-              className={`flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden transition-all ${
+              className={`flex-shrink-0 w-16 h-12 r-control overflow-hidden transition-all ${
                 index === currentIndex
                   ? 'ring-2 ring-primary-500 ring-offset-2 ring-offset-black'
                   : 'opacity-60 hover:opacity-100'

@@ -196,7 +196,7 @@ export function MyProfileModal({ isOpen, onClose }: Props) {
       {/* STEP 3: edit form */}
       {step === 'edit' && pickedMember && (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+          <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 r-card border border-emerald-200 dark:border-emerald-800">
             <div className="relative flex-shrink-0">
               {pickedMember.avatar_url ? (
                 <img src={pickedMember.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-emerald-300 dark:border-emerald-700" />
@@ -226,7 +226,7 @@ export function MyProfileModal({ isOpen, onClose }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{pickedMember.name}</p>
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+              <p className="t-meta text-emerald-600 dark:text-emerald-400">
                 {avatarUploading ? 'Uploading photo…' : 'Tap the camera icon to upload a new profile photo'}
               </p>
             </div>
@@ -259,8 +259,8 @@ export function MyProfileModal({ isOpen, onClose }: Props) {
             onChange={(e) => setForm({ ...form, birthday: e.target.value })}
           />
 
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
+          <div className="r-card border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+            <p className="t-meta font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
             <Select
               label="Role"
               value={form.role}

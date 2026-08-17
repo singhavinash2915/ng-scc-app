@@ -45,10 +45,10 @@ function BattingTable({ innings }: { innings: InningsData }) {
                   {b.name}
                 </span>
                 {b.isNotOut && (
-                  <span className="ml-1 text-[9px] font-bold text-emerald-500 uppercase tracking-wide">not out</span>
+                  <span className="ml-1 t-micro font-bold text-emerald-500 uppercase tracking-wide">not out</span>
                 )}
               </td>
-              <td className="py-1.5 text-gray-500 text-[11px] hidden sm:table-cell truncate max-w-[140px]">
+              <td className="py-1.5 text-gray-500 t-meta hidden sm:table-cell truncate max-w-[140px]">
                 {b.isNotOut ? '—' : b.dismissal || 'not out'}
               </td>
               <td className="py-1.5 pr-1 text-right font-black text-white tabular-nums">
@@ -64,7 +64,7 @@ function BattingTable({ innings }: { innings: InningsData }) {
           {/* Extras + Total */}
           {innings.extrasTotal > 0 && (
             <tr className="border-b border-white/10">
-              <td className="py-1.5 pl-2 text-gray-500 italic text-[11px]" colSpan={2}>
+              <td className="py-1.5 pl-2 text-gray-500 italic t-meta" colSpan={2}>
                 Extras {innings.extrasSummary}
               </td>
               <td className="py-1.5 pr-2 text-right text-gray-400 font-semibold tabular-nums" colSpan={5}>
@@ -126,18 +126,18 @@ function InningsTab({ innings, label }: { innings: InningsData; label: string })
       {/* Innings header */}
       <div className="flex items-baseline justify-between pb-2 border-b border-white/10">
         <div>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{label}</p>
+          <p className="t-micro font-bold text-gray-500 uppercase tracking-widest">{label}</p>
           <p className="text-base font-black text-white mt-0.5">{innings.teamName}</p>
         </div>
         <div className="text-right">
           <p className="text-2xl font-black text-yellow-400 tabular-nums">{innings.score}</p>
-          <p className="text-[11px] text-gray-500">{innings.overs} · RR {innings.runRate}</p>
+          <p className="t-meta text-gray-500">{innings.overs} · RR {innings.runRate}</p>
         </div>
       </div>
 
       {/* Batting */}
       <div>
-        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+        <p className="t-micro font-bold text-emerald-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
           🏏 Batting
         </p>
         <BattingTable innings={innings} />
@@ -145,7 +145,7 @@ function InningsTab({ innings, label }: { innings: InningsData; label: string })
 
       {/* Bowling */}
       <div>
-        <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+        <p className="t-micro font-bold text-cyan-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
           🎯 Bowling
         </p>
         <BowlingTable innings={innings} />
@@ -154,10 +154,10 @@ function InningsTab({ innings, label }: { innings: InningsData; label: string })
       {/* Fall of wickets */}
       {innings.fallOfWickets && (
         <div className="pt-2 border-t border-white/8">
-          <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-1">
+          <p className="t-micro font-bold text-gray-600 uppercase tracking-widest mb-1">
             Fall of Wickets
           </p>
-          <p className="text-[11px] text-gray-500 leading-relaxed">{innings.fallOfWickets}</p>
+          <p className="t-meta text-gray-500 leading-relaxed">{innings.fallOfWickets}</p>
         </div>
       )}
     </div>
@@ -178,16 +178,16 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Match Centre" size="xl">
       <div
-        className="rounded-xl overflow-hidden"
+        className="r-card overflow-hidden"
         style={{ background: 'linear-gradient(180deg, #0b0b0b 0%, #0f0f0f 100%)' }}
       >
         {/* Top-level view tabs — Heroes · Scorecard · Insights */}
-        <div className="flex gap-1 p-1 m-3 mb-0 bg-white/5 rounded-xl">
+        <div className="flex gap-1 p-1 m-3 mb-0 bg-white/5 r-card">
           {([['heroes', '🏆 Heroes'], ['scorecard', '📋 Scorecard'], ['insights', '📊 Insights']] as [ModalView, string][]).map(([v, label]) => (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 py-1.5 px-2 r-control text-xs font-bold transition-all ${
                 view === v ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -233,7 +233,7 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
         {data && (
           <div className="p-4 space-y-4">
             {/* Match summary header */}
-            <div className="rounded-xl overflow-hidden border border-white/8">
+            <div className="r-card overflow-hidden border border-white/8">
               {/* Result banner */}
               <div className="px-4 py-3 flex items-center justify-between"
                    style={{ background: 'linear-gradient(135deg, #2d1657 0%, #1a0f3a 100%)' }}>
@@ -243,7 +243,7 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
                 </div>
                 {data.mvpName && (
                   <div className="text-right flex-shrink-0 ml-3">
-                    <p className="text-[9px] text-purple-300/70 uppercase tracking-widest">MVP</p>
+                    <p className="t-micro text-purple-300/70 uppercase tracking-widest">MVP</p>
                     <p className="text-xs font-bold text-yellow-400">⭐ {data.mvpName}</p>
                   </div>
                 )}
@@ -251,22 +251,22 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
               {/* Meta */}
               <div className="px-4 py-2 flex flex-wrap gap-x-4 gap-y-1 bg-black/20">
                 {data.ground && (
-                  <span className="flex items-center gap-1 text-[11px] text-gray-500">
+                  <span className="flex items-center gap-1 t-meta text-gray-500">
                     <MapPin className="w-3 h-3 flex-shrink-0" />
                     {data.ground}{data.city ? `, ${data.city}` : ''}
                   </span>
                 )}
                 {(data.maxOvers > 0 || data.ballType) && (
-                  <span className="text-[11px] text-gray-500">
+                  <span className="t-meta text-gray-500">
                     {data.maxOvers > 0 ? `${data.maxOvers} Ov` : ''}
                     {data.ballType ? ` · ${data.ballType}` : ''}
                   </span>
                 )}
                 {matchDate && (
-                  <span className="text-[11px] text-gray-500">{matchDate}</span>
+                  <span className="t-meta text-gray-500">{matchDate}</span>
                 )}
                 <a href={chUrl} target="_blank" rel="noopener noreferrer"
-                   className="flex items-center gap-1 text-[11px] text-purple-400 hover:text-purple-300 ml-auto">
+                   className="flex items-center gap-1 t-meta text-purple-400 hover:text-purple-300 ml-auto">
                   <ExternalLink className="w-3 h-3" />CricHeroes
                 </a>
               </div>
@@ -274,12 +274,12 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
 
             {/* Innings tabs */}
             {data.innings.length > 1 && (
-              <div className="flex gap-1 p-1 bg-white/5 rounded-xl">
+              <div className="flex gap-1 p-1 bg-white/5 r-card">
                 {data.innings.map((inn, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveTab(i)}
-                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                    className={`flex-1 py-1.5 px-3 r-control text-xs font-bold transition-all ${
                       activeTab === i
                         ? 'bg-purple-600 text-white shadow-sm'
                         : 'text-gray-400 hover:text-white'

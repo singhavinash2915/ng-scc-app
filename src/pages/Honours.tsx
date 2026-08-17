@@ -42,7 +42,7 @@ export function Honours() {
             <button
               key={t.id}
               onClick={() => select(t.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition ${
+              className={`flex-1 flex items-center justify-center gap-1.5 r-control py-2.5 text-sm font-bold transition ${
                 tab === t.id
                   ? 'bg-primary-500 text-white shadow'
                   : 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70'

@@ -327,7 +327,7 @@ export function Finance() {
   const getTransactionIcon = (type: string, amount: number) => {
     if (type === 'adjustment') {
       return (
-        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 r-card">
           {amount >= 0
             ? <ArrowUpRight className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             : <ArrowDownRight className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -337,13 +337,13 @@ export function Finance() {
     }
     if (amount >= 0) {
       return (
-        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+        <div className="p-2 bg-green-100 dark:bg-green-900/30 r-card">
           <ArrowUpRight className="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
       );
     }
     return (
-      <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+      <div className="p-2 bg-red-100 dark:bg-red-900/30 r-card">
         <ArrowDownRight className="w-5 h-5 text-red-600 dark:text-red-400" />
       </div>
     );
@@ -394,7 +394,7 @@ export function Finance() {
                   value={pinInput}
                   onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
                   placeholder="Enter member PIN"
-                  className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 r-control bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                   autoFocus
                 />
                 {pinError && <p className="text-sm text-red-500">{pinError}</p>}
@@ -427,7 +427,7 @@ export function Finance() {
           <Card>
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 r-card">
                   <Wallet className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
@@ -443,7 +443,7 @@ export function Finance() {
           <Card>
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 r-card">
                   <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
@@ -459,7 +459,7 @@ export function Finance() {
           <Card>
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                <div className="p-3 bg-red-100 dark:bg-red-900/30 r-card">
                   <TrendingDown className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
@@ -587,19 +587,19 @@ export function Finance() {
             {/* Month Summary when filtered */}
             {selectedMonth !== 'all' && (
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 r-card">
                   <p className="text-sm text-green-600 dark:text-green-400">Deposits</p>
                   <p className="text-xl font-bold text-green-700 dark:text-green-300">
                     +₹{selectedMonthStats.deposits.toLocaleString('en-IN')}
                   </p>
                 </div>
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 r-card">
                   <p className="text-sm text-red-600 dark:text-red-400">Expenses</p>
                   <p className="text-xl font-bold text-red-700 dark:text-red-300">
                     -₹{selectedMonthStats.expenses.toLocaleString('en-IN')}
                   </p>
                 </div>
-                <div className={`p-4 rounded-xl ${selectedMonthStats.netFlow >= 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-orange-50 dark:bg-orange-900/20'}`}>
+                <div className={`p-4 r-card ${selectedMonthStats.netFlow >= 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-orange-50 dark:bg-orange-900/20'}`}>
                   <p className={`text-sm ${selectedMonthStats.netFlow >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>Net Flow</p>
                   <p className={`text-xl font-bold ${selectedMonthStats.netFlow >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-orange-700 dark:text-orange-300'}`}>
                     {selectedMonthStats.netFlow >= 0 ? '+' : ''}₹{selectedMonthStats.netFlow.toLocaleString('en-IN')}
@@ -647,7 +647,7 @@ export function Finance() {
                         {isAdmin && (
                           <button
                             onClick={() => setDeleteConfirm({ show: true, transaction: txn })}
-                            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                            className="p-2 r-control text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
                             title="Delete transaction"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -672,7 +672,7 @@ export function Finance() {
                 <button
                   onClick={() => navigateMonth('prev')}
                   disabled={selectedMonth === 'all' || availableMonths.indexOf(selectedMonth) === availableMonths.length - 1}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+                  className="p-2 r-control hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -689,7 +689,7 @@ export function Finance() {
                 <button
                   onClick={() => navigateMonth('next')}
                   disabled={selectedMonth === 'all' || availableMonths.indexOf(selectedMonth) === 0}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+                  className="p-2 r-control hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -808,7 +808,7 @@ export function Finance() {
                   </h3>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Current Month */}
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800/50 r-card">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-medium text-gray-700 dark:text-gray-300">
                           {monthlyComparison.current.month} {monthlyComparison.current.year}
@@ -834,7 +834,7 @@ export function Finance() {
                     </div>
 
                     {/* Previous Month */}
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800/50 r-card">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-medium text-gray-700 dark:text-gray-300">
                           {monthlyComparison.previous.month} {monthlyComparison.previous.year}
@@ -862,7 +862,7 @@ export function Finance() {
 
                   {/* Trend Indicators */}
                   <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className={`p-4 rounded-xl flex items-center gap-3 ${
+                    <div className={`p-4 r-card flex items-center gap-3 ${
                       monthlyComparison.depositsChange >= 0
                         ? 'bg-green-50 dark:bg-green-900/20'
                         : 'bg-red-50 dark:bg-red-900/20'
@@ -880,7 +880,7 @@ export function Finance() {
                       </div>
                     </div>
 
-                    <div className={`p-4 rounded-xl flex items-center gap-3 ${
+                    <div className={`p-4 r-card flex items-center gap-3 ${
                       monthlyComparison.expensesChange <= 0
                         ? 'bg-green-50 dark:bg-green-900/20'
                         : 'bg-red-50 dark:bg-red-900/20'
@@ -907,19 +907,19 @@ export function Finance() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Financial Summary</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10 rounded-xl">
+                  <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10 r-card">
                     <p className="text-4xl font-bold text-green-600 dark:text-green-400">
                       ₹{stats.totalDeposits.toLocaleString('en-IN')}
                     </p>
                     <p className="text-gray-600 dark:text-gray-400 mt-2">Total Deposits (All Time)</p>
                   </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/10 rounded-xl">
+                  <div className="text-center p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/10 r-card">
                     <p className="text-4xl font-bold text-red-500">
                       ₹{(stats.totalMatchFees + stats.totalExpenses).toLocaleString('en-IN')}
                     </p>
                     <p className="text-gray-600 dark:text-gray-400 mt-2">Total Spent (All Time)</p>
                   </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10 rounded-xl">
+                  <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10 r-card">
                     <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                       ₹{stats.clubFunds.toLocaleString('en-IN')}
                     </p>
@@ -980,7 +980,7 @@ export function Finance() {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 r-card">
                       <TrendingUp className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
@@ -998,7 +998,7 @@ export function Finance() {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 r-card">
                       <TrendingDown className="w-5 h-5 text-red-500" />
                     </div>
                     <div>
@@ -1016,7 +1016,7 @@ export function Finance() {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 r-card">
                       <Minus className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
@@ -1037,7 +1037,7 @@ export function Finance() {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 r-card">
                       <Calendar className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
@@ -1228,7 +1228,7 @@ export function Finance() {
         size="sm"
       >
         <div className="space-y-4">
-          <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
+          <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 r-card">
             <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
               <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
@@ -1245,7 +1245,7 @@ export function Finance() {
           </div>
 
           {deleteConfirm.transaction && (
-            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl space-y-2">
+            <div className="p-4 bg-gray-50 dark:bg-gray-700/50 r-card space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Type:</span>
                 <span className="font-medium capitalize">{deleteConfirm.transaction.type.replace('_', ' ')}</span>

@@ -100,22 +100,22 @@ export function MatchHeroes({ chMatchId }: { chMatchId: string }) {
           const avatar = mem?.avatar_url || c.photo;
           const isOurs = c.team === 'Sangria Cricket Club' || !!mem;
           return (
-            <div key={i} className="rounded-xl p-3 flex items-center gap-3 border border-white/10 bg-white/[0.03]">
+            <div key={i} className="r-card p-3 flex items-center gap-3 border border-white/10 bg-white/[0.03]">
               {avatar ? (
-                <img src={avatar} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" crossOrigin="anonymous" />
+                <img src={avatar} alt="" className="w-14 h-14 r-card object-cover flex-shrink-0" crossOrigin="anonymous" />
               ) : (
-                <div className="w-14 h-14 rounded-xl bg-purple-600/30 text-purple-200 flex items-center justify-center font-black text-xl flex-shrink-0">
+                <div className="w-14 h-14 r-card bg-purple-600/30 text-purple-200 flex items-center justify-center font-black text-xl flex-shrink-0">
                   {c.name.charAt(0)}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase tracking-widest text-purple-300/80 font-bold">{c.emoji} {c.role}</p>
+                <p className="t-micro uppercase tracking-widest text-purple-300/80 font-bold">{c.emoji} {c.role}</p>
                 {mem ? (
                   <Link to={`/profile/${mem.id}`} className="font-black text-white truncate block hover:text-purple-300">{c.name}</Link>
                 ) : (
                   <p className="font-black text-white truncate">{c.name}</p>
                 )}
-                <p className={`text-[11px] truncate ${isOurs ? 'text-emerald-400' : 'text-gray-500'}`}>{c.team}</p>
+                <p className={`t-meta truncate ${isOurs ? 'text-emerald-400' : 'text-gray-500'}`}>{c.team}</p>
                 {c.line && <p className="text-xs text-gray-300 font-semibold tabular-nums mt-0.5">{c.line}</p>}
               </div>
             </div>
@@ -124,9 +124,9 @@ export function MatchHeroes({ chMatchId }: { chMatchId: string }) {
       </div>
 
       {data.insight_statements.length > 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-1.5">
+        <div className="r-card border border-white/10 bg-white/[0.03] p-3 space-y-1.5">
           {data.insight_statements.slice(0, 5).map((s, i) => (
-            <p key={i} className="text-[11px] text-gray-400 flex gap-2"><span className="text-purple-400">•</span>{s}</p>
+            <p key={i} className="t-meta text-gray-400 flex gap-2"><span className="text-purple-400">•</span>{s}</p>
           ))}
         </div>
       )}

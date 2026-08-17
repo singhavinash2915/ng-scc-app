@@ -123,14 +123,14 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
           aria-label="Scrub through the vote timeline"
         />
 
-        <span className="text-[11px] font-bold tabular-nums text-slate-500 dark:text-white/60">
+        <span className="t-meta font-bold tabular-nums text-slate-500 dark:text-white/60">
           {idx}/{steps.length}
         </span>
 
         <div className="flex items-center gap-1">
           {SPEEDS.map((sp, i) => (
             <button key={sp.label} onClick={() => setSpeed(i)}
-              className={`rounded-full px-2 py-1 text-[10px] font-black transition-colors ${
+              className={`rounded-full px-2 py-1 t-micro font-black transition-colors ${
                 speed === i
                   ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
                   : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-white/60'
@@ -157,7 +157,7 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
       <div className="relative" style={{ height: rows.length * (ROW_H + GAP) }}>
         {rows.map((r, i) => (
           <div key={r.id} className="vr-row" style={{ transform: `translateY(${i * (ROW_H + GAP)}px)` }}>
-            <span className="text-[11px] font-black w-4 text-right tabular-nums text-slate-400">
+            <span className="t-meta font-black w-4 text-right tabular-nums text-slate-400">
               {i + 1}
             </span>
             <span className="text-xs font-bold w-24 sm:w-32 truncate text-slate-700 dark:text-white/80">
@@ -170,7 +170,7 @@ export function VoteRace({ ballots, candidates, memberById }: Props) {
             <span className="text-xs font-black tabular-nums w-5 text-right text-slate-900 dark:text-white">
               {r.votes}
             </span>
-            <span className="text-[11px] font-bold tabular-nums w-9 text-right
+            <span className="t-meta font-bold tabular-nums w-9 text-right
                              text-slate-400 dark:text-white/45">
               {r.votes > 0 ? `${pctOf(r.votes)}%` : '—'}
             </span>

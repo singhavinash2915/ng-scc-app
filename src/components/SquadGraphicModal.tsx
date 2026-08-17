@@ -107,7 +107,7 @@ export function SquadGraphicModal({ isOpen, onClose, match }: SquadGraphicModalP
           <>
             <div
               ref={previewRef}
-              className="rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
+              className="r-card overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
             />
 
             <div className="flex gap-3">

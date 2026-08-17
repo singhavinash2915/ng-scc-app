@@ -34,20 +34,20 @@ export function RenewalReminderBanner({ members }: Props) {
   return (
     <Link
       to="/members"
-      className={`relative overflow-hidden rounded-2xl shadow-md border block group transition-transform hover:scale-[1.005] ${
+      className={`relative overflow-hidden r-card shadow-md border block group transition-transform hover:scale-[1.005] ${
         isCritical
           ? 'border-red-500/30 bg-gradient-to-r from-red-500/15 via-orange-500/10 to-transparent'
           : 'border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-transparent'
       }`}
     >
       <div className="relative p-4 lg:p-5 flex items-center gap-3">
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+        <div className={`w-11 h-11 r-card flex items-center justify-center flex-shrink-0 ${
           isCritical ? 'bg-red-500/20' : 'bg-amber-500/20'
         }`}>
           <AlertCircle className={`w-6 h-6 ${isCritical ? 'text-red-400' : 'text-amber-400'}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-[10px] font-bold uppercase tracking-[1.5px] ${
+          <p className={`t-micro font-bold uppercase tracking-[1.5px] ${
             isCritical ? 'text-red-400' : 'text-amber-400'
           }`}>
             Membership Renewal
@@ -65,7 +65,7 @@ export function RenewalReminderBanner({ members }: Props) {
               </span>
             )}
           </p>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+          <p className="t-meta text-gray-500 dark:text-gray-400 truncate mt-0.5">
             {[...data.expired, ...data.expiring].slice(0, 3).map(m => m.name.split(' ')[0]).join(', ')}
             {data.total > 3 && ` + ${data.total - 3} more`}
           </p>

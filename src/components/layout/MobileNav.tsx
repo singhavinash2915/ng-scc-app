@@ -31,7 +31,7 @@ export function MobileNav() {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                `flex flex-col items-center gap-1 px-3 py-2 r-card transition-colors ${
                   isActive
                     ? 'text-primary-600 dark:text-primary-400'
                     : 'text-gray-500 dark:text-gray-400'
@@ -44,7 +44,7 @@ export function MobileNav() {
           ))}
           <button
             onClick={() => setMenuOpen(true)}
-            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-gray-500 dark:text-gray-400"
+            className="flex flex-col items-center gap-1 px-3 py-2 r-control text-gray-500 dark:text-gray-400"
           >
             <Menu className="w-5 h-5" />
             <span className="text-xs font-medium">More</span>

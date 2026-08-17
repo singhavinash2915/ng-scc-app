@@ -568,7 +568,7 @@ export function SeasonFund() {
                   value={pinInput}
                   onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
                   placeholder="Enter member PIN"
-                  className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 r-control bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                   autoFocus
                 />
                 {pinError && <p className="text-sm text-red-500">{pinError}</p>}
@@ -649,7 +649,7 @@ export function SeasonFund() {
                         weekend_cost: p.weekend_cost,
                       }));
                     }}
-                    className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                    className={`flex-1 px-3 py-2 text-xs font-medium r-control border transition-colors ${
                       selectedPreset === key
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                         : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-300'
@@ -681,7 +681,7 @@ export function SeasonFund() {
                         }));
                         setSelectedPreset('custom');
                       }}
-                      className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${
+                      className={`flex-1 py-2 text-xs font-medium r-control transition-colors ${
                         isSelected ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200'
                       }`}
                     >
@@ -695,7 +695,7 @@ export function SeasonFund() {
               <Input type="number" label="Weekday Cost (₹)" value={String(seasonForm.weekday_cost)} onChange={(e) => setSeasonForm(f => ({ ...f, weekday_cost: Number(e.target.value) || 0 }))} />
               <Input type="number" label="Weekend Cost (₹)" value={String(seasonForm.weekend_cost)} onChange={(e) => setSeasonForm(f => ({ ...f, weekend_cost: Number(e.target.value) || 0 }))} />
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
+            <div className="bg-gray-50 dark:bg-gray-700/50 r-card p-3 text-xs text-gray-500 dark:text-gray-400">
               <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">{GROUND_NAME} · {TIME_SLOT}</p>
               <p>{seasonForm.days.map(d => DAY_NAMES[d]).join(', ')} — Weekday ₹{seasonForm.weekday_cost.toLocaleString()} | Weekend ₹{seasonForm.weekend_cost.toLocaleString()}</p>
             </div>
@@ -756,7 +756,7 @@ export function SeasonFund() {
         <div className="space-y-5">
 
           {/* ═════ PREMIUM SEASON HERO BANNER ═════════════════════════════════ */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 p-5 sm:p-6 shadow-xl">
+          <div className="relative overflow-hidden r-card bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 p-5 sm:p-6 shadow-xl">
             {/* Decorative blurs */}
             <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-emerald-400/20 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-teal-300/10 blur-3xl pointer-events-none" />
@@ -766,7 +766,7 @@ export function SeasonFund() {
               <div>
                 <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-2.5 py-1 mb-2.5">
                   <span className={`w-1.5 h-1.5 rounded-full ${selectedSeason.status === 'active' ? 'bg-emerald-300 animate-pulse' : 'bg-amber-300'}`} />
-                  <span className="text-[10px] font-bold text-white tracking-wider uppercase">
+                  <span className="t-micro font-bold text-white tracking-wider uppercase">
                     {selectedSeason.status === 'active' ? 'Active Season' : selectedSeason.status === 'upcoming' ? 'Upcoming' : 'Completed'}
                   </span>
                 </div>
@@ -794,18 +794,18 @@ export function SeasonFund() {
               return (
                 <div
                   key={s.label}
-                  className="group relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-3 sm:p-4 hover:shadow-md hover:-translate-y-0.5 transition-all animate-fade-in"
+                  className="group relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 r-card p-3 sm:p-4 hover:shadow-md hover:-translate-y-0.5 transition-all animate-fade-in"
                   style={{ animationDelay: `${idx * 60}ms` }}
                 >
                   {/* Corner gradient */}
                   <div className={`absolute top-0 right-0 w-16 h-16 rounded-full -translate-y-6 translate-x-6 opacity-30 ${s.bgIcon} blur-xl`} />
                   <div className="relative">
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center ${s.bgIcon}`}>
+                      <div className={`w-7 h-7 sm:w-8 sm:h-8 r-card flex items-center justify-center ${s.bgIcon}`}>
                         <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${s.iconColor}`} />
                       </div>
                     </div>
-                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">{s.label}</p>
+                    <p className="t-micro sm:text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">{s.label}</p>
                     <p className={`text-base sm:text-lg font-black mt-0.5 ${s.text}`}>{formatCurrency(s.value)}</p>
                   </div>
                 </div>
@@ -816,7 +816,7 @@ export function SeasonFund() {
           {/* ═════ PROGRESS BARS ══════════════════════════════════════════════ */}
           <div className="grid grid-cols-1 gap-3">
             {stats && stats.bookingCount > 0 && (
-              <div className="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 animate-fade-in" style={{ animationDelay: '380ms' }}>
+              <div className="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 r-card p-4 animate-fade-in" style={{ animationDelay: '380ms' }}>
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-orange-500" />
@@ -830,18 +830,18 @@ export function SeasonFund() {
                     style={{ width: `${stats.totalSpent > 0 ? Math.min((stats.groundOwnerPaid / stats.totalSpent) * 100, 100) : 0}%` }}
                   />
                 </div>
-                <p className="text-[11px] text-gray-500 mt-1.5">{formatCurrency(stats.groundOwnerPaid)} of {formatCurrency(stats.totalSpent)}</p>
+                <p className="t-meta text-gray-500 mt-1.5">{formatCurrency(stats.groundOwnerPaid)} of {formatCurrency(stats.totalSpent)}</p>
               </div>
             )}
           </div>
 
           {/* ═════ PREMIUM TABS ═══════════════════════════════════════════════ */}
-          <div className="flex gap-1 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/70 rounded-2xl p-1 border border-gray-200 dark:border-gray-700">
+          <div className="flex gap-1 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/70 r-card p-1 border border-gray-200 dark:border-gray-700">
             {tabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 flex-1 justify-center px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                className={`flex items-center gap-1.5 flex-1 justify-center px-3 sm:px-4 py-2.5 r-control text-xs sm:text-sm font-semibold transition-all ${
                   activeTab === tab.key
                     ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-md'
                     : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
@@ -1190,14 +1190,14 @@ export function SeasonFund() {
 
                   {/* Income vs Expense rows */}
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 r-card">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-green-500" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Income</span>
                       </div>
                       <span className="text-base font-bold text-green-600">{formatCurrency(overviewStats.totalIncome)}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                    <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 r-card">
                       <div className="flex items-center gap-2">
                         <TrendingDown className="w-4 h-4 text-red-500" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Ground Cost</span>
@@ -1207,7 +1207,7 @@ export function SeasonFund() {
                   </div>
 
                   {/* Net balance */}
-                  <div className={`flex items-center justify-between p-4 rounded-xl border-2 ${
+                  <div className={`flex items-center justify-between p-4 r-card border-2 ${
                     overviewStats.netBalance >= 0
                       ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
                       : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
@@ -1227,16 +1227,16 @@ export function SeasonFund() {
 
                   {/* Quick stats strip */}
                   <div className="grid grid-cols-3 gap-2 mt-4">
-                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 r-card">
                       <p className="text-xs text-gray-400 mb-0.5">Avg/Session</p>
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(Math.round(overviewStats.avgCost))}</p>
                     </div>
-                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 r-card">
                       <p className="text-xs text-gray-400 mb-0.5">Net/Session</p>
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(Math.round(overviewStats.avgNetCost))}</p>
                       <p className="text-xs text-blue-500">after opponents</p>
                     </div>
-                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                    <div className="text-center p-2.5 bg-gray-50 dark:bg-gray-800/50 r-card">
                       <p className="text-xs text-gray-400 mb-0.5">Per Member</p>
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(Math.round(overviewStats.perMemberCost))}</p>
                       <p className="text-xs text-gray-400">net season cost</p>
@@ -1259,7 +1259,7 @@ export function SeasonFund() {
                       { label: 'Opponent Matches', value: overviewStats.matchesVsOpponent, sub: `${formatCurrency(overviewStats.opponentIncome)} saved`, color: 'text-blue-600' },
                       { label: 'Members Paid', value: overviewStats.membersPaidCount, sub: 'at least 1 payment', color: 'text-primary-600' },
                     ].map(item => (
-                      <div key={item.label} className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <div key={item.label} className="p-3 bg-gray-50 dark:bg-gray-800/50 r-card">
                         <p className="text-xs text-gray-400 mb-1">{item.label}</p>
                         <p className={`text-xl font-bold ${item.color}`}>{item.value}</p>
                         <p className="text-xs text-gray-400 mt-0.5">{item.sub}</p>
@@ -1296,7 +1296,7 @@ export function SeasonFund() {
                 <>
                   {/* ── Simple collection summary ─────────────────────────── */}
                   {overviewStats && overviewStats.memberIncome > 0 && (
-                    <div className="rounded-2xl bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 p-5 text-white shadow-lg">
+                    <div className="r-card bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 p-5 text-white shadow-lg">
                       <p className="text-xs font-medium opacity-70 mb-1">Total Advance Collected</p>
                       <p className="text-3xl font-black tracking-tight">{formatCurrency(overviewStats.memberIncome)}</p>
                       <p className="text-xs opacity-70 mt-2">{allContributors.length} member{allContributors.length !== 1 ? 's' : ''} contributed</p>
@@ -1330,7 +1330,7 @@ export function SeasonFund() {
                         <div
                           key={m.member_id}
                           onClick={() => setExpandedMemberId(isExpanded ? null : m.member_id)}
-                          className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${tier.card} ${isExpanded ? 'ring-2 ring-primary-400 ring-offset-1' : ''} ${idx < 3 ? 'sm:p-5' : ''}`}
+                          className={`relative r-card border-2 p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${tier.card} ${isExpanded ? 'ring-2 ring-primary-400 ring-offset-1' : ''} ${idx < 3 ? 'sm:p-5' : ''}`}
                         >
                           {/* Medal badge */}
                           {medal && (
@@ -1389,7 +1389,7 @@ export function SeasonFund() {
                           {isAdmin && (
                             <button
                               onClick={e => { e.stopPropagation(); setPaymentForm(p => ({ ...p, member_id: m.member_id })); setShowPaymentModal(true); }}
-                              className="mt-3 w-full flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-gray-400 hover:text-primary-500 hover:border-primary-400 transition"
+                              className="mt-3 w-full flex items-center justify-center gap-1 text-xs py-1.5 r-control border border-dashed border-gray-300 dark:border-gray-600 text-gray-400 hover:text-primary-500 hover:border-primary-400 transition"
                             >
                               <Plus className="w-3 h-3" /> Add payment
                             </button>
@@ -1446,7 +1446,7 @@ export function SeasonFund() {
                           <button
                             onClick={() => setPaymentsPage(p => Math.max(0, p - 1))}
                             disabled={paymentsPage === 0}
-                            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 r-control border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
                           >
                             <ChevronDown className="w-3.5 h-3.5 rotate-90" /> Prev
                           </button>
@@ -1456,7 +1456,7 @@ export function SeasonFund() {
                           <button
                             onClick={() => setPaymentsPage(p => Math.min(Math.ceil(payments.length / PAYMENTS_PER_PAGE) - 1, p + 1))}
                             disabled={(paymentsPage + 1) * PAYMENTS_PER_PAGE >= payments.length}
-                            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 r-control border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
                           >
                             Next <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
                           </button>
@@ -1498,7 +1498,7 @@ export function SeasonFund() {
                         weekend_cost: p.weekend_cost,
                       }));
                     }}
-                    className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                    className={`flex-1 px-3 py-2 text-xs font-medium r-control border transition-colors ${
                       selectedPreset === key
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                         : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-300'
@@ -1534,7 +1534,7 @@ export function SeasonFund() {
                       }));
                       setSelectedPreset('custom');
                     }}
-                    className={`flex-1 py-2 text-xs font-medium rounded-md transition-colors ${
+                    className={`flex-1 py-2 text-xs font-medium r-control transition-colors ${
                       isSelected
                         ? 'bg-primary-500 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200'
@@ -1561,7 +1561,7 @@ export function SeasonFund() {
             <Select label="Status" value={seasonForm.status} onChange={(e) => setSeasonForm(f => ({ ...f, status: e.target.value as Season['status'] }))} options={[{ value: 'upcoming', label: 'Upcoming' }, { value: 'active', label: 'Active' }, { value: 'completed', label: 'Completed' }]} />
           )}
 
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="bg-gray-50 dark:bg-gray-700/50 r-card p-3 text-xs text-gray-500 dark:text-gray-400">
             <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">{GROUND_NAME} · {TIME_SLOT}</p>
             <p>{seasonForm.days.map(d => DAY_NAMES[d]).join(', ')} — Weekday ₹{seasonForm.weekday_cost.toLocaleString()} | Weekend ₹{seasonForm.weekend_cost.toLocaleString()}</p>
           </div>

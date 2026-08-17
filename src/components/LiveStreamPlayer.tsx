@@ -17,7 +17,7 @@ interface Props {
 export function LiveStreamPlayer({ videoId, title, showLink = true, className = '' }: Props) {
   return (
     <div className={className}>
-      <div className="relative w-full overflow-hidden rounded-2xl bg-black shadow-lg" style={{ aspectRatio: '16 / 9' }}>
+      <div className="relative w-full overflow-hidden r-card bg-black shadow-lg" style={{ aspectRatio: '16 / 9' }}>
         <iframe
           src={youtubeEmbedUrl(videoId)}
           title={title || 'SCC Live Stream'}
@@ -32,7 +32,7 @@ export function LiveStreamPlayer({ videoId, title, showLink = true, className = 
           href={`https://www.youtube.com/watch?v=${videoId}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 hover:text-slate-200 transition-colors"
+          className="mt-2 inline-flex items-center gap-1.5 t-meta font-semibold text-slate-400 hover:text-slate-200 transition-colors"
         >
           <ExternalLink className="w-3 h-3" /> Watch on YouTube (chat & full screen)
         </a>

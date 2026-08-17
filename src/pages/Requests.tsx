@@ -141,7 +141,7 @@ export function Requests() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-4 py-2 r-control font-medium transition-colors ${
                 filter === f
                   ? 'bg-primary-500 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -202,7 +202,7 @@ export function Requests() {
                     )}
 
                     {request.message && (
-                      <div className="flex items-start gap-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                      <div className="flex items-start gap-2 bg-gray-50 dark:bg-gray-900 r-card p-3">
                         <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5" />
                         <p className="text-sm text-gray-600 dark:text-gray-400">{request.message}</p>
                       </div>

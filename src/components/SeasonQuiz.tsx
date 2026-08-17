@@ -91,7 +91,7 @@ export function SeasonQuiz({ awards, clubWrapped, members, season, onClose }: Pr
               const show = picked != null;
               return (
                 <button key={oi} onClick={() => choose(oi)} disabled={show}
-                  className={`flex items-center justify-between gap-3 px-5 py-4 rounded-2xl text-left font-bold border transition-all ${
+                  className={`flex items-center justify-between gap-3 px-5 py-4 r-control text-left font-bold border transition-all ${
                     show && isCorrect ? 'bg-emerald-500/25 border-emerald-400 text-white'
                     : show && isPicked ? 'bg-red-500/20 border-red-400/60 text-white'
                     : 'bg-white/[0.06] border-white/15 hover:bg-white/[0.12]'}`}>

@@ -231,7 +231,7 @@ export function MatchDayMessageModal({
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Message Preview
           </div>
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 max-h-[480px] overflow-y-auto border border-gray-200 dark:border-gray-700">
+          <div className="bg-gray-50 dark:bg-gray-900 r-card p-4 max-h-[480px] overflow-y-auto border border-gray-200 dark:border-gray-700">
             <pre className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-sans leading-relaxed">
               {message}
             </pre>

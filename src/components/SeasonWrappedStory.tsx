@@ -174,9 +174,9 @@ export function SeasonWrappedStory({ memberId, season = '2025-26', onClose }: Pr
               { v: data.overallRank ? `#${data.overallRank}` : '—', l: 'Club rank' },
               { v: Math.round(data.fantasyTotal).toLocaleString('en-IN'), l: 'Fantasy pts' },
             ].map(s => (
-              <div key={s.l} className="rounded-xl bg-white/10 border border-white/15 py-3">
+              <div key={s.l} className="r-card bg-white/10 border border-white/15 py-3">
                 <p className="text-2xl font-black text-white tabular-nums leading-none">{s.v}</p>
-                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mt-1">{s.l}</p>
+                <p className="text-white/60 t-micro font-bold uppercase tracking-wider mt-1">{s.l}</p>
               </div>
             ))}
           </div>

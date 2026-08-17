@@ -82,7 +82,7 @@ export function FeeTracking() {
       <div>
         <Header title="Fee Tracking" subtitle="Track fees, balances & match-day logistics" />
         <div className="p-4 lg:p-8 flex flex-col items-center justify-center min-h-[60vh] text-center">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 r-card flex items-center justify-center mb-4">
             <Lock className="w-8 h-8 text-gray-400" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Admin Access Required</h2>
@@ -104,7 +104,7 @@ export function FeeTracking() {
           <Card delay={0}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 r-card flex items-center justify-center">
                   <Wallet className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -120,7 +120,7 @@ export function FeeTracking() {
           <Card delay={1}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 r-card flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -136,7 +136,7 @@ export function FeeTracking() {
           <Card delay={2}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 r-card flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -153,7 +153,7 @@ export function FeeTracking() {
           <Card delay={3}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 r-card flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -172,13 +172,13 @@ export function FeeTracking() {
           <CardContent className="p-5">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">This Month</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3">
+              <div className="bg-green-50 dark:bg-green-900/20 r-card p-3">
                 <p className="text-xs text-green-600 dark:text-green-400">Deposits Received</p>
                 <p className="text-xl font-bold text-green-700 dark:text-green-300">
                   {stats.monthDeposits.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
                 </p>
               </div>
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
+              <div className="bg-red-50 dark:bg-red-900/20 r-card p-3">
                 <p className="text-xs text-red-600 dark:text-red-400">Match Fees Deducted</p>
                 <p className="text-xl font-bold text-red-700 dark:text-red-300">
                   {stats.monthMatchFees.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
@@ -197,7 +197,7 @@ export function FeeTracking() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 r-control font-medium transition-colors ${
                 activeTab === tab.key
                   ? 'bg-primary-500 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -285,15 +285,15 @@ export function FeeTracking() {
                       {isExpanded && (
                         <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700 pt-3 space-y-3">
                           <div className="grid grid-cols-3 gap-3 text-center">
-                            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg py-2">
+                            <div className="bg-green-50 dark:bg-green-900/20 r-card py-2">
                               <p className="text-lg font-bold text-green-600 dark:text-green-400">{status.paidCount}</p>
                               <p className="text-xs text-green-600 dark:text-green-400">Paid</p>
                             </div>
-                            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg py-2">
+                            <div className="bg-red-50 dark:bg-red-900/20 r-card py-2">
                               <p className="text-lg font-bold text-red-600 dark:text-red-400">{status.unpaidCount}</p>
                               <p className="text-xs text-red-600 dark:text-red-400">Unpaid</p>
                             </div>
-                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg py-2">
+                            <div className="bg-blue-50 dark:bg-blue-900/20 r-card py-2">
                               <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                                 {status.totalCollected.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
                               </p>
@@ -411,7 +411,7 @@ export function FeeTracking() {
                   <button
                     key={f}
                     onClick={() => setBalanceFilter(f)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 py-1.5 r-control text-sm font-medium transition-colors ${
                       balanceFilter === f
                         ? f === 'critical' ? 'bg-red-500 text-white'
                         : f === 'low' ? 'bg-amber-500 text-white'
@@ -438,7 +438,7 @@ export function FeeTracking() {
                   value={balanceSearch}
                   onChange={e => setBalanceSearch(e.target.value)}
                   placeholder="Search member..."
-                  className="pl-9 pr-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 border-none outline-none focus:ring-2 focus:ring-primary-500 w-full sm:w-48"
+                  className="pl-9 pr-3 py-1.5 r-control bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 border-none outline-none focus:ring-2 focus:ring-primary-500 w-full sm:w-48"
                 />
               </div>
             </div>

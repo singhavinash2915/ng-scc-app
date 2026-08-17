@@ -207,7 +207,7 @@ export function LiveScoring() {
       <div>
         <Header title="Live Scoring" subtitle="In testing" />
         <div className="p-8 max-w-md mx-auto mt-12 text-center">
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
+          <div className="r-card border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
             <Lock className="w-10 h-10 text-amber-500 mx-auto mb-3" />
             <h2 className="text-lg font-black text-slate-900 dark:text-white">Being tested</h2>
             <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
@@ -224,7 +224,7 @@ export function LiveScoring() {
     return (
       <div>
         <Header title="Live Scoring" subtitle="Not set up yet" />
-        <div className="p-8 max-w-lg mx-auto mt-10 rounded-3xl bg-amber-50 border border-amber-200 p-6">
+        <div className="p-8 max-w-lg mx-auto mt-10 r-card bg-amber-50 border border-amber-200 p-6">
           <p className="font-black text-amber-900">Scoring tables not created yet</p>
           <p className="text-sm text-amber-800/80 mt-1.5">
             Run <code className="font-mono">supabase/migrations/add_scoring_module.sql</code> in the
@@ -257,10 +257,10 @@ export function LiveScoring() {
       <div className="p-4 lg:p-8 max-w-3xl mx-auto space-y-4">
 
         {/* ── SCOREBOARD — the thing everyone looks at ─────────────────── */}
-        <div className="relative overflow-hidden rounded-3xl text-white shadow-2xl"
+        <div className="relative overflow-hidden r-card text-white shadow-2xl"
           style={{ background: 'linear-gradient(150deg,#052e16,#020617)' }}>
           <div className="p-6 text-center">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[2px] text-emerald-300">
+            <span className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-[2px] text-emerald-300">
               <Radio className="w-3 h-3" /> Innings {innings}
               {S.pending > 0 && (
                 <span className="ml-2 inline-flex items-center gap-1 text-amber-300">
@@ -279,24 +279,24 @@ export function LiveScoring() {
             <div className="grid grid-cols-2 gap-2 mt-5 text-left">
               {[[striker, true], [nonStriker, false]].map(([id, onStrike]) => (
                 <div key={String(id) + String(onStrike)}
-                  className={`rounded-2xl px-3 py-2.5 border ${
+                  className={`r-card px-3 py-2.5 border ${
                     onStrike ? 'bg-white/15 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}>
-                  <p className="text-[13px] font-bold truncate flex items-center gap-1.5">
+                  <p className="t-body font-bold truncate flex items-center gap-1.5">
                     {onStrike && <span className="text-emerald-400">●</span>}
                     {name(id as string | null)}
                   </p>
-                  <p className="text-[11px] text-white/55 tabular-nums">{batLine(id as string | null)}</p>
+                  <p className="t-meta text-white/55 tabular-nums">{batLine(id as string | null)}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-2 rounded-2xl bg-white/5 border border-white/10 px-3 py-2 text-left">
-              <p className="text-[12px] font-bold truncate">🏐 {name(bowler)}</p>
-              <p className="text-[11px] text-white/55 tabular-nums">{bowlLine(bowler)}</p>
+            <div className="mt-2 r-card bg-white/5 border border-white/10 px-3 py-2 text-left">
+              <p className="t-body font-bold truncate">🏐 {name(bowler)}</p>
+              <p className="t-meta text-white/55 tabular-nums">{bowlLine(bowler)}</p>
             </div>
 
             {/* this over */}
             <div className="flex items-center justify-center gap-1.5 mt-4 flex-wrap">
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/40 mr-1">
+              <span className="t-micro font-black uppercase tracking-widest text-white/40 mr-1">
                 This over
               </span>
               {st.thisOver.length === 0 && <span className="text-white/30 text-xs">—</span>}
@@ -309,7 +309,7 @@ export function LiveScoring() {
                   : String(b.runs_off_bat);
                 return (
                   <span key={b.seq}
-                    className={`w-8 h-8 rounded-lg text-[11px] font-black flex items-center justify-center ${
+                    className={`w-8 h-8 r-card t-meta font-black flex items-center justify-center ${
                       wkt ? 'bg-rose-500' : b.runs_off_bat >= 4 ? 'bg-emerald-500'
                       : b.extra_type ? 'bg-amber-500/80' : 'bg-white/15'}`}>
                     {label}
@@ -319,12 +319,12 @@ export function LiveScoring() {
             </div>
 
             {S.freeHit && (
-              <p className="mt-3 inline-block rounded-full bg-amber-400 text-slate-900 px-3 py-1 text-[10px] font-black">
+              <p className="mt-3 inline-block rounded-full bg-amber-400 text-slate-900 px-3 py-1 t-micro font-black">
                 FREE HIT — only run out
               </p>
             )}
             {st.isComplete && (
-              <p className="mt-3 inline-block rounded-full bg-white/15 px-4 py-1.5 text-[11px] font-black">
+              <p className="mt-3 inline-block rounded-full bg-white/15 px-4 py-1.5 t-meta font-black">
                 Innings complete · {st.completeReason}
               </p>
             )}
@@ -387,7 +387,7 @@ export function LiveScoring() {
           <div className="grid grid-cols-2 gap-2">
             {M.rows.map(r => (
               <button key={r.innings} onClick={() => setViewing(r.innings as 1 | 2)}
-                className={`rounded-2xl py-2.5 text-[12px] font-black border-2 truncate px-2 ${
+                className={`r-control py-2.5 t-body font-black border-2 truncate px-2 ${
                   shown === r.innings
                     ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700'
                     : 'border-slate-200 dark:border-white/10 text-slate-500'}`}>
@@ -399,7 +399,7 @@ export function LiveScoring() {
 
         {/* ── WHO IS SCORING ───────────────────────────────────────────── */}
         {!iAmScoring && (
-          <div className="rounded-2xl border-2 border-slate-200 dark:border-white/10 p-4">
+          <div className="r-card border-2 border-slate-200 dark:border-white/10 p-4">
             {!myId ? (
               <p className="text-sm text-slate-500 inline-flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -414,11 +414,11 @@ export function LiveScoring() {
                 {/* A dead phone shouldn't lock the match out — the heartbeat
                     goes stale and anyone can take it on. */}
                 <button onClick={() => myId && S.claimLock(myId)}
-                  className="text-[11px] font-black text-slate-400">Take over</button>
+                  className="t-meta font-black text-slate-400">Take over</button>
               </div>
             ) : (
               <button onClick={() => myId && S.claimLock(myId)}
-                className="w-full rounded-xl bg-emerald-500 text-white font-black py-3 text-sm">
+                className="w-full r-control bg-emerald-500 text-white font-black py-3 text-sm">
                 Start scoring this match
               </button>
             )}
@@ -438,8 +438,8 @@ export function LiveScoring() {
           <div className="space-y-2.5">
             {/* who's in — only needed at the start of an innings or after a wicket */}
             {(!striker || !nonStriker || !bowler) && (
-              <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 dark:bg-amber-500/10 p-4 space-y-2">
-                <p className="text-[11px] font-black uppercase tracking-widest text-amber-700">
+              <div className="r-card border-2 border-amber-300 bg-amber-50 dark:bg-amber-500/10 p-4 space-y-2">
+                <p className="t-meta font-black uppercase tracking-widest text-amber-700">
                   Set the players
                 </p>
                 {[
@@ -448,7 +448,7 @@ export function LiveScoring() {
                   { l: 'Bowler', v: bowler, set: setBowler },
                 ].map(f => (
                   <select key={f.l} value={f.v ?? ''} onChange={e => f.set(e.target.value || null)}
-                    className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm">
+                    className="w-full r-control border border-amber-200 bg-white px-3 py-2 text-sm">
                     <option value="">{f.l}…</option>
                     {squad.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
@@ -464,36 +464,36 @@ export function LiveScoring() {
               {/* numbers 0–3 */}
               {[0, 1, 2].map(r => (
                 <button key={r} onClick={() => record({ runsOffBat: r })} disabled={st.isComplete}
-                  className="h-16 rounded-2xl bg-white dark:bg-white/10 border-2 border-slate-200
+                  className="h-16 r-control bg-white dark:bg-white/10 border-2 border-slate-200
                              dark:border-white/10 font-display text-2xl font-extrabold
                              text-slate-900 dark:text-white disabled:opacity-30 active:scale-95 transition-transform">
                   {r}
                 </button>
               ))}
               <button onClick={() => S.undoBall()} disabled={S.balls.length === 0}
-                className="h-16 rounded-2xl bg-slate-100 dark:bg-white/10 border-2 border-slate-200
+                className="h-16 r-control bg-slate-100 dark:bg-white/10 border-2 border-slate-200
                            dark:border-white/10 text-slate-500 disabled:opacity-30
                            inline-flex items-center justify-center active:scale-95 transition-transform">
                 <Undo2 className="w-5 h-5" />
               </button>
 
               <button onClick={() => record({ runsOffBat: 3 })} disabled={st.isComplete}
-                className="h-16 rounded-2xl bg-white dark:bg-white/10 border-2 border-slate-200
+                className="h-16 r-control bg-white dark:bg-white/10 border-2 border-slate-200
                            dark:border-white/10 font-display text-2xl font-extrabold
                            text-slate-900 dark:text-white disabled:opacity-30 active:scale-95 transition-transform">
                 3
               </button>
               {[4, 6].map(r => (
                 <button key={r} onClick={() => record({ runsOffBat: r })} disabled={st.isComplete}
-                  className={`h-16 rounded-2xl font-display text-2xl font-extrabold text-white
+                  className={`h-16 r-control font-display text-2xl font-extrabold text-white
                               disabled:opacity-30 active:scale-95 transition-transform ${
                     r === 4 ? 'bg-amber-500' : 'bg-emerald-500'}`}>
                   {r}
-                  <span className="block text-[8px] font-bold tracking-widest opacity-80">BOUNDARY</span>
+                  <span className="block t-micro font-bold tracking-widest opacity-80">BOUNDARY</span>
                 </button>
               ))}
               <button onClick={() => setWicketSheet('W')} disabled={st.isComplete}
-                className="h-16 rounded-2xl bg-rose-500 text-white font-black text-lg
+                className="h-16 r-control bg-rose-500 text-white font-black text-lg
                            disabled:opacity-30 active:scale-95 transition-transform">
                 OUT
               </button>
@@ -503,11 +503,11 @@ export function LiveScoring() {
             <div className="grid grid-cols-4 gap-2">
               {EXTRAS.map(x => (
                 <button key={x.key} onClick={() => setWicketSheet(x.key)} disabled={st.isComplete}
-                  className="h-14 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-200
+                  className="h-14 r-control bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-200
                              dark:border-amber-400/20 text-amber-700 dark:text-amber-300
                              disabled:opacity-30 active:scale-95 transition-transform">
-                  <span className="block font-black text-[13px] uppercase">{x.key}</span>
-                  <span className="block text-[8px] font-bold opacity-70">{x.label}</span>
+                  <span className="block font-black t-body uppercase">{x.key}</span>
+                  <span className="block t-micro font-bold opacity-70">{x.label}</span>
                 </button>
               ))}
             </div>
@@ -525,23 +525,23 @@ export function LiveScoring() {
                 { k: 'card' as const, icon: ClipboardList, label: 'Card' },
               ].map(t => (
                 <button key={t.k} onClick={() => { setFixWho(null); setTool(t.k); }}
-                  className="h-12 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200
+                  className="h-12 r-control bg-slate-100 dark:bg-white/5 border border-slate-200
                              dark:border-white/10 text-slate-500 dark:text-white/60
                              inline-flex flex-col items-center justify-center gap-0.5
                              active:scale-95 transition-transform">
                   <t.icon className="w-4 h-4" />
-                  <span className="text-[9px] font-black uppercase tracking-wider">{t.label}</span>
+                  <span className="t-micro font-black uppercase tracking-wider">{t.label}</span>
                 </button>
               ))}
             </div>
 
             <div className="flex items-center justify-between">
               <button onClick={() => { setNewOvers(String(format.oversPerInnings)); setTool('overs'); }}
-                className="text-[11px] font-bold text-slate-400 py-1">
+                className="t-meta font-bold text-slate-400 py-1">
                 Change overs ({format.oversPerInnings})
               </button>
               <button onClick={() => S.releaseLock()}
-                className="text-[11px] font-bold text-slate-400 py-1">
+                className="t-meta font-bold text-slate-400 py-1">
                 Hand over scoring
               </button>
             </div>
@@ -556,7 +556,7 @@ export function LiveScoring() {
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto">
-              <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">
+              <p className="t-micro font-black uppercase tracking-widest text-rose-500">
                 Wicket · {st.wickets} down
               </p>
               <p className="font-black text-lg text-slate-900 dark:text-white mt-0.5">
@@ -567,8 +567,8 @@ export function LiveScoring() {
                 <div className="mt-3 space-y-1.5">
                   {squad.filter(m => !usedBatters.has(m.id)).map(m => (
                     <button key={m.id} onClick={() => setPickedBatter(m.id)}
-                      className="w-full text-left rounded-xl border-2 border-slate-200 dark:border-white/10
-                                 px-3.5 py-3 font-bold text-[13px] text-slate-800 dark:text-white/85
+                      className="w-full text-left r-control border-2 border-slate-200 dark:border-white/10
+                                 px-3.5 py-3 font-bold t-body text-slate-800 dark:text-white/85
                                  active:scale-[0.99] transition-transform">
                       {m.name}
                     </button>
@@ -581,7 +581,7 @@ export function LiveScoring() {
                 </div>
               ) : (
                 <div className="mt-3 space-y-2">
-                  <p className="text-[12px] text-slate-500">
+                  <p className="t-body text-slate-500">
                     <b className="text-slate-900 dark:text-white">{name(pickedBatter)}</b> comes in.
                   </p>
                   <button onClick={() => {
@@ -590,7 +590,7 @@ export function LiveScoring() {
                     setStriker(pickedBatter); setNonStriker(survivor);
                     setPickedBatter(null); setNewBatterFor(null);
                   }}
-                    className="w-full rounded-2xl bg-emerald-500 text-white font-black py-3.5 text-sm">
+                    className="w-full r-control bg-emerald-500 text-white font-black py-3.5 text-sm">
                     On strike
                   </button>
                   <button onClick={() => {
@@ -598,12 +598,12 @@ export function LiveScoring() {
                     setStriker(survivor); setNonStriker(pickedBatter);
                     setPickedBatter(null); setNewBatterFor(null);
                   }}
-                    className="w-full rounded-2xl border-2 border-slate-200 dark:border-white/10
+                    className="w-full r-control border-2 border-slate-200 dark:border-white/10
                                font-black py-3.5 text-sm text-slate-700 dark:text-white/80">
                     At the non-striker’s end
                   </button>
                   <button onClick={() => setPickedBatter(null)}
-                    className="w-full text-[11px] font-bold text-slate-400 pt-1">Back</button>
+                    className="w-full t-meta font-bold text-slate-400 pt-1">Back</button>
                 </div>
               )}
             </div>
@@ -618,7 +618,7 @@ export function LiveScoring() {
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto">
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
+              <p className="t-micro font-black uppercase tracking-widest text-emerald-600">
                 End of over {S.ctx.overNo}
               </p>
               <p className="font-black text-lg text-slate-900 dark:text-white mt-0.5">
@@ -629,11 +629,11 @@ export function LiveScoring() {
                   const l = bowl.get(m.id);
                   return (
                     <button key={m.id} onClick={() => { setBowler(m.id); setNeedBowler(false); }}
-                      className="w-full flex items-center justify-between rounded-xl border-2
+                      className="w-full flex items-center justify-between r-control border-2
                                  border-slate-200 dark:border-white/10 px-3.5 py-3 active:scale-[0.99] transition-transform">
-                      <span className="font-bold text-[13px] text-slate-800 dark:text-white/85">{m.name}</span>
+                      <span className="font-bold t-body text-slate-800 dark:text-white/85">{m.name}</span>
                       {l && (
-                        <span className="text-[11px] tabular-nums text-slate-400">
+                        <span className="t-meta tabular-nums text-slate-400">
                           {l.overs}-{l.maidens}-{l.runs}-{l.wickets}
                         </span>
                       )}
@@ -641,7 +641,7 @@ export function LiveScoring() {
                   );
                 })}
               </div>
-              <p className="text-[10px] text-slate-400 mt-3">
+              <p className="t-micro text-slate-400 mt-3">
                 Last over’s bowler and anyone at their {format.maxOversPerBowler}-over limit are hidden.
               </p>
             </div>
@@ -668,8 +668,8 @@ export function LiveScoring() {
                         // the man on strike.
                         dismissedId: w.key === 'run_out' ? striker : striker,
                       })}
-                      className="rounded-2xl border-2 border-slate-200 dark:border-white/10 py-3
-                                 font-black text-[12px] text-slate-700 dark:text-white/80">
+                      className="r-control border-2 border-slate-200 dark:border-white/10 py-3
+                                 font-black t-body text-slate-700 dark:text-white/80">
                       {w.label}
                     </button>
                   ))}
@@ -690,13 +690,13 @@ export function LiveScoring() {
                           extraRuns: penalty + n,
                           runsOffBat: 0,
                         })}
-                        className="h-16 rounded-2xl border-2 border-amber-200 dark:border-amber-400/20
+                        className="h-16 r-control border-2 border-amber-200 dark:border-amber-400/20
                                    bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300
                                    active:scale-95 transition-transform">
                         <span className="block font-display text-xl font-extrabold">
                           {wicketSheet}+{n}
                         </span>
-                        <span className="block text-[9px] font-bold opacity-70">
+                        <span className="block t-micro font-bold opacity-70">
                           {penalty + n} run{penalty + n === 1 ? '' : 's'}
                         </span>
                       </button>
@@ -706,7 +706,7 @@ export function LiveScoring() {
               )}
 
               <button onClick={() => setWicketSheet(null)}
-                className="w-full text-[11px] font-bold text-slate-400 pt-1">Cancel</button>
+                className="w-full t-meta font-bold text-slate-400 pt-1">Cancel</button>
             </div>
           </div>
         )}
@@ -716,22 +716,22 @@ export function LiveScoring() {
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center
                           justify-center p-3" onClick={() => setTool(null)}>
             <div onClick={e => e.stopPropagation()}
-              className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl bg-white dark:bg-slate-900
+              className="w-full max-w-md max-h-[85vh] overflow-y-auto r-card bg-white dark:bg-slate-900
                          border border-slate-200 dark:border-white/10 p-5 space-y-3">
 
               {tool === 'strike' && (
                 <>
                   <h3 className="font-black text-slate-900 dark:text-white">Change strike</h3>
-                  <p className="text-[12px] text-slate-500">
+                  <p className="t-body text-slate-500">
                     Overthrows, short runs and byes can leave the batters at ends the
                     rules alone don't predict. This puts them where the umpire says.
                   </p>
-                  <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-3 text-sm">
+                  <div className="r-card bg-slate-50 dark:bg-white/5 p-3 text-sm">
                     <p><span className="text-emerald-500">●</span> <b>{name(striker)}</b> on strike</p>
                     <p className="text-slate-500">{name(nonStriker)} at the other end</p>
                   </div>
                   <button onClick={swapStrike}
-                    className="w-full py-3 rounded-2xl bg-emerald-500 text-white font-black">
+                    className="w-full py-3 r-control bg-emerald-500 text-white font-black">
                     Swap them over
                   </button>
                 </>
@@ -740,14 +740,14 @@ export function LiveScoring() {
               {tool === 'batter' && (
                 <>
                   <h3 className="font-black text-slate-900 dark:text-white">Wrong batter</h3>
-                  <p className="text-[12px] text-slate-500">
+                  <p className="t-body text-slate-500">
                     Picks the right player and rewrites the balls faced during this
                     stay at the crease. Earlier innings by the same name aren't touched.
                   </p>
                   <div className="flex gap-2">
                     {[striker, nonStriker].map(id => (
                       <button key={String(id)} onClick={() => setFixWho(id)}
-                        className={`flex-1 py-2.5 rounded-2xl text-[12px] font-black border-2 ${
+                        className={`flex-1 py-2.5 r-control t-body font-black border-2 ${
                           fixWho === id
                             ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
                             : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70'}`}>
@@ -757,7 +757,7 @@ export function LiveScoring() {
                   </div>
                   {fixWho && (
                     <>
-                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 pt-1">
+                      <p className="t-meta font-black uppercase tracking-wider text-slate-400 pt-1">
                         Should have been
                       </p>
                       <div className="grid grid-cols-2 gap-2">
@@ -769,8 +769,8 @@ export function LiveScoring() {
                                 if (striker === fixWho) setStriker(m.id); else setNonStriker(m.id);
                                 setTool(null);
                               }}
-                              className="py-2.5 rounded-2xl border border-slate-200 dark:border-white/10
-                                         text-[12px] font-bold text-slate-700 dark:text-white/80 truncate px-2">
+                              className="py-2.5 r-control border border-slate-200 dark:border-white/10
+                                         t-body font-bold text-slate-700 dark:text-white/80 truncate px-2">
                               {m.name}
                             </button>
                           ))}
@@ -783,7 +783,7 @@ export function LiveScoring() {
               {tool === 'bowler' && (
                 <>
                   <h3 className="font-black text-slate-900 dark:text-white">Replace bowler</h3>
-                  <p className="text-[12px] text-slate-500">
+                  <p className="t-body text-slate-500">
                     For an injury mid-over. The replacement finishes the over and the
                     figures split between them — each keeps the balls they bowled.
                   </p>
@@ -793,12 +793,12 @@ export function LiveScoring() {
                       { k: 'over' as const, l: 'This whole over', h: 'wrong name all along' },
                     ].map(o => (
                       <button key={o.k} onClick={() => setBowlerScope(o.k)}
-                        className={`flex-1 py-2 rounded-2xl border-2 ${
+                        className={`flex-1 py-2 r-control border-2 ${
                           bowlerScope === o.k
                             ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
                             : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70'}`}>
-                        <span className="block text-[12px] font-black">{o.l}</span>
-                        <span className="block text-[9px] opacity-70">{o.h}</span>
+                        <span className="block t-body font-black">{o.l}</span>
+                        <span className="block t-micro opacity-70">{o.h}</span>
                       </button>
                     ))}
                   </div>
@@ -815,8 +815,8 @@ export function LiveScoring() {
                           setBowler(m.id);
                           setTool(null);
                         }}
-                        className="py-2.5 rounded-2xl border border-slate-200 dark:border-white/10
-                                   text-[12px] font-bold text-slate-700 dark:text-white/80 truncate px-2">
+                        className="py-2.5 r-control border border-slate-200 dark:border-white/10
+                                   t-body font-bold text-slate-700 dark:text-white/80 truncate px-2">
                         {m.name}
                       </button>
                     ))}
@@ -827,17 +827,17 @@ export function LiveScoring() {
               {tool === 'overs' && (
                 <>
                   <h3 className="font-black text-slate-900 dark:text-white">Change overs</h3>
-                  <p className="text-[12px] text-slate-500">
+                  <p className="t-body text-slate-500">
                     Rain, a late start, or teams agreeing to cut it short. Applies to
                     both innings — it can't go below the overs already bowled.
                   </p>
                   <input type="number" inputMode="numeric" value={newOvers}
                     onChange={e => setNewOvers(e.target.value)}
-                    className="w-full text-center font-display text-4xl font-extrabold py-3 rounded-2xl
+                    className="w-full text-center font-display text-4xl font-extrabold py-3 r-control
                                bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10
                                text-slate-900 dark:text-white" />
                   <button onClick={applyOvers}
-                    className="w-full py-3 rounded-2xl bg-emerald-500 text-white font-black">
+                    className="w-full py-3 r-control bg-emerald-500 text-white font-black">
                     Set overs
                   </button>
                 </>
@@ -848,9 +848,9 @@ export function LiveScoring() {
                   <h3 className="font-black text-slate-900 dark:text-white">
                     Full scorecard · {sideName(M.rows.find(r => r.innings === shown)?.batting_team)}
                   </h3>
-                  <table className="w-full text-[12px]">
+                  <table className="w-full t-body">
                     <thead>
-                      <tr className="text-slate-400 text-[9px] uppercase tracking-wider">
+                      <tr className="text-slate-400 t-micro uppercase tracking-wider">
                         <th className="text-left py-1">Batter</th><th className="text-right">R</th>
                         <th className="text-right">B</th><th className="text-right">4s</th>
                         <th className="text-right">6s</th><th className="text-right">SR</th>
@@ -872,9 +872,9 @@ export function LiveScoring() {
                       ))}
                     </tbody>
                   </table>
-                  <table className="w-full text-[12px] pt-2">
+                  <table className="w-full t-body pt-2">
                     <thead>
-                      <tr className="text-slate-400 text-[9px] uppercase tracking-wider">
+                      <tr className="text-slate-400 t-micro uppercase tracking-wider">
                         <th className="text-left py-1">Bowler</th><th className="text-right">O</th>
                         <th className="text-right">M</th><th className="text-right">R</th>
                         <th className="text-right">W</th><th className="text-right">Econ</th>
@@ -899,7 +899,7 @@ export function LiveScoring() {
               )}
 
               <button onClick={() => setTool(null)}
-                className="w-full text-[11px] font-bold text-slate-400 pt-1">Close</button>
+                className="w-full t-meta font-bold text-slate-400 pt-1">Close</button>
             </div>
           </div>
         )}

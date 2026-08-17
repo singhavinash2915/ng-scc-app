@@ -227,7 +227,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
 
       {/* Closed banner */}
       {isLocked && step !== 'done' && (
-        <div className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-center">
+        <div className="mb-4 p-3 r-card bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-center">
           <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mx-auto mb-1.5" />
           <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
             Predictions are closed for this match
@@ -239,8 +239,8 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
       )}
 
       {/* Match context strip */}
-      <div className="mb-4 p-3 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Next Match</p>
+      <div className="mb-4 p-3 r-card bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800">
+        <p className="t-micro font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Next Match</p>
         <p className="text-base font-black text-gray-900 dark:text-white mt-0.5">
           {isInternal
             ? internalSides(match).label
@@ -251,7 +251,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
           📍 {match.venue} · 🗓️ {matchDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
         </p>
         {predictions.length > 0 && (
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-semibold">
+          <p className="t-meta text-emerald-600 dark:text-emerald-400 mt-2 font-semibold">
             🎰 {predictions.length} {predictions.length === 1 ? 'person has' : 'people have'} predicted
           </p>
         )}
@@ -301,7 +301,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
             placeholder="••••"
             value={pinDigits}
             onChange={(e) => { setPinDigits(e.target.value.replace(/\D/g, '')); setPinError(''); }}
-            className="w-full text-center text-2xl tracking-[10px] font-black py-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:outline-none focus:border-primary-500"
+            className="w-full text-center text-2xl tracking-[10px] font-black py-3 r-control border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:outline-none focus:border-primary-500"
             required
           />
           {pinError && <p className="text-sm text-red-500 -mt-2 text-center">{pinError}</p>}
@@ -316,7 +316,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
       {step === 'predict' && (
         <form onSubmit={handleSubmit} className="space-y-4">
           {existing && (
-            <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <div className="p-2.5 r-card bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
               <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
                 ✏️ Updating your existing prediction
               </p>
@@ -338,7 +338,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     type="button"
                     disabled={isLocked}
                     onClick={() => setForm({ ...form, winner: opt.value })}
-                    className={`p-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                    className={`p-3 r-control border-2 font-bold text-sm transition-all ${
                       isSelected
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 ring-2 ring-primary-500/30'
                         : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
@@ -346,7 +346,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                   >
                     <span className={isSelected ? '' : opt.color}>{opt.label}</span>
                     {count > 0 && (
-                      <div className="text-[10px] font-medium text-gray-400 mt-1">{count} picked</div>
+                      <div className="t-micro font-medium text-gray-400 mt-1">{count} picked</div>
                     )}
                   </button>
                 );
@@ -384,10 +384,10 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
 
           {/* PER-TEAM STARS — internal only */}
           {isInternal && (
-            <div className="rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 p-3 space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-gray-500">⭐ Team Stars</p>
+            <div className="r-card bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+              <p className="t-micro font-black uppercase tracking-[2px] text-gray-500">⭐ Team Stars</p>
               <div>
-                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
+                <label className="flex items-center gap-1.5 t-meta font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
                   🦁 {sideNames.home} top scorer? <span className="text-gray-400 font-normal">+5</span>
                 </label>
                 <Select value={form.int_dhur_top_scorer_id || ''}
@@ -395,7 +395,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                   options={teamOptions.a} disabled={isLocked} />
               </div>
               <div>
-                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1.5">
+                <label className="flex items-center gap-1.5 t-meta font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1.5">
                   🐅 {sideNames.away} top scorer? <span className="text-gray-400 font-normal">+5</span>
                 </label>
                 <Select value={form.int_baz_top_scorer_id || ''}
@@ -403,7 +403,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                   options={teamOptions.b} disabled={isLocked} />
               </div>
               <div>
-                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
+                <label className="flex items-center gap-1.5 t-meta font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
                   🦁 {sideNames.home} top wicket-taker? <span className="text-gray-400 font-normal">+5</span>
                 </label>
                 <Select value={form.int_dhur_top_wicket_id || ''}
@@ -411,7 +411,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                   options={teamOptions.a} disabled={isLocked} />
               </div>
               <div>
-                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1.5">
+                <label className="flex items-center gap-1.5 t-meta font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1.5">
                   🐅 {sideNames.away} top wicket-taker? <span className="text-gray-400 font-normal">+5</span>
                 </label>
                 <Select value={form.int_baz_top_wicket_id || ''}
@@ -437,7 +437,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
           {/* ── BONUS QUESTIONS ─────────────────────────────────────────── */}
           {!isInternal && (
             <div className="pt-3 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-purple-500 mb-3 flex items-center gap-1.5">
+              <p className="t-micro font-black uppercase tracking-[2px] text-purple-500 mb-3 flex items-center gap-1.5">
                 ⚡ Bonus Questions · Up to +25 pts
               </p>
 
@@ -457,7 +457,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
                         onClick={() => setForm({ ...form, score_range: sel ? null : opt.v })}
-                        className={`p-2.5 rounded-xl border-2 font-bold text-xs transition-all ${
+                        className={`p-2.5 r-control border-2 font-bold text-xs transition-all ${
                           sel
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500/30'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
@@ -480,7 +480,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
                         onClick={() => setForm({ ...form, fifty_scored: sel ? null : opt.v })}
-                        className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                        className={`p-2.5 r-control border-2 font-bold text-sm transition-all ${
                           sel
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/30'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
@@ -503,7 +503,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
                         onClick={() => setForm({ ...form, three_wicket_haul: sel ? null : opt.v })}
-                        className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                        className={`p-2.5 r-control border-2 font-bold text-sm transition-all ${
                           sel
                             ? 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 ring-2 ring-red-500/30'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
@@ -520,7 +520,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
           {/* ── INTERNAL RIVALRY BONUS QUESTIONS ─────────────────────────── */}
           {isInternal && (
             <div className="pt-3 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
-              <p className="text-[10px] font-black uppercase tracking-[2px] text-purple-500 mb-3 flex items-center gap-1.5">
+              <p className="t-micro font-black uppercase tracking-[2px] text-purple-500 mb-3 flex items-center gap-1.5">
                 🔥 Rivalry Bonus · Up to +35 pts
               </p>
 
@@ -539,7 +539,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
                         onClick={() => setForm({ ...form, internal_most_sixes: sel ? null : opt.v })}
-                        className={`p-2.5 rounded-xl border-2 font-bold text-xs transition-all ${
+                        className={`p-2.5 r-control border-2 font-bold text-xs transition-all ${
                           sel
                             ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30 ring-2 ring-orange-500/30'
                             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -566,13 +566,13 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
                         onClick={() => setForm({ ...form, internal_margin: sel ? null : opt.v })}
-                        className={`p-2 rounded-xl border-2 font-bold text-xs transition-all leading-tight ${
+                        className={`p-2 r-control border-2 font-bold text-xs transition-all leading-tight ${
                           sel
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500/30'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
                         } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}>
                         <div>{opt.l}</div>
-                        <div className="text-[9px] font-normal opacity-60 mt-0.5">{opt.sub}</div>
+                        <div className="t-micro font-normal opacity-60 mt-0.5">{opt.sub}</div>
                       </button>
                     );
                   })}
@@ -590,7 +590,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
                         onClick={() => setForm({ ...form, internal_milestone: sel ? null : opt.v })}
-                        className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                        className={`p-2.5 r-control border-2 font-bold text-sm transition-all ${
                           sel
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/30'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'
@@ -617,7 +617,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
                         onClick={() => setForm({ ...form, internal_highest_team: sel ? null : opt.v })}
-                        className={`p-2.5 rounded-xl border-2 font-bold text-xs transition-all ${
+                        className={`p-2.5 r-control border-2 font-bold text-xs transition-all ${
                           sel
                             ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 ring-2 ring-amber-500/30'
                             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -640,7 +640,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                     return (
                       <button key={opt.v} type="button" disabled={isLocked}
                         onClick={() => setForm({ ...form, internal_duck: sel ? null : opt.v })}
-                        className={`p-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
+                        className={`p-2.5 r-control border-2 font-bold text-sm transition-all ${
                           sel
                             ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/30'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300'

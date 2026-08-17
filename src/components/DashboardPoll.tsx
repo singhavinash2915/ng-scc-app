@@ -275,10 +275,10 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
                 return (
                   <div
                     key={match.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl"
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 r-card"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex-shrink-0">
+                      <div className="p-2 bg-primary-100 dark:bg-primary-900/30 r-card flex-shrink-0">
                         {match.match_type === 'internal' ? (
                           <Swords className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                         ) : (
@@ -320,7 +320,7 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
                   type="datetime-local"
                   value={pollDeadline}
                   onChange={(e) => setPollDeadline(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full mt-1 px-3 py-2 r-control border text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -373,26 +373,26 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
 
       <CardContent className="p-4 space-y-4">
         {/* Response Summary Bar */}
-        <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800 r-card">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-green-500" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{summary.available}</span>
-            <span className="text-[10px] text-gray-400 hidden sm:inline">In</span>
+            <span className="t-micro text-gray-400 hidden sm:inline">In</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-amber-500" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{summary.maybe}</span>
-            <span className="text-[10px] text-gray-400 hidden sm:inline">Maybe</span>
+            <span className="t-micro text-gray-400 hidden sm:inline">Maybe</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{summary.unavailable}</span>
-            <span className="text-[10px] text-gray-400 hidden sm:inline">Out</span>
+            <span className="t-micro text-gray-400 hidden sm:inline">Out</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{summary.noResponse}</span>
-            <span className="text-[10px] text-gray-400 hidden sm:inline">Pending</span>
+            <span className="t-micro text-gray-400 hidden sm:inline">Pending</span>
           </div>
         </div>
 
@@ -424,7 +424,7 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
                 placeholder="Search member..."
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 mb-2"
+                className="w-full px-3 py-2 r-control border text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 mb-2"
               />
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
                 {filteredMembers.map((member) => {
@@ -437,7 +437,7 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
                         setSelectedMember(member.id);
                         setSubmitted(false);
                       }}
-                      className={`flex items-center gap-2 p-2 rounded-lg border text-left transition-all text-sm ${
+                      className={`flex items-center gap-2 p-2 r-control border text-left transition-all text-sm ${
                         selectedMember === member.id
                           ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 ring-2 ring-primary-500/30'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -447,7 +447,7 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
                         <img src={member.avatar_url} alt={member.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-bold text-white">{member.name.charAt(0).toUpperCase()}</span>
+                          <span className="t-micro font-bold text-white">{member.name.charAt(0).toUpperCase()}</span>
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
@@ -455,7 +455,7 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
                           {member.name}
                         </p>
                         {memberPoll && (
-                          <span className={`text-[10px] font-medium ${
+                          <span className={`t-micro font-medium ${
                             memberPoll.response === 'available'
                               ? 'text-green-600'
                               : memberPoll.response === 'maybe'
@@ -491,7 +491,7 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
                       <button
                         key={response}
                         onClick={() => setSelectedResponse(response)}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                        className={`flex flex-col items-center gap-1.5 p-3 r-control border-2 transition-all ${
                           isSelected
                             ? `${config.border} ${config.bg} ring-2 ${config.ringColor}`
                             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
@@ -514,12 +514,12 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
                       placeholder="Add a note (optional)..."
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2 r-control border text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                     <button
                       onClick={handleSubmit}
                       disabled={submitting}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors text-sm"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold r-control transition-colors text-sm"
                     >
                       {submitting ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -575,7 +575,7 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
         {polls.length > 0 && (
           <button
             onClick={() => setShowResponses(!showResponses)}
-            className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 r-control transition-colors"
           >
             <span className="flex items-center gap-1.5">
               <Users className="w-4 h-4" />
@@ -595,23 +595,23 @@ export function DashboardPoll({ matches, members, onMatchUpdate }: DashboardPoll
               const Icon = config.icon;
 
               return (
-                <div key={poll.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div key={poll.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 r-card">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     {member.avatar_url ? (
                       <img src={member.avatar_url} alt={member.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[10px] font-bold text-white">{member.name.charAt(0).toUpperCase()}</span>
+                        <span className="t-micro font-bold text-white">{member.name.charAt(0).toUpperCase()}</span>
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <span className="text-sm font-medium text-gray-900 dark:text-white truncate block">{member.name}</span>
                       {poll.note && (
-                        <span className="text-[10px] text-gray-400 truncate block">"{poll.note}"</span>
+                        <span className="t-micro text-gray-400 truncate block">"{poll.note}"</span>
                       )}
                     </div>
                   </div>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${config.bg} ${config.color}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded t-micro font-medium ${config.bg} ${config.color}`}>
                     <Icon className="w-3 h-3" />
                     {config.label}
                   </span>

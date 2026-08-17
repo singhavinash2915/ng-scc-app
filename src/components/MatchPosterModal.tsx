@@ -229,7 +229,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
       <div className="space-y-4">
 
         {/* Customise header */}
-        <div className="space-y-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="space-y-3 p-3 r-card border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Tournament / Header"
@@ -261,13 +261,13 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
               ℹ️ No detailed scorecard yet. Run <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">python3 scripts/sync_scorecards.py</code> to fetch batter/bowler tables from CricHeroes.
             </p>
           )}
-          <p className="text-[11px] text-gray-500">
+          <p className="t-meta text-gray-500">
             💡 Compact poster ≈ 300–500 KB · Detailed poster ≈ 1–2 MB · Both work in WhatsApp.
           </p>
         </div>
 
         {/* The actual poster — what gets exported */}
-        <div className="overflow-x-auto rounded-2xl bg-black">
+        <div className="overflow-x-auto r-card bg-black">
           <div
             ref={posterRef}
             style={{

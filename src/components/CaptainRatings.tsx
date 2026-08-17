@@ -58,13 +58,13 @@ export function CaptainRatings({ match, members, myMemberId, canRate }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 p-3.5">
+    <div className="r-card border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 p-3.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+        <span className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-widest text-slate-400">
           <Star className="w-3.5 h-3.5" /> Captain's ratings
         </span>
         {teamAverage !== null && (
-          <span className="text-[10px] font-bold text-slate-400">
+          <span className="t-micro font-bold text-slate-400">
             squad avg {teamAverage} · {ratings.length} rated
           </span>
         )}
@@ -75,16 +75,16 @@ export function CaptainRatings({ match, members, myMemberId, canRate }: Props) {
         <div className="mt-2.5">
           {myRating !== null ? (
             <div className="flex items-center gap-2.5">
-              <span className={`w-9 h-9 rounded-xl text-white font-black text-sm
+              <span className={`w-9 h-9 r-card text-white font-black text-sm
                                 flex items-center justify-center ${toneFor(myRating)}`}>
                 {myRating}
               </span>
-              <span className="text-[12px] text-slate-600 dark:text-white/70">
+              <span className="t-body text-slate-600 dark:text-white/70">
                 Your rating for this match
               </span>
             </div>
           ) : (
-            <p className="inline-flex items-center gap-1.5 text-[11px] text-slate-400">
+            <p className="inline-flex items-center gap-1.5 t-meta text-slate-400">
               <Lock className="w-3 h-3" /> Ratings are private — you'll only ever see your own.
             </p>
           )}
@@ -96,14 +96,14 @@ export function CaptainRatings({ match, members, myMemberId, canRate }: Props) {
         <div className="mt-3">
           {!expanded ? (
             <button onClick={() => setExpanded(true)}
-              className="w-full rounded-xl border-2 border-violet-200 dark:border-violet-400/30
-                         text-violet-600 dark:text-violet-300 font-black text-[12px] py-2.5">
+              className="w-full r-control border-2 border-violet-200 dark:border-violet-400/30
+                         text-violet-600 dark:text-violet-300 font-black t-body py-2.5">
               {ratings.length > 0 ? 'Edit ratings' : `Rate the squad (${squad.length})`}
             </button>
           ) : (
             <div className="space-y-2">
               {squad.length === 0 && (
-                <p className="text-[11px] text-slate-400">
+                <p className="t-meta text-slate-400">
                   No squad recorded for this match, so there's nobody to rate.
                 </p>
               )}
@@ -111,7 +111,7 @@ export function CaptainRatings({ match, members, myMemberId, canRate }: Props) {
                 const val = ratingFor(m.id);
                 return (
                   <div key={m.id} className="flex items-center gap-2">
-                    <span className="w-24 sm:w-32 shrink-0 truncate text-[12px] font-bold
+                    <span className="w-24 sm:w-32 shrink-0 truncate t-body font-bold
                                      text-slate-800 dark:text-white/85">
                       {m.name}
                     </span>
@@ -119,7 +119,7 @@ export function CaptainRatings({ match, members, myMemberId, canRate }: Props) {
                       {SCALE.map(n => (
                         <button key={n} onClick={() => setRating(m.id, n)}
                           disabled={busy === m.id}
-                          className={`flex-1 min-w-0 h-7 rounded text-[10px] font-black transition-colors
+                          className={`flex-1 min-w-0 h-7 rounded t-micro font-black transition-colors
                             ${val === n
                               ? `${toneFor(n)} text-white`
                               : 'bg-slate-100 dark:bg-white/10 text-slate-400 hover:bg-slate-200'}
@@ -133,8 +133,8 @@ export function CaptainRatings({ match, members, myMemberId, canRate }: Props) {
                 );
               })}
               <button onClick={() => setExpanded(false)}
-                className="w-full text-[11px] font-bold text-slate-400 pt-1">Done</button>
-              <p className="text-[10px] text-slate-400 leading-snug">
+                className="w-full t-meta font-bold text-slate-400 pt-1">Done</button>
+              <p className="t-micro text-slate-400 leading-snug">
                 Saved as you tap. Players only ever see their own mark and the squad average —
                 but these rows are readable by anyone with the app, so write them as if they might
                 be read.

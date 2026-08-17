@@ -49,7 +49,7 @@ export function AuctionPoster() {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-3xl shadow-2xl text-white ap-root"
+    <div className="relative overflow-hidden r-card shadow-2xl text-white ap-root"
       style={{ background: 'radial-gradient(800px 360px at 15% -10%, #7c3aed 0%, transparent 55%), radial-gradient(700px 320px at 100% 110%, #db2777 0%, transparent 55%), linear-gradient(150deg,#0b1020,#020617)' }}>
       <style>{`
         .ap-root { --a1:#60a5fa; --a2:#fb923c; }
@@ -65,10 +65,10 @@ export function AuctionPoster() {
       <div className="relative px-5 py-5 sm:px-7 sm:py-6">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 bg-white/15 border border-white/25 backdrop-blur
-                           rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[3px]">
+                           rounded-full px-3 py-1 t-micro font-black uppercase tracking-[3px]">
             <Gavel className="w-3.5 h-3.5" /> Auction Night
           </span>
-          <span className="ap-live inline-flex items-center gap-1 text-[10px] font-black text-rose-300">
+          <span className="ap-live inline-flex items-center gap-1 t-micro font-black text-rose-300">
             ● {AUCTION_NIGHT.label}
           </span>
         </div>
@@ -86,9 +86,9 @@ export function AuctionPoster() {
         {/* countdown */}
         <div className="grid grid-cols-4 gap-2 mt-4 max-w-sm">
           {CELLS.map(([v, l]) => (
-            <div key={l} className="bg-white/10 border border-white/15 rounded-2xl py-2.5 text-center">
+            <div key={l} className="bg-white/10 border border-white/15 r-card py-2.5 text-center">
               <p className="font-display text-2xl sm:text-3xl font-extrabold tabular-nums leading-none">{two(v)}</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1">{l}</p>
+              <p className="t-micro font-bold uppercase tracking-widest text-white/55 mt-1">{l}</p>
             </div>
           ))}
         </div>
@@ -103,15 +103,15 @@ export function AuctionPoster() {
               <div key={i} className="flex-1 min-w-0 flex items-center gap-2.5">
                 {i === 1 && <span className="font-black text-white/40 text-sm">vs</span>}
                 {m?.avatar_url
-                  ? <img src={m.avatar_url} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
+                  ? <img src={m.avatar_url} alt="" className="w-10 h-10 r-card object-cover flex-shrink-0"
                       style={{ border: `2px solid ${colour}` }} />
-                  : <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center
+                  : <div className="w-10 h-10 r-card bg-white/15 flex items-center justify-center
                         font-black flex-shrink-0" style={{ border: `2px solid ${colour}` }}>
                       {m?.name?.charAt(0) ?? '?'}
                     </div>}
                 <div className="min-w-0">
                   <p className="font-black text-sm truncate" style={{ color: colour }}>{teamName}</p>
-                  <p className="text-[10px] text-white/55 truncate inline-flex items-center gap-1">
+                  <p className="t-micro text-white/55 truncate inline-flex items-center gap-1">
                     <Crown className="w-2.5 h-2.5" fill="currentColor" />
                     {m?.name?.split(' ')[0] ?? '—'}
                   </p>
@@ -124,12 +124,12 @@ export function AuctionPoster() {
         {/* actions */}
         <div className="grid grid-cols-2 gap-2.5 mt-5">
           <a href={AUCTION_NIGHT.meetUrl} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-white text-slate-900
+            className="inline-flex items-center justify-center gap-1.5 r-card bg-white text-slate-900
                        font-black py-3 text-sm">
             <Video className="w-4 h-4" /> Join the Meet
           </a>
           <Link to="/auction"
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-white/15
+            className="inline-flex items-center justify-center gap-1.5 r-card bg-white/15
                        border border-white/25 font-black py-3 text-sm">
             Auction Centre <ChevronRight className="w-4 h-4" />
           </Link>

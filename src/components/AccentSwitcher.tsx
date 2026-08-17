@@ -15,7 +15,7 @@ export function AccentSwitcher({ className = '' }: { className?: string }) {
   const { accent, setAccent } = useTheme();
   return (
     <div className={`inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-2.5 py-1.5 backdrop-blur ${className}`}>
-      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 pl-1 pr-0.5">Theme</span>
+      <span className="t-micro font-bold uppercase tracking-widest text-gray-400 pl-1 pr-0.5">Theme</span>
       {ACCENTS.map(a => (
         <button
           key={a}

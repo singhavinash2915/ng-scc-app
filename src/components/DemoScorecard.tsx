@@ -47,13 +47,13 @@ export function DemoScorecard() {
   const ballsLeft = Math.max(0, 120 - balls);
 
   return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
+    <div className="r-card bg-white/5 border border-white/10 overflow-hidden">
       {/* Demo notice */}
       <div className="bg-amber-500/15 border-b border-amber-500/25 px-4 py-2 flex items-center gap-2">
-        <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 bg-amber-500/25 px-2 py-0.5 rounded">
+        <span className="t-micro font-black uppercase tracking-widest text-amber-300 bg-amber-500/25 px-2 py-0.5 rounded">
           Demo
         </span>
-        <span className="text-[11px] text-amber-200/80 font-medium">
+        <span className="t-meta text-amber-200/80 font-medium">
           Sample data — a real match pulls the live CricHeroes score here
         </span>
       </div>
@@ -61,7 +61,7 @@ export function DemoScorecard() {
       {/* Score header */}
       <div className="px-4 py-4 border-b border-white/10">
         <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center gap-1.5 bg-rose-600 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded">
+          <span className="inline-flex items-center gap-1.5 bg-rose-600 text-white t-micro font-black uppercase tracking-widest px-2 py-0.5 rounded">
             <Radio className="w-2.5 h-2.5 animate-pulse" /> Live
           </span>
           <span className="text-xs font-bold text-gray-300">SCC vs Tinsel County</span>
@@ -72,7 +72,7 @@ export function DemoScorecard() {
           </div>
           <div className="text-sm text-gray-400 font-semibold pb-1">({overs} ov)</div>
           <div className="ml-auto text-right pb-1">
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Run rate</p>
+            <p className="t-micro uppercase tracking-wider text-gray-500 font-bold">Run rate</p>
             <p className="font-display text-lg font-extrabold text-emerald-400 tabular-nums">{crr}</p>
           </div>
         </div>
@@ -81,11 +81,11 @@ export function DemoScorecard() {
         </p>
         {/* This over */}
         <div className="flex items-center gap-1.5 mt-3">
-          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mr-1">This over</span>
+          <span className="t-micro uppercase tracking-wider text-gray-500 font-bold mr-1">This over</span>
           {lastBalls.map((b, i) => (
             <span
               key={i}
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+              className={`w-6 h-6 rounded-full flex items-center justify-center t-micro font-black ${
                 b === '4' ? 'bg-emerald-500 text-white'
                 : b === '6' ? 'bg-violet-500 text-white'
                 : b === '0' ? 'bg-white/10 text-gray-400'
@@ -100,7 +100,7 @@ export function DemoScorecard() {
 
       {/* Batting */}
       <div className="px-4 py-3 border-b border-white/10">
-        <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-2">Batting</p>
+        <p className="t-micro uppercase tracking-wider text-gray-500 font-bold mb-2">Batting</p>
         <div className="space-y-1.5">
           {[{ ...striker, onStrike: true }, BATTERS[1]].map(b => (
             <div key={b.name} className="flex items-center gap-2 text-sm">
@@ -109,13 +109,13 @@ export function DemoScorecard() {
               </span>
               <span className="font-display font-extrabold text-white tabular-nums w-10 text-right">{b.runs}</span>
               <span className="text-gray-500 text-xs tabular-nums w-10 text-right">{b.balls}b</span>
-              <span className="text-gray-600 text-[11px] tabular-nums w-14 text-right">{b.fours}×4 {b.sixes}×6</span>
+              <span className="text-gray-600 t-meta tabular-nums w-14 text-right">{b.fours}×4 {b.sixes}×6</span>
             </div>
           ))}
           {OUT.map(b => (
             <div key={b.name} className="flex items-center gap-2 text-sm opacity-50">
               <span className="flex-1 truncate text-gray-400">
-                {b.name} <span className="text-[10px] text-gray-600">{b.how}</span>
+                {b.name} <span className="t-micro text-gray-600">{b.how}</span>
               </span>
               <span className="font-display font-bold text-gray-300 tabular-nums w-10 text-right">{b.runs}</span>
               <span className="text-gray-600 text-xs tabular-nums w-10 text-right">{b.balls}b</span>
@@ -126,7 +126,7 @@ export function DemoScorecard() {
 
       {/* Bowling */}
       <div className="px-4 py-3">
-        <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-2">Bowling</p>
+        <p className="t-micro uppercase tracking-wider text-gray-500 font-bold mb-2">Bowling</p>
         <div className="space-y-1.5">
           {BOWLERS.map((b, i) => (
             <div key={b.name} className="flex items-center gap-2 text-sm">

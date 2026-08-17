@@ -49,12 +49,12 @@ interface RecordCardProps {
 
 function RecordCard({ icon, label, value, subtitle, gradient, border }: RecordCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-2xl p-5 min-h-[140px] flex flex-col"
+    <div className="relative overflow-hidden r-card p-5 min-h-[140px] flex flex-col"
          style={{ background: gradient }}>
-      <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ border }} />
+      <div className="absolute inset-0 r-card pointer-events-none" style={{ border }} />
       <div className="flex items-center gap-1.5 mb-2 relative">
         {icon}
-        <span className="text-white/70 text-[10px] font-bold uppercase tracking-[1.5px]">{label}</span>
+        <span className="text-white/70 t-micro font-bold uppercase tracking-[1.5px]">{label}</span>
       </div>
       <div className="flex-1 flex flex-col justify-center relative">
         <div className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-tight">{value}</div>
@@ -201,13 +201,13 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
       <div className="p-4 lg:p-8 space-y-6">
 
         {/* ── Header banner ─────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl p-6 lg:p-7 shadow-2xl"
+        <div className="relative overflow-hidden r-card p-6 lg:p-7 shadow-2xl"
              style={{ background: 'radial-gradient(600px circle at 0% 0%, rgba(251,191,36,0.3), transparent 50%), linear-gradient(135deg, #78350f 0%, #1a0f05 60%, #0a1019 100%)' }}>
-          <div className="absolute inset-0 border border-amber-500/30 rounded-2xl pointer-events-none" />
+          <div className="absolute inset-0 border border-amber-500/30 r-card pointer-events-none" />
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-400/15 rounded-full blur-3xl" />
           <div className="absolute top-4 right-8 text-7xl opacity-[0.06] select-none pointer-events-none">🏆</div>
           <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-400/20 border-2 border-amber-400/40 flex items-center justify-center flex-shrink-0">
+            <div className="w-14 h-14 r-card bg-amber-400/20 border-2 border-amber-400/40 flex items-center justify-center flex-shrink-0">
               <Trophy className="w-7 h-7 text-amber-300" />
             </div>
             <div>
@@ -219,7 +219,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
 
         {/* ── TEAM RECORDS ─────────────────────────────────────────────── */}
         <div>
-          <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+          <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
             <Trophy className="w-3.5 h-3.5 text-amber-400" />
             Team Records
           </h3>
@@ -290,7 +290,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
         {/* ── INDIVIDUAL RECORDS ──────────────────────────────────────── */}
         {playerRecords && (
           <div>
-            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+            <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
               <Star className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
               Individual Records · Season 2025–26
             </h3>
@@ -385,23 +385,23 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
         {/* ── PLAYERS OF THE WEEK + MONTH (side by side) ─────────────── */}
         {(playerOfWeek || playerOfMonth) && (
           <div>
-            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+            <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
               <CalendarDays className="w-3.5 h-3.5 text-amber-400" />
               Players in Form
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Player of the Week */}
               {playerOfWeek && (
-                <div className="relative overflow-hidden rounded-2xl p-5 lg:p-6 shadow-xl"
+                <div className="relative overflow-hidden r-card p-5 lg:p-6 shadow-xl"
                      style={{ background: 'radial-gradient(400px circle at 0% 0%, rgba(244,114,182,0.3), transparent 50%), linear-gradient(135deg, #831843 0%, #1a0510 60%, #0a1019 100%)' }}>
-                  <div className="absolute inset-0 border border-pink-500/30 rounded-2xl pointer-events-none" />
+                  <div className="absolute inset-0 border border-pink-500/30 r-card pointer-events-none" />
                   <div className="absolute -top-12 -right-12 w-44 h-44 bg-pink-400/15 rounded-full blur-3xl" />
                   <div className="relative flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
                       <Crown className="w-3.5 h-3.5 text-pink-300" fill="currentColor" />
-                      <span className="text-pink-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Player of the Week</span>
+                      <span className="text-pink-300/80 t-micro font-bold uppercase tracking-[1.5px]">Player of the Week</span>
                     </div>
-                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-pink-400/15 border border-pink-400/30 text-pink-200 text-[10px] font-black">
+                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-pink-400/15 border border-pink-400/30 text-pink-200 t-micro font-black">
                       <Crown className="w-2.5 h-2.5" fill="currentColor" />
                       {playerOfWeek.moms}
                     </span>
@@ -409,9 +409,9 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                   <div className="relative flex items-center gap-4">
                     {playerOfWeek.member.avatar_url ? (
                       <img src={playerOfWeek.member.avatar_url} alt=""
-                           className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl object-cover border-2 border-pink-400/40 shadow-xl shadow-pink-500/30 flex-shrink-0" />
+                           className="w-16 h-16 lg:w-20 lg:h-20 r-card object-cover border-2 border-pink-400/40 shadow-xl shadow-pink-500/30 flex-shrink-0" />
                     ) : (
-                      <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-xl shadow-pink-500/30">
+                      <div className="w-16 h-16 lg:w-20 lg:h-20 r-card bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-xl shadow-pink-500/30">
                         <span className="text-2xl font-black text-pink-950">{playerOfWeek.member.name.charAt(0)}</span>
                       </div>
                     )}
@@ -419,7 +419,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                       <h3 className="text-xl lg:text-2xl font-black text-white truncate">{playerOfWeek.member.name}</h3>
                       <p className="text-pink-200/60 text-xs mt-0.5">{playerOfWeek.matchesPlayedInPeriod} match{playerOfWeek.matchesPlayedInPeriod !== 1 ? 'es' : ''} · last 7 days</p>
                       {playerOfWeek.tieBroken && (
-                        <p className="text-pink-300/40 text-[10px] mt-1">tie-broken by season MVP score</p>
+                        <p className="text-pink-300/40 t-micro mt-1">tie-broken by season MVP score</p>
                       )}
                     </div>
                   </div>
@@ -428,16 +428,16 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
 
               {/* Player of the Month */}
               {playerOfMonth && (
-                <div className="relative overflow-hidden rounded-2xl p-5 lg:p-6 shadow-xl"
+                <div className="relative overflow-hidden r-card p-5 lg:p-6 shadow-xl"
                      style={{ background: 'radial-gradient(400px circle at 0% 0%, rgba(251,191,36,0.25), transparent 50%), linear-gradient(135deg, #78350f 0%, #1a0f05 60%, #0a1019 100%)' }}>
-                  <div className="absolute inset-0 border border-amber-500/30 rounded-2xl pointer-events-none" />
+                  <div className="absolute inset-0 border border-amber-500/30 r-card pointer-events-none" />
                   <div className="absolute -top-12 -right-12 w-44 h-44 bg-amber-400/15 rounded-full blur-3xl" />
                   <div className="relative flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
                       <Crown className="w-3.5 h-3.5 text-amber-300" fill="currentColor" />
-                      <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Player of the Month</span>
+                      <span className="text-amber-300/80 t-micro font-bold uppercase tracking-[1.5px]">Player of the Month</span>
                     </div>
-                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-200 text-[10px] font-black">
+                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-200 t-micro font-black">
                       <Crown className="w-2.5 h-2.5" fill="currentColor" />
                       {playerOfMonth.moms}
                     </span>
@@ -445,9 +445,9 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                   <div className="relative flex items-center gap-4">
                     {playerOfMonth.member.avatar_url ? (
                       <img src={playerOfMonth.member.avatar_url} alt=""
-                           className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl object-cover border-2 border-amber-400/50 shadow-xl shadow-amber-500/30 flex-shrink-0" />
+                           className="w-16 h-16 lg:w-20 lg:h-20 r-card object-cover border-2 border-amber-400/50 shadow-xl shadow-amber-500/30 flex-shrink-0" />
                     ) : (
-                      <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 border-2 border-amber-400/50 flex items-center justify-center flex-shrink-0 shadow-xl shadow-amber-500/30">
+                      <div className="w-16 h-16 lg:w-20 lg:h-20 r-card bg-gradient-to-br from-amber-400 to-yellow-600 border-2 border-amber-400/50 flex items-center justify-center flex-shrink-0 shadow-xl shadow-amber-500/30">
                         <span className="text-2xl font-black text-yellow-950">{playerOfMonth.member.name.charAt(0)}</span>
                       </div>
                     )}
@@ -455,7 +455,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                       <h3 className="text-xl lg:text-2xl font-black text-white truncate">{playerOfMonth.member.name}</h3>
                       <p className="text-amber-200/60 text-xs mt-0.5">{playerOfMonth.matchesPlayedInPeriod} match{playerOfMonth.matchesPlayedInPeriod !== 1 ? 'es' : ''} · {playerOfMonth.periodLabel}</p>
                       {playerOfMonth.tieBroken && (
-                        <p className="text-amber-300/40 text-[10px] mt-1">tie-broken by season MVP score</p>
+                        <p className="text-amber-300/40 t-micro mt-1">tie-broken by season MVP score</p>
                       )}
                     </div>
                   </div>
@@ -465,16 +465,16 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
 
             {/* 6-month history timeline */}
             {monthlyHistory.some(m => m.winner) && (
-              <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
+              <div className="mt-4 r-card border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+                <p className="t-micro font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
                   <Crown className="w-3 h-3 text-amber-400" fill="currentColor" />
                   Last 6 Months · Player of the Month
                 </p>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                   {monthlyHistory.map(h => (
                     <div key={h.month}
-                         className="rounded-xl border border-gray-100 dark:border-gray-800 p-2.5 text-center hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{h.monthLabel}</p>
+                         className="r-card border border-gray-100 dark:border-gray-800 p-2.5 text-center hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
+                      <p className="t-micro font-bold uppercase tracking-wider text-gray-400">{h.monthLabel}</p>
                       {h.winner ? (
                         <>
                           {h.winner.member.avatar_url ? (
@@ -485,11 +485,11 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                               <span className="text-xs font-black text-yellow-950">{h.winner.member.name.charAt(0)}</span>
                             </div>
                           )}
-                          <p className="text-[11px] font-bold text-gray-800 dark:text-gray-200 mt-1.5 truncate">{h.winner.member.name.split(' ')[0]}</p>
-                          <p className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold">👑 {h.winner.moms}</p>
+                          <p className="t-meta font-bold text-gray-800 dark:text-gray-200 mt-1.5 truncate">{h.winner.member.name.split(' ')[0]}</p>
+                          <p className="t-micro text-amber-600 dark:text-amber-400 font-semibold">👑 {h.winner.moms}</p>
                         </>
                       ) : (
-                        <div className="mt-2 text-[10px] text-gray-300 dark:text-gray-600 italic py-3">—</div>
+                        <div className="mt-2 t-micro text-gray-300 dark:text-gray-600 italic py-3">—</div>
                       )}
                     </div>
                   ))}
@@ -502,22 +502,22 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
         {/* ── HEAD-TO-HEAD vs every opponent ──────────────────────────── */}
         {h2h.length > 0 && (
           <div>
-            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+            <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
               <Sword className="w-3.5 h-3.5 text-rose-400" />
               Head-to-Head Records
             </h3>
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                      <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Opponent</th>
-                      <th className="px-3 py-3 text-center text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">P</th>
-                      <th className="px-3 py-3 text-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">W</th>
-                      <th className="px-3 py-3 text-center text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">L</th>
-                      <th className="px-3 py-3 text-center text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">NR</th>
-                      <th className="px-3 py-3 text-right text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Win%</th>
-                      <th className="px-3 py-3 text-center text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Last</th>
+                      <th className="px-4 py-3 text-left t-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Opponent</th>
+                      <th className="px-3 py-3 text-center t-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">P</th>
+                      <th className="px-3 py-3 text-center t-micro font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">W</th>
+                      <th className="px-3 py-3 text-center t-micro font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">L</th>
+                      <th className="px-3 py-3 text-center t-micro font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">NR</th>
+                      <th className="px-3 py-3 text-right t-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Win%</th>
+                      <th className="px-3 py-3 text-center t-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Last</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -539,7 +539,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                         </td>
                         <td className="px-3 py-3 text-center hidden sm:table-cell">
                           {r.lastResult && (
-                            <span className={`inline-block w-6 h-6 rounded-md text-[10px] font-black text-white leading-6 ${
+                            <span className={`inline-block w-6 h-6 r-card t-micro font-black text-white leading-6 ${
                               r.lastResult === 'won' ? 'bg-emerald-500'
                               : r.lastResult === 'lost' ? 'bg-red-500'
                               : 'bg-amber-500'
@@ -560,7 +560,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
         {/* ── CUSTOM AWARDS ───────────────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
+            <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
               <Award className="w-3.5 h-3.5 text-violet-400" />
               Custom Awards
             </h3>
@@ -574,32 +574,32 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
             )}
           </div>
           {awards.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-400 dark:text-gray-500">
+            <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-400 dark:text-gray-500">
               {isAdmin ? 'No custom awards yet. Click "+ Grant Award" to recognise a player.' : 'No custom awards yet.'}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {awards.map(a => (
-                <div key={a.id} className="relative overflow-hidden rounded-2xl p-5 group"
+                <div key={a.id} className="relative overflow-hidden r-card p-5 group"
                      style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #0a1019 100%)' }}>
-                  <div className="absolute inset-0 border border-violet-500/25 rounded-2xl pointer-events-none" />
+                  <div className="absolute inset-0 border border-violet-500/25 r-card pointer-events-none" />
                   <div className="relative flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-violet-500/20 border border-violet-400/40 flex items-center justify-center flex-shrink-0 text-2xl">
+                    <div className="w-12 h-12 r-card bg-violet-500/20 border border-violet-400/40 flex items-center justify-center flex-shrink-0 text-2xl">
                       {a.icon || '🌟'}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-violet-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">{a.award_name}</p>
+                      <p className="text-violet-300/80 t-micro font-bold uppercase tracking-[1.5px]">{a.award_name}</p>
                       {a.member && (
                         <h4 className="text-sm font-black text-white mt-0.5 truncate">{a.member.name}</h4>
                       )}
                       {a.description && (
-                        <p className="text-[11px] text-gray-400 truncate mt-0.5">{a.description}</p>
+                        <p className="t-meta text-gray-400 truncate mt-0.5">{a.description}</p>
                       )}
                     </div>
                     {isAdmin && (
                       <button
                         onClick={() => setConfirmDelAward(a.id)}
-                        className="p-1.5 rounded-md text-red-300 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+                        className="p-1.5 r-control text-red-300 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

@@ -66,8 +66,8 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 lg:bottom-4 left-4 right-4 lg:left-auto lg:right-4 lg:w-96 z-50 animate-fade-in-up">
-      <div className="bg-primary-600 text-white rounded-xl shadow-lg p-4 flex items-start gap-3">
-        <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+      <div className="bg-primary-600 text-white r-card shadow-lg p-4 flex items-start gap-3">
+        <div className="flex-shrink-0 w-10 h-10 bg-white/20 r-card flex items-center justify-center">
           <Download className="w-5 h-5" />
         </div>
 
@@ -82,7 +82,7 @@ export function InstallPrompt() {
               </p>
               <button
                 onClick={handleInstall}
-                className="mt-2 px-4 py-1.5 bg-white text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-50 transition-colors"
+                className="mt-2 px-4 py-1.5 bg-white text-primary-700 text-xs font-semibold r-control hover:bg-primary-50 transition-colors"
               >
                 Install Now
               </button>
@@ -104,7 +104,7 @@ export function InstallPrompt() {
 
         <button
           onClick={handleDismiss}
-          className="flex-shrink-0 p-1 hover:bg-white/20 rounded-lg transition-colors"
+          className="flex-shrink-0 p-1 hover:bg-white/20 r-control transition-colors"
         >
           <X className="w-4 h-4" />
         </button>

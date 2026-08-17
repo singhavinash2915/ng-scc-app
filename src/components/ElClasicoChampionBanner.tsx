@@ -71,11 +71,11 @@ export function ElClasicoChampionBanner({ matches }: Props) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl shadow-2xl"
+      className="relative overflow-hidden r-card shadow-2xl"
       style={{ background: `radial-gradient(700px circle at 50% -20%, ${win.soft}, transparent 60%), linear-gradient(135deg, #2a1c05 0%, #120d02 55%, #0a0a0a 100%)` }}
     >
       {/* gold frame + glows */}
-      <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ border: '1px solid rgba(251,191,36,0.4)' }} />
+      <div className="absolute inset-0 r-card pointer-events-none" style={{ border: '1px solid rgba(251,191,36,0.4)' }} />
       <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: 'rgba(251,191,36,0.18)' }} />
       {/* confetti dots */}
       {[...Array(14)].map((_, i) => (
@@ -97,7 +97,7 @@ export function ElClasicoChampionBanner({ matches }: Props) {
         {/* kicker */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-300/40 mb-3">
           <Sparkles className="w-3 h-3 text-amber-300" />
-          <span className="text-amber-200 text-[10px] font-black uppercase tracking-[2.5px]">El Clásico · Champions</span>
+          <span className="text-amber-200 t-micro font-black uppercase tracking-[2.5px]">El Clásico · Champions</span>
         </div>
 
         {/* trophy + winner */}
@@ -111,7 +111,7 @@ export function ElClasicoChampionBanner({ matches }: Props) {
         </div>
 
         {/* scoreline */}
-        <div className="mt-4 inline-flex items-center gap-3 px-4 py-2 rounded-xl bg-black/30 border border-white/10">
+        <div className="mt-4 inline-flex items-center gap-3 px-4 py-2 r-card bg-black/30 border border-white/10">
           <span className="text-white font-black tabular-nums" style={{ color: win.accent }}>{data.winnerScore}</span>
           <span className="text-white/40 text-xs font-bold uppercase">def.</span>
           <span className="text-white/70 font-bold tabular-nums">{data.loserScore}</span>
@@ -133,7 +133,7 @@ export function ElClasicoChampionBanner({ matches }: Props) {
             <span style={{ color: TEAMS.bazigars.accent }}>{data.baz} Baazigars</span>
           </span>
         </div>
-        <p className="text-white/35 text-[10px] font-semibold uppercase tracking-wider mt-3">Rivalry updated · celebrating for 24 hours</p>
+        <p className="text-white/35 t-micro font-semibold uppercase tracking-wider mt-3">Rivalry updated · celebrating for 24 hours</p>
       </div>
 
       <style>{`

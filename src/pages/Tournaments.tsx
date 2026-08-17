@@ -297,7 +297,7 @@ export function Tournaments() {
           <Card>
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl">
+                <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 r-card">
                   <Trophy className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
                 <div>
@@ -313,7 +313,7 @@ export function Tournaments() {
           <Card>
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                <div className="p-3 bg-gray-100 dark:bg-gray-800 r-card">
                   <Medal className="w-6 h-6 text-gray-500" />
                 </div>
                 <div>
@@ -329,7 +329,7 @@ export function Tournaments() {
           <Card>
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 r-card">
                   <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
@@ -345,7 +345,7 @@ export function Tournaments() {
           <Card>
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 r-card">
                   <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
@@ -366,7 +366,7 @@ export function Tournaments() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 r-control font-medium transition-colors ${
                   filter === f
                     ? 'bg-primary-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -395,7 +395,7 @@ export function Tournaments() {
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     {/* Trophy/Result Icon */}
                     <div className="flex items-center gap-4 lg:w-16">
-                      <div className="w-14 h-14 bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-800/20 rounded-xl flex items-center justify-center">
+                      <div className="w-14 h-14 bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-800/20 r-card flex items-center justify-center">
                         {tournament.result ? getResultIcon(tournament.result) : (
                           <Trophy className="w-6 h-6 text-primary-500" />
                         )}
@@ -468,12 +468,12 @@ export function Tournaments() {
                         <div className="relative">
                           <button
                             onClick={() => setMenuOpen(menuOpen === tournament.id ? null : tournament.id)}
-                            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="p-2 r-control hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             <MoreVertical className="w-5 h-5 text-gray-500" />
                           </button>
                           {menuOpen === tournament.id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 r-card shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
                               <button
                                 onClick={() => openEditModal(tournament)}
                                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -755,27 +755,27 @@ export function Tournaments() {
           <div className="space-y-6">
             {/* Tournament Info */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 r-card">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Venue</p>
                 <p className="font-medium">{selectedTournament.venue}</p>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 r-card">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Format</p>
                 <p className="font-medium">{selectedTournament.format}</p>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 r-card">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Dates</p>
                 <p className="font-medium">
                   {new Date(selectedTournament.start_date).toLocaleDateString('en-IN')}
                   {selectedTournament.end_date && ` - ${new Date(selectedTournament.end_date).toLocaleDateString('en-IN')}`}
                 </p>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 r-card">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
                 <div className="mt-1">{getStatusBadge(selectedTournament.status)}</div>
               </div>
               {selectedTournament.result && (
-                <div className="p-4 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl col-span-2">
+                <div className="p-4 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 r-card col-span-2">
                   <p className="text-sm text-gray-500 dark:text-gray-400">Result</p>
                   <div className="flex items-center gap-2 mt-1">
                     {getResultIcon(selectedTournament.result)}
@@ -805,7 +805,7 @@ export function Tournaments() {
                   {selectedTournament.matches.map(tm => (
                     <div
                       key={tm.id}
-                      className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl"
+                      className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 r-card"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -829,7 +829,7 @@ export function Tournaments() {
                       {isAdmin && (
                         <button
                           onClick={() => handleRemoveMatch(tm.match_id)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          className="p-2 r-control text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -846,7 +846,7 @@ export function Tournaments() {
             </div>
 
             {selectedTournament.notes && (
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 r-card">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Notes</p>
                 <p className="text-gray-700 dark:text-gray-300">{selectedTournament.notes}</p>
               </div>

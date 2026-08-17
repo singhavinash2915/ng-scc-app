@@ -27,20 +27,20 @@ const LINKS = [
 export function ExploreGrid() {
   return (
     <div>
-      <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-3">
+      <p className="t-meta font-black uppercase tracking-[2px] text-slate-400 mb-3">
         Explore
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {LINKS.map(({ to, icon: Icon, label, hint }) => (
           <Link key={to} to={to}
-            className="group rounded-2xl bg-white dark:bg-white/5 border border-slate-200
+            className="group r-card bg-white dark:bg-white/5 border border-slate-200
                        dark:border-white/10 p-3.5 hover:border-emerald-400 hover:-translate-y-0.5
                        hover:shadow-md transition-all">
             <Icon className="w-5 h-5 text-emerald-500 mb-2" />
-            <p className="font-black text-[13px] text-slate-900 dark:text-white leading-tight">
+            <p className="font-black t-body text-slate-900 dark:text-white leading-tight">
               {label}
             </p>
-            <p className="text-[10px] text-slate-400 mt-0.5 truncate">{hint}</p>
+            <p className="t-micro text-slate-400 mt-0.5 truncate">{hint}</p>
           </Link>
         ))}
       </div>

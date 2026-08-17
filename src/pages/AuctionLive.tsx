@@ -172,7 +172,7 @@ export function AuctionLive() {
       <div>
         <Header title="Live Auction" subtitle="Admin only" />
         <div className="p-8 max-w-md mx-auto mt-12 text-center">
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
+          <div className="r-card border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
             <Lock className="w-10 h-10 text-amber-500 mx-auto mb-3" />
             <h2 className="text-lg font-black text-slate-900 dark:text-white">Auction room</h2>
             <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
@@ -189,7 +189,7 @@ export function AuctionLive() {
       <div>
         <Header title="Live Auction" subtitle="SCC League" />
         <div className="p-8 max-w-lg mx-auto mt-10">
-          <div className="rounded-3xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 p-6">
+          <div className="r-card bg-amber-50 dark:bg-amber-500/10 border border-amber-200 p-6">
             <p className="font-black text-amber-900 dark:text-amber-200">Auction tables not created yet</p>
             <p className="text-sm text-amber-800/80 dark:text-amber-200/70 mt-1.5">
               Run <code className="font-mono">supabase/migrations/add_scc_auction.sql</code> in the
@@ -265,9 +265,9 @@ export function AuctionLive() {
               </p>
               <div className="al-rise mt-6">
                 {celebration.avatar
-                  ? <img src={celebration.avatar} alt="" className="w-24 h-24 rounded-2xl object-cover mx-auto"
+                  ? <img src={celebration.avatar} alt="" className="w-24 h-24 r-card object-cover mx-auto"
                       style={{ border: `3px solid ${TEAM_COLOR[celebration.team]}` }} />
-                  : <div className="w-24 h-24 rounded-2xl mx-auto flex items-center justify-center
+                  : <div className="w-24 h-24 r-card mx-auto flex items-center justify-center
                                     text-4xl font-black bg-white/15"
                       style={{ border: `3px solid ${TEAM_COLOR[celebration.team]}` }}>
                       {celebration.name.charAt(0)}
@@ -281,7 +281,7 @@ export function AuctionLive() {
                   style={{ background: TEAM_COLOR[celebration.team] }}>
                   {TEAM_EMOJI[celebration.team]} {celebration.teamName}
                 </p>
-                <p className="text-[11px] text-white/40 mt-5">tap anywhere to carry on</p>
+                <p className="t-meta text-white/40 mt-5">tap anywhere to carry on</p>
               </div>
             </div>
           </div>
@@ -292,24 +292,24 @@ export function AuctionLive() {
             everyone thinks it's practice, or vice versa. Hidden entirely once
             REHEARSAL_ENABLED is off, so on the night there is nothing to hit. */}
         {REHEARSAL_ENABLED && (
-        <div className={`flex items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 ${
+        <div className={`flex items-center justify-between gap-3 r-card border-2 px-4 py-3 ${
           rehearsal
             ? 'border-amber-400 bg-amber-50 dark:bg-amber-500/10'
             : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5'
         }`}>
           <div className="min-w-0">
-            <p className={`text-[10px] font-black uppercase tracking-widest ${
+            <p className={`t-micro font-black uppercase tracking-widest ${
               rehearsal ? 'text-amber-600' : 'text-slate-400'}`}>
               {rehearsal ? '🎭 Rehearsal mode' : '🔴 Real auction'}
             </p>
-            <p className="text-[11px] text-slate-500 dark:text-white/60 leading-snug">
+            <p className="t-meta text-slate-500 dark:text-white/60 leading-snug">
               {rehearsal
                 ? 'Practice freely — nothing here is shown to members, and the real auction is untouched.'
                 : 'This is the one that counts. Everything appears on the Dashboard and Auction Centre.'}
             </p>
           </div>
           <button onClick={() => toggleRehearsal(!rehearsal)}
-            className={`flex-shrink-0 rounded-xl px-3.5 py-2 text-[11px] font-black border-2 ${
+            className={`flex-shrink-0 r-control px-3.5 py-2 t-meta font-black border-2 ${
               rehearsal
                 ? 'border-slate-300 text-slate-600 dark:text-white/70'
                 : 'border-amber-400 text-amber-600'
@@ -331,17 +331,17 @@ export function AuctionLive() {
         {a && (
           <>
             {/* ── STATUS STRIP ─────────────────────────────────────────── */}
-            <div className="flex items-center justify-between rounded-2xl bg-slate-900 text-white px-4 py-2.5">
-              <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
+            <div className="flex items-center justify-between r-card bg-slate-900 text-white px-4 py-2.5">
+              <span className="inline-flex items-center gap-2 t-meta font-black uppercase tracking-widest">
                 <Radio className={`w-3.5 h-3.5 text-rose-400 ${a.status === 'live' ? 'al-live' : ''}`} />
                 {a.status === 'live' ? 'Live' : a.status === 'done' ? 'Complete' : 'Setup'}
                 {a.status === 'live' && A.round > 1 && (
-                  <span className="ml-1 rounded-full bg-amber-400 text-slate-900 px-2 py-0.5 text-[9px]">
+                  <span className="ml-1 rounded-full bg-amber-400 text-slate-900 px-2 py-0.5 t-micro">
                     Unsold round {A.round - 1}
                   </span>
                 )}
               </span>
-              <span className="text-[11px] font-bold text-white/60">
+              <span className="t-meta font-bold text-white/60">
                 {/* pool_order shrinks to the unsold list in later rounds, so a
                     "26/9" style ratio was nonsense. Count what's left instead. */}
                 {A.sold.length} sold · {A.unsold.length} unsold ·{' '}
@@ -351,7 +351,7 @@ export function AuctionLive() {
 
             {/* ── ON THE BLOCK ─────────────────────────────────────────── */}
             {a.status === 'live' && current && (
-              <div key={current.id} className="al-pop relative overflow-hidden rounded-3xl text-white shadow-2xl"
+              <div key={current.id} className="al-pop relative overflow-hidden r-card text-white shadow-2xl"
                 style={{
                   background: a.current_bidder
                     ? `radial-gradient(700px 320px at 50% -10%, ${TEAM_COLOR[a.current_bidder]}bb, transparent 60%), linear-gradient(150deg,#0f172a,#020617)`
@@ -361,13 +361,13 @@ export function AuctionLive() {
                   <div className="inline-flex flex-wrap items-center justify-center gap-2">
                   <div className="inline-flex items-center gap-2 bg-white/12 border border-white/20 rounded-full px-3.5 py-1.5">
                     <span>{currentSet.emoji}</span>
-                    <span className="text-[10px] font-black uppercase tracking-[2px]">{currentSet.label}</span>
+                    <span className="t-micro font-black uppercase tracking-[2px]">{currentSet.label}</span>
                   </div>
                   {drawPool > 1 && (
                     <div className="inline-flex items-center gap-1.5 bg-emerald-400/15 border
                                     border-emerald-300/30 rounded-full px-3.5 py-1.5">
                       <span>🎲</span>
-                      <span className="text-[10px] font-black uppercase tracking-[2px] text-emerald-200">
+                      <span className="t-micro font-black uppercase tracking-[2px] text-emerald-200">
                         Random · 1 of {drawPool}
                       </span>
                     </div>
@@ -410,7 +410,7 @@ export function AuctionLive() {
                   })()}
 
                   <div className="mt-7 pt-5 border-t border-white/10">
-                    <p className="text-[10px] font-black uppercase tracking-[2px] text-white/50">Current bid</p>
+                    <p className="t-micro font-black uppercase tracking-[2px] text-white/50">Current bid</p>
                     <p className="text-6xl sm:text-7xl font-extrabold mt-1"
                       style={{ color: a.current_bidder ? TEAM_COLOR[a.current_bidder] : '#fde68a' }}>
                       {formatPrice(a.current_bid)}
@@ -426,7 +426,7 @@ export function AuctionLive() {
             )}
 
             {a.status === 'done' && (
-              <div className="rounded-3xl p-8 text-center text-white shadow-2xl"
+              <div className="r-card p-8 text-center text-white shadow-2xl"
                 style={{ background: 'radial-gradient(600px 300px at 50% 0%, rgba(34,197,94,.4), transparent 60%), linear-gradient(150deg,#064e3b,#020617)' }}>
                 <p className="text-6xl">🏆</p>
                 <h2 className="font-display text-3xl font-extrabold mt-2">Auction complete!</h2>
@@ -436,8 +436,8 @@ export function AuctionLive() {
                 {/* Say so out loud — players appearing in a squad that nobody
                     remembers bidding for would look like a bug from the room. */}
                 {A.allocated.length > 0 && (
-                  <p className="mt-3 inline-block rounded-2xl bg-amber-400/15 border border-amber-300/30
-                                px-4 py-2.5 text-[12px] text-amber-100 leading-snug">
+                  <p className="mt-3 inline-block r-card bg-amber-400/15 border border-amber-300/30
+                                px-4 py-2.5 t-body text-amber-100 leading-snug">
                     <b>{A.allocated.length} player{A.allocated.length > 1 ? 's' : ''}</b> nobody
                     bid for {A.allocated.length > 1 ? 'were' : 'was'} shared out at base price to
                     even up the squads:{' '}
@@ -455,7 +455,7 @@ export function AuctionLive() {
                 <div className="grid grid-cols-2 gap-2.5">
                   {(['team1', 'team2'] as TeamKey[]).map(t => (
                     <button key={t} onClick={() => A.bid(t)} disabled={!A.canBid(t)}
-                      className="rounded-2xl py-4 text-white font-black shadow-lg disabled:opacity-40
+                      className="r-control py-4 text-white font-black shadow-lg disabled:opacity-40
                                  disabled:cursor-not-allowed active:scale-95 transition-transform"
                       style={{ background: A.canBid(t) ? TEAM_COLOR[t] : '#94a3b8' }}>
                       <span className="text-2xl block">{TEAM_EMOJI[t]}</span>
@@ -483,12 +483,12 @@ export function AuctionLive() {
                     }
                     A.sell(baseOf);
                   }} disabled={!a.current_bidder}
-                    className="rounded-2xl py-3 bg-emerald-500 disabled:opacity-40 text-white font-black text-sm
+                    className="r-control py-3 bg-emerald-500 disabled:opacity-40 text-white font-black text-sm
                                inline-flex items-center justify-center gap-1.5">
                     <Check className="w-4 h-4" /> SOLD
                   </button>
                   <button onClick={() => A.passOver(baseOf)}
-                    className="rounded-2xl py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white
+                    className="r-control py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white
                                font-black text-sm inline-flex items-center justify-center gap-1.5">
                     <X className="w-4 h-4" /> Unsold
                   </button>
@@ -496,7 +496,7 @@ export function AuctionLive() {
                       a stray tap on a team used to mean selling the player and
                       undoing that — which threw away his whole auction. */}
                   <button onClick={() => A.undoBid()} disabled={A.bidsOnCurrent.length === 0}
-                    className="rounded-2xl py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white
+                    className="r-control py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white
                                font-black text-sm disabled:opacity-40 inline-flex items-center justify-center gap-1.5">
                     <Undo2 className="w-4 h-4" /> Take back bid
                   </button>
@@ -508,8 +508,8 @@ export function AuctionLive() {
                     A.undo(baseOf);
                   }
                 }} disabled={A.picks.length === 0}
-                  className="w-full rounded-2xl py-2.5 border-2 border-rose-200 dark:border-rose-400/30
-                             text-rose-600 dark:text-rose-300 font-black text-[12px] disabled:opacity-40
+                  className="w-full r-control py-2.5 border-2 border-rose-200 dark:border-rose-400/30
+                             text-rose-600 dark:text-rose-300 font-black t-body disabled:opacity-40
                              inline-flex items-center justify-center gap-1.5">
                   <Undo2 className="w-3.5 h-3.5" /> Reopen the last player
                 </button>
@@ -522,13 +522,13 @@ export function AuctionLive() {
                 one. Grouped by set, and the draw is random within a set, so
                 this tells you WHO is coming without giving away the order. */}
             {a.status === 'live' && (remaining.length > 0 || A.unsold.length > 0) && (
-              <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+              <div className="r-card bg-white dark:bg-white/5 border border-slate-200
                               dark:border-white/10 p-4">
                 <div className="flex items-baseline justify-between mb-3">
-                  <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                  <h3 className="t-meta font-black uppercase tracking-widest text-slate-500">
                     Still to come · 🎲 random order
                   </h3>
-                  <span className="text-[11px] font-bold text-slate-400">
+                  <span className="t-meta font-bold text-slate-400">
                     {remaining.length + A.unsold.length} left
                   </span>
                 </div>
@@ -538,7 +538,7 @@ export function AuctionLive() {
                     if (inBand.length === 0) return null;
                     return (
                       <div key={band.key}>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                        <p className="t-micro font-black uppercase tracking-widest text-slate-400 mb-1.5">
                           {band.emoji} {band.label} · {inBand.length}
                         </p>
                         <div className="flex flex-wrap gap-1.5">
@@ -547,8 +547,8 @@ export function AuctionLive() {
                             .sort((x, y) => y.p - x.p || x.name.localeCompare(y.name))
                             .map(x => (
                               <span key={x.id}
-                                className="inline-flex items-center gap-1 rounded-lg bg-slate-100
-                                           dark:bg-white/10 px-2 py-1 text-[11px] font-bold
+                                className="inline-flex items-center gap-1 r-card bg-slate-100
+                                           dark:bg-white/10 px-2 py-1 t-meta font-bold
                                            text-slate-700 dark:text-white/80">
                                 {x.name}
                                 <span className="text-slate-400 font-black">{formatPrice(x.p)}</span>
@@ -564,7 +564,7 @@ export function AuctionLive() {
                     exactly what decides whether he saves his purse. */}
                 {A.unsold.length > 0 && (
                   <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/10">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1.5">
+                    <p className="t-micro font-black uppercase tracking-widest text-amber-600 mb-1.5">
                       ↻ Passed over · {A.unsold.length} — back at base price next round
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -573,9 +573,9 @@ export function AuctionLive() {
                         .sort((x, y) => y.p - x.p || x.name.localeCompare(y.name))
                         .map(x => (
                           <span key={x.id}
-                            className="inline-flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-400/10
+                            className="inline-flex items-center gap-1 r-card bg-amber-50 dark:bg-amber-400/10
                                        border border-amber-200 dark:border-amber-400/20 px-2 py-1
-                                       text-[11px] font-bold text-amber-800 dark:text-amber-200">
+                                       t-meta font-bold text-amber-800 dark:text-amber-200">
                             {x.name}
                             <span className="text-amber-500 font-black">{formatPrice(x.p)}</span>
                           </span>
@@ -593,20 +593,20 @@ export function AuctionLive() {
                 const roster = A.squad(t);
                 const used = (A.spent(t) / (a.purse_lakh || 1)) * 100;
                 return (
-                  <div key={t} className="rounded-3xl p-4 text-white shadow-lg"
+                  <div key={t} className="r-card p-4 text-white shadow-lg"
                     style={{ background: `linear-gradient(150deg, ${TEAM_COLOR[t]}, #0b1220)` }}>
                     <div className="flex items-center justify-between">
                       <span className="font-black text-lg">{TEAM_EMOJI[t]} {teamName(t)}</span>
-                      <span className="text-[10px] font-bold text-white/60">
+                      <span className="t-micro font-bold text-white/60">
                         {roster.length + 1}/{a.squad_size}
                       </span>
                     </div>
 
                     {cap && (
-                      <div className="flex items-center gap-2 mt-2.5 bg-white/12 rounded-xl px-2 py-1.5">
+                      <div className="flex items-center gap-2 mt-2.5 bg-white/12 r-card px-2 py-1.5">
                         <Crown className="w-3.5 h-3.5 text-amber-300" fill="currentColor" />
                         <span className="text-sm font-bold truncate">{memberById[cap]?.name}</span>
-                        <span className="ml-auto text-[10px] font-black text-amber-300">
+                        <span className="ml-auto t-micro font-black text-amber-300">
                           {A.captainCost(t) > 0 ? formatPrice(A.captainCost(t)) : 'CAPTAIN'}
                         </span>
                       </div>
@@ -617,7 +617,7 @@ export function AuctionLive() {
                         A.budget(t) < 0 ? 'text-rose-300' : ''}`}>
                         <Wallet className="w-4 h-4 opacity-60" />{formatPrice(A.budget(t))}
                       </span>
-                      <span className="text-[10px] text-white/55">
+                      <span className="t-micro text-white/55">
                         {A.budget(t) < 0 ? 'overspent · ' : 'left '}of {formatPrice(a.purse_lakh)}
                         {A.captainCost(t) > 0 && ` · −${formatPrice(A.captainCost(t))} retention`}
                       </span>
@@ -628,13 +628,13 @@ export function AuctionLive() {
 
                     <div className="mt-3 space-y-1">
                       {roster.length === 0 && (
-                        <p className="text-[11px] text-white/45 py-1">No players bought yet</p>
+                        <p className="t-meta text-white/45 py-1">No players bought yet</p>
                       )}
                       {roster.map(p => (
-                        <div key={p.id} className="flex items-center gap-2 bg-white/8 rounded-lg px-2 py-1">
+                        <div key={p.id} className="flex items-center gap-2 bg-white/8 r-card px-2 py-1">
                           <Users className="w-3 h-3 text-white/40 flex-shrink-0" />
                           <span className="text-xs truncate flex-1">{memberById[p.member_id]?.name}</span>
-                          <span className="text-[11px] font-black tabular-nums">{formatPrice(p.price)}</span>
+                          <span className="t-meta font-black tabular-nums">{formatPrice(p.price)}</span>
                         </div>
                       ))}
                     </div>
@@ -645,8 +645,8 @@ export function AuctionLive() {
 
             {/* ── SOLD LOG ─────────────────────────────────────────────── */}
             {A.picks.length > 0 && (
-              <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4">
-                <p className="text-[10px] font-black uppercase tracking-[2px] text-slate-400 mb-2">Auction log</p>
+              <div className="r-card bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4">
+                <p className="t-micro font-black uppercase tracking-[2px] text-slate-400 mb-2">Auction log</p>
                 <div className="max-h-56 overflow-y-auto space-y-1">
                   {[...A.picks].reverse().map(p => (
                     <div key={p.id} className="flex items-center gap-2 text-xs py-0.5">
@@ -681,7 +681,7 @@ function Stat({ v, l }: { v: number; l: string }) {
   return (
     <div className="text-center">
       <p className="text-2xl font-extrabold tabular-nums">{v}</p>
-      <p className="text-[10px] uppercase tracking-widest text-white/40">{l}</p>
+      <p className="t-micro uppercase tracking-widest text-white/40">{l}</p>
     </div>
   );
 }
@@ -710,7 +710,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
 
   if (!isAdmin) {
     return (
-      <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 text-center">
+      <div className="r-card bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 text-center">
         <Gavel className="w-10 h-10 text-violet-500 mx-auto mb-3" />
         <h2 className="text-lg font-black text-slate-900 dark:text-white">The auction hasn't started</h2>
         <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
@@ -749,7 +749,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
   };
 
   return (
-    <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 space-y-4">
+    <div className="r-card bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 space-y-4">
       <div>
         <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
           <Gavel className="w-5 h-5 text-violet-500" /> Set up the auction
@@ -761,15 +761,15 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">🦁 Team 1 name</label>
+          <label className="t-micro font-black uppercase tracking-widest text-slate-400">🦁 Team 1 name</label>
           <input value={t1} onChange={e => setT1(e.target.value)} className={input} />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">🐅 Team 2 name</label>
+          <label className="t-micro font-black uppercase tracking-widest text-slate-400">🐅 Team 2 name</label>
           <input value={t2} onChange={e => setT2(e.target.value)} className={input} />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Team 1 captain</label>
+          <label className="t-micro font-black uppercase tracking-widest text-slate-400">Team 1 captain</label>
           <select value={c1} onChange={e => setC1(e.target.value)} className={input}>
             <option value="">— Select —</option>
             {league.going.map(r => r.member_id).filter(id => id !== c2).map(id => (
@@ -778,7 +778,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
           </select>
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Team 2 captain</label>
+          <label className="t-micro font-black uppercase tracking-widest text-slate-400">Team 2 captain</label>
           <select value={c2} onChange={e => setC2(e.target.value)} className={input}>
             <option value="">— Select —</option>
             {league.going.map(r => r.member_id).filter(id => id !== c1).map(id => (
@@ -787,7 +787,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
           </select>
         </div>
         <div className="col-span-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <label className="t-micro font-black uppercase tracking-widest text-slate-400">
             Purse per team (₹ lakh) — {formatPrice(purse)}
           </label>
           <input type="number" value={purse} onChange={e => setPurse(Number(e.target.value) || 0)} className={input} />
@@ -797,7 +797,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
       {err && <p className="text-sm font-bold text-rose-500">{err}</p>}
 
       <button onClick={go} disabled={busy}
-        className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-black py-4
+        className="w-full r-control bg-gradient-to-r from-violet-600 to-pink-600 text-white font-black py-4
                    disabled:opacity-40">
         {busy ? 'Starting…' : 'Start the auction 🔨'}
       </button>

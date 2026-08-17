@@ -50,7 +50,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               <ThemeToggle />
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-2 r-control hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -63,7 +63,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               href="/book-match"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
+              className="flex items-center gap-3 px-4 py-3 r-card bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
               onClick={onClose}
             >
               <BookOpen className="w-5 h-5" />
@@ -95,7 +95,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 to={item.to}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  `flex items-center gap-3 px-4 py-3 r-card transition-colors ${
                     isActive
                       ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -115,7 +115,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   to="/match-day-tools"
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    `flex items-center gap-3 px-4 py-3 r-card transition-colors ${
                       isActive
                         ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -130,7 +130,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   to="/bookings"
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    `flex items-center gap-3 px-4 py-3 r-card transition-colors ${
                       isActive
                         ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -145,7 +145,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   to="/annual-report"
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    `flex items-center gap-3 px-4 py-3 r-card transition-colors ${
                       isActive
                         ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -160,7 +160,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   to="/requests"
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    `flex items-center gap-3 px-4 py-3 r-card transition-colors ${
                       isActive
                         ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -180,7 +180,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   to="/settings"
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    `flex items-center gap-3 px-4 py-3 r-card transition-colors ${
                       isActive
                         ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -199,7 +199,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             {isAdmin ? (
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 r-control bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
               >
                 <Shield className="w-5 h-5 text-primary-500" />
                 <div className="flex-1 text-left">
@@ -211,7 +211,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             ) : (
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 r-control bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               >
                 <Lock className="w-5 h-5 text-gray-500" />
                 <div className="flex-1 text-left">

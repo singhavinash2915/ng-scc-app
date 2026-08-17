@@ -62,18 +62,18 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
     const avatar = getAvatar(player.member);
     const name = getName(player.member);
     return (
-      <div className="relative overflow-hidden rounded-2xl p-5 lg:p-6 flex flex-col min-h-[200px]"
+      <div className="relative overflow-hidden r-card p-5 lg:p-6 flex flex-col min-h-[200px]"
            style={{ background: color.bg }}>
-        <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ border: `1px solid ${color.border}` }} />
+        <div className="absolute inset-0 r-card pointer-events-none" style={{ border: `1px solid ${color.border}` }} />
         <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-40" style={{ background: color.glow }} />
 
         <div className="flex items-center justify-between mb-1 relative">
           <div className={`flex items-center gap-1.5 ${color.accent}`}>
-            <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: color.glow }}>
+            <span className="w-6 h-6 r-card flex items-center justify-center" style={{ background: color.glow }}>
               {icon}
             </span>
           </div>
-          <span className={`text-[10px] font-bold uppercase tracking-[2px] ${color.accent}`}>{label}</span>
+          <span className={`t-micro font-bold uppercase tracking-[2px] ${color.accent}`}>{label}</span>
         </div>
 
         <div className="flex-1 flex flex-col justify-center relative py-2">
@@ -81,7 +81,7 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
                style={{ background: color.numText, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             {number}
           </div>
-          <div className="text-[10px] text-gray-400 uppercase tracking-[1.5px] font-bold mt-2">{subtitle}</div>
+          <div className="t-micro text-gray-400 uppercase tracking-[1.5px] font-bold mt-2">{subtitle}</div>
         </div>
 
         <div className="relative pt-3 border-t border-white/8 flex items-center gap-2.5">
@@ -96,7 +96,7 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
             <div className="text-sm font-bold text-white truncate leading-tight">{name.split(' ').slice(0, 2).join(' ')}</div>
           </div>
           {moms > 0 && (
-            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[10px] font-black flex-shrink-0">
+            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 t-micro font-black flex-shrink-0">
               <Crown className="w-2.5 h-2.5" fill="currentColor" />{moms}
             </span>
           )}
@@ -109,7 +109,7 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
     <div>
       {/* Section header */}
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
+        <h2 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
           <Star className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
           Season 2025–26 Stars
         </h2>
@@ -121,11 +121,11 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
       <div className="space-y-3">
 
         {/* ── MVP HERO CARD (full width, featured) ────────────────────────── */}
-        <div className="relative overflow-hidden rounded-3xl p-6 lg:p-8"
+        <div className="relative overflow-hidden r-card p-6 lg:p-8"
              style={{
                background: 'radial-gradient(600px circle at 10% 0%, rgba(251,191,36,0.3), transparent 50%), radial-gradient(800px circle at 100% 100%, rgba(245,158,11,0.15), transparent 60%), linear-gradient(135deg, #78350f 0%, #1a0f05 60%, #0a1019 100%)',
              }}>
-          <div className="absolute inset-0 border border-amber-500/30 rounded-3xl pointer-events-none" />
+          <div className="absolute inset-0 border border-amber-500/30 r-card pointer-events-none" />
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-400/15 rounded-full blur-3xl" />
           <div className="absolute top-1/2 -translate-y-1/2 right-10 w-1 h-24 bg-gradient-to-b from-transparent via-amber-400/30 to-transparent hidden lg:block" />
 
@@ -139,9 +139,9 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
               <div className="relative flex-shrink-0">
                 {mvpAvatar ? (
                   <img src={mvpAvatar} alt=""
-                       className="w-24 h-24 lg:w-28 lg:h-28 rounded-2xl object-cover border-[3px] border-amber-400/50 shadow-2xl shadow-amber-500/40" />
+                       className="w-24 h-24 lg:w-28 lg:h-28 r-card object-cover border-[3px] border-amber-400/50 shadow-2xl shadow-amber-500/40" />
                 ) : (
-                  <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 border-[3px] border-amber-400/50 flex items-center justify-center shadow-2xl shadow-amber-500/40">
+                  <div className="w-24 h-24 lg:w-28 lg:h-28 r-card bg-gradient-to-br from-amber-400 to-yellow-600 border-[3px] border-amber-400/50 flex items-center justify-center shadow-2xl shadow-amber-500/40">
                     <span className="text-4xl font-black text-yellow-950">{mvpName.charAt(0)}</span>
                   </div>
                 )}
@@ -152,9 +152,9 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[2px]">Season MVP</span>
+                  <span className="text-amber-300/80 t-micro font-bold uppercase tracking-[2px]">Season MVP</span>
                   {mvpMoms > 0 && (
-                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-[10px] font-black">
+                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 t-micro font-black">
                       <Crown className="w-2.5 h-2.5" fill="currentColor" />
                       {mvpMoms} MOM{mvpMoms > 1 ? 's' : ''}
                     </span>
@@ -183,19 +183,19 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
                   <div className="text-xl lg:text-2xl font-black text-white tabular-nums leading-none">
                     {mvp.player.batting_runs}
                   </div>
-                  <div className="text-[9px] text-amber-300/60 uppercase tracking-widest font-bold mt-1">Runs</div>
+                  <div className="t-micro text-amber-300/60 uppercase tracking-widest font-bold mt-1">Runs</div>
                 </div>
                 <div className="text-center lg:text-left">
                   <div className="text-xl lg:text-2xl font-black text-white tabular-nums leading-none">
                     {mvp.player.bowling_wickets}
                   </div>
-                  <div className="text-[9px] text-amber-300/60 uppercase tracking-widest font-bold mt-1">Wickets</div>
+                  <div className="t-micro text-amber-300/60 uppercase tracking-widest font-bold mt-1">Wickets</div>
                 </div>
                 <div className="text-center lg:text-left">
                   <div className="text-xl lg:text-2xl font-black text-white tabular-nums leading-none">
                     {mvp.player.fielding_catches + mvp.player.fielding_stumpings + mvp.player.fielding_run_outs}
                   </div>
-                  <div className="text-[9px] text-amber-300/60 uppercase tracking-widest font-bold mt-1">Dismissals</div>
+                  <div className="t-micro text-amber-300/60 uppercase tracking-widest font-bold mt-1">Dismissals</div>
                 </div>
               </div>
             </div>

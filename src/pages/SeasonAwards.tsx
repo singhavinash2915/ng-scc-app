@@ -43,7 +43,7 @@ export function SeasonAwards() {
       <div className="p-4 lg:p-8 max-w-3xl mx-auto space-y-4">
 
         {/* Hero */}
-        <div className="rounded-3xl p-6 text-center text-white relative overflow-hidden"
+        <div className="r-card p-6 text-center text-white relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg,#b45309,#f59e0b 55%,#fde68a)' }}>
           <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/20 blur-3xl" />
           <Trophy className="w-11 h-11 mx-auto drop-shadow" fill="currentColor" />
@@ -56,9 +56,9 @@ export function SeasonAwards() {
           {SEASON_AWARDS.map(w => {
             const m = resolve(w);
             return (
-              <div key={w.key} className="rounded-3xl p-5 text-white relative overflow-hidden shadow-lg" style={{ background: w.accent }}>
+              <div key={w.key} className="r-card p-5 text-white relative overflow-hidden shadow-lg" style={{ background: w.accent }}>
                 <div className="absolute -top-10 -right-8 w-32 h-32 rounded-full bg-white/15 blur-2xl pointer-events-none" />
-                <div className="flex items-center gap-1.5 text-white/90 text-[10px] font-black uppercase tracking-[2px]">
+                <div className="flex items-center gap-1.5 text-white/90 t-micro font-black uppercase tracking-[2px]">
                   <Sparkles className="w-3.5 h-3.5" /> {w.title}
                 </div>
                 <div className="flex items-center gap-4 mt-3">

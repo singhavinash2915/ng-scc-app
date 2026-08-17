@@ -19,10 +19,10 @@ const TEAM_EMOJI: Record<TeamKey, string> = { team1: '🦁', team2: '🐅' };
 
 function Face({ member, size = 40 }: { member?: Member; size?: number }) {
   return member?.avatar_url ? (
-    <img src={member.avatar_url} alt="" className="rounded-xl object-cover flex-shrink-0"
+    <img src={member.avatar_url} alt="" className="r-card object-cover flex-shrink-0"
       style={{ width: size, height: size }} />
   ) : (
-    <div className="rounded-xl bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-white/60
+    <div className="r-card bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-white/60
                     font-black flex items-center justify-center flex-shrink-0"
       style={{ width: size, height: size, fontSize: size * 0.4 }}>
       {member?.name?.charAt(0) ?? '?'}
@@ -96,12 +96,12 @@ export function AuctionCentre() {
       <div className="p-4 lg:p-8 max-w-3xl mx-auto">
 
         {/* status */}
-        <div className="flex items-center justify-between rounded-2xl bg-slate-900 text-white px-4 py-2.5 mb-3">
-          <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
+        <div className="flex items-center justify-between r-card bg-slate-900 text-white px-4 py-2.5 mb-3">
+          <span className="inline-flex items-center gap-2 t-meta font-black uppercase tracking-widest">
             <Radio className={`w-3.5 h-3.5 ${started ? 'text-rose-400' : 'text-white/30'}`} />
             {!started ? 'Auction not started' : a!.status === 'done' ? 'Auction completed' : 'Live'}
           </span>
-          <span className="text-[11px] font-bold text-white/60">
+          <span className="t-meta font-bold text-white/60">
             {started
               ? `${A.sold.length} sold · ${A.unsold.length} unsold`
               : `${pool.length} players · ${formatPrice(PURSE_LAKH)} a side`}
@@ -126,7 +126,7 @@ export function AuctionCentre() {
         {tab === 'live' && (
           <div className="space-y-3">
             {!started && (
-              <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+              <div className="r-card bg-white dark:bg-white/5 border border-slate-200
                               dark:border-white/10 p-6 text-center">
                 <p className="text-4xl">🔨</p>
                 <h2 className="text-lg font-black text-slate-900 dark:text-white mt-2">
@@ -139,11 +139,11 @@ export function AuctionCentre() {
                 {/* Say it plainly and say it early. Nobody can audit the draw from
                     the outside, so the least we owe the squad is a clear statement
                     of how the order is decided, before it starts mattering. */}
-                <div className="mt-4 rounded-2xl bg-emerald-50 dark:bg-emerald-400/10 border
+                <div className="mt-4 r-card bg-emerald-50 dark:bg-emerald-400/10 border
                                 border-emerald-200 dark:border-emerald-400/20 px-4 py-3 text-left">
-                  <p className="text-[11px] font-black uppercase tracking-widest text-emerald-700
+                  <p className="t-meta font-black uppercase tracking-widest text-emerald-700
                                 dark:text-emerald-300">🎲 Random order</p>
-                  <p className="text-[12px] text-emerald-900/80 dark:text-emerald-100/70 mt-1 leading-snug">
+                  <p className="t-body text-emerald-900/80 dark:text-emerald-100/70 mt-1 leading-snug">
                     Names are drawn at random from the top grade still on the table — SCC
                     Icons first, then Grade B, then Grade C. There is no running order and
                     nobody, the auctioneer included, knows who is next until it happens.
@@ -157,10 +157,10 @@ export function AuctionCentre() {
               </p>
             )}
             {featured.map(({ tag, icon: Icon, pick, cls }) => (
-              <div key={tag} className="rounded-3xl bg-white dark:bg-white/5 border
+              <div key={tag} className="r-card bg-white dark:bg-white/5 border
                               border-slate-200 dark:border-white/10 overflow-hidden">
                 <div className="px-4 pt-3">
-                  <span className={`inline-flex items-center gap-1.5 text-[10px] font-black
+                  <span className={`inline-flex items-center gap-1.5 t-micro font-black
                                     uppercase tracking-widest ${cls}`}>
                     <Icon className="w-3.5 h-3.5" /> {tag}
                   </span>
@@ -171,11 +171,11 @@ export function AuctionCentre() {
                     <p className="font-black text-slate-900 dark:text-white truncate">
                       {memberById[pick.member_id]?.name}
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="t-meta text-slate-400">
                       {league.registrations.find(r => r.member_id === pick.member_id)?.role ?? '—'}
                     </p>
                   </div>
-                  <span className="text-[10px] font-black bg-emerald-100 text-emerald-700
+                  <span className="t-micro font-black bg-emerald-100 text-emerald-700
                                    dark:bg-emerald-500/15 dark:text-emerald-300 rounded px-2 py-1">
                     SOLD
                   </span>
@@ -193,7 +193,7 @@ export function AuctionCentre() {
 
         {/* ── TEAMS ────────────────────────────────────────────────────── */}
         {tab === 'teams' && !started && (
-          <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+          <div className="r-card bg-white dark:bg-white/5 border border-slate-200
                           dark:border-white/10 p-6 text-center">
             <Crown className="w-8 h-8 text-amber-500 mx-auto" fill="currentColor" />
             <p className="text-sm font-black text-slate-900 dark:text-white mt-2">
@@ -206,10 +206,10 @@ export function AuctionCentre() {
         )}
 
         {tab === 'teams' && a && (
-          <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+          <div className="r-card bg-white dark:bg-white/5 border border-slate-200
                           dark:border-white/10 overflow-hidden">
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2.5 bg-slate-50
-                            dark:bg-white/5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                            dark:bg-white/5 t-micro font-black uppercase tracking-wider text-slate-400">
               <span>Team</span><span className="text-right">Spent</span>
               <span className="text-right">Remaining</span><span className="text-right">Players</span>
             </div>
@@ -233,7 +233,7 @@ export function AuctionCentre() {
 
             {(['team1', 'team2'] as TeamKey[]).map(t => (
               <div key={`sq-${t}`} className="border-t border-slate-100 dark:border-white/10 px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-widest mb-2"
+                <p className="t-micro font-black uppercase tracking-widest mb-2"
                   style={{ color: TEAM_COLOR[t] }}>{name(t)} squad</p>
                 <div className="flex items-center gap-2 py-1">
                   <Crown className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="currentColor" />
@@ -266,11 +266,11 @@ export function AuctionCentre() {
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search players"
-                className="w-full rounded-2xl border border-slate-200 dark:border-white/15
+                className="w-full r-control border border-slate-200 dark:border-white/15
                            bg-white dark:bg-white/5 pl-9 pr-3 py-2.5 text-sm" />
             </div>
 
-            <div className="rounded-3xl bg-white dark:bg-white/5 border border-slate-200
+            <div className="r-card bg-white dark:bg-white/5 border border-slate-200
                             dark:border-white/10 overflow-hidden">
               {filtered.map(r => {
                 const m = memberById[r.member_id];
@@ -287,7 +287,7 @@ export function AuctionCentre() {
                         <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
                           {m?.name}
                         </p>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="t-meta text-slate-400">
                           {tier.emoji} {r.role ?? '—'} · base {formatPrice(r.base_price)}
                         </p>
                       </div>
@@ -297,14 +297,14 @@ export function AuctionCentre() {
                               style={{ color: TEAM_COLOR[pick.team] }}>
                               {formatPrice(pick.price)}
                             </span>
-                          : <span className="text-[10px] font-black text-slate-400">UNSOLD</span>
-                        : <span className="text-[10px] font-bold text-slate-300">—</span>}
+                          : <span className="t-micro font-black text-slate-400">UNSOLD</span>
+                        : <span className="t-micro font-bold text-slate-300">—</span>}
                     </button>
 
                     {isOpen && (
                       <div className="px-4 pb-4">
                         {pick?.team && (
-                          <div className="grid grid-cols-3 rounded-2xl bg-slate-50 dark:bg-white/5
+                          <div className="grid grid-cols-3 r-card bg-slate-50 dark:bg-white/5
                                           divide-x divide-slate-200 dark:divide-white/10 mb-3">
                             <Cell label="Base price" value={formatPrice(r.base_price)} />
                             <Cell label="Final price" value={formatPrice(pick.price)} />
@@ -315,7 +315,7 @@ export function AuctionCentre() {
                           <p className="text-xs italic text-slate-500 dark:text-white/60 mb-3">"{r.pitch}"</p>
                         )}
 
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                        <p className="t-micro font-black uppercase tracking-widest text-slate-400 mb-1.5">
                           Auction trail · {trail.length} bid{trail.length === 1 ? '' : 's'}
                         </p>
                         {trail.length === 0 ? (
@@ -325,13 +325,13 @@ export function AuctionCentre() {
                         ) : (
                           <div className="space-y-1">
                             {trail.map((b, i) => (
-                              <div key={b.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5"
+                              <div key={b.id} className="flex items-center gap-2 r-card px-2 py-1.5"
                                 style={{ background: i === 0 ? `${TEAM_COLOR[b.team]}1a` : undefined }}>
                                 <span className="text-xs font-black flex-1" style={{ color: TEAM_COLOR[b.team] }}>
                                   {TEAM_EMOJI[b.team]} {name(b.team)}
                                 </span>
                                 {i === 0 && pick?.team && (
-                                  <span className="text-[9px] font-black bg-emerald-100 text-emerald-700
+                                  <span className="t-micro font-black bg-emerald-100 text-emerald-700
                                                    dark:bg-emerald-500/15 dark:text-emerald-300 rounded px-1.5 py-0.5">
                                     SOLD
                                   </span>
@@ -362,7 +362,7 @@ export function AuctionCentre() {
 function Cell({ label, value }: { label: string; value: string }) {
   return (
     <div className="px-3 py-2.5 text-center">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+      <p className="t-micro font-bold uppercase tracking-wider text-slate-400">{label}</p>
       <p className="text-sm font-black text-slate-900 dark:text-white mt-0.5 truncate">{value}</p>
     </div>
   );

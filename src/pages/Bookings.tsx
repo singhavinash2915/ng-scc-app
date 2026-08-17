@@ -187,7 +187,7 @@ export function Bookings() {
           </Button>
           <button
             onClick={() => { fetchBookings(); fetchSlots(); }}
-            className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            className="p-2 r-control border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             title="Refresh"
           >
             <RefreshCw className="w-4 h-4 text-gray-500" />
@@ -203,7 +203,7 @@ export function Bookings() {
           { label: 'Confirmed',      value: stats.confirmed, icon: CheckCircle2, color: 'text-green-500' },
           { label: 'Revenue Verified', value: `₹${stats.revenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: 'text-primary-500' },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <div key={label} className="bg-white dark:bg-gray-800 r-card border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-2 mb-1">
               <Icon className={`w-4 h-4 ${color}`} />
               <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
@@ -237,7 +237,7 @@ export function Bookings() {
           <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         </div>
       ) : error ? (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex gap-3">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 r-card p-4 flex gap-3">
           <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
           <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
         </div>
@@ -248,7 +248,7 @@ export function Bookings() {
           <p className="text-sm mt-1">Share the booking link to start receiving requests.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
           {/* Mobile cards / Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
@@ -368,7 +368,7 @@ export function Bookings() {
         {selectedBooking && (
           <div className="space-y-5">
             {/* Match date + amount */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 dark:bg-gray-700/50 r-card p-4 grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Match Date</p>
                 <p className="font-semibold text-gray-900 dark:text-white">
@@ -476,12 +476,12 @@ export function Bookings() {
                 placeholder="e.g. Payment verified via UPI. Please confirm 30 mins early."
                 value={adminNotes}
                 onChange={e => setAdminNotes(e.target.value)}
-                className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 resize-none"
+                className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 r-control px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 resize-none"
               />
             </div>
 
             {actionError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 r-card p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 {actionError}
               </div>
@@ -512,14 +512,14 @@ export function Bookings() {
             )}
 
             {selectedBooking.status === 'confirmed' && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl p-3 text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 r-card p-3 text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
                 Booking confirmed. Match has been created in the Matches page.
               </div>
             )}
 
             {(selectedBooking.status === 'rejected' || selectedBooking.status === 'cancelled') && (
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 text-sm text-gray-500 dark:text-gray-400">
+              <div className="bg-gray-50 dark:bg-gray-700/50 r-card p-3 text-sm text-gray-500 dark:text-gray-400">
                 This booking has been {selectedBooking.status}. The slot has been released.
               </div>
             )}
@@ -534,21 +534,21 @@ export function Bookings() {
                   <Trash2 className="w-3.5 h-3.5" /> Delete this booking permanently
                 </button>
               ) : (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-3 space-y-2">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 r-card p-3 space-y-2">
                   <p className="text-sm font-medium text-red-700 dark:text-red-400">
                     Are you sure? This will permanently delete the booking and release the slot.
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="flex-1 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                      className="flex-1 py-1.5 text-xs r-control border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleDelete}
                       disabled={actionLoading}
-                      className="flex-1 py-1.5 text-xs rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition disabled:opacity-60 flex items-center justify-center gap-1"
+                      className="flex-1 py-1.5 text-xs r-control bg-red-500 hover:bg-red-600 text-white font-medium transition disabled:opacity-60 flex items-center justify-center gap-1"
                     >
                       {actionLoading
                         ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -576,7 +576,7 @@ export function Bookings() {
             <img
               src={selectedBooking.payment_screenshot_url}
               alt="Payment screenshot"
-              className="max-w-full rounded-xl border border-gray-200 dark:border-gray-600"
+              className="max-w-full r-card border border-gray-200 dark:border-gray-600"
             />
             <a
               href={selectedBooking.payment_screenshot_url}
@@ -618,13 +618,13 @@ export function Bookings() {
               return url ? (
                 <a href={url} target="_blank" rel="noopener noreferrer"
                   onClick={() => setNotify(null)}
-                  className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#25D366]
+                  className="flex items-center justify-center gap-2.5 r-card bg-[#25D366]
                              text-white font-black py-4 shadow-lg">
                   <MessageCircle className="w-5 h-5" />
                   Message {notify.booking.contact_name} on WhatsApp
                 </a>
               ) : (
-                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 r-card p-3">
                   Their number ({notify.booking.contact_phone}) isn't a valid Indian mobile,
                   so WhatsApp can't be opened automatically — you'll need to contact them directly.
                 </p>
@@ -755,7 +755,7 @@ function ManualBookingModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Match Date / Slot *</label>
             {slots.length === 0 ? (
-              <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-3 py-2.5">
+              <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 r-card px-3 py-2.5">
                 <AlertCircle className="w-4 h-4 shrink-0" /> No available slots. Open new slots first.
               </div>
             ) : (
@@ -821,7 +821,7 @@ function ManualBookingModal({
           </div>
 
           {/* Confirm + create match toggle */}
-          <label className="flex items-start gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 cursor-pointer">
+          <label className="flex items-start gap-3 bg-gray-50 dark:bg-gray-700/50 r-control p-3 cursor-pointer">
             <input type="checkbox" checked={confirmNow} onChange={e => setConfirmNow(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary-500" />
             <span className="text-sm">
               <span className="font-medium text-gray-900 dark:text-white">Confirm now & create the match</span>
@@ -832,7 +832,7 @@ function ManualBookingModal({
           </label>
 
           {err && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 r-card p-3 text-sm text-red-600 dark:text-red-400 flex gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /> {err}
             </div>
           )}

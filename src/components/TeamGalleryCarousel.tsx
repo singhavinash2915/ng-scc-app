@@ -41,13 +41,13 @@ export function TeamGalleryCarousel({ photos, autoPlayInterval = 5000 }: Props) 
 
   return (
     <div>
-      <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-3">
+      <h2 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-3">
         <Camera className="w-3.5 h-3.5 text-primary-500" />
         Team Gallery
       </h2>
 
       <div
-        className="relative rounded-2xl overflow-hidden bg-black group"
+        className="relative r-card overflow-hidden bg-black group"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
@@ -74,7 +74,7 @@ export function TeamGalleryCarousel({ photos, autoPlayInterval = 5000 }: Props) 
 
           {/* Counter */}
           {photos.length > 1 && (
-            <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-white">
+            <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-0.5 t-micro font-semibold text-white">
               {idx + 1} / {photos.length}
             </div>
           )}
@@ -127,7 +127,7 @@ export function TeamGalleryCarousel({ photos, autoPlayInterval = 5000 }: Props) 
                 key={p.url}
                 type="button"
                 onClick={() => goTo(i)}
-                className={`flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden transition-all ${
+                className={`flex-shrink-0 w-16 h-12 r-control overflow-hidden transition-all ${
                   i === idx
                     ? 'ring-2 ring-primary-500 ring-offset-1 ring-offset-black'
                     : 'opacity-60 hover:opacity-100'

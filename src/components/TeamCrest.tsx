@@ -13,7 +13,7 @@ export function TeamCrest({ team, size = 40 }: { team: TeamKey; size?: number })
 
   return (
     <span
-      className="relative inline-flex items-center justify-center rounded-xl flex-shrink-0 overflow-hidden"
+      className="relative inline-flex items-center justify-center r-card flex-shrink-0 overflow-hidden"
       style={{
         width: size, height: size,
         background: loaded ? 'transparent' : `${id.color}1f`,

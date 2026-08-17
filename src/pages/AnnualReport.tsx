@@ -17,7 +17,7 @@ export function AnnualReport() {
       <div>
         <Header title="Annual Report" subtitle="Admin only" />
         <div className="p-8 max-w-md mx-auto mt-12">
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center bg-white dark:bg-gray-900">
+          <div className="r-card border border-gray-200 dark:border-gray-700 p-8 text-center bg-white dark:bg-gray-900">
             <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
               <Lock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
             </div>
@@ -109,7 +109,7 @@ export function AnnualReport() {
             <select
               value={year}
               onChange={e => setYear(Number(e.target.value))}
-              className="appearance-none pl-3 pr-9 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 font-semibold text-sm cursor-pointer"
+              className="appearance-none pl-3 pr-9 py-2 r-control border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 font-semibold text-sm cursor-pointer"
             >
               {years.map(y => <option key={y} value={y}>FY {y}</option>)}
             </select>
@@ -117,7 +117,7 @@ export function AnnualReport() {
           </div>
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-semibold text-sm shadow-md"
+            className="inline-flex items-center gap-2 px-4 py-2 r-control bg-primary-500 hover:bg-primary-600 text-white font-semibold text-sm shadow-md"
           >
             <Printer className="w-4 h-4" />
             Print / Save as PDF
@@ -127,7 +127,7 @@ export function AnnualReport() {
         {/* ── Print-only header ───────────────────────────────────────────────── */}
         <div className="hidden print:block border-b-2 border-gray-300 pb-4 mb-4">
           <div className="flex items-center gap-3">
-            <img src="/scc-logo.jpg" alt="SCC" className="w-14 h-14 rounded-lg" />
+            <img src="/scc-logo.jpg" alt="SCC" className="w-14 h-14 r-card" />
             <div>
               <h1 className="text-2xl font-black">Sangria Cricket Club</h1>
               <p className="text-sm text-gray-600">Annual Report · Financial Year {year}</p>
@@ -138,37 +138,37 @@ export function AnnualReport() {
 
         {/* ── Summary cards ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print:gap-2">
-          <div className="rounded-2xl p-5 print:border print:border-gray-300"
+          <div className="r-card p-5 print:border print:border-gray-300"
                style={{ background: 'linear-gradient(135deg, #065f46 0%, #0a1019 100%)' }}>
             <div className="flex items-center gap-1.5 text-emerald-300/80 mb-1">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-[1.5px]">Deposits</span>
+              <span className="t-micro font-bold uppercase tracking-[1.5px]">Deposits</span>
             </div>
             <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">{fmt(data.deposits)}</p>
           </div>
-          <div className="rounded-2xl p-5"
+          <div className="r-card p-5"
                style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)' }}>
             <div className="flex items-center gap-1.5 text-red-300/80 mb-1">
               <TrendingDown className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-[1.5px]">Expenses</span>
+              <span className="t-micro font-bold uppercase tracking-[1.5px]">Expenses</span>
             </div>
             <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">{fmt(data.expenses)}</p>
           </div>
-          <div className="rounded-2xl p-5"
+          <div className="r-card p-5"
                style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)' }}>
             <div className="flex items-center gap-1.5 text-blue-300/80 mb-1">
               <IndianRupee className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-[1.5px]">Match Fees</span>
+              <span className="t-micro font-bold uppercase tracking-[1.5px]">Match Fees</span>
             </div>
             <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">{fmt(data.matchFees)}</p>
           </div>
-          <div className="rounded-2xl p-5"
+          <div className="r-card p-5"
                style={{ background: data.net >= 0
                  ? 'linear-gradient(135deg, #14532d 0%, #0a1019 100%)'
                  : 'linear-gradient(135deg, #7c2d12 0%, #0a1019 100%)' }}>
             <div className="flex items-center gap-1.5 text-amber-300/80 mb-1">
               <Calendar className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-[1.5px]">Net Flow</span>
+              <span className="t-micro font-bold uppercase tracking-[1.5px]">Net Flow</span>
             </div>
             <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${data.net >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
               {data.net >= 0 ? '+' : '−'}{fmt(Math.abs(data.net))}
@@ -177,7 +177,7 @@ export function AnnualReport() {
         </div>
 
         {/* ── Match summary ───────────────────────────────────────────────────── */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+        <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 p-5">
           <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
             <Calendar className="w-4 h-4 text-primary-500" />
             Match Performance · {year}
@@ -185,26 +185,26 @@ export function AnnualReport() {
           <div className="grid grid-cols-4 gap-2 text-center">
             <div>
               <p className="text-2xl font-black text-gray-900 dark:text-white">{data.matchesPlayed}</p>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">Played</p>
+              <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">Played</p>
             </div>
             <div>
               <p className="text-2xl font-black text-emerald-600">{data.won}</p>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">Won</p>
+              <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">Won</p>
             </div>
             <div>
               <p className="text-2xl font-black text-red-600">{data.lost}</p>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">Lost</p>
+              <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">Lost</p>
             </div>
             <div>
               <p className="text-2xl font-black text-amber-600">{data.drawn}</p>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">No Result</p>
+              <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">No Result</p>
             </div>
           </div>
         </div>
 
         {/* ── Two columns: Top contributors + Top expense categories ────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 print:grid-cols-2">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+          <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 p-5">
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
               <Users className="w-4 h-4 text-emerald-500" />
               Top Contributors
@@ -215,7 +215,7 @@ export function AnnualReport() {
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {data.topContributors.map((c, i) => (
                   <div key={c.member!.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                    <span className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black bg-gray-100 dark:bg-gray-800 text-gray-500">
+                    <span className="w-6 h-6 r-card flex items-center justify-center t-micro font-black bg-gray-100 dark:bg-gray-800 text-gray-500">
                       {i + 1}
                     </span>
                     <span className="flex-1 text-sm font-medium truncate">{c.member!.name}</span>
@@ -226,7 +226,7 @@ export function AnnualReport() {
             )}
           </div>
 
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+          <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 p-5">
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
               <TrendingDown className="w-4 h-4 text-red-500" />
               Top Expense Categories
@@ -237,7 +237,7 @@ export function AnnualReport() {
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {data.topCategories.map((c, i) => (
                   <div key={c.category} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                    <span className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black bg-gray-100 dark:bg-gray-800 text-gray-500">
+                    <span className="w-6 h-6 r-card flex items-center justify-center t-micro font-black bg-gray-100 dark:bg-gray-800 text-gray-500">
                       {i + 1}
                     </span>
                     <span className="flex-1 text-sm font-medium truncate">{c.category}</span>

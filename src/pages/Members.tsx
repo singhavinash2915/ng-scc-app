@@ -400,22 +400,22 @@ export function Members() {
           {showcase && (
             <Card animate>
               <CardContent className="p-5">
-                <div className="text-[10px] font-bold uppercase tracking-[2px] text-emerald-600 dark:text-emerald-400 mb-3">
+                <div className="t-micro font-bold uppercase tracking-[2px] text-emerald-600 dark:text-emerald-400 mb-3">
                   ⭐ Team Captain · Contact
                 </div>
                 <Link to={`/profile/${showcase.id}`} className="flex items-center gap-3.5 group">
                   {showcase.avatar_url ? (
                     <img src={showcase.avatar_url} alt={showcase.name}
-                      className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-400/40 ring-2 ring-emerald-400/15 shadow-md group-hover:scale-105 transition-transform" />
+                      className="w-16 h-16 r-card object-cover border-2 border-emerald-400/40 ring-2 ring-emerald-400/15 shadow-md group-hover:scale-105 transition-transform" />
                   ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 border-2 border-emerald-400/40 flex items-center justify-center shadow-md">
+                    <div className="w-16 h-16 r-card bg-gradient-to-br from-emerald-500 to-teal-600 border-2 border-emerald-400/40 flex items-center justify-center shadow-md">
                       <span className="text-emerald-50 font-black text-xl">{showcase.name.charAt(0)}</span>
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="font-black text-gray-900 dark:text-white text-base leading-tight">{showcase.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sangria Cricket Club</p>
-                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1.5">View profile →</p>
+                    <p className="t-meta text-emerald-600 dark:text-emerald-400 font-semibold mt-1.5">View profile →</p>
                   </div>
                 </Link>
               </CardContent>
@@ -436,7 +436,7 @@ export function Members() {
                   value={pinInput}
                   onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
                   placeholder="Enter member PIN"
-                  className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 text-center text-lg tracking-widest border border-gray-200 dark:border-gray-600 r-control bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                 />
                 {pinError && <p className="text-sm text-red-500">{pinError}</p>}
                 <Button type="submit" className="w-full" disabled={!pinInput.trim()}>
@@ -501,7 +501,7 @@ export function Members() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setBalanceFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+              className={`px-4 py-2 r-control font-medium text-sm transition-colors ${
                 balanceFilter === 'all'
                   ? 'bg-primary-500 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -511,7 +511,7 @@ export function Members() {
             </button>
             <button
               onClick={() => setBalanceFilter('low')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+              className={`px-4 py-2 r-control font-medium text-sm transition-colors flex items-center gap-2 ${
                 balanceFilter === 'low'
                   ? 'bg-orange-500 text-white'
                   : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50'
@@ -528,7 +528,7 @@ export function Members() {
             </button>
             <button
               onClick={() => setBalanceFilter('critical')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+              className={`px-4 py-2 r-control font-medium text-sm transition-colors flex items-center gap-2 ${
                 balanceFilter === 'critical'
                   ? 'bg-red-500 text-white'
                   : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
@@ -561,7 +561,7 @@ export function Members() {
             earned from match data rather than assigned. The admin list below
             still holds everything editable — this is the members' view. */}
         <div className="mb-6">
-          <p className="text-[10px] font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
+          <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
             The squad
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -581,19 +581,19 @@ export function Members() {
                 {statMap[member.id] && (
                   <div className="absolute top-3 right-4 text-right leading-none">
                     <span className="font-display text-2xl font-extrabold text-gray-900 dark:text-white tabular-nums">{statMap[member.id].ovr}</span>
-                    <span className="text-[9px] font-bold text-gray-400 align-top ml-0.5">OVR</span>
+                    <span className="t-micro font-bold text-gray-400 align-top ml-0.5">OVR</span>
                   </div>
                 )}
                 {isAdmin && (
                   <div className="absolute top-3 left-3 z-20">
                     <button
                       onClick={() => setMenuOpen(menuOpen === member.id ? null : member.id)}
-                      className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="p-1 r-control hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       <MoreVertical className="w-5 h-5 text-gray-500" />
                     </button>
                     {menuOpen === member.id && (
-                      <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-30">
+                      <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 r-card shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-30">
                         <button
                           onClick={() => openEditModal(member)}
                           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -653,12 +653,12 @@ export function Members() {
                       {isActive(member.id) ? 'active' : 'inactive'}
                     </Badge>
                     {member.role && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 r-card t-micro font-bold bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
                         <span>{ROLE_ICON[member.role]}</span>{ROLE_LABEL[member.role]}
                       </span>
                     )}
                     {member.jersey_number != null && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 tabular-nums">#{member.jersey_number}</span>
+                      <span className="px-1.5 py-0.5 rounded t-micro font-black bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 tabular-nums">#{member.jersey_number}</span>
                     )}
                   </div>
                 </Link>
@@ -668,12 +668,12 @@ export function Members() {
                   <div className="mt-4 mb-4 flex items-center justify-center gap-8">
                     <div className="text-center">
                       <p className="font-display text-xl font-extrabold text-gray-900 dark:text-white tabular-nums leading-none">{statMap[member.id].runs.toLocaleString()}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mt-1">Runs</p>
+                      <p className="t-micro uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mt-1">Runs</p>
                     </div>
                     <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
                     <div className="text-center">
                       <p className="font-display text-xl font-extrabold text-gray-900 dark:text-white tabular-nums leading-none">{statMap[member.id].wkts}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mt-1">Wkts</p>
+                      <p className="t-micro uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold mt-1">Wkts</p>
                     </div>
                   </div>
                 )}
@@ -723,7 +723,7 @@ export function Members() {
                 </div>
                 {/* Ground advance contribution badge */}
                 {(memberContributions.get(member.id) ?? 0) > 0 && (
-                  <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                  <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 r-card bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
                     <Landmark className="w-3 h-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                       Ground advance: ₹{(memberContributions.get(member.id) ?? 0).toLocaleString('en-IN')}
@@ -780,8 +780,8 @@ export function Members() {
           </div>
 
           {/* Cricket player attributes */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
+          <div className="r-card border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+            <p className="t-meta font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
             <Select
               label="Role"
               value={formData.role}
@@ -898,8 +898,8 @@ export function Members() {
           </div>
 
           {/* Cricket player attributes */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
+          <div className="r-card border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+            <p className="t-meta font-bold text-gray-400 uppercase tracking-widest">Cricket Profile</p>
             <Select
               label="Role"
               value={formData.role}
@@ -976,7 +976,7 @@ export function Members() {
       {/* Add Funds Modal */}
       <Modal isOpen={showFundModal} onClose={() => setShowFundModal(false)} title="Add Funds">
         <form onSubmit={handleAddFunds} className="space-y-4">
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4">
+          <div className="bg-gray-50 dark:bg-gray-900 r-card p-4 mb-4">
             <p className="text-sm text-gray-500">Adding funds for</p>
             <p className="font-semibold text-gray-900 dark:text-white">{selectedMember?.name}</p>
             <p className="text-sm text-gray-500">
@@ -1039,7 +1039,7 @@ export function Members() {
             />
             <label
               htmlFor="avatar-upload"
-              className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-primary-500 dark:hover:border-primary-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+              className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 r-control hover:border-primary-500 dark:hover:border-primary-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800/50"
             >
               {avatarUploading ? (
                 <div className="flex flex-col items-center gap-2">
@@ -1127,7 +1127,7 @@ export function Members() {
             return (
               <div className="space-y-4">
                 {/* Balance - prominent */}
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 r-card text-center">
                   <p className="text-xs text-gray-500 mb-1">Current Balance</p>
                   <p className={`text-2xl font-bold ${historyMember.balance < 500 ? 'text-red-500' : historyMember.balance < 1000 ? 'text-amber-500' : 'text-blue-600 dark:text-blue-400'}`}>
                     ₹{historyMember.balance.toLocaleString('en-IN')}
@@ -1136,11 +1136,11 @@ export function Members() {
 
                 {/* In / Out summary */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 r-card text-center">
                     <p className="text-xs text-gray-500 mb-1">Total In</p>
                     <p className="font-bold text-green-600 dark:text-green-400">₹{totalIn.toLocaleString('en-IN')}</p>
                   </div>
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-center">
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 r-card text-center">
                     <p className="text-xs text-gray-500 mb-1">Total Out</p>
                     <p className="font-bold text-red-500 dark:text-red-400">₹{totalOut.toLocaleString('en-IN')}</p>
                   </div>
@@ -1155,7 +1155,7 @@ export function Members() {
                 {isAdmin && (
                   <button
                     onClick={() => openAdjustModal(historyMember)}
-                    className="w-full py-2 px-4 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2 px-4 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 r-control text-sm font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors flex items-center justify-center gap-2"
                   >
                     <Settings2 className="w-4 h-4" />
                     Correct Balance
@@ -1178,7 +1178,7 @@ export function Members() {
                       const isPositive = isDeposit || isRefund || (isAdjustment && txn.amount >= 0);
 
                       return (
-                        <div key={txn.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div key={txn.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 r-card">
                           <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                               isAdjustment ? 'bg-purple-100 dark:bg-purple-900/30' :
@@ -1225,13 +1225,13 @@ export function Members() {
       {/* Balance Adjustment Modal */}
       <Modal isOpen={showAdjustModal} onClose={() => { setShowAdjustModal(false); setAdjustMember(null); }} title="Correct Balance">
         <form onSubmit={handleAdjustBalance} className="space-y-4">
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 r-card p-4 mb-4">
             <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
               Use this to fix incorrect balances (e.g., old app migration issues where contributions were migrated but match fees were not).
             </p>
           </div>
 
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+          <div className="bg-gray-50 dark:bg-gray-900 r-card p-4">
             <p className="text-sm text-gray-500">Correcting balance for</p>
             <p className="font-semibold text-gray-900 dark:text-white">{adjustMember?.name}</p>
             <p className="text-sm text-gray-500 mt-1">
@@ -1250,7 +1250,7 @@ export function Members() {
           />
 
           {adjustMember && adjustAmount !== '' && !isNaN(parseFloat(adjustAmount)) && (
-            <div className={`p-3 rounded-lg text-sm font-medium ${
+            <div className={`p-3 r-card text-sm font-medium ${
               parseFloat(adjustAmount) - adjustMember.balance < 0
                 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
                 : parseFloat(adjustAmount) - adjustMember.balance > 0

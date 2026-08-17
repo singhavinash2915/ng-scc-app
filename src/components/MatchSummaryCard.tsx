@@ -54,7 +54,7 @@ export function MatchSummaryCard({ match }: Props) {
     : `SCC vs ${match.opponent ?? 'TBD'}`;
 
   return (
-    <div className={`rounded-2xl overflow-hidden border ${cfg.border} shadow-xl`}
+    <div className={`r-card overflow-hidden border ${cfg.border} shadow-xl`}
          style={{ background: 'linear-gradient(180deg, #0d0d0d 0%, #111111 100%)' }}>
 
       {/* ── Result banner ────────────────────────────────────────────── */}
@@ -63,7 +63,7 @@ export function MatchSummaryCard({ match }: Props) {
         <div className="flex items-center gap-2.5">
           <span className="text-2xl leading-none">{cfg.emoji}</span>
           <div>
-            <p className="text-[9px] text-white/60 uppercase tracking-widest font-semibold">Last Match</p>
+            <p className="t-micro text-white/60 uppercase tracking-widest font-semibold">Last Match</p>
             <p className="text-xl font-black text-white leading-tight">{cfg.text}</p>
           </div>
         </div>
@@ -71,7 +71,7 @@ export function MatchSummaryCard({ match }: Props) {
           <p className="text-xs text-white/70 font-medium">
             {isInternal ? '🏟️ Internal' : `vs ${match.opponent || 'TBD'}`}
           </p>
-          <p className="text-[11px] text-white/50">{matchDate}</p>
+          <p className="t-meta text-white/50">{matchDate}</p>
         </div>
       </div>
 
@@ -81,26 +81,26 @@ export function MatchSummaryCard({ match }: Props) {
           /* Internal match: Dhurandars vs Bazigars */
           <div className="flex items-center justify-center gap-5 mb-3">
             <div className="text-center">
-              <p className="text-[10px] font-bold text-orange-400 mb-0.5">🦁 Dhurandars</p>
+              <p className="t-micro font-bold text-orange-400 mb-0.5">🦁 Dhurandars</p>
               <p className={`text-2xl font-black tabular-nums ${
                 match.winning_team === 'dhurandars' ? 'text-yellow-400' : 'text-white/40'
               }`}>
                 {match.our_score || '—'}
               </p>
               {match.winning_team === 'dhurandars' && (
-                <span className="text-[9px] font-bold text-yellow-400 uppercase tracking-wide">Winners</span>
+                <span className="t-micro font-bold text-yellow-400 uppercase tracking-wide">Winners</span>
               )}
             </div>
             <span className="text-gray-600 font-bold text-lg">vs</span>
             <div className="text-center">
-              <p className="text-[10px] font-bold text-blue-400 mb-0.5">🐅 Bazigars</p>
+              <p className="t-micro font-bold text-blue-400 mb-0.5">🐅 Bazigars</p>
               <p className={`text-2xl font-black tabular-nums ${
                 match.winning_team === 'bazigars' ? 'text-yellow-400' : 'text-white/40'
               }`}>
                 {match.opponent_score || '—'}
               </p>
               {match.winning_team === 'bazigars' && (
-                <span className="text-[9px] font-bold text-yellow-400 uppercase tracking-wide">Winners</span>
+                <span className="t-micro font-bold text-yellow-400 uppercase tracking-wide">Winners</span>
               )}
             </div>
           </div>
@@ -108,14 +108,14 @@ export function MatchSummaryCard({ match }: Props) {
           /* External match: SCC vs Opponent */
           <div className="flex items-center justify-center gap-5 mb-3">
             <div className="text-center">
-              <p className="text-[10px] font-bold text-emerald-400 mb-0.5">SCC</p>
+              <p className="t-micro font-bold text-emerald-400 mb-0.5">SCC</p>
               <p className={`text-3xl font-black tabular-nums tracking-tight ${cfg.scoreColor}`}>
                 {match.our_score || '—'}
               </p>
             </div>
             <span className="text-gray-600 font-bold text-lg">vs</span>
             <div className="text-center">
-              <p className="text-[10px] font-bold text-gray-400 mb-0.5 truncate max-w-[80px]">
+              <p className="t-micro font-bold text-gray-400 mb-0.5 truncate max-w-[80px]">
                 {match.opponent || 'OPP'}
               </p>
               <p className="text-2xl font-black tabular-nums tracking-tight text-white/40">
@@ -141,7 +141,7 @@ export function MatchSummaryCard({ match }: Props) {
               return (
                 <div key={i}>
                   {/* Innings label */}
-                  <p className="text-[9px] uppercase tracking-widest font-bold mb-2 flex items-center gap-1.5">
+                  <p className="t-micro uppercase tracking-widest font-bold mb-2 flex items-center gap-1.5">
                     <span className={i === 0 ? 'text-orange-400/80' : 'text-blue-400/80'}>
                       {i === 0 ? '1st' : '2nd'} Inn
                     </span>
@@ -157,14 +157,14 @@ export function MatchSummaryCard({ match }: Props) {
                       {topBatters.map(b => (
                         <div key={b.name} className="flex items-center justify-between gap-1">
                           <span className="flex items-center gap-1 min-w-0">
-                            <span className="text-[10px]">🏏</span>
-                            <span className="text-[11px] text-gray-300 truncate">{b.name.split(' ')[0]}</span>
+                            <span className="t-micro">🏏</span>
+                            <span className="t-meta text-gray-300 truncate">{b.name.split(' ')[0]}</span>
                           </span>
                           <span className="flex items-center gap-1 flex-shrink-0">
-                            <span className={`text-[12px] font-black tabular-nums ${b.runs >= 50 ? 'text-yellow-400' : 'text-white'}`}>
+                            <span className={`t-body font-black tabular-nums ${b.runs >= 50 ? 'text-yellow-400' : 'text-white'}`}>
                               {b.runs}{b.isNotOut ? '*' : ''}
                             </span>
-                            <span className="text-gray-700 text-[10px]">({b.balls})</span>
+                            <span className="text-gray-700 t-micro">({b.balls})</span>
                           </span>
                         </div>
                       ))}
@@ -175,15 +175,15 @@ export function MatchSummaryCard({ match }: Props) {
                       {topBowlers.length > 0 ? topBowlers.map(b => (
                         <div key={b.name} className="flex items-center justify-between gap-1">
                           <span className="flex items-center gap-1 min-w-0">
-                            <span className="text-[10px]">🎯</span>
-                            <span className="text-[11px] text-gray-300 truncate">{b.name.split(' ')[0]}</span>
+                            <span className="t-micro">🎯</span>
+                            <span className="t-meta text-gray-300 truncate">{b.name.split(' ')[0]}</span>
                           </span>
-                          <span className={`text-[12px] font-black tabular-nums flex-shrink-0 ${b.wickets >= 3 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                          <span className={`t-body font-black tabular-nums flex-shrink-0 ${b.wickets >= 3 ? 'text-yellow-400' : 'text-emerald-400'}`}>
                             {b.wickets}/{b.runs}
                           </span>
                         </div>
                       )) : (
-                        <p className="text-[10px] text-gray-700 italic">No wickets</p>
+                        <p className="t-micro text-gray-700 italic">No wickets</p>
                       )}
                     </div>
                   </div>
@@ -196,13 +196,13 @@ export function MatchSummaryCard({ match }: Props) {
         {/* ── Meta row ──────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 border-t border-white/8 pt-2.5 flex-wrap">
           {match.venue && (
-            <span className="flex items-center gap-1 text-[11px] text-gray-500">
+            <span className="flex items-center gap-1 t-meta text-gray-500">
               <MapPin className="w-3 h-3 flex-shrink-0" />
               {match.venue}
             </span>
           )}
           {match.man_of_match && (
-            <span className="flex items-center gap-1 text-[11px] text-yellow-400 font-semibold ml-auto">
+            <span className="flex items-center gap-1 t-meta text-yellow-400 font-semibold ml-auto">
               <Star className="w-3 h-3 fill-yellow-400 flex-shrink-0" />
               MOM: {match.man_of_match.name}
             </span>
@@ -211,7 +211,7 @@ export function MatchSummaryCard({ match }: Props) {
 
         {/* Notes */}
         {match.notes && (
-          <p className="text-[11px] text-gray-600 mt-1.5 italic line-clamp-1">
+          <p className="t-meta text-gray-600 mt-1.5 italic line-clamp-1">
             "{match.notes}"
           </p>
         )}
@@ -222,11 +222,11 @@ export function MatchSummaryCard({ match }: Props) {
             <div className="mt-3 pt-2.5 border-t border-white/8">
               <button
                 onClick={() => setShowScorecard(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-extrabold shadow-lg shadow-purple-900/30 hover:from-purple-700 hover:to-blue-700 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 r-control bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-extrabold shadow-lg shadow-purple-900/30 hover:from-purple-700 hover:to-blue-700 transition-colors"
               >
                 <BarChart2 className="w-4 h-4" />
                 📊 Match Centre
-                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/20 text-[9px] font-black uppercase tracking-wide">Heroes · Insights</span>
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/20 t-micro font-black uppercase tracking-wide">Heroes · Insights</span>
               </button>
             </div>
             <MatchScorecardModal
@@ -243,7 +243,7 @@ export function MatchSummaryCard({ match }: Props) {
         <div className="mt-2 text-right">
           <Link
             to="/matches"
-            className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors"
+            className="t-meta text-gray-600 hover:text-gray-400 transition-colors"
           >
             All matches →
           </Link>

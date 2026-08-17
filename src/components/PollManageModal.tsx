@@ -116,7 +116,7 @@ export function PollManageModal({ isOpen, onClose, match, members, isAdmin, onCl
     <Modal isOpen={isOpen} onClose={onClose} title="Manage Poll" size="lg">
       <div className="space-y-4">
         {/* Summary Bar */}
-        <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-800 r-card">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-green-500" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{summary.available}</span>
@@ -166,7 +166,7 @@ export function PollManageModal({ isOpen, onClose, match, members, isAdmin, onCl
                 return (
                   <div
                     key={poll.id}
-                    className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-gray-800 r-card"
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {member.avatar_url ? (
@@ -179,7 +179,7 @@ export function PollManageModal({ isOpen, onClose, match, members, isAdmin, onCl
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{member.name}</span>
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${config.bg} ${config.color}`}>
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded t-micro font-medium ${config.bg} ${config.color}`}>
                             <Icon className="w-3 h-3" />
                             {config.label}
                           </span>
@@ -217,7 +217,7 @@ export function PollManageModal({ isOpen, onClose, match, members, isAdmin, onCl
               {nonResponders.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-gray-800 r-card"
                 >
                   <div className="flex items-center gap-2.5">
                     {member.avatar_url ? (
@@ -230,7 +230,7 @@ export function PollManageModal({ isOpen, onClose, match, members, isAdmin, onCl
                     <div>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">{member.name}</span>
                       {!member.phone && (
-                        <p className="text-[10px] text-gray-400">No phone number</p>
+                        <p className="t-micro text-gray-400">No phone number</p>
                       )}
                     </div>
                   </div>

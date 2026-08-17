@@ -87,21 +87,21 @@ export function Fantasy() {
       <div className="p-4 lg:p-8 space-y-4 max-w-3xl mx-auto">
 
         {/* Hero / rules */}
-        <div className="relative overflow-hidden rounded-2xl p-5 text-white shadow-lg"
+        <div className="relative overflow-hidden r-card p-5 text-white shadow-lg"
           style={{ background: 'linear-gradient(120deg,#7c3aed,#2563eb 55%,#0a1019)' }}>
           <div className="flex items-center gap-2 mb-1"><Trophy className="w-5 h-5" /><span className="font-black text-lg">Fantasy Draft · Season {SEASON}</span></div>
           <p className="text-white/85 text-sm">Pick {SQUAD_SIZE} players within {BUDGET} credits, name your team and choose a captain (scores 2×). Prices are set by <b>last season's form</b>; points come from <b>this season's real performances</b> — and the draft locks at the first ball of the season.</p>
         </div>
 
         {seasonStarted && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-sm">
+          <div className="flex items-center gap-2 p-3 r-card bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-sm">
             <Info className="w-4 h-4 flex-shrink-0" />
             The season is underway — squads are locked. Points now update automatically after every match. 🏏
           </div>
         )}
 
         {tableMissing && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-sm">
+          <div className="flex items-center gap-2 p-3 r-card bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-sm">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             Fantasy league isn't activated yet — an admin needs to run the <code className="mx-1">add_fantasy_teams.sql</code> migration.
           </div>
@@ -109,7 +109,7 @@ export function Fantasy() {
 
         {/* Identify yourself */}
         {!myId ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
+          <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
             <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
             <p className="font-bold text-gray-700 dark:text-gray-200">Who are you?</p>
             <p className="text-xs text-gray-500 mb-3">Pick your profile to manage a fantasy team.</p>
@@ -118,45 +118,45 @@ export function Fantasy() {
         ) : (
           <>
             {/* Builder controls */}
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-3">
+            <div className="r-card border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-3">
               <input
                 value={teamName}
                 onChange={e => setTeamName(e.target.value)}
                 placeholder="Name your team…"
-                className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-white"
+                className="w-full text-sm r-control border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-white"
               />
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-gray-50 dark:bg-gray-800 py-2">
+                <div className="r-card bg-gray-50 dark:bg-gray-800 py-2">
                   <p className={`text-xl font-black tabular-nums ${selected.size === SQUAD_SIZE ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>{selected.size}/{SQUAD_SIZE}</p>
-                  <p className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Players</p>
+                  <p className="t-micro uppercase tracking-wider font-bold text-gray-400">Players</p>
                 </div>
-                <div className="rounded-lg bg-gray-50 dark:bg-gray-800 py-2">
+                <div className="r-card bg-gray-50 dark:bg-gray-800 py-2">
                   <p className={`text-xl font-black tabular-nums ${remaining < 0 ? 'text-rose-500' : 'text-gray-900 dark:text-white'}`}>{remaining}</p>
-                  <p className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Credits left</p>
+                  <p className="t-micro uppercase tracking-wider font-bold text-gray-400">Credits left</p>
                 </div>
-                <div className="rounded-lg bg-gray-50 dark:bg-gray-800 py-2">
+                <div className="r-card bg-gray-50 dark:bg-gray-800 py-2">
                   <p className="text-xl font-black tabular-nums text-violet-600 dark:text-violet-400">{captain ? '✓' : '—'}</p>
-                  <p className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Captain</p>
+                  <p className="t-micro uppercase tracking-wider font-bold text-gray-400">Captain</p>
                 </div>
               </div>
               {msg && <p className={`text-xs font-semibold ${msg.startsWith('✓') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>{msg}</p>}
               <button
                 onClick={save}
                 disabled={!valid || saving || seasonStarted}
-                className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white font-bold text-sm transition-colors"
+                className="w-full py-2.5 r-control bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white font-bold text-sm transition-colors"
               >
                 {seasonStarted ? '🔒 Squads locked' : saving ? 'Saving…' : existing ? 'Update my team' : 'Save my team'}
               </button>
               {!valid && (
-                <p className="text-[11px] text-gray-400 flex items-center gap-1"><Info className="w-3 h-3" /> Pick exactly {SQUAD_SIZE} players within budget and tap a star to set your captain.</p>
+                <p className="t-meta text-gray-400 flex items-center gap-1"><Info className="w-3 h-3" /> Pick exactly {SQUAD_SIZE} players within budget and tap a star to set your captain.</p>
               )}
             </div>
 
             {/* Player pool */}
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+            <div className="r-card border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-[2px] text-gray-600 dark:text-gray-300">Player pool</span>
-                <span className="text-[10px] text-gray-400 font-semibold">price · last-season pts</span>
+                <span className="t-meta font-black uppercase tracking-[2px] text-gray-600 dark:text-gray-300">Player pool</span>
+                <span className="t-micro text-gray-400 font-semibold">price · last-season pts</span>
               </div>
               <div className="divide-y divide-gray-50 dark:divide-gray-800 max-h-[480px] overflow-y-auto">
                 {pool.map(p => {
@@ -166,15 +166,15 @@ export function Fantasy() {
                   return (
                     <div key={p.member.id} className={`flex items-center gap-2.5 px-3 py-2 ${isSel ? 'bg-violet-50/60 dark:bg-violet-900/15' : ''}`}>
                       <button onClick={() => toggle(p.member.id)} disabled={tooPricey}
-                        className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border ${
+                        className={`w-6 h-6 r-control flex items-center justify-center flex-shrink-0 border ${
                           isSel ? 'bg-violet-600 border-violet-600 text-white'
                           : tooPricey ? 'border-gray-200 dark:border-gray-700 text-gray-300 cursor-not-allowed'
                           : 'border-gray-300 dark:border-gray-600 text-transparent hover:border-violet-400'}`}>
                         <Check className="w-4 h-4" />
                       </button>
                       {p.member.avatar_url
-                        ? <img src={p.member.avatar_url} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                        : <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 text-xs font-black text-gray-500">{p.member.name.charAt(0)}</div>}
+                        ? <img src={p.member.avatar_url} alt="" className="w-8 h-8 r-card object-cover flex-shrink-0" />
+                        : <div className="w-8 h-8 r-card bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 text-xs font-black text-gray-500">{p.member.name.charAt(0)}</div>}
                       <span className="flex-1 min-w-0 text-sm font-bold text-gray-900 dark:text-white truncate">{p.member.name}</span>
                       <button onClick={() => isSel && setCaptain(isCap ? null : p.member.id)} disabled={!isSel}
                         title="Set captain (2×)"
@@ -184,7 +184,7 @@ export function Fantasy() {
                       <span className="flex-shrink-0 inline-flex items-center gap-0.5 text-xs font-black text-amber-600 dark:text-amber-400 tabular-nums w-9 justify-end">
                         <Coins className="w-3 h-3" />{p.price}
                       </span>
-                      <span className="flex-shrink-0 text-[11px] text-gray-400 font-semibold tabular-nums w-12 text-right">{Math.round(p.lastSeasonPoints).toLocaleString('en-IN')}</span>
+                      <span className="flex-shrink-0 t-meta text-gray-400 font-semibold tabular-nums w-12 text-right">{Math.round(p.lastSeasonPoints).toLocaleString('en-IN')}</span>
                     </div>
                   );
                 })}
@@ -194,10 +194,10 @@ export function Fantasy() {
         )}
 
         {/* League table */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="r-card border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
             <Trophy className="w-4 h-4 text-emerald-500" />
-            <span className="text-[11px] font-black uppercase tracking-[2px] text-gray-600 dark:text-gray-300">League table</span>
+            <span className="t-meta font-black uppercase tracking-[2px] text-gray-600 dark:text-gray-300">League table</span>
           </div>
           {loading ? (
             <p className="p-4 text-sm text-gray-400">Loading…</p>
@@ -210,7 +210,7 @@ export function Fantasy() {
                   <span className={`w-6 text-center font-black tabular-nums ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-orange-400' : 'text-gray-300'}`}>{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{e.team.team_name || `My ${PLAYING_LABEL}`}</p>
-                    <p className="text-[11px] text-gray-400 truncate">{e.manager?.name || 'Unknown'}{e.captainName ? ` · © ${e.captainName.split(' ')[0]}` : ''}</p>
+                    <p className="t-meta text-gray-400 truncate">{e.manager?.name || 'Unknown'}{e.captainName ? ` · © ${e.captainName.split(' ')[0]}` : ''}</p>
                   </div>
                   <span className="text-sm font-black tabular-nums text-emerald-600 dark:text-emerald-400">{e.score.toLocaleString('en-IN')}</span>
                 </div>

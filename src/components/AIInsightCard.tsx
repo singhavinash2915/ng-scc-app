@@ -16,7 +16,7 @@ export function AIInsightCard({ title, insight, loading, error, onRefresh, class
 
   if (loading) {
     return (
-      <div className={`bg-gradient-to-br from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-primary-200 dark:border-primary-800 ${className}`}>
+      <div className={`bg-gradient-to-br from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 r-card p-4 border border-primary-200 dark:border-primary-800 ${className}`}>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-4 h-4 text-primary-500 animate-pulse" />
           <span className="text-sm font-semibold text-primary-700 dark:text-primary-300">{title}</span>
@@ -33,7 +33,7 @@ export function AIInsightCard({ title, insight, loading, error, onRefresh, class
 
   if (error) {
     return (
-      <div className={`bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800 ${className}`}>
+      <div className={`bg-amber-50 dark:bg-amber-900/20 r-card p-4 border border-amber-200 dark:border-amber-800 ${className}`}>
         <div className="flex items-center gap-2 mb-2">
           <AlertCircle className="w-4 h-4 text-amber-500" />
           <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">{title}</span>
@@ -51,7 +51,7 @@ export function AIInsightCard({ title, insight, loading, error, onRefresh, class
   if (!insight) return null;
 
   return (
-    <div className={`bg-gradient-to-br from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 rounded-xl border border-primary-200 dark:border-primary-800 overflow-hidden ${className}`}>
+    <div className={`bg-gradient-to-br from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 r-card border border-primary-200 dark:border-primary-800 overflow-hidden ${className}`}>
       <div
         className={`flex items-center justify-between p-4 ${compact ? 'cursor-pointer' : ''}`}
         onClick={compact ? () => setExpanded(!expanded) : undefined}
@@ -63,7 +63,7 @@ export function AIInsightCard({ title, insight, loading, error, onRefresh, class
         </div>
         <div className="flex items-center gap-2">
           {onRefresh && (
-            <button onClick={(e) => { e.stopPropagation(); onRefresh(); }} className="p-1 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-lg transition-colors" title="Refresh">
+            <button onClick={(e) => { e.stopPropagation(); onRefresh(); }} className="p-1 hover:bg-primary-100 dark:hover:bg-primary-800 r-control transition-colors" title="Refresh">
               <RefreshCw className="w-3.5 h-3.5 text-primary-500" />
             </button>
           )}

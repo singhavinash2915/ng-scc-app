@@ -477,9 +477,9 @@ export function AIInsights() {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-emerald-600 rounded-2xl p-6 text-white">
+      <div className="bg-gradient-to-r from-primary-600 to-emerald-600 r-card p-6 text-white">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-white/20 rounded-xl">
+          <div className="p-2 bg-white/20 r-card">
             <Brain className="w-6 h-6" />
           </div>
           <div>
@@ -493,7 +493,7 @@ export function AIInsights() {
             { label: 'Matches', value: recentMatches.length },
             { label: 'Stats Loaded', value: stats.length },
           ].map(s => (
-            <div key={s.label} className="bg-white/15 rounded-xl p-3 text-center border border-white/20">
+            <div key={s.label} className="bg-white/15 r-card p-3 text-center border border-white/20">
               <p className="text-2xl font-bold">{s.value}</p>
               <p className="text-xs text-white/70">{s.label}</p>
             </div>
@@ -502,12 +502,12 @@ export function AIInsights() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 overflow-x-auto">
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 r-card p-1 overflow-x-auto">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 r-control text-sm font-medium whitespace-nowrap transition-all ${
               activeTab === tab.id
                 ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -538,7 +538,7 @@ export function AIInsights() {
                   <button
                     key={item.tab}
                     onClick={() => setActiveTab(item.tab)}
-                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors group"
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 r-control hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors group"
                   >
                     <div className="text-left">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</p>
@@ -558,19 +558,19 @@ export function AIInsights() {
               </h3>
               {stats.length > 0 ? (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                  <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 r-card">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Top Scorer</span>
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
                       {leaderboard[0]?.member?.name || '-'} ({leaderboard[0]?.batting_runs || 0} runs)
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 r-card">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Top Wicket Taker</span>
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
                       {[...stats].sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0]?.member?.name || '-'} ({[...stats].sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0]?.bowling_wickets || 0} wkts)
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 r-card">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Best Average</span>
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
                       {[...stats].filter(s => s.batting_innings >= 3).sort((a, b) => b.batting_average - a.batting_average)[0]?.member?.name || '-'} ({([...stats].filter(s => s.batting_innings >= 3).sort((a, b) => b.batting_average - a.batting_average)[0]?.batting_average || 0).toFixed(1)})
@@ -676,7 +676,7 @@ export function AIInsights() {
             <select
               value={selectedMatch}
               onChange={e => setSelectedMatch(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm mb-3"
+              className="w-full r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm mb-3"
             >
               <option value="">{upcomingMatches[0] ? `Next match (${upcomingMatches[0].opponent || upcomingMatches[0].date})` : 'No upcoming matches'}</option>
               {upcomingMatches.map(m => (
@@ -687,12 +687,12 @@ export function AIInsights() {
             {/* Recent selection frequency — who's been playing */}
             {participationList.length > 0 && (
               <div className="mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">
+                <p className="t-micro font-bold uppercase tracking-widest text-gray-400 mb-1.5">
                   Selected in last {last10Preview.length} matches
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {participationList.map(({ member, count }) => (
-                    <span key={member.id} className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
+                    <span key={member.id} className={`t-micro px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
                       count >= 8 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
                       : count >= 5 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
@@ -702,7 +702,7 @@ export function AIInsights() {
                     </span>
                   ))}
                 </div>
-                <p className="text-[9px] text-gray-400 mt-1">Green = 8–10 · Blue = 5–7 · Gray = 1–4 · Not shown = 0 (excluded)</p>
+                <p className="t-micro text-gray-400 mt-1">Green = 8–10 · Blue = 5–7 · Gray = 1–4 · Not shown = 0 (excluded)</p>
               </div>
             )}
 
@@ -777,7 +777,7 @@ export function AIInsights() {
               <select
                 value={selectedMember}
                 onChange={e => setSelectedMember(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm mb-3"
+                className="w-full r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm mb-3"
               >
                 <option value="">Choose a player...</option>
                 {members.map(m => (
@@ -890,7 +890,7 @@ export function AIInsights() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Ask anything about SCC — members, matches, stats, performance</p>
 
           {/* Chat Messages */}
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 min-h-48 max-h-96 overflow-y-auto mb-4 space-y-3">
+          <div className="bg-gray-50 dark:bg-gray-700/50 r-card p-4 min-h-48 max-h-96 overflow-y-auto mb-4 space-y-3">
             {chatMessages.length === 0 && (
               <div className="text-center py-6">
                 <Bot className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
@@ -915,7 +915,7 @@ export function AIInsights() {
             )}
             {chatMessages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                <div className={`max-w-xs lg:max-w-md px-4 py-2.5 r-card text-sm leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-primary-500 text-white rounded-tr-sm'
                     : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-tl-sm'
@@ -927,7 +927,7 @@ export function AIInsights() {
             ))}
             {chatLoading && (
               <div className="flex justify-start">
-                <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl rounded-tl-sm px-4 py-2.5">
+                <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 r-card rounded-tl-sm px-4 py-2.5">
                   <div className="flex gap-1 items-center">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -946,7 +946,7 @@ export function AIInsights() {
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleChat()}
               placeholder="Ask about SCC..."
-              className="flex-1 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex-1 r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               disabled={chatLoading}
             />
             <Button onClick={handleChat} disabled={chatLoading || !chatInput.trim()} className="px-4">

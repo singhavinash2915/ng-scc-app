@@ -223,12 +223,12 @@ export function Predictions() {
       <div className="p-4 lg:p-8 space-y-6 max-w-5xl mx-auto">
 
         {/* HERO */}
-        <div className="relative overflow-hidden rounded-3xl p-6 lg:p-7 shadow-xl"
+        <div className="relative overflow-hidden r-card p-6 lg:p-7 shadow-xl"
              style={{ background: 'radial-gradient(500px circle at 0% 0%, rgba(168,85,247,0.3), transparent 50%), linear-gradient(135deg, #2e1065 0%, #1a0b3d 60%, #0f0820 100%)' }}>
-          <div className="absolute inset-0 border border-purple-500/30 rounded-3xl pointer-events-none" />
+          <div className="absolute inset-0 border border-purple-500/30 r-card pointer-events-none" />
           <div className="absolute -top-12 -right-12 w-48 h-48 bg-purple-400/20 rounded-full blur-3xl" />
           <div className="relative flex items-center gap-5 flex-wrap">
-            <div className="w-16 h-16 rounded-2xl bg-purple-400/20 border-2 border-purple-400/40 flex items-center justify-center flex-shrink-0">
+            <div className="w-16 h-16 r-card bg-purple-400/20 border-2 border-purple-400/40 flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-8 h-8 text-purple-300" />
             </div>
             <div className="flex-1 min-w-0">
@@ -242,29 +242,29 @@ export function Predictions() {
         </div>
 
         {scoredCount !== null && scoredCount > 0 && (
-          <div className="rounded-xl p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 text-sm text-emerald-700 dark:text-emerald-300 font-semibold text-center">
+          <div className="r-card p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 text-sm text-emerald-700 dark:text-emerald-300 font-semibold text-center">
             ✓ Scored {scoredCount} prediction{scoredCount > 1 ? 's' : ''} · refreshing…
           </div>
         )}
         {scoring && scoredCount === null && (
-          <div className="rounded-xl p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-sm text-blue-700 dark:text-blue-300 text-center">
+          <div className="r-card p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-sm text-blue-700 dark:text-blue-300 text-center">
             ⏳ Scoring predictions…
           </div>
         )}
 
         {/* ── SEASON PRIZES ── */}
-        <div className="relative overflow-hidden rounded-2xl p-5"
+        <div className="relative overflow-hidden r-card p-5"
              style={{ background: 'radial-gradient(400px circle at 0% 100%, rgba(251,191,36,0.2), transparent 60%), linear-gradient(135deg, #1a1306 0%, #0f0d1a 100%)' }}>
-          <div className="absolute inset-0 rounded-2xl pointer-events-none border border-amber-500/25" />
+          <div className="absolute inset-0 r-card pointer-events-none border border-amber-500/25" />
           <div className="absolute -top-8 -right-8 w-40 h-40 bg-amber-400/10 rounded-full blur-2xl" />
           <div className="relative flex items-center gap-3 mb-4">
             <Gift className="w-5 h-5 text-amber-400 flex-shrink-0" />
             <h3 className="text-sm font-black text-amber-300 uppercase tracking-[2px]">Season Prizes</h3>
-            <span className="text-[10px] text-amber-400/60 font-medium">Top predictors at season end</span>
+            <span className="t-micro text-amber-400/60 font-medium">Top predictors at season end</span>
           </div>
           <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-3">
             {prizes.map(p => (
-              <div key={p.rank} className={`rounded-xl p-4 border ${
+              <div key={p.rank} className={`r-card p-4 border ${
                 p.rank === 1 ? 'bg-amber-400/10 border-amber-400/30'
                 : p.rank === 2 ? 'bg-gray-400/10 border-gray-400/20'
                 : 'bg-orange-400/10 border-orange-400/20'
@@ -278,7 +278,7 @@ export function Predictions() {
                     </button>
                   )}
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">{p.label}</p>
+                <p className="t-micro font-bold uppercase tracking-widest text-gray-400 mb-0.5">{p.label}</p>
                 {editingPrize === p.rank ? (
                   <div className="flex items-center gap-1 mt-1">
                     <input
@@ -298,7 +298,7 @@ export function Predictions() {
             ))}
           </div>
           {isAdmin && (
-            <p className="relative text-[10px] text-amber-400/50 mt-3 text-center">
+            <p className="relative t-micro text-amber-400/50 mt-3 text-center">
               ✏️ Click the pencil icon on any prize to edit it
             </p>
           )}
@@ -312,8 +312,8 @@ export function Predictions() {
             { icon: <Target className="w-4 h-4 text-red-400" />, label: 'Top Wicket-Taker', points: PREDICTION_POINTS.top_wicket_taker, color: 'text-red-300' },
             { icon: <Crown className="w-4 h-4 text-amber-400" />, label: 'MOM', points: PREDICTION_POINTS.mom, color: 'text-amber-300' },
           ].map(r => (
-            <div key={r.label} className="rounded-xl p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-1.5 mb-1">{r.icon}<span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{r.label}</span></div>
+            <div key={r.label} className="r-card p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-1.5 mb-1">{r.icon}<span className="t-micro font-bold uppercase tracking-widest text-gray-500">{r.label}</span></div>
               <p className={`text-xl font-black tabular-nums ${r.color}`}>+{r.points} pts</p>
             </div>
           ))}
@@ -322,7 +322,7 @@ export function Predictions() {
         {/* PREDICT NEXT MATCHES */}
         {upcomingMatches.length > 0 && (
           <div>
-            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+            <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-purple-400" />
               Predict the Next Match
             </h3>
@@ -330,10 +330,10 @@ export function Predictions() {
               {upcomingMatches.slice(0, 3).map(m => {
                 const predictionCount = allPredictions.filter(p => p.match_id === m.id).length;
                 return (
-                  <div key={m.id} className="rounded-2xl p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 transition-colors">
+                  <div key={m.id} className="r-card p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 transition-colors">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-purple-500">{fmtDate(m.date)}</p>
+                        <p className="t-micro font-bold uppercase tracking-widest text-purple-500">{fmtDate(m.date)}</p>
                         <h4 className="text-lg font-black text-gray-900 dark:text-white mt-0.5">
                           {m.match_type === 'internal'
                             ? internalSides(m).label
@@ -359,11 +359,11 @@ export function Predictions() {
         {/* LEADERBOARD */}
         {leaderboard.length > 0 && (
           <div>
-            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+            <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
               <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
               Season Predictor Leaderboard
             </h3>
-            <div className="rounded-2xl overflow-x-auto border border-gray-200 dark:border-gray-700">
+            <div className="r-card overflow-x-auto border border-gray-200 dark:border-gray-700">
               <table className="w-full min-w-[480px]">
                 <thead className="bg-gray-50 dark:bg-gray-800 text-xs uppercase tracking-widest text-gray-500">
                   <tr>
@@ -407,18 +407,18 @@ export function Predictions() {
                 </tbody>
               </table>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1.5 px-1">Ties are broken by most correct picks, then fewest matches needed — equal on both share the same rank.</p>
+            <p className="t-micro text-gray-400 mt-1.5 px-1">Ties are broken by most correct picks, then fewest matches needed — equal on both share the same rank.</p>
           </div>
         )}
 
         {/* MY PREDICTIONS STATS */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 px-4 py-3.5 flex items-center gap-2.5 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+            <div className="w-7 h-7 r-card bg-indigo-500/20 flex items-center justify-center">
               <User className="w-3.5 h-3.5 text-indigo-500" />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-[2px] text-gray-700 dark:text-gray-300 flex-1">My Predictions</p>
+            <p className="t-meta font-black uppercase tracking-[2px] text-gray-700 dark:text-gray-300 flex-1">My Predictions</p>
           </div>
 
           <div className="bg-white dark:bg-gray-900 p-4 space-y-4">
@@ -429,7 +429,7 @@ export function Predictions() {
                 setMyMemberId(e.target.value);
                 localStorage.setItem('scc-my-prediction-id', e.target.value);
               }}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full r-control border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             >
               <option value="">— Select your name —</option>
               {members.sort((a, b) => a.name.localeCompare(b.name)).map(m => (
@@ -451,8 +451,8 @@ export function Predictions() {
                     { icon: <TrendingUp className="w-4 h-4 text-amber-400" />, label: 'Predicted', value: `${myStats.matchesPredicted}`, color: 'text-amber-600 dark:text-amber-400' },
                     { icon: <Zap className="w-4 h-4 text-rose-400" />, label: 'Correct', value: `${myStats.correct}/${myStats.scoredCount}`, color: 'text-rose-600 dark:text-rose-400' },
                   ].map(s => (
-                    <div key={s.label} className="rounded-xl bg-gray-50 dark:bg-gray-800 p-3 flex flex-col gap-1.5">
-                      <div className="flex items-center gap-1.5">{s.icon}<span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{s.label}</span></div>
+                    <div key={s.label} className="r-card bg-gray-50 dark:bg-gray-800 p-3 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-1.5">{s.icon}<span className="t-micro text-gray-500 uppercase tracking-wider font-bold">{s.label}</span></div>
                       <p className={`text-xl font-black tabular-nums ${s.color}`}>{s.value}</p>
                     </div>
                   ))}
@@ -460,10 +460,10 @@ export function Predictions() {
 
                 {/* Best match */}
                 {myStats.bestMatch && (
-                  <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-4 py-3 flex items-center gap-3">
+                  <div className="r-card bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-4 py-3 flex items-center gap-3">
                     <Star className="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Best Prediction</p>
+                      <p className="t-micro font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Best Prediction</p>
                       <p className="text-sm font-bold text-gray-800 dark:text-white truncate">
                         vs {myStats.bestMatch.opponent} · {fmtDate(myStats.bestMatch.date)}
                       </p>
@@ -475,10 +475,10 @@ export function Predictions() {
                 {/* Last 5 history */}
                 {myStats.history.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Recent Predictions</p>
+                    <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400 mb-2">Recent Predictions</p>
                     <div className="space-y-1.5">
                       {myStats.history.map(({ p, match }) => (
-                        <div key={p.id} className="flex items-center gap-3 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-800">
+                        <div key={p.id} className="flex items-center gap-3 r-card px-3 py-2 bg-gray-50 dark:bg-gray-800">
                           <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${
                             (p.points_earned ?? 0) >= 20 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                             : (p.points_earned ?? 0) > 0  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
@@ -504,7 +504,7 @@ export function Predictions() {
         {/* RECENT MATCHES PREDICTION SUMMARY */}
         {settledWithPredictions.length > 0 && (
           <div>
-            <h3 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
+            <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
               <Trophy className="w-3.5 h-3.5 text-emerald-400" />
               Recent Match Predictions
             </h3>
@@ -518,9 +518,9 @@ export function Predictions() {
                 }).length;
                 return (
                   <Link to={`/matches?focus=${match.id}`} key={match.id}>
-                    <div className="rounded-xl p-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
+                    <div className="r-card p-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                        <p className="t-micro font-bold uppercase tracking-widest text-gray-400">
                           {fmtDate(match.date)} · {match.result.toUpperCase()}
                         </p>
                         <h4 className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">
@@ -540,7 +540,7 @@ export function Predictions() {
         )}
 
         {leaderboard.length === 0 && upcomingMatches.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-10 text-center">
+          <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-10 text-center">
             <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 font-medium">No predictions yet</p>
             <p className="text-xs text-gray-400 mt-1">
@@ -551,14 +551,14 @@ export function Predictions() {
 
         {/* ── ALL PREDICTIONS (settled matches — visible to everyone) ── */}
         {allPredictions.length > 0 && (
-          <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+          <div className="r-card overflow-hidden border border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setAdminViewOpen(o => !o)}
               className="w-full flex items-center gap-3 px-4 py-3.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors text-left"
             >
               <Trophy className="w-4 h-4 text-emerald-500 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-[11px] font-black uppercase tracking-[2px] text-gray-700 dark:text-gray-300">
+                <p className="t-meta font-black uppercase tracking-[2px] text-gray-700 dark:text-gray-300">
                   Prediction Results
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -602,7 +602,7 @@ export function Predictions() {
                           onClick={() => setExpandedMatchId(isExpanded ? null : match.id)}
                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-left"
                         >
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${
+                          <div className={`w-8 h-8 r-card flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${
                             !settled ? 'bg-purple-500'
                             : match.result === 'won' ? 'bg-emerald-500'
                             : match.result === 'lost' ? 'bg-red-500'
@@ -614,7 +614,7 @@ export function Predictions() {
                             <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                               {match.match_type === 'internal' ? internalSides(match).label : `vs ${match.opponent || 'TBD'}`}
                             </p>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            <p className="t-meta text-gray-500 dark:text-gray-400">
                               {fmtDate(match.date)} · 🎰 {picks.length} prediction{picks.length === 1 ? '' : 's'}
                               {settled && ` · scored: ${picks.filter(p => p.points_earned !== null).length}/${picks.length}`}
                             </p>
@@ -629,11 +629,11 @@ export function Predictions() {
                           <div className="bg-gray-50 dark:bg-gray-800/30 px-4 py-3 space-y-2">
                             {/* ACTUAL RESULT — the correct answers, so picks below can be judged */}
                             {outcome && (
-                              <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-900/20 p-3">
-                                <p className="text-[10px] font-black uppercase tracking-[2px] text-emerald-700 dark:text-emerald-300 mb-1.5 flex items-center gap-1">
+                              <div className="r-card border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-900/20 p-3">
+                                <p className="t-micro font-black uppercase tracking-[2px] text-emerald-700 dark:text-emerald-300 mb-1.5 flex items-center gap-1">
                                   <Trophy className="w-3 h-3" /> Actual Result
                                 </p>
-                                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                                <div className="grid grid-cols-2 gap-1.5 t-meta">
                                   {isInternal ? (
                                     <>
                                       <PickRow label="Winner" value={teamPickLabel(outcome.winner)} />
@@ -679,14 +679,14 @@ export function Predictions() {
                                 const topWkt = p.top_wicket_taker_id ? memberById[p.top_wicket_taker_id]?.name : null;
                                 const mom = p.mom_id ? memberById[p.mom_id]?.name : null;
                                 return (
-                                  <div key={p.id} className="rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3">
+                                  <div key={p.id} className="r-card bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3">
                                     <div className="flex items-center justify-between gap-2 mb-1.5">
                                       <Link to={`/profile/${predictor.id}`} className="flex items-center gap-2 hover:text-primary-600">
                                         {predictor.avatar_url ? (
                                           <img src={predictor.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
                                         ) : (
                                           <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-                                            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400">{predictor.name.charAt(0)}</span>
+                                            <span className="t-micro font-bold text-primary-600 dark:text-primary-400">{predictor.name.charAt(0)}</span>
                                           </div>
                                         )}
                                         <span className="text-sm font-bold text-gray-900 dark:text-white">{predictor.name}</span>
@@ -700,10 +700,10 @@ export function Predictions() {
                                           {p.points_earned > 0 ? `+${p.points_earned}` : '0'} pts
                                         </span>
                                       ) : (
-                                        <span className="text-[10px] text-gray-400 font-medium">Unscored</span>
+                                        <span className="t-micro text-gray-400 font-medium">Unscored</span>
                                       )}
                                     </div>
-                                    <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                                    <div className="grid grid-cols-2 gap-1.5 t-meta">
                                       {isInternal ? (
                                         <>
                                           <PickRow label="Winner" value={winnerLabel} />
@@ -727,7 +727,7 @@ export function Predictions() {
                                         </>
                                       )}
                                     </div>
-                                    <p className="text-[10px] text-gray-400 mt-1.5">
+                                    <p className="t-micro text-gray-400 mt-1.5">
                                       Locked {new Date(p.locked_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
                                     </p>
                                   </div>
@@ -774,7 +774,7 @@ const ynLabel = (v: string | null | undefined): string =>
 function PickRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline gap-1.5 min-w-0">
-      <span className="text-[9px] uppercase tracking-wider font-bold text-gray-400 flex-shrink-0">{label}</span>
+      <span className="t-micro uppercase tracking-wider font-bold text-gray-400 flex-shrink-0">{label}</span>
       <span className="font-semibold text-gray-700 dark:text-gray-200 truncate">{value}</span>
     </div>
   );

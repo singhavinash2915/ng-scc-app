@@ -84,9 +84,9 @@ export function AwardsPresentation({ awards, season, onClose }: Props) {
       ) : (
         <div className="relative flex flex-col items-center mt-6 animate-[pop_.5s_cubic-bezier(.34,1.56,.64,1)]">
           {award.member!.avatar_url ? (
-            <img src={award.member!.avatar_url} alt="" className="w-36 h-36 sm:w-44 sm:h-44 rounded-3xl object-cover border-4 border-amber-400/60 shadow-[0_0_60px_-8px_rgba(251,191,36,0.6)]" />
+            <img src={award.member!.avatar_url} alt="" className="w-36 h-36 sm:w-44 sm:h-44 r-card object-cover border-4 border-amber-400/60 shadow-[0_0_60px_-8px_rgba(251,191,36,0.6)]" />
           ) : (
-            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-6xl font-black shadow-2xl">{award.member!.name.charAt(0)}</div>
+            <div className="w-36 h-36 sm:w-44 sm:h-44 r-card bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-6xl font-black shadow-2xl">{award.member!.name.charAt(0)}</div>
           )}
           <h2 className="font-display text-4xl sm:text-6xl font-extrabold mt-5 text-center bg-gradient-to-r from-amber-200 via-white to-amber-200 bg-clip-text text-transparent">{award.member!.name}</h2>
           <p className="text-2xl sm:text-3xl font-black text-amber-300 mt-2 tabular-nums">{award.value}</p>

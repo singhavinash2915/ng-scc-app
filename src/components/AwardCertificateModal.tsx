@@ -90,7 +90,7 @@ export function AwardCertificateModal({ isOpen, onClose, award, season }: Props)
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Award Certificate" size="md">
       <div className="flex flex-col items-center gap-4">
-        <div className="overflow-hidden rounded-2xl shadow-xl" style={{ width: 300 }}>
+        <div className="overflow-hidden r-card shadow-xl" style={{ width: 300 }}>
           <div
             ref={cardRef}
             style={{

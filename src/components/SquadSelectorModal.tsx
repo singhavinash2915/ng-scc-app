@@ -180,9 +180,9 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
       <div className="space-y-4">
 
         {/* Match info */}
-        <div className="rounded-xl bg-gray-50 dark:bg-gray-800 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+        <div className="r-card bg-gray-50 dark:bg-gray-800 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary-600 dark:text-primary-400">
+            <p className="t-meta font-bold uppercase tracking-widest text-primary-600 dark:text-primary-400">
               {match.match_type === 'internal' ? '🏏 Internal Match' : `vs ${match.opponent || 'TBD'}`}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -223,7 +223,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
           {/* ── PLAYING XI (left) ─────────────────────────────────────────── */}
-          <div className="rounded-xl border-2 border-emerald-300 dark:border-emerald-800 p-3 bg-emerald-50/30 dark:bg-emerald-900/10">
+          <div className="r-card border-2 border-emerald-300 dark:border-emerald-800 p-3 bg-emerald-50/30 dark:bg-emerald-900/10">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5" fill="currentColor" />
@@ -240,27 +240,27 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                   const m = memberById[id];
                   if (!m) return null;
                   return (
-                    <div key={id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 group">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-[10px] font-black text-emerald-700 dark:text-emerald-300 flex items-center justify-center flex-shrink-0">
+                    <div key={id} className="flex items-center gap-2 px-2 py-1.5 r-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 group">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 t-micro font-black text-emerald-700 dark:text-emerald-300 flex items-center justify-center flex-shrink-0">
                         {idx + 1}
                       </span>
                       {m.avatar_url ? (
                         <img src={m.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-bold text-primary-600">{m.name.charAt(0)}</span>
+                          <span className="t-micro font-bold text-primary-600">{m.name.charAt(0)}</span>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                          <span className={`inline-block mr-1.5 text-[8px] font-black uppercase tracking-wider
+                          <span className={`inline-block mr-1.5 t-micro font-black uppercase tracking-wider
                                             px-1.5 py-0.5 rounded-full align-middle ${tierOf(m.id).chip}`}>
                             {tierOf(m.id).label}
                           </span>
                           {m.name}
                           {m.role && <span className="ml-1 text-gray-400">{ROLE_ICON[m.role]}</span>}
-                          {captainId === id && <span className="ml-1 text-[9px] font-black text-amber-600">C</span>}
-                          {viceCaptainId === id && <span className="ml-1 text-[9px] font-black text-blue-600">VC</span>}
+                          {captainId === id && <span className="ml-1 t-micro font-black text-amber-600">C</span>}
+                          {viceCaptainId === id && <span className="ml-1 t-micro font-black text-blue-600">VC</span>}
                         </p>
                       </div>
                       <button onClick={() => moveUp(idx)} disabled={idx === 0} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded disabled:opacity-30">
@@ -282,13 +282,13 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
             {squad.length > 0 && (
               <div className="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-800/40 grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <label className="t-micro font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Crown className="w-3 h-3" fill="currentColor" /> Captain
                   </label>
                   <select
                     value={captainId}
                     onChange={e => setCaptainId(e.target.value)}
-                    className="w-full mt-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    className="w-full mt-1 text-xs px-2 py-1.5 r-control border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                   >
                     <option value="">— None —</option>
                     {squad.map(id => (
@@ -297,13 +297,13 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                  <label className="t-micro font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 flex items-center gap-1">
                     <Crown className="w-3 h-3" /> Vice-Captain
                   </label>
                   <select
                     value={viceCaptainId}
                     onChange={e => setViceCaptainId(e.target.value)}
-                    className="w-full mt-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    className="w-full mt-1 text-xs px-2 py-1.5 r-control border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                   >
                     <option value="">— None —</option>
                     {squad.filter(id => id !== captainId).map(id => (
@@ -316,18 +316,18 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
           </div>
 
           {/* ── BENCH (right) ─────────────────────────────────────────────── */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+          <div className="r-card border border-gray-200 dark:border-gray-700 p-3">
             <div className="flex items-center justify-between mb-2 gap-2">
               <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" />
                 Bench ({benchMembers.length})
               </h3>
-              <div className="flex gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-md p-0.5">
+              <div className="flex gap-0.5 bg-gray-100 dark:bg-gray-800 r-card p-0.5">
                 {(['all', 'available', 'maybe'] as const).map(f => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`px-2 py-0.5 text-[10px] rounded font-bold uppercase tracking-wider ${
+                    className={`px-2 py-0.5 t-micro rounded font-bold uppercase tracking-wider ${
                       filter === f
                         ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-white'
                         : 'text-gray-500'
@@ -352,7 +352,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                       key={m.id}
                       onClick={() => addToSquad(m.id)}
                       disabled={squad.length >= 12}
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-colors text-left ${
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 r-control border transition-colors text-left ${
                         squad.length >= 12
                           ? 'opacity-40 cursor-not-allowed border-gray-200 dark:border-gray-700'
                           : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
@@ -362,19 +362,19 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                         <img src={m.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">{m.name.charAt(0)}</span>
+                          <span className="t-micro font-bold text-gray-600 dark:text-gray-300">{m.name.charAt(0)}</span>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
                           {m.name}
                           {m.role && <span className="ml-1 text-gray-400">{ROLE_ICON[m.role]}</span>}
-                          {m.jersey_number != null && <span className="ml-1 text-[10px] text-gray-400">#{m.jersey_number}</span>}
+                          {m.jersey_number != null && <span className="ml-1 t-micro text-gray-400">#{m.jersey_number}</span>}
                         </p>
-                        {note && <p className="text-[9px] text-gray-400 italic truncate">"{note}"</p>}
+                        {note && <p className="t-micro text-gray-400 italic truncate">"{note}"</p>}
                       </div>
                       {meta && (
-                        <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-black ${meta.bg} ${meta.color}`}>
+                        <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full t-micro font-black ${meta.bg} ${meta.color}`}>
                           <meta.icon className="w-2.5 h-2.5" />
                           {meta.label}
                         </span>
@@ -402,7 +402,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
           </Button>
         </div>
 
-        <p className="text-[11px] text-gray-400 text-center">
+        <p className="t-meta text-gray-400 text-center">
           Tip: tap "Auto-pick" to fill the 12 based on who said "I'm in" on the poll.
         </p>
       </div>

@@ -175,7 +175,7 @@ export function Notifications({ members, matches }: NotificationsProps) {
       {/* Notification Bell Button */}
       <button
         onClick={openPanel}
-        className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="relative p-2 r-control hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         aria-label={`Notifications${unseen.length ? `, ${unseen.length} new` : ''}`}
       >
         <Bell className="w-6 h-6 text-gray-600 dark:text-gray-300" />
@@ -198,7 +198,7 @@ export function Notifications({ members, matches }: NotificationsProps) {
           />
 
           {/* Panel */}
-          <div className="absolute right-0 mt-2 w-80 sm:w-96 max-h-[80vh] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-80 sm:w-96 max-h-[80vh] bg-white dark:bg-gray-800 r-card shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
               <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export function Notifications({ members, matches }: NotificationsProps) {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="p-1 r-control hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 <X className="w-4 h-4 text-gray-500" />
               </button>
@@ -237,7 +237,7 @@ export function Notifications({ members, matches }: NotificationsProps) {
                       onClick={() => setIsOpen(false)}
                       className="flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
                     >
-                      <div className={`p-2 rounded-lg ${getIconBg(notif.type, notif.priority)}`}>
+                      <div className={`p-2 r-card ${getIconBg(notif.type, notif.priority)}`}>
                         {getIcon(notif.type)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -285,7 +285,7 @@ export function Notifications({ members, matches }: NotificationsProps) {
                     )}
                   </div>
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1.5">
+                <p className="t-micro text-gray-400 mt-1.5">
                   These stay listed until they're actually resolved — the badge clears once
                   you've seen them, and returns if anything changes.
                 </p>

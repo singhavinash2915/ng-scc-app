@@ -23,9 +23,9 @@ export function DashboardWrappedBanner() {
   if (myId) return <SeasonWrappedButton memberId={myId} variant="banner" />;
 
   return (
-    <div className="w-full relative overflow-hidden rounded-2xl px-5 py-4 flex items-center gap-3 shadow-lg"
+    <div className="w-full relative overflow-hidden r-card px-5 py-4 flex items-center gap-3 shadow-lg"
       style={{ background: 'linear-gradient(110deg,#7c3aed,#db2777 55%,#f59e0b)' }}>
-      <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+      <div className="w-11 h-11 r-card bg-white/20 flex items-center justify-center flex-shrink-0">
         <Sparkles className="w-6 h-6 text-white" />
       </div>
       <div className="flex-1 min-w-0">

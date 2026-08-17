@@ -50,7 +50,7 @@ export function PressureIndex({ embedded = false }: { embedded?: boolean } = {})
       <div className="p-4 lg:p-6 space-y-4 max-w-2xl mx-auto">
 
         {/* Hero */}
-        <div className="rounded-2xl p-5 text-white relative overflow-hidden"
+        <div className="r-card p-5 text-white relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg,#b91c1c,#ea580c 60%,#f59e0b)' }}>
           <Flame className="w-9 h-9 drop-shadow" />
           <h2 className="font-display text-2xl font-extrabold mt-2">Pressure Performance Index 🔥</h2>
@@ -62,14 +62,14 @@ export function PressureIndex({ embedded = false }: { embedded?: boolean } = {})
         </div>
 
         {/* How it works */}
-        <div className="glass rounded-2xl overflow-hidden">
+        <div className="glass r-card overflow-hidden">
           <button onClick={() => setShowHow(s => !s)} className="w-full flex items-center gap-2 px-4 py-3 text-left">
             <Info className="w-4 h-4 text-rose-500" />
             <span className="flex-1 text-sm font-bold text-slate-800 dark:text-white">How is pressure measured?</span>
             <span className="text-slate-400 text-xs">{showHow ? '▲' : '▼'}</span>
           </button>
           {showHow && (
-            <div className="px-4 pb-4 text-[13px] leading-relaxed text-slate-600 dark:text-white/70 space-y-2">
+            <div className="px-4 pb-4 t-body leading-relaxed text-slate-600 dark:text-white/70 space-y-2">
               <p>Each match gets a <b>pressure weight</b> (1.0 = ordinary, up to ~2.6 = white-knuckle). It goes up when:</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>🔥 <b>Close finish</b> — the smaller the margin, the bigger the weight</li>
@@ -88,7 +88,7 @@ export function PressureIndex({ embedded = false }: { embedded?: boolean } = {})
         <div className="flex gap-2">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition ${
+              className={`flex-1 flex items-center justify-center gap-1.5 r-control py-2.5 text-sm font-bold transition ${
                 tab === t.id ? 'bg-rose-500 text-white shadow' : 'glass text-slate-600 dark:text-white/70'
               }`}>
               <t.icon className="w-4 h-4" /> {t.label}
@@ -97,7 +97,7 @@ export function PressureIndex({ embedded = false }: { embedded?: boolean } = {})
         </div>
 
         {/* Leaderboard */}
-        <div className="glass rounded-2xl p-4">
+        <div className="glass r-card p-4">
           {loading ? (
             <p className="text-center text-slate-400 py-8 text-sm">Loading scorecards…</p>
           ) : rows.length === 0 ? (
@@ -105,25 +105,25 @@ export function PressureIndex({ embedded = false }: { embedded?: boolean } = {})
           ) : (
             <div className="space-y-2">
               {rows.slice(0, 15).map((r, i) => (
-                <div key={r.member.id} className={`flex items-center gap-3 rounded-xl p-2.5 ${i === 0 ? 'bg-rose-500/10 ring-1 ring-rose-400/40' : ''}`}>
+                <div key={r.member.id} className={`flex items-center gap-3 r-card p-2.5 ${i === 0 ? 'bg-rose-500/10 ring-1 ring-rose-400/40' : ''}`}>
                   <span className={`w-6 text-center font-black text-sm ${i === 0 ? 'text-rose-500' : 'text-slate-400'}`}>{i + 1}</span>
                   <Avatar member={r.member} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-900 dark:text-white truncate">{r.member.name}</p>
-                    <p className="text-[11px] text-slate-400 dark:text-white/50">{subLabel(r)}</p>
+                    <p className="t-meta text-slate-400 dark:text-white/50">{subLabel(r)}</p>
                     <div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden mt-1">
                       <div className="h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-400" style={{ width: `${r.index / 10}%` }} />
                     </div>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="font-display font-extrabold text-rose-600 dark:text-rose-400">{metricLabel(r)}</p>
-                    <p className="text-[10px] text-slate-400">{r.index}/1000</p>
+                    <p className="t-micro text-slate-400">{r.index}/1000</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
-          <p className="text-[10px] text-slate-400 text-center mt-3">pr = pressure runs · pw = pressure wickets · pts = runs + wickets×20 (pressure-weighted)</p>
+          <p className="t-micro text-slate-400 text-center mt-3">pr = pressure runs · pw = pressure wickets · pts = runs + wickets×20 (pressure-weighted)</p>
         </div>
         <div className="h-4" />
       </div>

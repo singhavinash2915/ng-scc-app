@@ -145,7 +145,7 @@ export function MatchDayTools() {
 
       <div className="p-4 md:p-6 space-y-6">
         {/* Info Banner */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-start gap-3">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 r-card p-4 flex items-start gap-3">
           <Megaphone className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-blue-700 dark:text-blue-300">
             Fill in the match details and select players to generate squad graphics or match day messages. No match will be created and no balance will be affected.
@@ -169,7 +169,7 @@ export function MatchDayTools() {
                       setSelectedPlayers([]);
                       setPlayerTeams({});
                     }}
-                    className={`flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                    className={`flex-1 py-2.5 r-control font-medium text-sm transition-colors ${
                       matchType === 'external'
                         ? 'bg-primary-500 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -184,7 +184,7 @@ export function MatchDayTools() {
                       setSelectedPlayers([]);
                       setPlayerTeams({});
                     }}
-                    className={`flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                    className={`flex-1 py-2.5 r-control font-medium text-sm transition-colors ${
                       matchType === 'internal'
                         ? 'bg-primary-500 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -206,7 +206,7 @@ export function MatchDayTools() {
                     type="date"
                     value={date}
                     onChange={e => setDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 r-control bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
@@ -219,7 +219,7 @@ export function MatchDayTools() {
                     value={venue}
                     onChange={e => setVenue(e.target.value)}
                     placeholder="e.g. Four Star Ground"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 r-control bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
@@ -236,7 +236,7 @@ export function MatchDayTools() {
                     value={opponent}
                     onChange={e => setOpponent(e.target.value)}
                     placeholder="e.g. Game Changers"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 r-control bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               )}
@@ -252,7 +252,7 @@ export function MatchDayTools() {
                   value={matchFee}
                   onChange={e => setMatchFee(Number(e.target.value))}
                   min={0}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 r-control bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
 
@@ -271,7 +271,7 @@ export function MatchDayTools() {
                             key={f}
                             type="button"
                             onClick={() => setPlayerFilter(f)}
-                            className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
+                            className={`px-2 py-1 text-xs r-control font-medium transition-colors ${
                               playerFilter === f
                                 ? 'bg-primary-500 text-white'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -282,13 +282,13 @@ export function MatchDayTools() {
                         ))}
                       </div>
                     </div>
-                    <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
+                    <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 r-card p-2 space-y-1">
                       {filteredMembers.map(member => (
                         <button
                           key={member.id}
                           type="button"
                           onClick={() => togglePlayer(member.id)}
-                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          className={`w-full flex items-center gap-3 px-3 py-2 r-control transition-colors ${
                             selectedPlayers.includes(member.id)
                               ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                               : 'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -305,7 +305,7 @@ export function MatchDayTools() {
                           </div>
                           <span className="flex-1 text-left flex items-center gap-2">
                             {member.name}
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                            <span className={`t-micro px-1.5 py-0.5 rounded-full font-medium ${
                               isActive(member.id)
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
@@ -325,7 +325,7 @@ export function MatchDayTools() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       {/* Dhurandars Team */}
-                      <div className="border-2 border-blue-200 dark:border-blue-800 rounded-xl p-3 bg-blue-50/50 dark:bg-blue-900/10">
+                      <div className="border-2 border-blue-200 dark:border-blue-800 r-card p-3 bg-blue-50/50 dark:bg-blue-900/10">
                         <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2 text-sm">
                           🦁 {TEAM_NAMES.dhurandars} ({getPlayersByTeam('dhurandars').length})
                         </h4>
@@ -345,7 +345,7 @@ export function MatchDayTools() {
                       </div>
 
                       {/* Bazigars Team */}
-                      <div className="border-2 border-purple-200 dark:border-purple-800 rounded-xl p-3 bg-purple-50/50 dark:bg-purple-900/10">
+                      <div className="border-2 border-purple-200 dark:border-purple-800 r-card p-3 bg-purple-50/50 dark:bg-purple-900/10">
                         <h4 className="font-semibold text-purple-700 dark:text-purple-300 mb-2 text-sm">
                           🐅 {TEAM_NAMES.bazigars} ({getPlayersByTeam('bazigars').length})
                         </h4>
@@ -377,7 +377,7 @@ export function MatchDayTools() {
                               key={f}
                               type="button"
                               onClick={() => setPlayerFilter(f)}
-                              className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
+                              className={`px-2 py-1 text-xs r-control font-medium transition-colors ${
                                 playerFilter === f
                                   ? 'bg-primary-500 text-white'
                                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -388,12 +388,12 @@ export function MatchDayTools() {
                           ))}
                         </div>
                       </div>
-                      <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
+                      <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 r-card p-2 space-y-1">
                         {filteredMembers.filter(m => !playerTeams[m.id]).map(member => (
                           <div key={member.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
                             <span className="flex-1 text-sm flex items-center gap-1.5">
                               {member.name}
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                              <span className={`t-micro px-1.5 py-0.5 rounded-full font-medium ${
                                 isActive(member.id)
                                   ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                   : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'

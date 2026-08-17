@@ -243,7 +243,7 @@ export function Feedback() {
 
                           {/* Admin Reply Display */}
                           {item.admin_reply && (
-                            <div className="mt-3 ml-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border-l-4 border-primary-500">
+                            <div className="mt-3 ml-4 p-3 bg-primary-50 dark:bg-primary-900/20 r-card border-l-4 border-primary-500">
                               <div className="flex items-center gap-2 mb-1">
                                 <Shield className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
                                 <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">Admin Reply</span>
@@ -299,7 +299,7 @@ export function Feedback() {
                                   setReplyingTo(item.id);
                                   setReplyText(item.admin_reply || '');
                                 }}
-                                className="p-2 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                                className="p-2 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 r-control transition-colors"
                                 title={item.admin_reply ? 'Edit reply' : 'Reply'}
                               >
                                 <Reply className="w-4 h-4" />
@@ -307,7 +307,7 @@ export function Feedback() {
                             )}
                             <button
                               onClick={() => handleDelete(item.id)}
-                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 r-control transition-colors"
                               title="Delete"
                             >
                               <Trash2 className="w-4 h-4" />

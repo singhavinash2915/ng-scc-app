@@ -82,14 +82,14 @@ export function LiveAddons({ videoId, matchId, name, memberId, isAdmin }: Props)
           value={label}
           onChange={e => setLabel(e.target.value)}
           placeholder="Optional: what happened? (e.g. Avinash bowls him 🔥)"
-          className="w-full rounded-xl bg-white/90 text-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="w-full r-control bg-white/90 text-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
         />
       )}
 
       {/* Marked moments */}
       {marks.length > 0 && (
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-white/50 mb-2">
+        <div className="r-card bg-white/5 border border-white/10 p-3">
+          <p className="t-micro font-bold uppercase tracking-wider text-white/50 mb-2">
             ✂️ Marked moments · {marks.length}
           </p>
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
@@ -97,8 +97,8 @@ export function LiveAddons({ videoId, matchId, name, memberId, isAdmin }: Props)
               <div key={m.id} className="flex items-center gap-2 text-xs">
                 <span className="font-display font-bold text-amber-300 tabular-nums w-12">{formatTime(m.seconds)}</span>
                 <span className="flex-1 truncate text-white/80">{m.label || 'Moment'}</span>
-                <span className="text-white/40 text-[10px] truncate max-w-[70px]">{m.marked_by}</span>
-                {m.converted && <span className="text-emerald-400 text-[10px] font-bold">✓ clipped</span>}
+                <span className="text-white/40 t-micro truncate max-w-[70px]">{m.marked_by}</span>
+                {m.converted && <span className="text-emerald-400 t-micro font-bold">✓ clipped</span>}
                 {isAdmin && (
                   <button onClick={() => deleteMark(m.id)} className="text-white/30 hover:text-rose-400">
                     <Trash2 className="w-3 h-3" />
@@ -108,7 +108,7 @@ export function LiveAddons({ videoId, matchId, name, memberId, isAdmin }: Props)
             ))}
           </div>
           {isAdmin && (
-            <p className="text-[10px] text-white/40 mt-2">
+            <p className="t-micro text-white/40 mt-2">
               💡 After the match, add these as clips from the match card using the replay link + these times.
             </p>
           )}
@@ -117,7 +117,7 @@ export function LiveAddons({ videoId, matchId, name, memberId, isAdmin }: Props)
 
       {/* YouTube's own live chat */}
       {showChat && (
-        <div className="rounded-2xl overflow-hidden border border-white/10 bg-black" style={{ height: 380 }}>
+        <div className="r-card overflow-hidden border border-white/10 bg-black" style={{ height: 380 }}>
           <iframe
             src={chatUrl}
             title="Live chat"

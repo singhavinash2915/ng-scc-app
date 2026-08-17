@@ -163,12 +163,12 @@ function GroundPhotoCarousel({
         {/* Home Ground badge */}
         <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
           <MapPin className="w-3 h-3 text-primary-600" />
-          <span className="text-[11px] font-bold text-gray-900">Home Ground</span>
+          <span className="t-meta font-bold text-gray-900">Home Ground</span>
         </div>
 
         {/* Photo counter */}
         {photos.length > 1 && (
-          <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] font-semibold text-white">
+          <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 t-micro font-semibold text-white">
             {idx + 1} / {photos.length}
           </div>
         )}
@@ -227,7 +227,7 @@ function GroundPhotoCarousel({
               key={url + i}
               type="button"
               onClick={() => goTo(i)}
-              className={`h-14 w-20 rounded-lg overflow-hidden flex-shrink-0 border transition-all ${
+              className={`h-14 w-20 r-control overflow-hidden flex-shrink-0 border transition-all ${
                 i === idx
                   ? 'border-primary-500 ring-2 ring-primary-500/30'
                   : 'border-gray-200 opacity-70 hover:opacity-100'
@@ -548,7 +548,7 @@ export function BookMatch() {
       <header className="bg-white/95 backdrop-blur-md border-b border-gray-200/70 sticky top-0 z-20 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <img src="/scc-logo.jpg" alt="SCC" className="w-10 h-10 rounded-xl object-cover shadow ring-2 ring-primary-100" />
+            <img src="/scc-logo.jpg" alt="SCC" className="w-10 h-10 r-card object-cover shadow ring-2 ring-primary-100" />
             <div>
               <h1 className="font-bold text-gray-900 text-base leading-tight">SCC – Sangria Cricket Club</h1>
               <p className="text-xs text-primary-600 font-medium">Book a Match · Season 2026–27</p>
@@ -571,7 +571,7 @@ export function BookMatch() {
         {step === 'calendar' && (
           <>
             {/* ── Premium Hero Card ─────────────────────────────────────── */}
-            <div className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 p-6 sm:p-8 shadow-xl">
+            <div className="relative mb-6 overflow-hidden r-card bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 p-6 sm:p-8 shadow-xl">
               {/* Decorative blurs */}
               <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-emerald-400/20 blur-3xl" />
               <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-teal-300/10 blur-3xl" />
@@ -582,7 +582,7 @@ export function BookMatch() {
                 {/* Badge */}
                 <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1 mb-4">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                  <span className="text-[11px] font-semibold text-white tracking-wide uppercase">Now booking · Season 2026–27</span>
+                  <span className="t-meta font-semibold text-white tracking-wide uppercase">Now booking · Season 2026–27</span>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-1.5 leading-tight">
@@ -599,18 +599,18 @@ export function BookMatch() {
                 {/* Mini stats row */}
                 {sccRecord && (
                   <div className="flex items-center gap-2 mt-5 flex-wrap">
-                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-1.5">
+                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 r-card px-3 py-1.5">
                       <Trophy className="w-3.5 h-3.5 text-amber-300" />
                       <span className="text-xs font-bold text-white">{winRate}% Win Rate</span>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-1.5">
+                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 r-card px-3 py-1.5">
                       <span className="text-xs text-emerald-100">
                         <span className="font-bold text-white">{sccRecord.wins}W</span> · <span className="font-bold text-white">{sccRecord.losses}L</span>
                         {sccRecord.draws > 0 && <> · <span className="font-bold text-white">{sccRecord.draws}NR</span></>}
                       </span>
                     </div>
                     {ground.name && (
-                      <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-1.5">
+                      <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 r-card px-3 py-1.5">
                         <MapPin className="w-3 h-3 text-emerald-200" />
                         <span className="text-xs text-white font-medium truncate max-w-[140px]">{ground.name}</span>
                       </div>
@@ -624,8 +624,8 @@ export function BookMatch() {
                 The single most common misunderstanding: teams thought the fee
                 bought two hours of empty ground and they had to find their own
                 opposition. Spell it out before they reach the calendar. */}
-            <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
-              <p className="text-[11px] font-black uppercase tracking-widest text-emerald-700 mb-2.5">
+            <div className="mb-6 r-card border border-emerald-200 bg-emerald-50/60 p-4">
+              <p className="t-meta font-black uppercase tracking-widest text-emerald-700 mb-2.5">
                 What you're booking
               </p>
               <ul className="space-y-2 text-sm text-emerald-950/85">
@@ -647,12 +647,12 @@ export function BookMatch() {
 
             {/* ── Premium Pricing cards ────────────────────────────────── */}
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="group relative overflow-hidden r-card bg-white border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary-100 to-transparent rounded-full -translate-y-8 translate-x-8" />
                 <div className="relative">
                   <div className="flex items-center gap-1.5 mb-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />
-                    <div className="text-[10px] sm:text-xs text-primary-600 font-bold tracking-wide uppercase">Tue · Thu</div>
+                    <div className="t-micro sm:text-xs text-primary-600 font-bold tracking-wide uppercase">Tue · Thu</div>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl sm:text-3xl font-black text-gray-900">₹3,000</span>
@@ -660,13 +660,13 @@ export function BookMatch() {
                   <div className="text-xs text-gray-500 mt-1">Per match vs SCC · Tue/Thu</div>
                 </div>
               </div>
-              <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-white border border-amber-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="group relative overflow-hidden r-card bg-gradient-to-br from-amber-50 to-white border border-amber-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-200/60 to-transparent rounded-full -translate-y-8 translate-x-8" />
-                <div className="absolute top-2 right-2 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5">PEAK</div>
+                <div className="absolute top-2 right-2 t-micro font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5">PEAK</div>
                 <div className="relative">
                   <div className="flex items-center gap-1.5 mb-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <div className="text-[10px] sm:text-xs text-amber-700 font-bold tracking-wide uppercase">Saturday</div>
+                    <div className="t-micro sm:text-xs text-amber-700 font-bold tracking-wide uppercase">Saturday</div>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl sm:text-3xl font-black text-gray-900">₹4,000</span>
@@ -678,7 +678,7 @@ export function BookMatch() {
 
             {/* ── Premium Ground details card ──────────────────────────── */}
             {((ground.image_urls?.length || ground.image_url) || ground.address || ground.facilities) && (
-              <div className="mb-6 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="mb-6 bg-white border border-gray-200 r-card overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 {/* Photo gallery — auto-rotating carousel with clickable thumbnails */}
                 {(ground.image_urls?.length > 0 || ground.image_url) && (() => {
                   const photos: string[] = ground.image_urls?.length > 0 ? ground.image_urls : [ground.image_url!];
@@ -706,12 +706,12 @@ export function BookMatch() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex flex-wrap gap-2 text-xs text-gray-600">
                       {ground.timing && (
-                        <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium">
+                        <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 r-card px-2.5 py-1.5 font-medium">
                           🕐 {ground.timing}
                         </span>
                       )}
                       {ground.facilities && ground.facilities.split(',').slice(0, 4).map((f, i) => (
-                        <span key={i} className="flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg px-2.5 py-1.5 font-medium">
+                        <span key={i} className="flex items-center gap-1 bg-emerald-50 border border-emerald-100 text-emerald-700 r-card px-2.5 py-1.5 font-medium">
                           <Check className="w-3 h-3" /> {f.trim()}
                         </span>
                       ))}
@@ -721,7 +721,7 @@ export function BookMatch() {
                         href={ground.directions_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 rounded-xl px-3 py-2 transition flex items-center gap-1 shadow-sm"
+                        className="shrink-0 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 r-card px-3 py-2 transition flex items-center gap-1 shadow-sm"
                       >
                         <MapPin className="w-3.5 h-3.5" /> Get Directions
                       </a>
@@ -729,7 +729,7 @@ export function BookMatch() {
                   </div>
 
                   {ground.notes && (
-                    <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-start gap-1.5">
+                    <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 r-card px-3 py-2 flex items-start gap-1.5">
                       <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
                       <span>{ground.notes}</span>
                     </p>
@@ -754,9 +754,9 @@ export function BookMatch() {
                       <img
                         src={url}
                         alt={`Match photo ${i+1}`}
-                        className="h-28 w-44 object-cover rounded-2xl border border-gray-200 shadow-sm group-hover:shadow-md transition-shadow"
+                        className="h-28 w-44 object-cover r-card border border-gray-200 shadow-sm group-hover:shadow-md transition-shadow"
                       />
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                      <div className="absolute inset-0 r-card bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                     </div>
                   ))}
                 </div>
@@ -765,25 +765,25 @@ export function BookMatch() {
 
             {/* ── Trust badges row ─────────────────────────────────────── */}
             <div className="grid grid-cols-3 gap-2 mb-6">
-              <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+              <div className="bg-white border border-gray-200 r-card p-3 text-center">
                 <div className="text-lg mb-0.5">⚡</div>
-                <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Instant Reply</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">Within hours</div>
+                <div className="t-micro font-bold text-gray-700 uppercase tracking-wide">Instant Reply</div>
+                <div className="t-micro text-gray-400 mt-0.5">Within hours</div>
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+              <div className="bg-white border border-gray-200 r-card p-3 text-center">
                 <div className="text-lg mb-0.5">🔒</div>
-                <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Secure Payment</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">UPI verified</div>
+                <div className="t-micro font-bold text-gray-700 uppercase tracking-wide">Secure Payment</div>
+                <div className="t-micro text-gray-400 mt-0.5">UPI verified</div>
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+              <div className="bg-white border border-gray-200 r-card p-3 text-center">
                 <div className="text-lg mb-0.5">🏆</div>
-                <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Trusted Team</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">{(sccRecord?.wins ?? 0) + (sccRecord?.losses ?? 0) + (sccRecord?.draws ?? 0)}+ matches</div>
+                <div className="t-micro font-bold text-gray-700 uppercase tracking-wide">Trusted Team</div>
+                <div className="t-micro text-gray-400 mt-0.5">{(sccRecord?.wins ?? 0) + (sccRecord?.losses ?? 0) + (sccRecord?.draws ?? 0)}+ matches</div>
               </div>
             </div>
 
             {/* Info note */}
-            <p className="text-xs text-gray-500 flex items-start gap-1.5 mb-6 bg-blue-50/50 border border-blue-100 rounded-xl px-3 py-2.5">
+            <p className="text-xs text-gray-500 flex items-start gap-1.5 mb-6 bg-blue-50/50 border border-blue-100 r-card px-3 py-2.5">
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-500" />
               <span>One match per team per month. Booking confirmed after SCC admin verifies payment.</span>
             </p>
@@ -818,19 +818,19 @@ export function BookMatch() {
 
         {/* ══ STEP 1: Premium Slot Calendar ═════════════════════════════════ */}
         {step === 'calendar' && (
-          <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-md mb-8">
+          <div className="bg-white border border-gray-200 r-card overflow-hidden shadow-md mb-8">
             {/* Gradient month nav */}
             <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-emerald-500 px-5 py-4 flex items-center justify-between">
               <button onClick={()=>setCurrentMonthIndex(i=>Math.max(0,i-1))} disabled={currentMonthIndex===0}
-                className="p-2 rounded-xl bg-white/15 hover:bg-white/25 disabled:opacity-30 transition text-white backdrop-blur-sm">
+                className="p-2 r-control bg-white/15 hover:bg-white/25 disabled:opacity-30 transition text-white backdrop-blur-sm">
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <div className="text-center">
-                <p className="text-[10px] uppercase tracking-widest text-emerald-100/90 font-bold mb-0.5">Select your match date</p>
+                <p className="t-micro uppercase tracking-widest text-emerald-100/90 font-bold mb-0.5">Select your match date</p>
                 <h3 className="font-black text-white text-lg">{monthLabel || '—'}</h3>
               </div>
               <button onClick={()=>setCurrentMonthIndex(i=>Math.min(monthKeys.length-1,i+1))} disabled={currentMonthIndex===monthKeys.length-1}
-                className="p-2 rounded-xl bg-white/15 hover:bg-white/25 disabled:opacity-30 transition text-white backdrop-blur-sm">
+                className="p-2 r-control bg-white/15 hover:bg-white/25 disabled:opacity-30 transition text-white backdrop-blur-sm">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -853,11 +853,11 @@ export function BookMatch() {
 
             {/* Admin: hold days off the public calendar */}
             {isAdmin && (
-              <div className="mx-4 sm:mx-5 mt-3 rounded-xl bg-violet-50 border border-violet-200 px-3.5 py-2.5">
+              <div className="mx-4 sm:mx-5 mt-3 r-card bg-violet-50 border border-violet-200 px-3.5 py-2.5">
                 <p className="text-xs font-bold text-violet-900">
                   🔨 Admin · tap any date to block it — league match, paid direct, or ground unavailable
                 </p>
-                <p className="text-[11px] text-violet-600 mt-0.5">
+                <p className="t-meta text-violet-600 mt-0.5">
                   {holds.tableMissing
                     ? 'Run add_internal_match_days.sql in Supabase to enable this.'
                     : holds.needsMigration
@@ -865,7 +865,7 @@ export function BookMatch() {
                       : 'Blocked dates disappear from external booking. Tap one again to edit or release it.'}
                 </p>
                 {holds.offlineTotal > 0 && (
-                  <p className="text-[11px] font-bold text-emerald-700 mt-1.5">
+                  <p className="t-meta font-bold text-emerald-700 mt-1.5">
                     💰 Offline bookings recorded: ₹{holds.offlineTotal.toLocaleString('en-IN')}
                   </p>
                 )}
@@ -920,7 +920,7 @@ export function BookMatch() {
                     return (
                       <button key={slot.id} disabled={holds.busyDate === slot.date || (!avail && !adminActionable)}
                         onClick={handleClick}
-                        className={`relative rounded-2xl p-3 text-left border-2 transition-all ${
+                        className={`relative r-control p-3 text-left border-2 transition-all ${
                           avail
                             ? isSat
                               ? 'bg-gradient-to-br from-amber-50 to-white border-amber-200 hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
@@ -930,16 +930,16 @@ export function BookMatch() {
                                                    `bg-gray-50 border-gray-200 opacity-60 ${adminActionable?'cursor-pointer hover:border-gray-400 hover:opacity-100':'cursor-not-allowed'}`
                         }`}>
                         {avail && isSat && (
-                          <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-amber-700 bg-amber-300 rounded-full px-1.5 py-0.5 shadow-sm">SAT</div>
+                          <div className="absolute -top-1.5 -right-1.5 t-micro font-bold text-amber-700 bg-amber-300 rounded-full px-1.5 py-0.5 shadow-sm">SAT</div>
                         )}
                         {status==='reserved' && (
-                          <div className="absolute -top-1.5 -right-1.5 text-[9px] font-bold text-white bg-violet-500 rounded-full px-1.5 py-0.5 shadow-sm">
+                          <div className="absolute -top-1.5 -right-1.5 t-micro font-bold text-white bg-violet-500 rounded-full px-1.5 py-0.5 shadow-sm">
                             {/* Visitors only ever see the SCC badge — the 💰/🚧
                                 emoji would quietly reveal how the day was held. */}
                             {isAdmin && meta ? meta.emoji : 'SCC'}
                           </div>
                         )}
-                        <div className={`text-[10px] font-bold mb-0.5 tracking-wide uppercase ${
+                        <div className={`t-micro font-bold mb-0.5 tracking-wide uppercase ${
                           avail
                             ? isSat ? 'text-amber-600' : 'text-primary-600'
                             : status==='reserved' ? 'text-violet-500' :
@@ -949,7 +949,7 @@ export function BookMatch() {
                         </div>
                         <div className={`font-black text-base ${avail?'text-gray-900':status==='reserved'?'text-violet-900':'text-gray-400'}`}>{formatShortDate(slot.date)}</div>
                         {status==='reserved' ? (
-                          <div className="text-[10px] text-violet-600 font-bold mt-1 leading-tight">
+                          <div className="t-micro text-violet-600 font-bold mt-1 leading-tight">
                             {/* Outsiders just see "Booked" for an offline deal — no reason
                                 to advertise that it was arranged off-app. Admins see the
                                 detail so they remember who paid. */}
@@ -966,12 +966,12 @@ export function BookMatch() {
                             ₹{slot.price.toLocaleString('en-IN')}
                           </div>
                         )}
-                        {status==='pending' && <div className="text-[10px] text-rose-500 font-bold mt-0.5">Pending</div>}
-                        {(status==='booked'||status==='blocked') && <div className="text-[10px] text-gray-400 font-bold mt-0.5">Booked</div>}
+                        {status==='pending' && <div className="t-micro text-rose-500 font-bold mt-0.5">Pending</div>}
+                        {(status==='booked'||status==='blocked') && <div className="t-micro text-gray-400 font-bold mt-0.5">Booked</div>}
                         {/* Admins see which team holds it, so they know whose
                             cancellation they're acting on before they tap. */}
                         {isAdmin && slot.booking?.team_name && (
-                          <div className="text-[10px] font-bold text-gray-500 truncate mt-0.5">
+                          <div className="t-micro font-bold text-gray-500 truncate mt-0.5">
                             {slot.booking.team_name}
                           </div>
                         )}
@@ -1067,7 +1067,7 @@ export function BookMatch() {
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {testimonials.filter(t => t.active).map((t) => (
-                <div key={t.id} className="relative bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <div key={t.id} className="relative bg-white border border-gray-200 r-card p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
                   <div className="absolute top-2 left-3 text-4xl text-primary-100 font-serif leading-none select-none pointer-events-none">"</div>
                   <div className="relative">
                     <div className="flex gap-0.5 mb-2.5">
@@ -1077,7 +1077,7 @@ export function BookMatch() {
                     </div>
                     <p className="text-xs text-gray-600 leading-relaxed mb-3 italic">{t.text}</p>
                     <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-emerald-500 flex items-center justify-center text-white t-micro font-bold">
                         {t.team.slice(0,2).toUpperCase()}
                       </div>
                       <p className="text-xs font-bold text-gray-800">{t.team}</p>
@@ -1093,7 +1093,7 @@ export function BookMatch() {
         {step === 'form' && selectedSlot && (
           <div className="space-y-4">
             {/* Chosen fixture */}
-            <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center gap-3">
+            <div className="bg-primary-50 border border-primary-200 r-card p-4 flex items-center gap-3">
               <CalendarDays className="w-5 h-5 text-primary-600 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900 text-sm">{formatDate(selectedSlot.date)}</p>
@@ -1102,13 +1102,13 @@ export function BookMatch() {
                 </p>
               </div>
               <button onClick={()=>setStep('calendar')}
-                className="text-xs text-gray-500 hover:text-gray-800 border border-gray-200 bg-white rounded-lg px-3 py-1.5 transition shrink-0">
+                className="text-xs text-gray-500 hover:text-gray-800 border border-gray-200 bg-white r-control px-3 py-1.5 transition shrink-0">
                 Change
               </button>
             </div>
 
             {/* Form */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="bg-white border border-gray-200 r-card p-5 shadow-sm space-y-4">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 <Users className="w-4 h-4 text-primary-500" /> Team Details
               </h3>
@@ -1162,12 +1162,12 @@ export function BookMatch() {
                 {formErrors.chTeamId ? (
                   <p className="text-red-500 text-xs mt-1">{formErrors.chTeamId}</p>
                 ) : detectedTeamId ? (
-                  <div className="mt-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-700 flex items-center gap-1.5 font-semibold">
+                  <div className="mt-1.5 bg-emerald-50 border border-emerald-200 r-card px-3 py-2 text-xs text-emerald-700 flex items-center gap-1.5 font-semibold">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                     <span>Team ID <strong>{detectedTeamId}</strong> detected — you're good to go.</span>
                   </div>
                 ) : (
-                  <div className="mt-1.5 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-blue-700 flex gap-1.5">
+                  <div className="mt-1.5 bg-blue-50 border border-blue-100 r-card px-3 py-2 text-xs text-blue-700 flex gap-1.5">
                     <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                     <span>Just paste your team's CricHeroes link, or type your team ID. Tip: in the CricHeroes app → Your team → <strong>Share</strong> → Copy link. Keeps bookings one-per-team.</span>
                   </div>
@@ -1176,7 +1176,7 @@ export function BookMatch() {
             </div>
 
             <button onClick={()=>{ if(validateForm()) setStep('payment'); }}
-              className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3.5 rounded-xl transition text-sm">
+              className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3.5 r-control transition text-sm">
               Continue to Payment →
             </button>
           </div>
@@ -1186,7 +1186,7 @@ export function BookMatch() {
         {step === 'payment' && selectedSlot && (
           <div className="space-y-4">
             {/* Summary */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <div className="bg-white border border-gray-200 r-card p-4 shadow-sm">
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Booking Summary</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-500">Match Date</span><span className="font-medium text-gray-900">{formatDate(selectedSlot.date)}</span></div>
@@ -1203,20 +1203,20 @@ export function BookMatch() {
 
             {/* UPI panel */}
             {paymentMethod==='upi' && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="bg-white border border-gray-200 r-card p-5 shadow-sm space-y-4">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
                   <QrCode className="w-4 h-4 text-primary-500"/> Pay via UPI
                 </h3>
                 <div className="flex flex-col items-center gap-3">
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl">
+                  <div className="bg-gray-50 border border-gray-200 p-4 r-card">
                     {qrUrl ? (
                       <img
                         src={qrUrl}
                         alt="SCC UPI QR code"
-                        className="w-40 h-40 object-contain rounded-xl bg-white"
+                        className="w-40 h-40 object-contain r-card bg-white"
                       />
                     ) : (
-                      <div className="w-40 h-40 bg-gray-100 rounded-xl flex flex-col items-center justify-center gap-2">
+                      <div className="w-40 h-40 bg-gray-100 r-card flex flex-col items-center justify-center gap-2">
                         <QrCode className="w-14 h-14 text-gray-300"/>
                         <p className="text-xs text-gray-400 text-center">SCC UPI QR<br/>(Set by admin)</p>
                       </div>
@@ -1224,7 +1224,7 @@ export function BookMatch() {
                   </div>
                   <div className="text-center w-full">
                     <p className="text-xs text-gray-500 mb-1.5">Or pay directly to UPI ID</p>
-                    <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
+                    <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 r-card px-4 py-2.5">
                       <span className="font-mono text-sm font-semibold text-gray-900">{upiId}</span>
                       <button onClick={handleCopyUPI} className="text-primary-500 hover:text-primary-700 transition">
                         {copied ? <Check className="w-4 h-4"/> : <Copy className="w-4 h-4"/>}
@@ -1235,9 +1235,9 @@ export function BookMatch() {
                 </div>
 
                 {/* AI verification hint */}
-                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-100">
+                <div className="flex items-start gap-2 px-3 py-2 r-card bg-emerald-50 border border-emerald-100">
                   <span className="text-base flex-shrink-0">⚡</span>
-                  <p className="text-[11px] text-emerald-700 leading-snug">
+                  <p className="t-meta text-emerald-700 leading-snug">
                     <span className="font-bold">Instant verification:</span> we check your payment screenshot automatically using AI — most bookings confirm in seconds, no waiting for admin review.
                   </p>
                 </div>
@@ -1251,14 +1251,14 @@ export function BookMatch() {
                     Pay via UPI first, then upload the screenshot. Booking won't proceed without it.
                   </p>
                   <div onClick={()=>fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition ${
+                    className={`border-2 border-dashed r-card p-4 text-center cursor-pointer transition ${
                       screenshotPreview ? 'border-primary-300 bg-primary-50'
                         : paymentError  ? 'border-red-300 bg-red-50'
                         : 'border-gray-200 hover:border-gray-300 bg-gray-50'
                     }`}>
                     {screenshotPreview ? (
                       <div className="flex flex-col items-center gap-2">
-                        <img src={screenshotPreview} alt="ss" className="max-h-32 rounded-lg object-contain"/>
+                        <img src={screenshotPreview} alt="ss" className="max-h-32 r-card object-contain"/>
                         <p className="text-xs text-primary-600 font-medium">Screenshot uploaded · Tap to change</p>
                       </div>
                     ) : (
@@ -1280,7 +1280,7 @@ export function BookMatch() {
             )}
 
             {/* Confirmation note */}
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-2">
+            <div className="bg-blue-50 border border-blue-100 r-card p-3 flex gap-2">
               <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5"/>
               <p className="text-xs text-blue-700">
                 Booking confirmed only after SCC admin verifies payment. WhatsApp confirmation sent to {contactPhone}.
@@ -1288,7 +1288,7 @@ export function BookMatch() {
             </div>
 
             {submitError && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex gap-2">
+              <div className="bg-red-50 border border-red-200 r-card p-3 flex gap-2">
                 <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5"/>
                 <p className="text-sm text-red-600">{submitError}</p>
               </div>
@@ -1296,11 +1296,11 @@ export function BookMatch() {
 
             <div className="flex gap-3">
               <button onClick={()=>setStep('form')}
-                className="flex-1 py-3.5 rounded-xl border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 bg-white font-medium transition text-sm">
+                className="flex-1 py-3.5 r-control border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 bg-white font-medium transition text-sm">
                 ← Back
               </button>
               <button onClick={handleSubmit} disabled={submitting}
-                className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm">
+                className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-white font-semibold py-3.5 r-control transition flex items-center justify-center gap-2 text-sm">
                 {submitting
                   ? <><Loader2 className="w-4 h-4 animate-spin"/>{paymentMethod === 'upi' ? 'Verifying payment…' : 'Submitting…'}</>
                   : 'Confirm Booking'}
@@ -1326,7 +1326,7 @@ export function BookMatch() {
               if (!url) return null;
               return (
                 <a href={url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 rounded-2xl bg-[#25D366]
+                  className="flex items-center justify-center gap-2.5 r-card bg-[#25D366]
                              text-white font-black py-4 shadow-lg hover:-translate-y-0.5 transition-transform">
                   <MessageCircle className="w-5 h-5" />
                   Send again on WhatsApp
@@ -1359,7 +1359,7 @@ export function BookMatch() {
 
             {/* AI validation result banner */}
             {paymentMethod === 'upi' && validationReason && (
-              <div className={`rounded-xl px-4 py-3 text-xs border ${
+              <div className={`r-card px-4 py-3 text-xs border ${
                 autoVerified
                   ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                   : 'bg-amber-50 border-amber-200 text-amber-800'
@@ -1367,7 +1367,7 @@ export function BookMatch() {
                 <p className="font-bold mb-0.5 flex items-center gap-1.5">
                   {autoVerified ? '✅ Auto-verified' : '⏳ Admin will review'}
                 </p>
-                <p className="text-[11px] opacity-90">{validationReason}</p>
+                <p className="t-meta opacity-90">{validationReason}</p>
               </div>
             )}
 
@@ -1384,7 +1384,7 @@ export function BookMatch() {
             </div>
 
             {/* Summary text (for screen) */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm text-sm space-y-2">
+            <div className="bg-white border border-gray-200 r-card p-4 shadow-sm text-sm space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-500">Booking ID</span>
                 <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
@@ -1404,18 +1404,18 @@ export function BookMatch() {
             {/* Action buttons */}
             <div className="grid grid-cols-2 gap-3">
               <button onClick={handleDownloadCard} disabled={downloading}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-sm transition disabled:opacity-60">
+                className="flex items-center justify-center gap-2 py-3 r-control border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-sm transition disabled:opacity-60">
                 {downloading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Download className="w-4 h-4"/>}
                 Download Card
               </button>
               <button onClick={handleWhatsAppShare}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium text-sm transition">
+                className="flex items-center justify-center gap-2 py-3 r-control bg-green-500 hover:bg-green-600 text-white font-medium text-sm transition">
                 <Share2 className="w-4 h-4"/> Share on WhatsApp
               </button>
             </div>
 
             {/* Next steps */}
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
+            <div className="bg-blue-50 border border-blue-100 r-card p-4 flex gap-3">
               <Shield className="w-5 h-5 text-blue-500 shrink-0 mt-0.5"/>
               <div>
                 <p className="text-sm font-semibold text-blue-800">What happens next?</p>
@@ -1428,7 +1428,7 @@ export function BookMatch() {
             </div>
 
             <button onClick={handleReset}
-              className="w-full py-3.5 rounded-xl bg-primary-500 hover:bg-primary-600 font-semibold text-white transition text-sm">
+              className="w-full py-3.5 r-control bg-primary-500 hover:bg-primary-600 font-semibold text-white transition text-sm">
               Book Another Match
             </button>
           </div>

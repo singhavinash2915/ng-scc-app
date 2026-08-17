@@ -73,9 +73,9 @@ export function ClubWrappedStory({ data, onClose }: Props) {
             { v: data.topScorer?.runs ?? '—', l: 'Top runs' }, { v: data.topWicket?.wkts ?? '—', l: 'Top wkts' },
             { v: data.mvp?.name?.split(' ')[0] ?? '—', l: 'MVP' }, { v: data.elClasico ? `${data.elClasico.dhur}-${data.elClasico.baz}` : '—', l: 'Clásico' },
           ].map(s => (
-            <div key={s.l} className="rounded-xl bg-white/10 border border-white/15 py-3">
+            <div key={s.l} className="r-card bg-white/10 border border-white/15 py-3">
               <p className="font-display text-xl font-extrabold text-white tabular-nums leading-none truncate px-1">{s.v}</p>
-              <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mt-1">{s.l}</p>
+              <p className="text-white/60 t-micro font-bold uppercase tracking-wider mt-1">{s.l}</p>
             </div>
           ))}
         </div>

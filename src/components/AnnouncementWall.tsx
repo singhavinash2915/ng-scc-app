@@ -29,7 +29,7 @@ function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
   else { label = `${mins}m left`; urgent = true; }
 
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black ${
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full t-micro font-black ${
       urgent
         ? 'bg-red-500/25 border border-red-400/50 text-red-200 animate-pulse'
         : 'bg-white/10 border border-white/20 text-white/80'
@@ -63,13 +63,13 @@ function AnnouncementCard({
   const isLong = a.body.length > 140 || a.body.split('\n').length > 3;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl p-4 lg:p-5 group"
+    <div className="relative overflow-hidden r-card p-4 lg:p-5 group"
          style={{ background: TYPE_GRADIENT[a.type] || TYPE_GRADIENT.general }}>
-      <div className="absolute inset-0 border border-white/10 rounded-2xl pointer-events-none" />
+      <div className="absolute inset-0 border border-white/10 r-card pointer-events-none" />
 
       <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
         {a.pinned && (
-          <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-[9px] font-black">
+          <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 t-micro font-black">
             <Pin className="w-2.5 h-2.5" fill="currentColor" />
             PINNED
           </div>
@@ -79,7 +79,7 @@ function AnnouncementCard({
 
       <div className={`flex items-center gap-1.5 mb-2 relative ${meta.color}`}>
         {meta.icon}
-        <span className="text-[10px] font-bold uppercase tracking-[2px]">{meta.label}</span>
+        <span className="t-micro font-bold uppercase tracking-[2px]">{meta.label}</span>
       </div>
       <h3 className="text-base lg:text-lg font-black text-white relative leading-tight pr-16">{a.title}</h3>
 
@@ -100,14 +100,14 @@ function AnnouncementCard({
       </div>
 
       <div className="flex items-center justify-between mt-3 relative">
-        <p className="text-[10px] text-gray-500">
+        <p className="t-micro text-gray-500">
           {a.created_by ? `${a.created_by} · ` : ''}
           {new Date(a.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
         </p>
         {isAdmin && (
           <button
             onClick={() => onDelete(a.id)}
-            className="p-1 rounded-md text-red-300 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+            className="p-1 r-control text-red-300 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
             title="Delete announcement"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -173,7 +173,7 @@ export function AnnouncementWall() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
+        <h2 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
           <Megaphone className="w-3.5 h-3.5 text-primary-500" />
           Team Wall
         </h2>
@@ -188,7 +188,7 @@ export function AnnouncementWall() {
       </div>
 
       {announcements.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-400 dark:text-gray-500">
+        <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-400 dark:text-gray-500">
           {isAdmin ? 'No announcements yet. Click "+ New" to post one.' : 'No announcements yet.'}
         </div>
       ) : (
@@ -259,7 +259,7 @@ export function AnnouncementWall() {
             ]}
           />
           {form.expiry !== 'never' && (
-            <p className="text-[11px] text-gray-500 -mt-2">
+            <p className="t-meta text-gray-500 -mt-2">
               Auto-disappears at {new Date(computeExpiry(form.expiry)!).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
             </p>
           )}

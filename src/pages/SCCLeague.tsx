@@ -133,13 +133,13 @@ export function SCCLeague() {
       <div className="p-4 lg:p-8 max-w-3xl mx-auto space-y-4">
 
         {/* ── HERO ─────────────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-white shadow-2xl"
+        <div className="relative overflow-hidden r-card p-6 sm:p-8 text-white shadow-2xl"
           style={{ background: 'radial-gradient(900px 400px at 85% -10%, #7c3aed 0%, transparent 55%), linear-gradient(140deg,#1e1b4b 5%,#4c1d95 45%,#9d174d 100%)' }}>
           <div className="blob-anim absolute -top-24 -right-16 w-72 h-72 rounded-full pointer-events-none"
             style={{ background: '#f472b6', filter: 'blur(80px)', opacity: .35 }} />
           <div className="relative">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 border border-white/25
-                             backdrop-blur px-3 py-1 text-[10px] font-black uppercase tracking-[3px]">
+                             backdrop-blur px-3 py-1 t-micro font-black uppercase tracking-[3px]">
               <Trophy className="w-3 h-3" /> {done ? 'Squads are set' : 'Auction league'}
             </span>
             <h1 className="font-display text-4xl sm:text-5xl font-extrabold mt-3 leading-[1.05]">
@@ -159,16 +159,16 @@ export function SCCLeague() {
                   { v: formatPrice(totalSpend), l: 'Total spend' },
                   { v: topBuys[0] ? formatPrice(topBuys[0].price) : '—', l: 'Top buy' },
                 ].map(k => (
-                  <div key={k.l} className="rounded-2xl bg-white/10 border border-white/15 px-2 py-3 text-center">
+                  <div key={k.l} className="r-card bg-white/10 border border-white/15 px-2 py-3 text-center">
                     <p className="font-display text-xl sm:text-2xl font-extrabold leading-none">{k.v}</p>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-white/55 mt-1.5">{k.l}</p>
+                    <p className="t-micro font-bold uppercase tracking-wider text-white/55 mt-1.5">{k.l}</p>
                   </div>
                 ))}
               </div>
             )}
 
             <a href={MAHASANGRAM.cricHeroesUrl} target="_blank" rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white text-slate-900
+              className="mt-5 inline-flex items-center gap-2 r-card bg-white text-slate-900
                          font-black text-sm px-5 py-3 shadow-lg hover:-translate-y-0.5 transition-transform">
               Scorecards on CricHeroes <ExternalLink className="w-4 h-4" />
             </a>
@@ -178,8 +178,8 @@ export function SCCLeague() {
         {done && (
           <>
             {/* ── PURSE, HEAD TO HEAD ──────────────────────────────────── */}
-            <div className="glass rounded-3xl p-5">
-              <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-3.5
+            <div className="glass r-card p-5">
+              <p className="t-meta font-black uppercase tracking-[2px] text-slate-400 mb-3.5
                             flex items-center gap-1.5">
                 <Wallet className="w-4 h-4" /> How the purses went
               </p>
@@ -207,13 +207,13 @@ export function SCCLeague() {
 
             {/* ── STANDINGS ────────────────────────────────────────────── */}
             {maha.played > 0 && (
-              <div className="glass rounded-3xl p-5">
+              <div className="glass r-card p-5">
                 <div className="flex items-baseline justify-between mb-4">
-                  <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400
+                  <p className="t-meta font-black uppercase tracking-[2px] text-slate-400
                                 inline-flex items-center gap-1.5">
                     <Trophy className="w-4 h-4" /> Standings
                   </p>
-                  <span className="text-[11px] font-bold text-slate-400">
+                  <span className="t-meta font-bold text-slate-400">
                     {maha.played} played · series {maha.seriesScore}
                   </span>
                 </div>
@@ -225,7 +225,7 @@ export function SCCLeague() {
                     const top = maha.leader === st.side;
                     return (
                       <div key={st.side}
-                        className={`flex items-center gap-3 rounded-2xl px-3.5 py-3 border-2 ${
+                        className={`flex items-center gap-3 r-card px-3.5 py-3 border-2 ${
                           top ? '' : 'border-transparent bg-white/60 dark:bg-white/5'}`}
                         style={top ? { borderColor: id.color, background: `${id.color}12` } : undefined}>
                         <TeamCrest team={tk} size={36} />
@@ -233,14 +233,14 @@ export function SCCLeague() {
                           <p className="font-black text-sm text-slate-900 dark:text-white truncate">
                             {id.name}{top && ' 👑'}
                           </p>
-                          <p className="text-[10px] text-slate-400">
+                          <p className="t-micro text-slate-400">
                             {st.won}W · {st.lost}L{st.noResult > 0 ? ` · ${st.noResult}NR` : ''}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {st.form.map((f, i) => (
                             <span key={i}
-                              className={`w-5 h-5 rounded-md text-[9px] font-black flex items-center justify-center ${
+                              className={`w-5 h-5 r-card t-micro font-black flex items-center justify-center ${
                                 f === 'W' ? 'bg-emerald-500 text-white'
                                 : f === 'L' ? 'bg-rose-500 text-white'
                                 : 'bg-slate-300 text-slate-600'}`}>{f}</span>
@@ -252,7 +252,7 @@ export function SCCLeague() {
                     );
                   })}
                 </div>
-                <p className="text-[10px] text-slate-400 mt-2.5">
+                <p className="t-micro text-slate-400 mt-2.5">
                   2 points a win, 1 for no result.
                 </p>
               </div>
@@ -262,8 +262,8 @@ export function SCCLeague() {
                 Scoped to MahaSangram only, so a ₹20 L signing can top it
                 without competing against ten years of club history. */}
             {maha.mvps.length > 0 && (
-              <div className="glass rounded-3xl p-5">
-                <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-3
+              <div className="glass r-card p-5">
+                <p className="t-meta font-black uppercase tracking-[2px] text-slate-400 mb-3
                               inline-flex items-center gap-1.5">
                   <Flame className="w-4 h-4" /> MVP race
                 </p>
@@ -274,10 +274,10 @@ export function SCCLeague() {
                         i === 0 ? 'text-amber-500' : 'text-slate-300 dark:text-white/25'}`}>{i + 1}</span>
                       <Avatar member={r.member} size={32} />
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                        <p className="font-bold t-body text-slate-900 dark:text-white truncate">
                           {r.member.name}
                         </p>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="t-micro text-slate-400">
                           {r.runs} runs · {r.wickets} wkts
                           {r.dismissals > 0 && ` · ${r.dismissals} dis`}
                         </p>
@@ -289,7 +289,7 @@ export function SCCLeague() {
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] text-slate-400 mt-3">
+                <p className="t-micro text-slate-400 mt-3">
                   1 point a run, 20 a wicket, 10 a dismissal.
                 </p>
               </div>
@@ -299,12 +299,12 @@ export function SCCLeague() {
                 The argument the auction exists to create. Empty until matches
                 have been played — ranking everyone at zero would say nothing. */}
             {maha.value.length > 0 && (
-              <div className="glass rounded-3xl p-5">
-                <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-1
+              <div className="glass r-card p-5">
+                <p className="t-meta font-black uppercase tracking-[2px] text-slate-400 mb-1
                               inline-flex items-center gap-1.5">
                   <Gavel className="w-4 h-4" /> Value for money
                 </p>
-                <p className="text-[11px] text-slate-500 dark:text-white/50 mb-3.5 leading-snug">
+                <p className="t-meta text-slate-500 dark:text-white/50 mb-3.5 leading-snug">
                   MVP points per ₹ crore paid at the auction. Who's earning their price?
                 </p>
 
@@ -315,10 +315,10 @@ export function SCCLeague() {
                         i === 0 ? 'text-emerald-500' : 'text-slate-300 dark:text-white/25'}`}>{i + 1}</span>
                       <Avatar member={r.member} size={32} />
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                        <p className="font-bold t-body text-slate-900 dark:text-white truncate">
                           {r.member.name}
                         </p>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="t-micro text-slate-400">
                           {formatPrice(r.price)} · {r.points} pts
                         </p>
                       </div>
@@ -326,7 +326,7 @@ export function SCCLeague() {
                         <p className="font-black tabular-nums text-slate-900 dark:text-white">
                           {Math.round(r.perCrore)}
                         </p>
-                        <p className={`text-[10px] font-bold ${
+                        <p className={`t-micro font-bold ${
                           r.vsAverage >= 1 ? 'text-emerald-600' : 'text-slate-400'}`}>
                           {r.vsAverage.toFixed(1)}× avg
                         </p>
@@ -338,16 +338,16 @@ export function SCCLeague() {
                 {/* the flip side — worth naming, it's the funnier half */}
                 {maha.value.length > 3 && (
                   <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                    <p className="t-micro font-black uppercase tracking-widest text-slate-400 mb-2">
                       Still earning it
                     </p>
                     {maha.value.slice(-2).reverse().map(r => (
                       <div key={r.member.id} className="flex items-center gap-3 py-1">
                         <Avatar member={r.member} size={26} />
-                        <span className="flex-1 min-w-0 truncate text-[12px] font-bold
+                        <span className="flex-1 min-w-0 truncate t-body font-bold
                                          text-slate-700 dark:text-white/70">{r.member.name}</span>
-                        <span className="text-[11px] text-slate-400">{formatPrice(r.price)}</span>
-                        <span className="text-[11px] font-black text-slate-500 w-12 text-right">
+                        <span className="t-meta text-slate-400">{formatPrice(r.price)}</span>
+                        <span className="t-meta font-black text-slate-500 w-12 text-right">
                           {Math.round(r.perCrore)}
                         </span>
                       </div>
@@ -358,13 +358,13 @@ export function SCCLeague() {
             )}
 
             {/* ── FIXTURES ─────────────────────────────────────────────── */}
-            <div className="glass rounded-3xl p-5">
+            <div className="glass r-card p-5">
               <div className="flex items-baseline justify-between mb-3.5">
-                <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400
+                <p className="t-meta font-black uppercase tracking-[2px] text-slate-400
                               inline-flex items-center gap-1.5">
                   <CalendarDays className="w-4 h-4" /> Fixtures
                 </p>
-                <span className="text-[11px] font-bold text-slate-400">
+                <span className="t-meta font-bold text-slate-400">
                   {playedCount} played · {fixtures.length - playedCount} to come
                 </span>
               </div>
@@ -380,27 +380,27 @@ export function SCCLeague() {
                     const up = f.result === 'upcoming';
                     return (
                       <div key={f.id}
-                        className="flex items-center gap-3 rounded-2xl bg-white/60 dark:bg-white/5 px-3.5 py-3">
+                        className="flex items-center gap-3 r-card bg-white/60 dark:bg-white/5 px-3.5 py-3">
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <TeamCrest team="team1" size={26} />
-                          <span className="text-[10px] font-black text-slate-400">v</span>
+                          <span className="t-micro font-black text-slate-400">v</span>
                           <TeamCrest team="team2" size={26} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-black text-slate-900 dark:text-white">
+                          <p className="t-body font-black text-slate-900 dark:text-white">
                             {new Date(f.date).toLocaleDateString('en-IN',
                               { weekday: 'short', day: 'numeric', month: 'short' })}
                           </p>
-                          <p className="text-[10px] text-slate-400 truncate">{f.venue || '—'}</p>
+                          <p className="t-micro text-slate-400 truncate">{f.venue || '—'}</p>
                         </div>
                         {up ? (
                           <span className="flex-shrink-0 rounded-full bg-emerald-50 dark:bg-emerald-400/10
                                            border border-emerald-200 dark:border-emerald-400/20 px-2.5 py-1
-                                           text-[10px] font-black text-emerald-700 dark:text-emerald-300">
+                                           t-micro font-black text-emerald-700 dark:text-emerald-300">
                             Upcoming
                           </span>
                         ) : (
-                          <span className="flex-shrink-0 text-[11px] font-black tabular-nums
+                          <span className="flex-shrink-0 t-meta font-black tabular-nums
                                            text-slate-700 dark:text-white/80">
                             {f.our_score || '—'} · {f.opponent_score || '—'}
                           </span>
@@ -415,7 +415,7 @@ export function SCCLeague() {
             {/* ── THE SQUADS ───────────────────────────────────────────────
                 A switcher rather than two columns: on a phone, side-by-side
                 squads of fifteen means neither is readable. */}
-            <div className="glass rounded-3xl overflow-hidden">
+            <div className="glass r-card overflow-hidden">
               <div className="grid grid-cols-2">
                 {rosters.map(r => {
                   const on = openTeam === r.key;
@@ -425,7 +425,7 @@ export function SCCLeague() {
                       style={{ background: on ? TEAM_COLOR[r.key] : 'transparent' }}>
                       <TeamCrest team={r.key} size={34} />
                       <span className="block font-black text-sm mt-1.5">{r.name}</span>
-                      <span className={`block text-[10px] font-bold mt-0.5 ${on ? 'text-white/70' : 'text-slate-400'}`}>
+                      <span className={`block t-micro font-bold mt-0.5 ${on ? 'text-white/70' : 'text-slate-400'}`}>
                         {r.size} players · {formatPrice(r.spent)}
                       </span>
                     </button>
@@ -445,7 +445,7 @@ export function SCCLeague() {
                           {r.captain.name}
                           <Crown className="w-3.5 h-3.5 text-amber-500" fill="currentColor" />
                         </p>
-                        <p className="text-[11px] font-bold" style={{ color: TEAM_COLOR[r.key] }}>
+                        <p className="t-meta font-bold" style={{ color: TEAM_COLOR[r.key] }}>
                           Captain · retained
                         </p>
                       </div>
@@ -457,15 +457,15 @@ export function SCCLeague() {
                   <div className="divide-y divide-slate-100 dark:divide-white/10">
                     {r.bought.map((b, i) => (
                       <div key={b.id} className="flex items-center gap-3 px-4 py-2.5">
-                        <span className="w-5 text-center text-[11px] font-black text-slate-300 dark:text-white/25">
+                        <span className="w-5 text-center t-meta font-black text-slate-300 dark:text-white/25">
                           {i + 1}
                         </span>
                         <Avatar member={b.member} size={34} />
                         <div className="min-w-0 flex-1">
-                          <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                          <p className="font-bold t-body text-slate-900 dark:text-white truncate">
                             {b.member?.name ?? '?'}
                           </p>
-                          <p className="text-[10px] text-slate-400">
+                          <p className="t-micro text-slate-400">
                             Base {formatPrice(basePriceOf[b.id] ?? 20)}
                             {b.allocated && ' · allocated at close'}
                           </p>
@@ -483,8 +483,8 @@ export function SCCLeague() {
 
             {/* ── TOP BUYS ─────────────────────────────────────────────── */}
             {topBuys.length > 0 && (
-              <div className="glass rounded-3xl p-5">
-                <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-3
+              <div className="glass r-card p-5">
+                <p className="t-meta font-black uppercase tracking-[2px] text-slate-400 mb-3
                               flex items-center gap-1.5">
                   <Gavel className="w-4 h-4" /> Biggest buys of the night
                 </p>
@@ -497,10 +497,10 @@ export function SCCLeague() {
                       </span>
                       <Avatar member={b.member} size={34} />
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-[13px] text-slate-900 dark:text-white truncate">
+                        <p className="font-bold t-body text-slate-900 dark:text-white truncate">
                           {b.member?.name ?? '?'}
                         </p>
-                        <p className="inline-flex items-center gap-1.5 text-[10px] font-bold"
+                        <p className="inline-flex items-center gap-1.5 t-micro font-bold"
                           style={{ color: TEAM_COLOR[b.team as TeamKey] }}>
                           <TeamCrest team={b.team as TeamKey} size={14} />
                           {rosters.find(r => r.key === b.team)?.name}
@@ -519,8 +519,8 @@ export function SCCLeague() {
 
         {/* ── SITTING OUT ──────────────────────────────────────────────── */}
         {league.sittingOut.length > 0 && (
-          <div className="glass rounded-3xl p-5">
-            <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-400 mb-3 flex items-center gap-1.5">
+          <div className="glass r-card p-5">
+            <p className="t-meta font-black uppercase tracking-[2px] text-slate-400 mb-3 flex items-center gap-1.5">
               <UserMinus className="w-4 h-4" /> Sitting this one out · {league.sittingOut.length}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -537,8 +537,8 @@ export function SCCLeague() {
         )}
 
         {/* ── RULEBOOK ─────────────────────────────────────────────────── */}
-        <div className="glass rounded-3xl p-5 sm:p-6">
-          <p className="text-[11px] font-black uppercase tracking-[2px] text-slate-600 dark:text-white/70 mb-1 flex items-center gap-1.5">
+        <div className="glass r-card p-5 sm:p-6">
+          <p className="t-meta font-black uppercase tracking-[2px] text-slate-600 dark:text-white/70 mb-1 flex items-center gap-1.5">
             <ScrollText className="w-4 h-4" /> The rulebook
           </p>
           <p className="text-xs text-slate-500 dark:text-white/60 mb-4">
@@ -551,20 +551,20 @@ export function SCCLeague() {
               { v: String(SQUAD_SIZE), l: 'Players / squad', c: 'from-violet-500 to-purple-600' },
               { v: String(SQUAD_TARGET), l: 'Needed to start', c: 'from-emerald-500 to-teal-500' },
             ].map(k => (
-              <div key={k.l} className={`rounded-2xl p-3 text-center text-white bg-gradient-to-br ${k.c} shadow-md`}>
+              <div key={k.l} className={`r-card p-3 text-center text-white bg-gradient-to-br ${k.c} shadow-md`}>
                 <p className="font-display text-lg font-extrabold leading-none">{k.v}</p>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-white/80 mt-1">{k.l}</p>
+                <p className="t-micro font-bold uppercase tracking-wider text-white/80 mt-1">{k.l}</p>
               </div>
             ))}
           </div>
 
           <div className="space-y-2">
             {ALL_RULES.map(section => (
-              <details key={section.title} className="group rounded-2xl bg-white/60 dark:bg-white/5 overflow-hidden">
+              <details key={section.title} className="group r-card bg-white/60 dark:bg-white/5 overflow-hidden">
                 <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer list-none">
                   <span className="text-lg">{section.emoji}</span>
                   <span className="flex-1 font-bold text-sm text-slate-800 dark:text-white">{section.title}</span>
-                  <span className="text-[10px] font-bold text-slate-400">{section.rules.length} rules</span>
+                  <span className="t-micro font-bold text-slate-400">{section.rules.length} rules</span>
                   <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180" />
                 </summary>
                 <ol className="px-4 pb-4 space-y-2">

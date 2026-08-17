@@ -208,7 +208,7 @@ export function MatchPoll() {
             <img
               src="/scc-logo.jpg"
               alt="SCC"
-              className="w-10 h-10 rounded-xl object-cover"
+              className="w-10 h-10 r-card object-cover"
             />
             <div>
               <h1 className="font-bold text-lg">Squad Availability Poll</h1>
@@ -250,7 +250,7 @@ export function MatchPoll() {
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         {/* Response Summary */}
-        <div className={`rounded-xl p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+        <div className={`r-card p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
           <h3 className={`text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
             Responses ({polls.length}/{members.length})
           </h3>
@@ -281,7 +281,7 @@ export function MatchPoll() {
 
         {isPollClosed ? (
           /* Poll Closed State */
-          <div className={`rounded-xl p-6 text-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+          <div className={`r-card p-6 text-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
             <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <h3 className={`font-semibold text-lg mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
               Poll Closed
@@ -292,7 +292,7 @@ export function MatchPoll() {
           </div>
         ) : submitted ? (
           /* Success State */
-          <div className={`rounded-xl p-6 text-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+          <div className={`r-card p-6 text-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
             <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
             <h3 className={`font-semibold text-lg mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
               Response Submitted!
@@ -312,7 +312,7 @@ export function MatchPoll() {
             </p>
             <button
               onClick={handleChangeResponse}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 r-control transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
               Change Response
@@ -321,7 +321,7 @@ export function MatchPoll() {
         ) : (
           <>
             {/* Step 1: Select Member */}
-            <div className={`rounded-xl p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+            <div className={`r-card p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
               <h3 className={`text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                 1. Who are you?
               </h3>
@@ -330,7 +330,7 @@ export function MatchPoll() {
                 placeholder="Search your name..."
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
-                className={`w-full px-3 py-2 rounded-lg border text-sm mb-3 ${
+                className={`w-full px-3 py-2 r-control border text-sm mb-3 ${
                   theme === 'dark'
                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                     : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
@@ -345,7 +345,7 @@ export function MatchPoll() {
                     <button
                       key={member.id}
                       onClick={() => setSelectedMember(member.id)}
-                      className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-all ${
+                      className={`flex items-center gap-2 p-2.5 r-control border text-left transition-all ${
                         selectedMember === member.id
                           ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 ring-2 ring-primary-500/30'
                           : theme === 'dark'
@@ -371,7 +371,7 @@ export function MatchPoll() {
                           {member.name}
                         </p>
                         {hasResponse && (
-                          <span className={`text-[10px] font-medium ${
+                          <span className={`t-micro font-medium ${
                             memberResponse?.response === 'available'
                               ? 'text-green-600'
                               : memberResponse?.response === 'maybe'
@@ -390,7 +390,7 @@ export function MatchPoll() {
 
             {/* Step 2: Select Response (shown after member selection) */}
             {selectedMember && (
-              <div className={`rounded-xl p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+              <div className={`r-card p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
                 <h3 className={`text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                   2. Are you available?
                   {existingResponse && (
@@ -400,7 +400,7 @@ export function MatchPoll() {
                 <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => setSelectedResponse('available')}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    className={`flex flex-col items-center gap-2 p-4 r-control border-2 transition-all ${
                       selectedResponse === 'available'
                         ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                         : theme === 'dark'
@@ -420,7 +420,7 @@ export function MatchPoll() {
 
                   <button
                     onClick={() => setSelectedResponse('maybe')}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    className={`flex flex-col items-center gap-2 p-4 r-control border-2 transition-all ${
                       selectedResponse === 'maybe'
                         ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
                         : theme === 'dark'
@@ -440,7 +440,7 @@ export function MatchPoll() {
 
                   <button
                     onClick={() => setSelectedResponse('unavailable')}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    className={`flex flex-col items-center gap-2 p-4 r-control border-2 transition-all ${
                       selectedResponse === 'unavailable'
                         ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
                         : theme === 'dark'
@@ -470,7 +470,7 @@ export function MatchPoll() {
                       placeholder="e.g., Will be 15 min late..."
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
-                      className={`w-full mt-1 px-3 py-2 rounded-lg border text-sm ${
+                      className={`w-full mt-1 px-3 py-2 r-control border text-sm ${
                         theme === 'dark'
                           ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                           : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
@@ -484,7 +484,7 @@ export function MatchPoll() {
                   <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
+                    className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold r-control transition-colors"
                   >
                     {submitting ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />

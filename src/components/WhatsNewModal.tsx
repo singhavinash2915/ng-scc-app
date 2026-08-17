@@ -53,11 +53,11 @@ export function WhatsNewModal() {
             <div className="relative px-5 pt-5 pb-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 r-card bg-white/20 flex items-center justify-center flex-shrink-0">
                     <Sparkles className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-[2px]">
+                    <p className="text-emerald-200 t-micro font-bold uppercase tracking-[2px]">
                       What's New · v{latest.version}
                     </p>
                     <h2 className="text-white text-xl font-black leading-tight">{latest.title}</h2>
@@ -73,7 +73,7 @@ export function WhatsNewModal() {
                   <X className="w-4 h-4 text-white" />
                 </button>
               </div>
-              <p className="text-emerald-300/60 text-[10px] mt-2 font-medium">{latest.date}</p>
+              <p className="text-emerald-300/60 t-micro mt-2 font-medium">{latest.date}</p>
             </div>
           </div>
 
@@ -81,13 +81,13 @@ export function WhatsNewModal() {
           <div className="flex-1 overflow-y-auto overscroll-contain">
             <div className="p-4 space-y-1">
               {latest.notes.map((n, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div key={i} className="flex items-start gap-3 p-3 r-card hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                   <span className="text-xl flex-shrink-0 mt-0.5">{n.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{n.title}</p>
                       {n.tag && (
-                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${tagColor(n.tag)}`}>
+                        <span className={`px-1.5 py-0.5 rounded-full t-micro font-black uppercase tracking-wider ${tagColor(n.tag)}`}>
                           {n.tag}
                         </span>
                       )}
@@ -112,7 +112,7 @@ export function WhatsNewModal() {
                   <div className="px-4 pb-4 space-y-4">
                     {older.map(r => (
                       <div key={r.version}>
-                        <p className="text-[10px] font-black uppercase tracking-[2px] text-gray-400 mb-2 px-1">
+                        <p className="t-micro font-black uppercase tracking-[2px] text-gray-400 mb-2 px-1">
                           {r.title} · {r.date}
                         </p>
                         {r.notes.map((n, i) => (
@@ -120,7 +120,7 @@ export function WhatsNewModal() {
                             <span className="text-base flex-shrink-0">{n.emoji}</span>
                             <div>
                               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{n.title}</p>
-                              <p className="text-[11px] text-gray-400">{n.desc}</p>
+                              <p className="t-meta text-gray-400">{n.desc}</p>
                             </div>
                           </div>
                         ))}
@@ -136,7 +136,7 @@ export function WhatsNewModal() {
           <div className="flex-shrink-0 px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-3">
             <button
               onClick={dismiss}
-              className="flex-1 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-colors"
+              className="flex-1 py-2.5 r-control bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-colors"
             >
               Got it, let's go! 🏏
             </button>

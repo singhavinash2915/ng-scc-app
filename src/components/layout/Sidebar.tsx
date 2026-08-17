@@ -128,7 +128,7 @@ export function Sidebar() {
           <img
             src="/scc-logo.jpg"
             alt="SCC"
-            className="w-10 h-10 rounded-xl object-cover"
+            className="w-10 h-10 r-card object-cover"
           />
           <div>
             <h1 className="font-bold text-gray-900 dark:text-white">SCC</h1>
@@ -141,7 +141,7 @@ export function Sidebar() {
           href="/book-match"
           target="_blank"
           rel="noopener noreferrer"
-          className="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
+          className="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 r-card bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-xs font-medium hover:bg-primary-100 dark:hover:bg-primary-900/30 transition"
         >
           <BookOpen className="w-3.5 h-3.5" />
           Book a Match vs SCC
@@ -152,7 +152,7 @@ export function Sidebar() {
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {navGroups.map((group, gi) => (
             <div key={group.title} className={gi > 0 ? 'pt-3' : undefined}>
-              <p className="px-4 pb-1 text-[10px] font-black uppercase tracking-[1.5px] text-gray-400 dark:text-gray-500">
+              <p className="px-4 pb-1 t-micro font-black uppercase tracking-[1.5px] text-gray-400 dark:text-gray-500">
                 {group.title}
               </p>
               {group.items.map((item) => (
@@ -160,7 +160,7 @@ export function Sidebar() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+                    `flex items-center gap-3 px-4 py-2.5 r-card transition-colors ${
                       isActive
                         ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -170,7 +170,7 @@ export function Sidebar() {
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium flex-1">{item.label}</span>
                   {item.to === '/whats-new' && hasUnreadRelease && (
-                    <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-black rounded-full uppercase tracking-wide animate-pulse">
+                    <span className="px-1.5 py-0.5 bg-emerald-500 text-white t-micro font-black rounded-full uppercase tracking-wide animate-pulse">
                       New
                     </span>
                   )}
@@ -185,7 +185,7 @@ export function Sidebar() {
               <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
               {/* Match Bookings */}
               <NavLink to="/bookings" className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`
+                `flex items-center gap-3 px-4 py-3 r-card transition-colors ${isActive ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`
               }>
                 <BookOpen className="w-5 h-5" />
                 <span className="font-medium">Match Bookings</span>
@@ -195,7 +195,7 @@ export function Sidebar() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    `flex items-center gap-3 px-4 py-3 r-card transition-colors ${
                       isActive
                         ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -220,7 +220,7 @@ export function Sidebar() {
           {isAdmin ? (
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 r-control bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
             >
               <Shield className="w-5 h-5 text-primary-500" />
               <div className="flex-1 text-left">
@@ -232,7 +232,7 @@ export function Sidebar() {
           ) : (
             <button
               onClick={() => setShowLoginModal(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 r-control bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               <Lock className="w-5 h-5 text-gray-500" />
               <div className="flex-1 text-left">

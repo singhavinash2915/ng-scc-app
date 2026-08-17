@@ -355,7 +355,7 @@ export function Auction() {
       <div>
         <Header title="Auction" subtitle="Admin only" />
         <div className="p-8 max-w-md mx-auto mt-12">
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center bg-white dark:bg-gray-900">
+          <div className="r-card border border-gray-200 dark:border-gray-700 p-8 text-center bg-white dark:bg-gray-900">
             <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
               <Lock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
             </div>
@@ -381,12 +381,12 @@ export function Auction() {
         {/* ── STEP 1: SETUP ────────────────────────────────────────────── */}
         {step === 'setup' && (
           <>
-            <div className="relative overflow-hidden rounded-3xl p-6 lg:p-8 shadow-xl"
+            <div className="relative overflow-hidden r-card p-6 lg:p-8 shadow-xl"
                  style={{ background: 'radial-gradient(600px circle at 0% 0%, rgba(168,85,247,0.3), transparent 50%), radial-gradient(400px circle at 100% 100%, rgba(59,130,246,0.25), transparent 60%), linear-gradient(135deg, #1e1b4b 0%, #0a1019 100%)' }}>
-              <div className="absolute inset-0 border border-purple-500/30 rounded-3xl pointer-events-none" />
+              <div className="absolute inset-0 border border-purple-500/30 r-card pointer-events-none" />
               <div className="absolute -top-16 -right-16 w-56 h-56 bg-purple-400/15 rounded-full blur-3xl" />
               <div className="relative flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-purple-400/20 border-2 border-purple-400/40 flex items-center justify-center flex-shrink-0">
+                <div className="w-14 h-14 r-card bg-purple-400/20 border-2 border-purple-400/40 flex items-center justify-center flex-shrink-0">
                   <Gavel className="w-7 h-7 text-purple-300" />
                 </div>
                 <div>
@@ -397,8 +397,8 @@ export function Auction() {
             </div>
 
             {/* Match details */}
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
-              <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400">Match Details</p>
+            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+              <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">Match Details</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   label="Match Date"
@@ -415,8 +415,8 @@ export function Auction() {
             </div>
 
             {/* Team names — chosen once the captains are known */}
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
-              <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400">Team Names</p>
+            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+              <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">Team Names</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   label="🦁 Team 1"
@@ -434,8 +434,8 @@ export function Auction() {
             </div>
 
             {/* Captains */}
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
-              <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400">Pick Captains</p>
+            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+              <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">Pick Captains</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 mb-1.5 flex items-center gap-1">
@@ -444,7 +444,7 @@ export function Auction() {
                   <select
                     value={config.dhurCaptainId}
                     onChange={e => setConfig(c => ({ ...c, dhurCaptainId: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 r-control border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   >
                     <option value="">— Select —</option>
                     {eligibleMembers.filter(m => m.id !== config.bazCaptainId).map(m => (
@@ -459,7 +459,7 @@ export function Auction() {
                   <select
                     value={config.bazCaptainId}
                     onChange={e => setConfig(c => ({ ...c, bazCaptainId: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 r-control border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   >
                     <option value="">— Select —</option>
                     {eligibleMembers.filter(m => m.id !== config.dhurCaptainId).map(m => (
@@ -471,8 +471,8 @@ export function Auction() {
             </div>
 
             {/* Budget + bid params */}
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
-              <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400">Budget & Bidding</p>
+            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+              <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">Budget & Bidding</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input
                   label="Purse per team (₹ lakh)"
@@ -496,9 +496,9 @@ export function Auction() {
             </div>
 
             {/* Pool selection */}
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400">
+                <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">
                   Pool ({poolSelected.filter(id => id !== config.dhurCaptainId && id !== config.bazCaptainId).length} players)
                 </p>
                 <div className="flex gap-2">
@@ -540,7 +540,7 @@ export function Auction() {
                       type="button"
                       disabled={isCaptain}
                       onClick={() => togglePool(m.id)}
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm transition-all ${
+                      className={`flex items-center gap-2 px-2 py-1.5 r-control text-left text-sm transition-all ${
                         isCaptain
                           ? 'bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 opacity-50 cursor-not-allowed'
                           : selected
@@ -552,7 +552,7 @@ export function Auction() {
                         <img src={m.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[9px] font-bold text-white">{m.name.charAt(0)}</span>
+                          <span className="t-micro font-bold text-white">{m.name.charAt(0)}</span>
                         </div>
                       )}
                       <span className="flex-1 truncate text-xs">{m.name.split(' ')[0]}</span>
@@ -574,7 +574,7 @@ export function Auction() {
         {step === 'auction' && currentPlayer && (
           <>
             {/* Progress */}
-            <div className="flex items-center justify-between rounded-xl bg-gray-100 dark:bg-gray-800 px-4 py-2.5">
+            <div className="flex items-center justify-between r-card bg-gray-100 dark:bg-gray-800 px-4 py-2.5">
               <span className="text-xs font-bold text-gray-500">
                 Player {currentIdx + 1} of {totalToAuction}
               </span>
@@ -593,28 +593,28 @@ export function Auction() {
             </div>
 
             {/* Current Player Card */}
-            <div className="relative overflow-hidden rounded-3xl shadow-2xl"
+            <div className="relative overflow-hidden r-card shadow-2xl"
                  style={{ background: currentBidder
                    ? `radial-gradient(600px circle at 50% 0%, ${currentBidder === 'dhurandars' ? 'rgba(59,130,246,0.4)' : 'rgba(168,85,247,0.4)'}, transparent 50%), linear-gradient(135deg, #0a0e1f 0%, #0a1019 100%)`
                    : 'radial-gradient(600px circle at 50% 0%, rgba(251,191,36,0.25), transparent 50%), linear-gradient(135deg, #1a0f05 0%, #0a1019 100%)'
                  }}>
-              <div className="absolute inset-0 border border-amber-500/30 rounded-3xl pointer-events-none" />
+              <div className="absolute inset-0 border border-amber-500/30 r-card pointer-events-none" />
               <div className="relative p-6 lg:p-8 text-center">
                 {/* Which set is on the block — the room needs to know whether the
                     big names are still coming or the money should be spent now. */}
                 <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3.5 py-1.5 mb-3">
                   <span className="text-base leading-none">{currentSet.emoji}</span>
-                  <span className="text-[10px] font-black uppercase tracking-[2px] text-white/90">
+                  <span className="t-micro font-black uppercase tracking-[2px] text-white/90">
                     {currentSet.label}
                   </span>
-                  <span className="text-[10px] font-bold text-white/50">{setIdx}/{setSize}</span>
+                  <span className="t-micro font-bold text-white/50">{setIdx}/{setSize}</span>
                 </div>
-                <p className="text-amber-300/70 text-[10px] font-bold uppercase tracking-[3px]">On the block</p>
+                <p className="text-amber-300/70 t-micro font-bold uppercase tracking-[3px]">On the block</p>
                 <div className="mt-4 flex justify-center">
                   {currentPlayer.avatar_url ? (
-                    <img src={currentPlayer.avatar_url} alt="" className="w-28 h-28 lg:w-32 lg:h-32 rounded-3xl object-cover border-[3px] border-amber-400/50 shadow-2xl shadow-amber-500/40" />
+                    <img src={currentPlayer.avatar_url} alt="" className="w-28 h-28 lg:w-32 lg:h-32 r-card object-cover border-[3px] border-amber-400/50 shadow-2xl shadow-amber-500/40" />
                   ) : (
-                    <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-3xl bg-gradient-to-br from-amber-400 to-yellow-600 border-[3px] border-amber-400/50 flex items-center justify-center shadow-2xl shadow-amber-500/40">
+                    <div className="w-28 h-28 lg:w-32 lg:h-32 r-card bg-gradient-to-br from-amber-400 to-yellow-600 border-[3px] border-amber-400/50 flex items-center justify-center shadow-2xl shadow-amber-500/40">
                       <span className="text-5xl font-black text-yellow-950">{currentPlayer.name.charAt(0)}</span>
                     </div>
                   )}
@@ -640,19 +640,19 @@ export function Auction() {
                       {s && s.batting_runs > 0 && (
                         <div className="text-center">
                           <p className="text-xl font-black tabular-nums">{s.batting_runs}</p>
-                          <p className="text-[10px] uppercase tracking-widest text-white/40">runs</p>
+                          <p className="t-micro uppercase tracking-widest text-white/40">runs</p>
                         </div>
                       )}
                       {s && s.bowling_wickets > 0 && (
                         <div className="text-center">
                           <p className="text-xl font-black tabular-nums">{s.bowling_wickets}</p>
-                          <p className="text-[10px] uppercase tracking-widest text-white/40">wkts</p>
+                          <p className="t-micro uppercase tracking-widest text-white/40">wkts</p>
                         </div>
                       )}
                       {moms > 0 && (
                         <div className="text-center">
                           <p className="text-xl font-black tabular-nums">👑 {moms}</p>
-                          <p className="text-[10px] uppercase tracking-widest text-white/40">MOMs</p>
+                          <p className="t-micro uppercase tracking-widest text-white/40">MOMs</p>
                         </div>
                       )}
                     </div>
@@ -661,7 +661,7 @@ export function Auction() {
 
                 {/* Current bid */}
                 <div className="mt-7 pt-5 border-t border-white/10">
-                  <p className="text-[10px] font-bold uppercase tracking-[2px] text-white/50">Current Bid</p>
+                  <p className="t-micro font-bold uppercase tracking-[2px] text-white/50">Current Bid</p>
                   <p className="text-5xl lg:text-6xl font-black text-white tabular-nums mt-1"
                      style={{ background: 'linear-gradient(180deg, #fff 30%, #fde68a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     {formatPrice(currentBid)}
@@ -680,7 +680,7 @@ export function Auction() {
               <button
                 onClick={() => placeBid('dhurandars')}
                 disabled={!dhurCanBid}
-                className={`relative p-4 rounded-2xl text-white font-bold transition-all ${
+                className={`relative p-4 r-control text-white font-bold transition-all ${
                   dhurCanBid
                     ? 'bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg shadow-blue-500/30 active:scale-95'
                     : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed opacity-60'
@@ -693,7 +693,7 @@ export function Auction() {
               <button
                 onClick={() => placeBid('bazigars')}
                 disabled={!bazCanBid}
-                className={`relative p-4 rounded-2xl text-white font-bold transition-all ${
+                className={`relative p-4 r-control text-white font-bold transition-all ${
                   bazCanBid
                     ? 'bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg shadow-purple-500/30 active:scale-95'
                     : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed opacity-60'
@@ -724,14 +724,14 @@ export function Auction() {
                 const spent = team === 'dhurandars' ? dhurSpent : bazSpent;
                 const used = (spent / config.budgetEach) * 100;
                 return (
-                  <div key={team} className="relative overflow-hidden rounded-2xl p-4"
+                  <div key={team} className="relative overflow-hidden r-card p-4"
                        style={{ background: TEAM_GRADIENT[team] }}>
-                    <div className="absolute inset-0 rounded-2xl pointer-events-none"
+                    <div className="absolute inset-0 r-card pointer-events-none"
                          style={{ border: `1px solid ${TEAM_BORDER[team]}` }} />
                     <div className="relative">
                       <div className="flex items-center justify-between">
                         <span className="text-2xl">{TEAM_EMOJI[team]}</span>
-                        <span className={`text-[10px] font-bold uppercase tracking-[1.5px] ${TEAM_ACCENT[team]}`}>
+                        <span className={`t-micro font-bold uppercase tracking-[1.5px] ${TEAM_ACCENT[team]}`}>
                           {teamName(team)}
                         </span>
                       </div>
@@ -743,13 +743,13 @@ export function Auction() {
                       )}
                       <div className="mt-3 flex items-baseline justify-between">
                         <p className="text-2xl font-black text-white tabular-nums">{formatPrice(budget)}</p>
-                        <p className="text-[10px] text-white/50 font-semibold">{teamPicks.length + 1} players</p>
+                        <p className="t-micro text-white/50 font-semibold">{teamPicks.length + 1} players</p>
                       </div>
                       <div className="mt-1.5 h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div className={`h-full transition-all duration-500 ${team === 'dhurandars' ? 'bg-blue-400' : 'bg-purple-400'}`}
                              style={{ width: `${used}%` }} />
                       </div>
-                      <p className="text-[10px] text-white/50 mt-1">Spent {formatPrice(spent)} ({used.toFixed(0)}%)</p>
+                      <p className="t-micro text-white/50 mt-1">Spent {formatPrice(spent)} ({used.toFixed(0)}%)</p>
                     </div>
                   </div>
                 );
@@ -758,8 +758,8 @@ export function Auction() {
 
             {/* Already sold list */}
             {picks.length > 0 && (
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
-                <p className="text-[10px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Auction Log</p>
+              <div className="r-card border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+                <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400 mb-2">Auction Log</p>
                 <div className="max-h-40 overflow-y-auto space-y-1">
                   {[...picks].reverse().map((p, idx) => {
                     const m = memberById[p.memberId];
@@ -791,9 +791,9 @@ export function Auction() {
         {/* ── STEP 3: DONE ─────────────────────────────────────────────── */}
         {step === 'done' && (
           <>
-            <div className="relative overflow-hidden rounded-3xl p-6 lg:p-8 shadow-xl text-center"
+            <div className="relative overflow-hidden r-card p-6 lg:p-8 shadow-xl text-center"
                  style={{ background: 'radial-gradient(600px circle at 50% 0%, rgba(34,197,94,0.3), transparent 50%), linear-gradient(135deg, #064e3b 0%, #0a1019 100%)' }}>
-              <div className="absolute inset-0 border border-emerald-500/30 rounded-3xl pointer-events-none" />
+              <div className="absolute inset-0 border border-emerald-500/30 r-card pointer-events-none" />
               <div className="text-6xl mb-3">🏆</div>
               <h2 className="text-2xl lg:text-3xl font-black text-white">Auction Complete!</h2>
               <p className="text-emerald-200/70 text-sm mt-1">{config.poolOrder.length} players auctioned · {picks.filter(p => p.team).length} sold · {picks.filter(p => !p.team).length} unsold</p>
@@ -805,9 +805,9 @@ export function Auction() {
                 const teamPicks = team === 'dhurandars' ? dhurPicks : bazPicks;
                 const spent = team === 'dhurandars' ? dhurSpent : bazSpent;
                 return (
-                  <div key={team} className="relative overflow-hidden rounded-2xl p-5"
+                  <div key={team} className="relative overflow-hidden r-card p-5"
                        style={{ background: TEAM_GRADIENT[team] }}>
-                    <div className="absolute inset-0 rounded-2xl pointer-events-none"
+                    <div className="absolute inset-0 r-card pointer-events-none"
                          style={{ border: `1px solid ${TEAM_BORDER[team]}` }} />
                     <div className="relative">
                       <div className="flex items-center justify-between mb-3">
@@ -819,17 +819,17 @@ export function Auction() {
                       </div>
                       <div className="space-y-1.5">
                         {captain && (
-                          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-amber-400/15 border border-amber-400/30">
+                          <div className="flex items-center gap-2 px-2 py-1.5 r-card bg-amber-400/15 border border-amber-400/30">
                             <Crown className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" fill="currentColor" />
                             <span className="text-sm font-bold text-white truncate flex-1">{captain.name}</span>
-                            <span className="text-[10px] text-amber-300 font-bold">CAPTAIN</span>
+                            <span className="t-micro text-amber-300 font-bold">CAPTAIN</span>
                           </div>
                         )}
                         {teamPicks.map(p => {
                           const m = memberById[p.memberId];
                           if (!m) return null;
                           return (
-                            <div key={p.memberId} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/5">
+                            <div key={p.memberId} className="flex items-center gap-2 px-2 py-1.5 r-card bg-white/5">
                               <Users className="w-3 h-3 text-white/40 flex-shrink-0" />
                               <span className="text-sm text-white truncate flex-1">{m.name}</span>
                               <span className="text-xs font-black text-white/70 tabular-nums">{formatPrice(p.price)}</span>
@@ -844,7 +844,7 @@ export function Auction() {
             </div>
 
             {savedMatchId ? (
-              <div className="rounded-2xl border border-emerald-300 dark:border-emerald-700 p-5 bg-emerald-50 dark:bg-emerald-900/20 text-center">
+              <div className="r-card border border-emerald-300 dark:border-emerald-700 p-5 bg-emerald-50 dark:bg-emerald-900/20 text-center">
                 <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-2" />
                 <p className="font-bold text-emerald-700 dark:text-emerald-300">Internal match created!</p>
                 <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Both rosters are saved with team assignments + captains.</p>
