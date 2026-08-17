@@ -10,6 +10,8 @@ import { useScoring } from '../hooks/useScoring';
 import { useMatchInnings } from '../hooks/useMatchInnings';
 import { TossSheet, InningsBreak, MatchResult, type Side } from '../components/MatchFlow';
 import { internalSides } from '../utils/internalTeams';
+import { LiveViewer } from '../components/LiveViewer';
+import { useLiveFeed } from '../hooks/useLiveFeed';
 import { DEFAULT_FORMAT, battingCard, bowlingCard, type WicketType, type ExtraType } from '../lib/cricketRules';
 
 // ─── Live scoring ──────────────────────────────────────────────────────────────
@@ -90,6 +92,15 @@ export function LiveScoring() {
     wickets: I1.state.wickets,
     overs: I1.state.overs,
   };
+
+  // The watching side of the page. Reads whichever source has data — our pad
+  // when we're scoring, CricHeroes otherwise.
+  const feed = useLiveFeed(
+    matchId ?? null,
+    (match as { ch_match_id?: string | null } | undefined)?.ch_match_id ?? null,
+    format,
+    { home: sides[0].name, away: sides[1].name },
+  );
 
   const iAmScoring = !!myId && S.lockHolder === myId && S.lockFresh;
   const someoneElse = S.lockFresh && S.lockHolder && S.lockHolder !== myId;
@@ -412,6 +423,14 @@ export function LiveScoring() {
               </button>
             )}
           </div>
+        )}
+
+        {/* ── THE VIEWER ───────────────────────────────────────────────
+            Anyone who isn't the scorer gets the watching experience rather
+            than a bare score: commentary, key moments, over-by-over and the
+            win probability. Source-agnostic on purpose — see useLiveFeed. */}
+        {!iAmScoring && feed.view && (
+          <LiveViewer view={feed.view} format={format} name={name} />
         )}
 
         {/* ── THE PAD ──────────────────────────────────────────────────── */}
