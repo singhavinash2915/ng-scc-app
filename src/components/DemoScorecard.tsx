@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Card } from './ui/Card';
 import { Radio } from 'lucide-react';
 
 // ─── Demo Scorecard ────────────────────────────────────────────────────────────
@@ -47,7 +48,7 @@ export function DemoScorecard() {
   const ballsLeft = Math.max(0, 120 - balls);
 
   return (
-    <div className="r-card bg-white/5 border border-white/10 overflow-hidden">
+    <Card className="bg-white/5 border-white/10 overflow-hidden">
       {/* Demo notice */}
       <div className="bg-amber-500/15 border-b border-amber-500/25 px-4 py-2 flex items-center gap-2">
         <span className="t-micro font-black uppercase tracking-widest text-amber-300 bg-amber-500/25 px-2 py-0.5 rounded">
@@ -140,6 +141,6 @@ export function DemoScorecard() {
           ))}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Card } from './ui/Card';
 import { BarChart3, Loader2, Zap } from 'lucide-react';
 import { useMatchInsights, type InningInsight, type PhaseStat } from '../hooks/useMatchAnalysis';
 
@@ -80,7 +81,7 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
       </h3>
 
       {/* Comparison table — whole-innings totals */}
-      <div className="r-card border border-white/10 overflow-hidden">
+      <Card className="border-white/10 overflow-hidden">
         <div className="grid grid-cols-3 px-3 py-2 bg-white/5 text-center">
           <p className="text-xs font-black text-emerald-400 truncate">{teamShort(nameFor(scc))}</p>
           <p className="t-micro text-gray-500 self-center">vs</p>
@@ -93,15 +94,15 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
             <p className="text-sm font-black text-white tabular-nums">{oStat ? get(oStat) : '–'}</p>
           </div>
         ))}
-      </div>
+      </Card>
 
       {/* CricHeroes insight one-liners (accurate) */}
       {data && data.insightStatements.length > 0 && (
-        <div className="r-card border border-white/10 bg-white/[0.03] p-3 space-y-1.5">
+        <Card className="border-white/10 bg-white/[0.03] p-3 space-y-1.5">
           {data.insightStatements.slice(0, 4).map((s, i) => (
             <p key={i} className="t-meta text-gray-400 flex gap-2"><span className="text-purple-400">•</span>{s}</p>
           ))}
-        </div>
+        </Card>
       )}
 
       {/* Phases won bar */}
@@ -140,7 +141,7 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
               </div>
             </div>
             {inn ? (
-              <div className="r-card border border-white/10 bg-white/[0.03] p-3">
+              <Card className="border-white/10 bg-white/[0.03] p-3">
                 <p className="t-meta font-bold text-gray-400 mb-2">
                   Sangria Cricket Club — {tpView}{tpView === 'bowling' ? ` (vs ${teamShort(nameFor(opp))})` : ''}
                 </p>
@@ -156,7 +157,7 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             ) : (
               <p className="t-meta text-gray-500">No {tpView} data for this match.</p>
             )}

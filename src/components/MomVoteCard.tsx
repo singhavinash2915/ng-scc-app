@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Card } from './ui/Card';
 import { Crown, Users } from 'lucide-react';
 import { useMomVotes } from '../hooks/useMomVotes';
 import type { Match, Member } from '../types';
@@ -41,7 +42,7 @@ export function MomVoteCard({ match, members, myMemberId }: Props) {
   if (tableMissing || match.result === 'upcoming' || match.result === 'cancelled') return null;
 
   return (
-    <div className="r-card border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 p-3.5">
+    <Card className="bg-white/60 p-3.5">
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-widest text-slate-400">
           <Users className="w-3.5 h-3.5" /> Members' MOM
@@ -132,6 +133,6 @@ export function MomVoteCard({ match, members, myMemberId }: Props) {
           Pick your profile on the Members page to vote.
         </p>
       )}
-    </div>
+    </Card>
   );
 }

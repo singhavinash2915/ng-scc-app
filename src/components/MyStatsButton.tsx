@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Card } from './ui/Card';
 import { useNavigate } from 'react-router-dom';
 import { BarChart3, User } from 'lucide-react';
 import { Modal } from './ui/Modal';
@@ -82,7 +83,7 @@ export function MyStatsButton({ compact = false }: { compact?: boolean }) {
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Who are you?">
         <div className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 r-card border border-emerald-200 dark:border-emerald-800">
+          <Card className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800">
             <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
               <User className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
@@ -94,7 +95,7 @@ export function MyStatsButton({ compact = false }: { compact?: boolean }) {
                 We'll remember it on this device — next click goes straight to your stats.
               </p>
             </div>
-          </div>
+          </Card>
 
           <Select
             label="Select your name"

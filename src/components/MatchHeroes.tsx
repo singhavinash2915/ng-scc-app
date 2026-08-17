@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Card } from './ui/Card';
 import { Link } from 'react-router-dom';
 import { Trophy, Loader2 } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
@@ -124,11 +125,11 @@ export function MatchHeroes({ chMatchId }: { chMatchId: string }) {
       </div>
 
       {data.insight_statements.length > 0 && (
-        <div className="r-card border border-white/10 bg-white/[0.03] p-3 space-y-1.5">
+        <Card className="border-white/10 bg-white/[0.03] p-3 space-y-1.5">
           {data.insight_statements.slice(0, 5).map((s, i) => (
             <p key={i} className="t-meta text-gray-400 flex gap-2"><span className="text-purple-400">•</span>{s}</p>
           ))}
-        </div>
+        </Card>
       )}
     </div>
   );

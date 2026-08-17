@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Card } from './ui/Card';
 import { Star, Lock } from 'lucide-react';
 import { usePlayerRatings } from '../hooks/usePlayerRatings';
 import type { Match, Member } from '../types';
@@ -58,7 +59,7 @@ export function CaptainRatings({ match, members, myMemberId, canRate }: Props) {
   };
 
   return (
-    <div className="r-card border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 p-3.5">
+    <Card className="bg-white/60 p-3.5">
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-widest text-slate-400">
           <Star className="w-3.5 h-3.5" /> Captain's ratings
@@ -143,6 +144,6 @@ export function CaptainRatings({ match, members, myMemberId, canRate }: Props) {
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

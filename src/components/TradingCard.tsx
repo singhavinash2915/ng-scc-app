@@ -1,4 +1,5 @@
 import type { Member, MemberCricketStats } from '../types';
+import { Card } from './ui/Card';
 
 interface Props {
   member: Member;
@@ -70,9 +71,9 @@ export function TradingCard({ member, stats, momCount, rating, compact = false }
           <img src={member.avatar_url} alt={member.name}
                className="w-full aspect-square object-cover r-card border-2 border-white/20 shadow-lg" />
         ) : (
-          <div className="w-full aspect-square r-card bg-white/10 border-2 border-white/20 flex items-center justify-center">
+          <Card className="w-full aspect-square bg-white/10 border-white/20 flex items-center justify-center">
             <span className="text-5xl font-black text-white/40">{member.name.charAt(0)}</span>
-          </div>
+          </Card>
         )}
       </div>
 

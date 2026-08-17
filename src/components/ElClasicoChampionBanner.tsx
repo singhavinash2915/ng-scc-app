@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Card } from './ui/Card';
 import { Trophy, Crown, X, Sparkles } from 'lucide-react';
 import type { Match } from '../types';
 
@@ -111,11 +112,11 @@ export function ElClasicoChampionBanner({ matches }: Props) {
         </div>
 
         {/* scoreline */}
-        <div className="mt-4 inline-flex items-center gap-3 px-4 py-2 r-card bg-black/30 border border-white/10">
+        <Card className="mt-4 inline-flex items-center gap-3 px-4 py-2 bg-black/30 border-white/10">
           <span className="text-white font-black tabular-nums" style={{ color: win.accent }}>{data.winnerScore}</span>
           <span className="text-white/40 text-xs font-bold uppercase">def.</span>
           <span className="text-white/70 font-bold tabular-nums">{data.loserScore}</span>
-        </div>
+        </Card>
         {data.margin && (
           <p className="text-amber-200/80 text-xs font-semibold mt-1.5">{win.name} won {data.margin}</p>
         )}
