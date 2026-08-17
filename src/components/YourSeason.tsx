@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { useMe } from '../context/MemberContext';
+import { usePersonalAlerts } from '../hooks/usePersonalAlerts';
 import type { Match, Member } from '../types';
 
 // ─── Your season ──────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ interface Item {
 
 export function YourSeason({ matches, members }: Props) {
   const { me, signOut } = useMe();
+  const alerts = usePersonalAlerts(matches);
   const [confirmOut, setConfirmOut] = useState(false);
 
   const items = useMemo<Item[]>(() => {
@@ -66,13 +68,17 @@ export function YourSeason({ matches, members }: Props) {
     // ── Where you sit ──────────────────────────────────────────────────────
     // Ranked on matches played this season; the club's real ranking lives on
     // the leaderboard and this is only a nudge towards it.
-    const played = matches.filter(m => m.players?.some(p => p.member_id === me.id)).length;
+    // Season-scoped, like Wrapped and the rest of the app. They happen to agree
+    // today only because squads are recorded for recent matches; unscoped they
+    // would drift apart the moment a new season starts.
+    const inSeason = matches.filter(m => m.date >= '2025-10-01' && m.date <= '2026-09-30');
+    const played = inSeason.filter(m => m.players?.some(p => p.member_id === me.id)).length;
     const ranked = members
-      .map(m => ({ id: m.id, n: matches.filter(x => x.players?.some(p => p.member_id === m.id)).length }))
+      .map(m => ({ id: m.id, n: inSeason.filter(x => x.players?.some(p => p.member_id === m.id)).length }))
       .sort((a, b) => b.n - a.n);
     const rank = ranked.findIndex(r => r.id === me.id) + 1;
     out.push({
-      label: 'Matches played',
+      label: 'Matches this season',
       value: String(played),
       detail: rank ? `#${rank} of ${members.length} for appearances` : undefined,
       to: `/profile/${me.id}`,
@@ -112,6 +118,23 @@ export function YourSeason({ matches, members }: Props) {
           {confirmOut ? 'Sure?' : ''}
         </button>
       </div>
+
+      {/* Alerts first — a notification is only useful before you've scrolled
+          past it. Derived, so one exists exactly as long as it's true. */}
+      {alerts.length > 0 && (
+        <div className="mt-4 space-y-1.5">
+          {alerts.map(a => (
+            <Link key={a.id} to={a.to}
+              className={`block rounded-2xl px-3.5 py-2.5 border ${
+                a.tone === 'urgent' ? 'border-rose-200 dark:border-rose-400/25 bg-rose-50/70 dark:bg-rose-500/10'
+                : a.tone === 'good' ? 'border-emerald-200 dark:border-emerald-400/25 bg-emerald-50/70 dark:bg-emerald-500/10'
+                : 'border-slate-200 dark:border-white/10'}`}>
+              <p className="font-black text-[13px] text-slate-900 dark:text-white">{a.title}</p>
+              <p className="text-[11px] text-slate-500 dark:text-white/55">{a.body}</p>
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 space-y-2">
         {items.map(it => (

@@ -79,6 +79,7 @@ const navGroups: Array<{ title: string; items: Array<{ to: string; icon: typeof 
   {
     title: 'About',
     items: [
+      { to: '/wrapped', icon: Sparkles, label: 'Season Wrapped' },
       { to: '/about', icon: Info, label: 'About' },
       { to: '/whats-new', icon: Sparkles, label: "What's New" },
     ],
