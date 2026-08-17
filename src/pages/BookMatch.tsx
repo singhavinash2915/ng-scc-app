@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { Card } from '../components/ui/Card';
 import { toPng } from 'html-to-image';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -599,21 +600,21 @@ export function BookMatch() {
                 {/* Mini stats row */}
                 {sccRecord && (
                   <div className="flex items-center gap-2 mt-5 flex-wrap">
-                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 r-card px-3 py-1.5">
+                    <Card className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border-white/15 px-3 py-1.5">
                       <Trophy className="w-3.5 h-3.5 text-amber-300" />
                       <span className="text-xs font-bold text-white">{winRate}% Win Rate</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 r-card px-3 py-1.5">
+                    </Card>
+                    <Card className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border-white/15 px-3 py-1.5">
                       <span className="text-xs text-emerald-100">
                         <span className="font-bold text-white">{sccRecord.wins}W</span> · <span className="font-bold text-white">{sccRecord.losses}L</span>
                         {sccRecord.draws > 0 && <> · <span className="font-bold text-white">{sccRecord.draws}NR</span></>}
                       </span>
-                    </div>
+                    </Card>
                     {ground.name && (
-                      <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/15 r-card px-3 py-1.5">
+                      <Card className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border-white/15 px-3 py-1.5">
                         <MapPin className="w-3 h-3 text-emerald-200" />
                         <span className="text-xs text-white font-medium truncate max-w-[140px]">{ground.name}</span>
-                      </div>
+                      </Card>
                     )}
                   </div>
                 )}
@@ -624,7 +625,7 @@ export function BookMatch() {
                 The single most common misunderstanding: teams thought the fee
                 bought two hours of empty ground and they had to find their own
                 opposition. Spell it out before they reach the calendar. */}
-            <div className="mb-6 r-card border border-emerald-200 bg-emerald-50/60 p-4">
+            <Card className="mb-6 border-emerald-200 bg-emerald-50/60 p-4">
               <p className="t-meta font-black uppercase tracking-widest text-emerald-700 mb-2.5">
                 What you're booking
               </p>
@@ -643,11 +644,11 @@ export function BookMatch() {
                   <span><strong>One price for the whole fixture</strong> — not an hourly ground rental.</span>
                 </li>
               </ul>
-            </div>
+            </Card>
 
             {/* ── Premium Pricing cards ────────────────────────────────── */}
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="group relative overflow-hidden r-card bg-white border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <Card className="group relative overflow-hidden p-4 sm:p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary-100 to-transparent rounded-full -translate-y-8 translate-x-8" />
                 <div className="relative">
                   <div className="flex items-center gap-1.5 mb-2">
@@ -659,8 +660,8 @@ export function BookMatch() {
                   </div>
                   <div className="text-xs text-gray-500 mt-1">Per match vs SCC · Tue/Thu</div>
                 </div>
-              </div>
-              <div className="group relative overflow-hidden r-card bg-gradient-to-br from-amber-50 to-white border border-amber-200 p-4 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+              </Card>
+              <Card className="group relative overflow-hidden bg-gradient-to-br from-amber-50 to-white border-amber-200 p-4 sm:p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-200/60 to-transparent rounded-full -translate-y-8 translate-x-8" />
                 <div className="absolute top-2 right-2 t-micro font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5">PEAK</div>
                 <div className="relative">
@@ -673,12 +674,12 @@ export function BookMatch() {
                   </div>
                   <div className="text-xs text-gray-500 mt-1">Per match vs SCC · Oct–Feb</div>
                 </div>
-              </div>
+              </Card>
             </div>
 
             {/* ── Premium Ground details card ──────────────────────────── */}
             {((ground.image_urls?.length || ground.image_url) || ground.address || ground.facilities) && (
-              <div className="mb-6 bg-white border border-gray-200 r-card overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <Card className="mb-6 overflow-hidden hover:shadow-md transition-shadow">
                 {/* Photo gallery — auto-rotating carousel with clickable thumbnails */}
                 {(ground.image_urls?.length > 0 || ground.image_url) && (() => {
                   const photos: string[] = ground.image_urls?.length > 0 ? ground.image_urls : [ground.image_url!];
@@ -735,7 +736,7 @@ export function BookMatch() {
                     </p>
                   )}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* ── Photo strip ──────────────────────────────────────────── */}
@@ -765,21 +766,21 @@ export function BookMatch() {
 
             {/* ── Trust badges row ─────────────────────────────────────── */}
             <div className="grid grid-cols-3 gap-2 mb-6">
-              <div className="bg-white border border-gray-200 r-card p-3 text-center">
+              <Card className="p-3 text-center">
                 <div className="text-lg mb-0.5">⚡</div>
                 <div className="t-micro font-bold text-gray-700 uppercase tracking-wide">Instant Reply</div>
                 <div className="t-micro text-gray-400 mt-0.5">Within hours</div>
-              </div>
-              <div className="bg-white border border-gray-200 r-card p-3 text-center">
+              </Card>
+              <Card className="p-3 text-center">
                 <div className="text-lg mb-0.5">🔒</div>
                 <div className="t-micro font-bold text-gray-700 uppercase tracking-wide">Secure Payment</div>
                 <div className="t-micro text-gray-400 mt-0.5">UPI verified</div>
-              </div>
-              <div className="bg-white border border-gray-200 r-card p-3 text-center">
+              </Card>
+              <Card className="p-3 text-center">
                 <div className="text-lg mb-0.5">🏆</div>
                 <div className="t-micro font-bold text-gray-700 uppercase tracking-wide">Trusted Team</div>
                 <div className="t-micro text-gray-400 mt-0.5">{(sccRecord?.wins ?? 0) + (sccRecord?.losses ?? 0) + (sccRecord?.draws ?? 0)}+ matches</div>
-              </div>
+              </Card>
             </div>
 
             {/* Info note */}
@@ -818,7 +819,7 @@ export function BookMatch() {
 
         {/* ══ STEP 1: Premium Slot Calendar ═════════════════════════════════ */}
         {step === 'calendar' && (
-          <div className="bg-white border border-gray-200 r-card overflow-hidden shadow-md mb-8">
+          <Card className="overflow-hidden shadow-md mb-8">
             {/* Gradient month nav */}
             <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-emerald-500 px-5 py-4 flex items-center justify-between">
               <button onClick={()=>setCurrentMonthIndex(i=>Math.max(0,i-1))} disabled={currentMonthIndex===0}
@@ -853,7 +854,7 @@ export function BookMatch() {
 
             {/* Admin: hold days off the public calendar */}
             {isAdmin && (
-              <div className="mx-4 sm:mx-5 mt-3 r-card bg-violet-50 border border-violet-200 px-3.5 py-2.5">
+              <Card className="mx-4 sm:mx-5 mt-3 bg-violet-50 border-violet-200 px-3.5 py-2.5">
                 <p className="text-xs font-bold text-violet-900">
                   🔨 Admin · tap any date to block it — league match, paid direct, or ground unavailable
                 </p>
@@ -869,7 +870,7 @@ export function BookMatch() {
                     💰 Offline bookings recorded: ₹{holds.offlineTotal.toLocaleString('en-IN')}
                   </p>
                 )}
-              </div>
+              </Card>
             )}
 
             {/* Slots */}
@@ -1048,7 +1049,7 @@ export function BookMatch() {
                 );
               })}
             </div>
-          </div>
+          </Card>
         )}
 
         {/* ══ Premium Testimonials (calendar step) ══════════════════════════ */}
@@ -1093,7 +1094,7 @@ export function BookMatch() {
         {step === 'form' && selectedSlot && (
           <div className="space-y-4">
             {/* Chosen fixture */}
-            <div className="bg-primary-50 border border-primary-200 r-card p-4 flex items-center gap-3">
+            <Card className="bg-primary-50 border-primary-200 p-4 flex items-center gap-3">
               <CalendarDays className="w-5 h-5 text-primary-600 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900 text-sm">{formatDate(selectedSlot.date)}</p>
@@ -1105,10 +1106,10 @@ export function BookMatch() {
                 className="text-xs text-gray-500 hover:text-gray-800 border border-gray-200 bg-white r-control px-3 py-1.5 transition shrink-0">
                 Change
               </button>
-            </div>
+            </Card>
 
             {/* Form */}
-            <div className="bg-white border border-gray-200 r-card p-5 shadow-sm space-y-4">
+            <Card className="p-5 space-y-4">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 <Users className="w-4 h-4 text-primary-500" /> Team Details
               </h3>
@@ -1162,18 +1163,18 @@ export function BookMatch() {
                 {formErrors.chTeamId ? (
                   <p className="text-red-500 text-xs mt-1">{formErrors.chTeamId}</p>
                 ) : detectedTeamId ? (
-                  <div className="mt-1.5 bg-emerald-50 border border-emerald-200 r-card px-3 py-2 text-xs text-emerald-700 flex items-center gap-1.5 font-semibold">
+                  <Card className="mt-1.5 bg-emerald-50 border-emerald-200 px-3 py-2 text-xs text-emerald-700 flex items-center gap-1.5 font-semibold">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                     <span>Team ID <strong>{detectedTeamId}</strong> detected — you're good to go.</span>
-                  </div>
+                  </Card>
                 ) : (
-                  <div className="mt-1.5 bg-blue-50 border border-blue-100 r-card px-3 py-2 text-xs text-blue-700 flex gap-1.5">
+                  <Card className="mt-1.5 bg-blue-50 border-blue-100 px-3 py-2 text-xs text-blue-700 flex gap-1.5">
                     <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                     <span>Just paste your team's CricHeroes link, or type your team ID. Tip: in the CricHeroes app → Your team → <strong>Share</strong> → Copy link. Keeps bookings one-per-team.</span>
-                  </div>
+                  </Card>
                 )}
               </div>
-            </div>
+            </Card>
 
             <button onClick={()=>{ if(validateForm()) setStep('payment'); }}
               className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3.5 r-control transition text-sm">
@@ -1186,7 +1187,7 @@ export function BookMatch() {
         {step === 'payment' && selectedSlot && (
           <div className="space-y-4">
             {/* Summary */}
-            <div className="bg-white border border-gray-200 r-card p-4 shadow-sm">
+            <Card className="p-4">
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Booking Summary</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-500">Match Date</span><span className="font-medium text-gray-900">{formatDate(selectedSlot.date)}</span></div>
@@ -1199,16 +1200,16 @@ export function BookMatch() {
                   </span>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* UPI panel */}
             {paymentMethod==='upi' && (
-              <div className="bg-white border border-gray-200 r-card p-5 shadow-sm space-y-4">
+              <Card className="p-5 space-y-4">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
                   <QrCode className="w-4 h-4 text-primary-500"/> Pay via UPI
                 </h3>
                 <div className="flex flex-col items-center gap-3">
-                  <div className="bg-gray-50 border border-gray-200 p-4 r-card">
+                  <Card className="bg-gray-50 p-4">
                     {qrUrl ? (
                       <img
                         src={qrUrl}
@@ -1221,26 +1222,26 @@ export function BookMatch() {
                         <p className="text-xs text-gray-400 text-center">SCC UPI QR<br/>(Set by admin)</p>
                       </div>
                     )}
-                  </div>
+                  </Card>
                   <div className="text-center w-full">
                     <p className="text-xs text-gray-500 mb-1.5">Or pay directly to UPI ID</p>
-                    <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 r-card px-4 py-2.5">
+                    <Card className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2.5">
                       <span className="font-mono text-sm font-semibold text-gray-900">{upiId}</span>
                       <button onClick={handleCopyUPI} className="text-primary-500 hover:text-primary-700 transition">
                         {copied ? <Check className="w-4 h-4"/> : <Copy className="w-4 h-4"/>}
                       </button>
-                    </div>
+                    </Card>
                     <p className="text-xs text-gray-400 mt-1">Name: {upiName}</p>
                   </div>
                 </div>
 
                 {/* AI verification hint */}
-                <div className="flex items-start gap-2 px-3 py-2 r-card bg-emerald-50 border border-emerald-100">
+                <Card className="flex items-start gap-2 px-3 py-2 bg-emerald-50 border-emerald-100">
                   <span className="text-base flex-shrink-0">⚡</span>
                   <p className="t-meta text-emerald-700 leading-snug">
                     <span className="font-bold">Instant verification:</span> we check your payment screenshot automatically using AI — most bookings confirm in seconds, no waiting for admin review.
                   </p>
-                </div>
+                </Card>
 
                 {/* Screenshot — required */}
                 <div>
@@ -1276,22 +1277,22 @@ export function BookMatch() {
                     </p>
                   )}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Confirmation note */}
-            <div className="bg-blue-50 border border-blue-100 r-card p-3 flex gap-2">
+            <Card className="bg-blue-50 border-blue-100 p-3 flex gap-2">
               <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5"/>
               <p className="text-xs text-blue-700">
                 Booking confirmed only after SCC admin verifies payment. WhatsApp confirmation sent to {contactPhone}.
               </p>
-            </div>
+            </Card>
 
             {submitError && (
-              <div className="bg-red-50 border border-red-200 r-card p-3 flex gap-2">
+              <Card className="bg-red-50 border-red-200 p-3 flex gap-2">
                 <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5"/>
                 <p className="text-sm text-red-600">{submitError}</p>
-              </div>
+              </Card>
             )}
 
             <div className="flex gap-3">
@@ -1384,7 +1385,7 @@ export function BookMatch() {
             </div>
 
             {/* Summary text (for screen) */}
-            <div className="bg-white border border-gray-200 r-card p-4 shadow-sm text-sm space-y-2">
+            <Card className="p-4 text-sm space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-500">Booking ID</span>
                 <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
@@ -1399,7 +1400,7 @@ export function BookMatch() {
                 <span className="text-gray-500">Amount</span>
                 <span className="font-bold text-primary-600">₹{selectedSlot.price.toLocaleString('en-IN')}</span>
               </div>
-            </div>
+            </Card>
 
             {/* Action buttons */}
             <div className="grid grid-cols-2 gap-3">
@@ -1415,7 +1416,7 @@ export function BookMatch() {
             </div>
 
             {/* Next steps */}
-            <div className="bg-blue-50 border border-blue-100 r-card p-4 flex gap-3">
+            <Card className="bg-blue-50 border-blue-100 p-4 flex gap-3">
               <Shield className="w-5 h-5 text-blue-500 shrink-0 mt-0.5"/>
               <div>
                 <p className="text-sm font-semibold text-blue-800">What happens next?</p>
@@ -1425,7 +1426,7 @@ export function BookMatch() {
                   <li>Match is scheduled on the SCC app</li>
                 </ol>
               </div>
-            </div>
+            </Card>
 
             <button onClick={handleReset}
               className="w-full py-3.5 r-control bg-primary-500 hover:bg-primary-600 font-semibold text-white transition text-sm">
