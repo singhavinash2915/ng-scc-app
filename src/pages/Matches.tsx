@@ -34,6 +34,7 @@ import { Input, TextArea, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Badge } from '../components/ui/Badge';
+import { resultTone } from '../lib/playerCard';
 import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import { useMatchPhotos } from '../hooks/useMatchPhotos';
@@ -864,7 +865,10 @@ export function Matches() {
         {/* Matches List */}
         <div className="space-y-4">
           {filteredMatches.map(match => (
-            <Card key={match.id}>
+            // Ringed by result, in the same language the player cards use — you
+            // can read won/lost/upcoming off the edge of the card before any
+            // text. The badge stays: colour alone isn't readable for everyone.
+            <Card key={match.id} ring={resultTone(match.result).ring}>
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                   {/* Date */}

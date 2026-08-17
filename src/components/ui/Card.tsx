@@ -10,6 +10,14 @@ interface CardProps {
   glass?: boolean;
   /** What the card MEANS, rather than a hand-picked border colour. */
   tone?: CardTone;
+  /**
+   * A result/tier ring, e.g. from resultTone(). Passed as a PROP rather than
+   * tacked onto className because both are border-colour utilities — which of
+   * them wins is decided by their order in the generated stylesheet, not by the
+   * class attribute, so appending one silently loses. Taking it here lets the
+   * tone's own border be dropped instead of fought with.
+   */
+  ring?: string;
 }
 
 // ─── The card ─────────────────────────────────────────────────────────────────
@@ -32,10 +40,13 @@ const TONES: Record<CardTone, string> = {
   quiet: 'bg-transparent border-slate-200 dark:border-white/10',
 };
 
-export function Card({ children, className = '', onClick, hover = false, animate = true, delay = 0, glass = false, tone = 'plain' }: CardProps) {
+export function Card({ children, className = '', onClick, hover = false, animate = true, delay = 0, glass = false, tone = 'plain', ring }: CardProps) {
   const baseClasses = glass
     ? 'bg-white/80 dark:bg-gray-900/70 backdrop-blur-md r-card shadow-lg border border-white/20 dark:border-white/10'
-    : `r-card shadow-sm border ${TONES[tone]}`;
+    : ring
+      // Ring supplied: keep the tone's background, drop its border colour.
+      ? `r-card shadow-sm border-2 ${TONES[tone].replace(/border-\S+/g, '')} ${ring}`
+      : `r-card shadow-sm border ${TONES[tone]}`;
 
   const hoverClasses = hover || onClick
     ? 'hover:shadow-lg hover:scale-[1.02] hover:border-primary-300 dark:hover:border-primary-600 cursor-pointer active:scale-[0.98]'
