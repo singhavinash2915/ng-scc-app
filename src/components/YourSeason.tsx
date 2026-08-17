@@ -5,6 +5,10 @@ import { useMe } from '../context/MemberContext';
 import { usePersonalAlerts } from '../hooks/usePersonalAlerts';
 import type { Match, Member } from '../types';
 
+/** Written out in full: Tailwind can't see an interpolated class name. */
+const STAGGER = ['m-1', 'm-2', 'm-3', 'm-4', 'm-5', 'm-6'] as const;
+const step = (n: number) => STAGGER[Math.min(n, STAGGER.length - 1)];
+
 // ─── Your season ──────────────────────────────────────────────────────────────
 // The first block on the Dashboard once you're signed in, and the point of the
 // whole identity layer: the same club data, addressed to one person.
@@ -139,9 +143,9 @@ export function YourSeason({ matches, members }: Props) {
           past it. Derived, so one exists exactly as long as it's true. */}
       {alerts.length > 0 && (
         <div className="mt-4 space-y-1.5">
-          {alerts.map(a => (
+          {alerts.map((a, n) => (
             <Link key={a.id} to={a.to}
-              className={`block r-card px-3.5 py-2.5 border ${
+              className={`block r-card px-3.5 py-2.5 border m-enter ${step(n)} ${
                 a.tone === 'urgent' ? 'border-rose-200 dark:border-rose-400/25 bg-rose-50/70 dark:bg-rose-500/10'
                 : a.tone === 'good' ? 'border-emerald-200 dark:border-emerald-400/25 bg-emerald-50/70 dark:bg-emerald-500/10'
                 : 'border-slate-200 dark:border-white/10'}`}>
@@ -153,9 +157,9 @@ export function YourSeason({ matches, members }: Props) {
       )}
 
       <div className="mt-4 space-y-2">
-        {items.map(it => (
+        {items.map((it, n) => (
           <Link key={it.label} to={it.to}
-            className={`flex items-center gap-3 r-card px-3.5 py-3 border group ${
+            className={`flex items-center gap-3 r-card px-3.5 py-3 border group m-enter ${step(n)} ${
               it.tone === 'green' ? 'border-emerald-200 dark:border-emerald-400/20 bg-emerald-50/60 dark:bg-emerald-500/10'
               : it.tone === 'amber' ? 'border-amber-200 dark:border-amber-400/20 bg-amber-50/60 dark:bg-amber-500/10'
               : 'border-slate-200 dark:border-white/10'}`}>

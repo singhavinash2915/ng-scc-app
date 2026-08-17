@@ -45,6 +45,48 @@
   .t-title { font-size: 19px; line-height: 1.25; letter-spacing: -0.01em; }
   .t-hero  { font-size: 30px; line-height: 1.1;  letter-spacing: -0.02em; }
 
+  /* ── Motion ─────────────────────────────────────────────────────────────
+     Animation in the app was decorative and inconsistent — things floated in
+     because floating in looked nice. Motion should CONFIRM, not decorate: it
+     tells you something arrived, changed, or is still happening.
+
+     Three jobs, and nothing else gets to move:
+       m-enter   content arrived (cards, list rows)
+       m-live    something is still happening (live score, recording dot)
+       m-bump    a value just changed (score ticked, balance updated)
+
+     All of it yields to prefers-reduced-motion at the bottom of this block:
+     a member who has asked their phone to stop animating has asked us too. */
+
+  @keyframes m-enter-k {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .m-enter { animation: m-enter-k 320ms cubic-bezier(.22,.61,.36,1) backwards; }
+
+  /* Stagger for lists. Capped at 6 — beyond that the last row waits so long
+     it reads as slow loading rather than choreography. */
+  .m-1 { animation-delay: 40ms }  .m-2 { animation-delay: 80ms }
+  .m-3 { animation-delay: 120ms } .m-4 { animation-delay: 160ms }
+  .m-5 { animation-delay: 200ms } .m-6 { animation-delay: 240ms }
+
+  @keyframes m-live-k {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .55; transform: scale(.88); }
+  }
+  .m-live { animation: m-live-k 1.8s ease-in-out infinite; }
+
+  @keyframes m-bump-k {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+  .m-bump { animation: m-bump-k 380ms cubic-bezier(.22,.61,.36,1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .m-enter, .m-live, .m-bump { animation: none !important; }
+  }
+
   /* Numbers — scores, prices, stats. Tabular so digits don't jump as they
      tick over, which is the whole reason a live score needs its own class. */
   .t-num { font-family: 'Sora', system-ui, sans-serif; font-variant-numeric: tabular-nums;

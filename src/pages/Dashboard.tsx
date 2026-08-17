@@ -284,7 +284,7 @@ export function Dashboard() {
             style={{ background: 'linear-gradient(110deg,#064e3b,#059669 55%,#10b981)' }}>
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 r-card bg-white/25 flex items-center justify-center flex-shrink-0">
-                <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
+                <span className="w-3 h-3 rounded-full bg-white m-live" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="t-micro font-black uppercase tracking-[2px] text-white/75">
@@ -350,7 +350,7 @@ export function Dashboard() {
           >
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 r-card bg-white/25 flex items-center justify-center flex-shrink-0">
-                <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
+                <span className="w-3 h-3 rounded-full bg-white m-live" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-black text-base leading-tight truncate">

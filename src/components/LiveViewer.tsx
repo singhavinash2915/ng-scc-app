@@ -54,9 +54,13 @@ export function LiveViewer({ view, format, name }: {
         style={{ background: 'linear-gradient(150deg,#052e16,#020617)' }}>
         <div className="p-6 text-center">
           <span className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-[2px] text-emerald-300">
-            <Radio className="w-3 h-3" /> Live · {view.battingTeam}
+            <Radio className="w-3 h-3 m-live" /> Live · {view.battingTeam}
           </span>
-          <p className="font-display text-6xl font-extrabold tabular-nums mt-2 leading-none">
+          {/* key on the score so React remounts the node when it changes —
+              that's what restarts the animation. m-bump then means "this just
+              moved", which on a live score is the one thing worth animating. */}
+          <p key={`${view.runs}-${view.wickets}`}
+            className="t-num text-6xl mt-2 leading-none m-bump">
             {view.runs}<span className="text-white/40">/</span>{view.wickets}
           </p>
           <p className="text-white/60 text-sm mt-1.5">
