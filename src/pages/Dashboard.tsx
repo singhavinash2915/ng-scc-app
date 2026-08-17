@@ -387,7 +387,8 @@ export function Dashboard() {
       )}
 
       {/* ── PREMIUM HERO (theme-aware: light + dark) ──────────────────── */}
-      <div className="px-4 lg:px-8 pt-4 space-y-3">
+      {LEGACY_BLOCKS && (
+        <div className="px-4 lg:px-8 pt-4 space-y-3">
         <div className="flex justify-end"><AccentSwitcher /></div>
         <PremiumHero
           greeted={!!me}
@@ -411,6 +412,7 @@ export function Dashboard() {
           milestone={myNextMilestone}
         />
       </div>
+        )}
 
       {/* ── Remaining sections keep the Stadium-Night dark styling for now ── */}
       <div className="p-4 lg:p-8 space-y-4">
@@ -464,6 +466,7 @@ export function Dashboard() {
         )}
 
         {/* ── BENTO GRID ────────────────────────────── */}
+        {LEGACY_BLOCKS && (
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 auto-rows-[minmax(120px,auto)]">
 
           {/* FEATURED — Next Match (4x2 on lg, full width on mobile) */}
@@ -734,6 +737,7 @@ export function Dashboard() {
           </div>
 
         </div>
+        )}
 
         {/* ── MATCH CENTRE — pre-match analytics for the next match ───── */}
         {nextUpcomingMatch && (
