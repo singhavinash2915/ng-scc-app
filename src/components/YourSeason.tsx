@@ -65,25 +65,41 @@ export function YourSeason({ matches, members }: Props) {
       tone: low ? 'amber' : 'green',
     });
 
-    // ── Where you sit ──────────────────────────────────────────────────────
-    // Ranked on matches played this season; the club's real ranking lives on
-    // the leaderboard and this is only a nudge towards it.
-    // Season-scoped, like Wrapped and the rest of the app. They happen to agree
-    // today only because squads are recorded for recent matches; unscoped they
-    // would drift apart the moment a new season starts.
-    const inSeason = matches.filter(m => m.date >= '2025-10-01' && m.date <= '2026-09-30');
-    const played = inSeason.filter(m => m.players?.some(p => p.member_id === me.id)).length;
-    const ranked = members
-      .map(m => ({ id: m.id, n: inSeason.filter(x => x.players?.some(p => p.member_id === m.id)).length }))
-      .sort((a, b) => b.n - a.n);
-    const rank = ranked.findIndex(r => r.id === me.id) + 1;
-    out.push({
-      label: 'Matches this season',
-      value: String(played),
-      detail: rank ? `#${rank} of ${members.length} for appearances` : undefined,
-      to: `/profile/${me.id}`,
-      tone: 'slate',
-    });
+    // ── What's ahead ───────────────────────────────────────────────────────
+    // Forward-looking on purpose. A personal home screen is opened to find out
+    // what's coming, not to admire last season — the career totals already
+    // live on the profile and in Wrapped, and repeating them here just pushes
+    // the useful things further down.
+    const upcoming = matches
+      .filter(m => m.result === 'upcoming')
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const NEXT_SEASON_START = '2026-10-01';
+    const nextSeason = upcoming.filter(m => m.date >= NEXT_SEASON_START);
+
+    if (upcoming.length) {
+      const d = Math.ceil(
+        (new Date(upcoming[0].date + 'T00:00:00').getTime() - Date.now()) / 86400000,
+      );
+      out.push({
+        label: 'Fixtures ahead',
+        value: `${upcoming.length} match${upcoming.length > 1 ? 'es' : ''}`,
+        detail: nextSeason.length
+          ? `${nextSeason.length} of them next season · first in ${Math.max(0, d)} days`
+          : `First one in ${Math.max(0, d)} days`,
+        to: '/calendar',
+        tone: 'slate',
+      });
+    } else {
+      // Between seasons there is genuinely nothing to show, and inventing a
+      // number would be worse than saying so.
+      out.push({
+        label: 'Fixtures ahead',
+        value: 'None yet',
+        detail: 'Next season\u2019s dates land here as they\u2019re booked',
+        to: '/calendar',
+        tone: 'slate',
+      });
+    }
 
     return out;
   }, [me, matches, members]);
