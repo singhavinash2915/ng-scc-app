@@ -428,7 +428,7 @@ export function Dashboard() {
         {LEGACY_BLOCKS && <ElClasicoChampionBanner matches={matches} />}
 
         {/* ── ALERTS ─────────────────────────────────────────────────────── */}
-        {LEGACY_BLOCKS && <BirthdayBanner members={members} />}
+        <BirthdayBanner members={members} />
         {LEGACY_BLOCKS && <RenewalReminderBanner members={members} />}
 
         {/* ── BOOK A MATCH — subtle, share-with-opponents prompt ─────────── */}
@@ -759,7 +759,7 @@ export function Dashboard() {
         )}
 
         {/* ── BIRTHDAYS ─────────────────────────────────────────────────── */}
-        {LEGACY_BLOCKS && <BirthdayBoard members={members} />}
+        <BirthdayBoard members={members} />
 
         {/* ── SEASON STARS (lazy — loads cricketStats on demand) ────────── */}
         {showDeferred && (

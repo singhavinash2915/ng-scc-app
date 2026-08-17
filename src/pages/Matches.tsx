@@ -381,6 +381,27 @@ export function Matches() {
       });
   }, [matches, filter, matchTypeFilter]);
 
+  /**
+   * Matches grouped by month, in whatever order the filter produced. Grouping
+   * is applied AFTER filtering so a narrow filter doesn't leave empty months,
+   * and the label carries the year because the list spans several seasons.
+   */
+  const groupedMatches = useMemo(() => {
+    const groups: Array<{ key: string; label: string; matches: Match[] }> = [];
+    for (const m of filteredMatches) {
+      const d = new Date(m.date + 'T00:00:00');
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      let g = groups.find(x => x.key === key);
+      if (!g) {
+        g = { key, label: d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }), matches: [] };
+        groups.push(g);
+      }
+      g.matches.push(m);
+    }
+    return groups;
+  }, [filteredMatches]);
+
+
   const [playerFilter, setPlayerFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Filter members based on active/inactive toggle
@@ -863,8 +884,22 @@ export function Matches() {
         </div>
 
         {/* Matches List */}
-        <div className="space-y-4">
-          {filteredMatches.map(match => (
+        <div className="space-y-6">
+          {groupedMatches.map(group => (
+            <div key={group.key} className="space-y-4">
+              {/* Sticky so you always know which month you're looking at —
+                  the point of grouping is lost if the label scrolls away. */}
+              <div className="sticky top-0 z-10 -mx-1 px-1 py-2
+                              bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
+                <h3 className="t-micro font-black uppercase tracking-[1.5px] text-slate-400
+                               flex items-center gap-2">
+                  {group.label}
+                  <span className="text-slate-300 dark:text-white/25 normal-case tracking-normal">
+                    {group.matches.length} {group.matches.length === 1 ? 'match' : 'matches'}
+                  </span>
+                </h3>
+              </div>
+          {group.matches.map(match => (
             // Ringed by result, in the same language the player cards use — you
             // can read won/lost/upcoming off the edge of the card before any
             // text. The badge stays: colour alone isn't readable for everyone.
@@ -1268,6 +1303,8 @@ export function Matches() {
                 </div>
               </CardContent>
             </Card>
+          ))}
+            </div>
           ))}
         </div>
 
