@@ -25,6 +25,7 @@ import { ElClasicoChampionBanner } from '../components/ElClasicoChampionBanner';
 import { useWeather } from '../hooks/useWeather';
 import { useLiveScore } from '../hooks/useLiveScore';
 import { useAppLiveMatch } from '../hooks/useAppLiveMatch';
+import { winProbability, chaseLine } from '../lib/liveMatch';
 import { useMe } from '../context/MemberContext';
 import { YourSeason } from '../components/YourSeason';
 import { SignInCard } from '../components/SignInCard';
@@ -297,12 +298,37 @@ export function Dashboard() {
                 </p>
                 <p className="text-white/85 text-xs font-medium truncate">
                   {appLive.live.target
-                    ? `Need ${Math.max(0, appLive.live.target - appLive.live.runs)} to beat ${appLive.live.bowlingTeam}`
+                    ? chaseLine({ target: appLive.live.target, runs: appLive.live.runs,
+                        wickets: appLive.live.wickets, legalBalls: appLive.live.legalBalls,
+                        oversPerInnings: 16, playersPerSide: 12 })
                     : `v ${appLive.live.bowlingTeam} — tap for ball by ball`}
                 </p>
               </div>
               <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
             </div>
+
+            {/* Win probability — second innings only. There's nothing to chase
+                in the first, and a number with no target behind it would be
+                invented rather than derived. */}
+            {appLive.live.target != null && (() => {
+              const pct = Math.round(winProbability({
+                target: appLive.live!.target!, runs: appLive.live!.runs,
+                wickets: appLive.live!.wickets, legalBalls: appLive.live!.legalBalls,
+                oversPerInnings: 16, playersPerSide: 12,
+              }) * 100);
+              return (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-white/70">
+                    <span>{appLive.live!.battingTeam} {pct}%</span>
+                    <span>{100 - pct}% {appLive.live!.bowlingTeam}</span>
+                  </div>
+                  <div className="mt-1 h-2 rounded-full bg-white/20 overflow-hidden">
+                    <div className="h-full bg-white rounded-full transition-all duration-700"
+                      style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })()}
           </Link>
         </div>
       )}
