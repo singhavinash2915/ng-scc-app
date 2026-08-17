@@ -45,6 +45,17 @@ import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useMonthSummary } from '../hooks/useMonthSummary';
 
 // Lazy-loaded heavy components (photos, sponsor data load on-demand)
+// ─── The cut ──────────────────────────────────────────────────────────────────
+// The Dashboard had grown to 16 blocks and 5.8 screens of scrolling, which
+// meant everything below the fold — sponsor included — was effectively
+// invisible. The club's call: keep Next match, Your season, Last match and
+// Sponsor; everything else lives on the page it belongs to.
+//
+// Gated rather than deleted. Nothing here is broken, it is just not earning a
+// place on the home screen, and that is a judgement worth being able to undo
+// without archaeology.
+const LEGACY_BLOCKS = false;
+
 const DashboardStars = lazy(() => import('../components/DashboardStars'));
 const DashboardDeferred = lazy(() => import('../components/DashboardDeferred'));
 
@@ -412,11 +423,11 @@ export function Dashboard() {
              card below carries the result instead. */}
 
         {/* ── EL CLÁSICO CHAMPIONS — 24h heroic victory showcase ────────── */}
-        <ElClasicoChampionBanner matches={matches} />
+        {LEGACY_BLOCKS && <ElClasicoChampionBanner matches={matches} />}
 
         {/* ── ALERTS ─────────────────────────────────────────────────────── */}
-        <BirthdayBanner members={members} />
-        <RenewalReminderBanner members={members} />
+        {LEGACY_BLOCKS && <BirthdayBanner members={members} />}
+        {LEGACY_BLOCKS && <RenewalReminderBanner members={members} />}
 
         {/* ── BOOK A MATCH — subtle, share-with-opponents prompt ─────────── */}
         <a
@@ -744,7 +755,7 @@ export function Dashboard() {
         )}
 
         {/* ── BIRTHDAYS ─────────────────────────────────────────────────── */}
-        <BirthdayBoard members={members} />
+        {LEGACY_BLOCKS && <BirthdayBoard members={members} />}
 
         {/* ── SEASON STARS (lazy — loads cricketStats on demand) ────────── */}
         {showDeferred && (
@@ -754,7 +765,7 @@ export function Dashboard() {
         )}
 
         {/* ── MAHASANGRAM — this season's internal competition ─────────── */}
-        <MahaSangramCard matches={matches} />
+        {LEGACY_BLOCKS && <MahaSangramCard matches={matches} />}
 
         {/* ── INTERNAL BATTLE ─────────────────────────────────────────────
              The Dhurandars vs Bazigars rivalry is off the Dashboard: it's a
@@ -778,10 +789,10 @@ export function Dashboard() {
         )}
 
         {/* ── SQUAD POLL ───────────────────────────────────────────────── */}
-        <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />
+        {LEGACY_BLOCKS && <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />}
 
         {/* ── EXPLORE — everything that used to be inlined above ──────── */}
-        <ExploreGrid />
+        {LEGACY_BLOCKS && <ExploreGrid />}
 
         {/* ── SPONSOR (always at bottom) ─────────── */}
         {showDeferred && (
