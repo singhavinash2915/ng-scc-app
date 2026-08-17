@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Card } from './ui/Card';
 import { Megaphone, Pin, Trophy, AlertTriangle, Calendar as CalIcon, Plus, X, Trash2, Clock } from 'lucide-react';
 import { useAnnouncements } from '../hooks/useAnnouncements';
 import { useAuth } from '../context/AuthContext';
@@ -188,9 +189,9 @@ export function AnnouncementWall() {
       </div>
 
       {announcements.length === 0 ? (
-        <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-400 dark:text-gray-500">
+        <Card className="border-dashed p-6 text-center text-sm text-gray-400 dark:text-gray-500">
           {isAdmin ? 'No announcements yet. Click "+ New" to post one.' : 'No announcements yet.'}
-        </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {announcements.map(a => (

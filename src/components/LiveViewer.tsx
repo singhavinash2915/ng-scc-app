@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Card } from './ui/Card';
 import { Radio } from 'lucide-react';
 import { commentaryFor, winProbability, chaseLine, keyMoments, overByOver } from '../lib/liveMatch';
 import type { Ball, MatchFormat } from '../lib/cricketRules';
@@ -95,21 +96,20 @@ export function LiveViewer({ view, format, name }: {
       {/* CricHeroes gives us totals, not deliveries. Rather than fake a feed,
           say plainly what this source can and can't show. */}
       {view.source === 'cricheroes' && (
-        <div className="r-card border border-amber-200 dark:border-amber-400/20
-                        bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
+        <Card className="border-amber-200 dark:border-amber-400/20 bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
           <p className="t-body font-semibold text-amber-800 dark:text-amber-200">
             Scored on CricHeroes — live score only
           </p>
           <p className="t-meta text-amber-700/80 dark:text-amber-200/60 mt-0.5">
             Ball-by-ball commentary needs the match to be scored in the app.
           </p>
-        </div>
+        </Card>
       )}
 
       {view.balls.length > 0 && (
         <>
           {/* ── Over by over ── */}
-          <div className="r-card border border-slate-200 dark:border-white/10 p-4">
+          <Card className="p-4">
             <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 mb-3">
               Over by over
             </p>
@@ -122,11 +122,11 @@ export function LiveViewer({ view, format, name }: {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* ── Key moments ── */}
           {moments.length > 0 && (
-            <div className="r-card border border-slate-200 dark:border-white/10 p-4">
+            <Card className="p-4">
               <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
                 Key moments
               </p>
@@ -142,11 +142,11 @@ export function LiveViewer({ view, format, name }: {
                   </p>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
 
           {/* ── Commentary ── */}
-          <div className="r-card border border-slate-200 dark:border-white/10 p-4">
+          <Card className="p-4">
             <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
               Commentary
             </p>
@@ -160,7 +160,7 @@ export function LiveViewer({ view, format, name }: {
                 </p>
               ))}
             </div>
-          </div>
+          </Card>
         </>
       )}
     </div>

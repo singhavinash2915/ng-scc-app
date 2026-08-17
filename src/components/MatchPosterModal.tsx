@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
+import { Card } from './ui/Card';
 import { Download, Share2, Loader2, ExternalLink } from 'lucide-react';
 import { toPng, toJpeg } from 'html-to-image';
 import { Modal } from './ui/Modal';
@@ -229,7 +230,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
       <div className="space-y-4">
 
         {/* Customise header */}
-        <div className="space-y-3 p-3 r-card border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <Card className="space-y-3 p-3 bg-gray-50">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Tournament / Header"
@@ -264,7 +265,7 @@ export function MatchPosterModal({ isOpen, onClose, match }: Props) {
           <p className="t-meta text-gray-500">
             💡 Compact poster ≈ 300–500 KB · Detailed poster ≈ 1–2 MB · Both work in WhatsApp.
           </p>
-        </div>
+        </Card>
 
         {/* The actual poster — what gets exported */}
         <div className="overflow-x-auto r-card bg-black">

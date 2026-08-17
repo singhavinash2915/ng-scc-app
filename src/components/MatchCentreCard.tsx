@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Card } from './ui/Card';
 import { Link } from 'react-router-dom';
 import { Swords, TrendingUp, MapPin, Crown, Target, Activity, BarChart3, ChevronRight } from 'lucide-react';
 import { useMatchPreview, type PreviewStatRow } from '../hooks/useMatchPreview';
@@ -88,16 +89,16 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       </div>
 
       {/* Storyline */}
-      <div className="relative mb-4 r-card bg-white/5 border border-white/10 px-3.5 py-2.5">
+      <Card className="relative mb-4 bg-white/5 border-white/10 px-3.5 py-2.5">
         <p className="t-body lg:text-[13px] text-gray-200 leading-snug font-medium">{storyline}</p>
-      </div>
+      </Card>
 
       {/* El Clásico head-to-head (internal) */}
       {isInternal && internalH2H && internalH2H.played > 0 && (() => {
         const { dhur, baz, played: ip, lastWinner, form: ifrm } = internalH2H;
         const dhurPct = dhur + baz > 0 ? Math.round((dhur / (dhur + baz)) * 100) : 50;
         return (
-          <div className="relative mb-4 r-card bg-white/5 border border-white/10 p-3.5">
+          <Card className="relative mb-4 bg-white/5 border-white/10 p-3.5">
             <div className="flex items-center justify-between mb-2">
               <span className="t-micro font-bold uppercase tracking-[1.5px] text-white/50">Rivalry · all-time</span>
               <span className="t-micro font-semibold text-white/40">{ip} clásicos</span>
@@ -135,7 +136,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
                 </span>
               )}
             </div>
-          </div>
+          </Card>
         );
       })()}
 
@@ -158,7 +159,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
 
       {/* Avg runs us vs them */}
       {!isInternal && avgRunsUs != null && avgRunsThem != null && (
-        <div className="relative mb-4 flex items-center justify-between r-card bg-white/5 border border-white/8 px-3.5 py-2.5">
+        <Card className="relative mb-4 flex items-center justify-between bg-white/5 border-white/8 px-3.5 py-2.5">
           <div className="text-center flex-1">
             <p className="text-emerald-300 text-lg font-black tabular-nums leading-none">{avgRunsUs}</p>
             <p className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mt-1">Our avg</p>
@@ -168,7 +169,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
             <p className="text-rose-300 text-lg font-black tabular-nums leading-none">{avgRunsThem}</p>
             <p className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mt-1">Their avg</p>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Win probability meter */}
@@ -192,7 +193,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       {/* Form + venue */}
       {!isInternal && (
       <div className="relative grid grid-cols-2 gap-2 mb-4">
-        <div className="r-card bg-white/5 border border-white/8 px-3 py-2.5">
+        <Card className="bg-white/5 border-white/8 px-3 py-2.5">
           <p className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mb-1.5 flex items-center gap-1">
             <Activity className="w-3 h-3" /> Recent form
           </p>
@@ -211,8 +212,8 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
               </span>
             ))}
           </div>
-        </div>
-        <div className="r-card bg-white/5 border border-white/8 px-3 py-2.5">
+        </Card>
+        <Card className="bg-white/5 border-white/8 px-3 py-2.5">
           <p className="text-gray-500 t-micro font-bold uppercase tracking-[1px] mb-1.5 flex items-center gap-1">
             <MapPin className="w-3 h-3" /> At {venueName || 'venue'}
           </p>
@@ -226,7 +227,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
           ) : (
             <p className="text-gray-500 text-xs">First time here</p>
           )}
-        </div>
+        </Card>
       </div>
       )}
 
@@ -234,7 +235,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
       {(keyBatsman || keyBowler) && (
         <div className="relative grid grid-cols-2 gap-2 mb-4">
           {keyBatsman && (
-            <div className="r-card bg-white/5 border border-white/8 px-3 py-2.5 flex items-center gap-2.5">
+            <Card className="bg-white/5 border-white/8 px-3 py-2.5 flex items-center gap-2.5">
               <Initials name={keyBatsman.name} url={keyBatsman.avatar_url} ring="border-emerald-400/40" />
               <div className="min-w-0">
                 <p className="text-emerald-300 t-micro font-bold uppercase tracking-[1px] flex items-center gap-1">
@@ -243,10 +244,10 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
                 <p className="text-white text-xs font-black truncate leading-tight">{keyBatsman.name}</p>
                 <p className="text-gray-400 t-micro font-semibold tabular-nums">{keyBatsman.value} {keyBatsman.label.replace(' this season', '')}</p>
               </div>
-            </div>
+            </Card>
           )}
           {keyBowler && (
-            <div className="r-card bg-white/5 border border-white/8 px-3 py-2.5 flex items-center gap-2.5">
+            <Card className="bg-white/5 border-white/8 px-3 py-2.5 flex items-center gap-2.5">
               <Initials name={keyBowler.name} url={keyBowler.avatar_url} ring="border-violet-400/40" />
               <div className="min-w-0">
                 <p className="text-violet-300 t-micro font-bold uppercase tracking-[1px] flex items-center gap-1">
@@ -255,7 +256,7 @@ export function MatchCentreCard({ nextMatch, matches, members, cricketStats }: P
                 <p className="text-white text-xs font-black truncate leading-tight">{keyBowler.name}</p>
                 <p className="text-gray-400 t-micro font-semibold tabular-nums">{keyBowler.value} {keyBowler.label.replace(' this season', '')}</p>
               </div>
-            </div>
+            </Card>
           )}
         </div>
       )}

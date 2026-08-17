@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Card } from './ui/Card';
 import { Share2, Star, Zap, Target } from 'lucide-react';
 import type { Member, MemberCricketStats } from '../types';
 
@@ -88,22 +89,22 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
             </div>
           </div>
           <div className="text-right">
-            <div className="bg-white/20 backdrop-blur-sm r-card px-3 py-2 text-center border border-white/20">
+            <Card className="bg-white/20 backdrop-blur-sm px-3 py-2 text-center border-white/20">
               <p className="text-xs text-white/60 uppercase tracking-wide">Season</p>
               <p className="font-bold text-sm">2025-26</p>
-            </div>
+            </Card>
           </div>
         </div>
 
         {dna?.dnaType && (
-          <div className="mt-3 bg-white/15 backdrop-blur-sm r-card p-3 border border-white/20">
+          <Card className="mt-3 bg-white/15 backdrop-blur-sm p-3 border-white/20">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-yellow-300" />
               <span className="text-xs text-white/70 uppercase tracking-wider">Cricket DNA</span>
             </div>
             <p className="text-base font-bold mt-0.5">{dna.dnaType}</p>
             {dna.signature && <p className="text-xs text-white/70 mt-1">{dna.signature}</p>}
-          </div>
+          </Card>
         )}
       </div>
 
@@ -130,7 +131,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
       {dna && (
         <div className="px-5 py-3 space-y-2">
           {dna.strengths.length > 0 && (
-            <div className="bg-white/10 r-card p-3 border border-white/10">
+            <Card className="bg-white/10 p-3 border-white/10">
               <div className="flex items-center gap-1 mb-1.5">
                 <Target className="w-3.5 h-3.5 text-yellow-300" />
                 <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">Strengths</span>
@@ -138,12 +139,12 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
               {dna.strengths.map((s, i) => (
                 <p key={i} className="text-xs text-white/80 leading-relaxed">- {s}</p>
               ))}
-            </div>
+            </Card>
           )}
           {dna.wisdom && (
-            <div className="bg-white/10 r-card p-3 border border-white/10">
+            <Card className="bg-white/10 p-3 border-white/10">
               <p className="text-xs text-white/60 italic">"{dna.wisdom}"</p>
-            </div>
+            </Card>
           )}
           {dna.legend && (
             <p className="text-xs text-white/60 text-center">Plays like: {dna.legend}</p>

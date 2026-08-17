@@ -1,4 +1,5 @@
 import { RefreshCw } from 'lucide-react';
+import { Card } from './ui/Card';
 import type { LiveScoreData } from '../hooks/useLiveScore';
 
 interface Props {
@@ -111,14 +112,14 @@ export function LiveScorecard({
               {fmtMatchDate && <span>🗓 {fmtMatchDate}</span>}
             </div>
             {/* Status strip — adapts based on time of day */}
-            <div className="flex items-center gap-2 px-3 py-2 r-card bg-amber-500/8 border border-amber-500/15">
+            <Card className="flex items-center gap-2 px-3 py-2 bg-amber-500/8 border-amber-500/15">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
               <p className="t-meta text-amber-600 dark:text-amber-300/70">
                 {new Date().getHours() >= 6
                   ? 'Match may be in progress · live score loading automatically…'
                   : 'Waiting for match to start · auto-refreshing every 15s'}
               </p>
-            </div>
+            </Card>
             <a
               href={chUrl}
               target="_blank"
@@ -205,7 +206,7 @@ export function LiveScorecard({
 
             {/* ── Batters table (CricHeroes style) ──────────────── */}
             {data.batters && data.batters.length > 0 && (
-              <div className="mt-3 r-card live-inner border border-slate-200 dark:border-white/8 overflow-hidden">
+              <Card className="mt-3 live-inner overflow-hidden">
                 <div className="grid grid-cols-[1fr_36px_36px_28px_28px_44px] gap-1 px-3 py-1.5 t-micro font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
                   <span>Batters</span>
                   <span className="text-right">R</span>
@@ -226,12 +227,12 @@ export function LiveScorecard({
                     <span className="text-right tabular-nums text-slate-500 dark:text-white/60">{b.sr}</span>
                   </div>
                 ))}
-              </div>
+              </Card>
             )}
 
             {/* ── Bowlers table ─────────────────────────────────── */}
             {data.bowlers && data.bowlers.length > 0 && (
-              <div className="mt-2 r-card live-inner border border-slate-200 dark:border-white/8 overflow-hidden">
+              <Card className="mt-2 live-inner overflow-hidden">
                 <div className="grid grid-cols-[1fr_36px_28px_36px_28px_44px] gap-1 px-3 py-1.5 t-micro font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
                   <span>Bowlers</span>
                   <span className="text-right">O</span>
@@ -252,7 +253,7 @@ export function LiveScorecard({
                     <span className="text-right tabular-nums text-slate-500 dark:text-white/60">{b.economy}</span>
                   </div>
                 ))}
-              </div>
+              </Card>
             )}
           </>
         )}

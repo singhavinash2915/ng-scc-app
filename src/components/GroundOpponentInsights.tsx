@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Card } from './ui/Card';
 import { MapPin, Users, TrendingUp, TrendingDown } from 'lucide-react';
 import { normalizeVenue } from '../utils/normalizeVenue';
 import type { Match } from '../types';
@@ -125,7 +126,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
   return (
     <div className="space-y-6">
       {/* Ground-wise */}
-      <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary-500" />
@@ -161,11 +162,11 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Opponent analysis */}
       {(opponentStats.best.length > 0 || opponentStats.worst.length > 0) && (
-        <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <Card className="overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
             <Users className="w-4 h-4 text-primary-500" />
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Opponent Analysis</h3>
@@ -229,7 +230,7 @@ export function GroundOpponentInsights({ matches, compact = false }: Props) {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

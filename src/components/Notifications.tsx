@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Card } from './ui/Card';
 import { Link } from 'react-router-dom';
 import {
   Bell,
@@ -198,7 +199,7 @@ export function Notifications({ members, matches }: NotificationsProps) {
           />
 
           {/* Panel */}
-          <div className="absolute right-0 mt-2 w-80 sm:w-96 max-h-[80vh] bg-white dark:bg-gray-800 r-card shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+          <Card className="absolute right-0 mt-2 w-80 sm:w-96 max-h-[80vh] shadow-2xl z-50 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
               <div className="flex items-center gap-2">
@@ -291,7 +292,7 @@ export function Notifications({ members, matches }: NotificationsProps) {
                 </p>
               </div>
             )}
-          </div>
+          </Card>
         </>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Card } from './ui/Card';
 import { Scissors, Eye, MessageSquare, Check, Trash2 } from 'lucide-react';
 import { useLiveViewers, useClipMarks } from '../hooks/useLiveAddons';
 import { formatTime } from '../hooks/useMatchVideos';
@@ -88,7 +89,7 @@ export function LiveAddons({ videoId, matchId, name, memberId, isAdmin }: Props)
 
       {/* Marked moments */}
       {marks.length > 0 && (
-        <div className="r-card bg-white/5 border border-white/10 p-3">
+        <Card className="bg-white/5 border-white/10 p-3">
           <p className="t-micro font-bold uppercase tracking-wider text-white/50 mb-2">
             ✂️ Marked moments · {marks.length}
           </p>
@@ -112,7 +113,7 @@ export function LiveAddons({ videoId, matchId, name, memberId, isAdmin }: Props)
               💡 After the match, add these as clips from the match card using the replay link + these times.
             </p>
           )}
-        </div>
+        </Card>
       )}
 
       {/* YouTube's own live chat */}
