@@ -25,6 +25,9 @@ import { ElClasicoChampionBanner } from '../components/ElClasicoChampionBanner';
 import { useWeather } from '../hooks/useWeather';
 import { useLiveScore } from '../hooks/useLiveScore';
 import { useAppLiveMatch } from '../hooks/useAppLiveMatch';
+import { useMe } from '../context/MemberContext';
+import { YourSeason } from '../components/YourSeason';
+import { SignInCard } from '../components/SignInCard';
 import { LiveScorecard } from '../components/LiveScorecard';
 import { MatchSummaryCard } from '../components/MatchSummaryCard';
 import { useMembers } from '../hooks/useMembers';
@@ -90,6 +93,7 @@ export function Dashboard() {
   const league = useSeasonLeague();
   const liveStream = useLiveStream();
   const appLive = useAppLiveMatch();
+  const { me, loading: meLoading } = useMe();
   // Match Day mode — an upcoming match dated today takes over the top banner
   const { todaysMatch } = useMemo(() => {
     const now = new Date();
@@ -331,6 +335,16 @@ export function Dashboard() {
               <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </Link>
+        </div>
+      )}
+
+      {/* ── YOUR SEASON — the club data, addressed to one person ────────
+          Above the club-wide hero on purpose: a signed-in member wants to know
+          whether THEY are playing before they want the club's win rate. Signed
+          out this is the sign-in card, and everything below still works. */}
+      {!meLoading && (
+        <div className="px-4 lg:px-8 pt-4">
+          {me ? <YourSeason matches={matches} members={members} /> : <SignInCard />}
         </div>
       )}
 

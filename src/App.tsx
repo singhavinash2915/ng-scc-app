@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { MemberProvider } from './context/MemberContext';
 import { Layout } from './components/layout/Layout';
 import { FEATURES } from './config/features';
 
@@ -170,9 +171,11 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <MemberProvider>
         <Router>
           <AppRoutes />
         </Router>
+        </MemberProvider>
       </AuthProvider>
     </ThemeProvider>
   );
