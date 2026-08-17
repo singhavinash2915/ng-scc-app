@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
 import { Rocket, CalendarDays, Trophy, Swords, Coins, Target as TargetIcon, Sparkles, Gavel, Check, Users } from 'lucide-react';
 import { Header } from '../components/layout/Header';
@@ -163,9 +164,9 @@ export function SeasonKickoff() {
         </div>
 
         {migrationNeeded && (
-          <div className="r-card bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 text-center">
+          <Card className="bg-amber-50 border-amber-200 p-3 text-sm text-amber-800 text-center">
             ⚙️ Predictions &amp; goals go live once <code>add_season2_features.sql</code> is run in Supabase.
-          </div>
+          </Card>
         )}
 
         {/* ── DEFENDING CHAMPIONS ──────────────────────────────────────────── */}

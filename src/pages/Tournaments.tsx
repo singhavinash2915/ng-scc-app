@@ -473,7 +473,7 @@ export function Tournaments() {
                             <MoreVertical className="w-5 h-5 text-gray-500" />
                           </button>
                           {menuOpen === tournament.id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 r-card shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                            <Card className="absolute right-0 mt-2 w-48 shadow-lg py-1 z-10">
                               <button
                                 onClick={() => openEditModal(tournament)}
                                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -486,7 +486,7 @@ export function Tournaments() {
                               >
                                 <Trash2 className="w-4 h-4" /> Delete
                               </button>
-                            </div>
+                            </Card>
                           )}
                         </div>
                       )}

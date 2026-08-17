@@ -407,7 +407,7 @@ export function Leaderboard() {
 
       {/* Best Wicket-Keeper highlight (fielding tab only) */}
       {tab === 'fielding' && topKeeper && (
-        <div className="mx-4 sm:mx-0 flex items-center gap-3 r-card border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/15 px-4 py-3">
+        <Card className="mx-4 sm:mx-0 flex items-center gap-3 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/15 px-4 py-3">
           {(topKeeper.player.member as { avatar_url?: string } | undefined)?.avatar_url ? (
             <img src={(topKeeper.player.member as { avatar_url?: string }).avatar_url} alt="" className="w-11 h-11 rounded-full object-cover" />
           ) : (
@@ -422,7 +422,7 @@ export function Leaderboard() {
               {topKeeper.total} dismissals · {topKeeper.player.fielding_caught_behind ?? 0} ct behind · {topKeeper.player.fielding_stumpings} st
             </p>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Top 3 spotlight */}

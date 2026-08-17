@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
 import {
   Trophy, TrendingUp, Zap, Sparkles, Info, X, Crown, Medal, Award,
@@ -117,7 +118,7 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
 
         {/* ── Empty state ────────────────────────────────────────────────── */}
         {!loading && list.length === 0 && (
-          <div className="text-center py-12 r-card bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-700">
+          <Card className="text-center py-12 bg-gray-50 border-dashed">
             <Trophy className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-sm font-bold text-gray-600 dark:text-gray-400">No ranked players yet</p>
             <p className="text-xs text-gray-400 mt-1">
@@ -125,7 +126,7 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
                 ? 'Need players with both batting AND bowling contributions to qualify.'
                 : 'Detailed match scorecards must be synced from CricHeroes first.'}
             </p>
-          </div>
+          </Card>
         )}
 
         {/* ── Podium (Top 3) ─────────────────────────────────────────────── */}
@@ -133,11 +134,11 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
 
         {/* ── Rest of the table (4 onwards) ──────────────────────────────── */}
         {!loading && rest.length > 0 && (
-          <div className="r-card border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <Card className="overflow-hidden">
             {rest.map(p => (
               <RankRow key={p.member.id} player={p} tab={tab} />
             ))}
-          </div>
+          </Card>
         )}
 
         {/* ── Bottom note ────────────────────────────────────────────────── */}
@@ -278,11 +279,11 @@ function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="How SCC Rankings Work" size="lg">
       <div className="space-y-4 text-sm">
-        <div className="r-card bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 p-3.5">
+        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-emerald-200 dark:border-emerald-800 p-3.5">
           <p className="text-xs leading-relaxed text-emerald-900 dark:text-emerald-300">
             <strong>ICC-style weighted rating.</strong> Each player earns points from every match — adjusted for opposition quality and win/loss. Final rating normalised 0–1000.
           </p>
-        </div>
+        </Card>
 
         <Section icon="🌐" title="Overall vs Season views">
           <Bullet><strong>Overall (All-Time)</strong>: includes every external match SCC has ever played, with recent matches weighted more heavily (time decay).</Bullet>
@@ -340,11 +341,11 @@ function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           <Bullet>Rating = geometric mean of bat + bowl totals (favours balance over extreme one-sided stats)</Bullet>
         </Section>
 
-        <div className="r-card bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3.5">
+        <Card className="bg-gray-50 dark:bg-gray-800/50 p-3.5">
           <p className="t-meta text-gray-600 dark:text-gray-400 leading-relaxed">
             <strong>Final rating</strong> = sum of (match points × opposition × result × time-decay) for every external match a player participated in. Internal matches (Dhurandars vs Bazigars) are excluded so the rating measures performance against real opposition.
           </p>
-        </div>
+        </Card>
 
         <button
           onClick={onClose}

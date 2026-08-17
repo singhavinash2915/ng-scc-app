@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Card } from '../components/ui/Card';
 import {
   Trophy, Users, Calendar, MapPin, Phone, Mail, Instagram,
   Target, Heart, TrendingUp, Building2, ExternalLink,
@@ -133,7 +134,7 @@ export function About() {
         </div>
 
         {/* ── WHAT THIS APP DOES ─────────────────────────────────────────── */}
-        <div className="r-card border border-gray-200 dark:border-gray-700 p-6 lg:p-7 bg-white dark:bg-gray-900">
+        <Card className="p-6 lg:p-7">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-3.5 h-3.5 text-primary-500" />
             <span className="t-micro font-bold uppercase tracking-[2px] text-gray-400 dark:text-gray-500">
@@ -163,7 +164,7 @@ export function About() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* ── LEADERSHIP / VALUES PILLARS (3-col Bento) ──────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -186,9 +187,9 @@ export function About() {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
             <div className="absolute inset-0 border border-emerald-400/30 r-card pointer-events-none" />
             <div className="relative p-6 lg:p-8 flex items-center gap-5 flex-wrap">
-              <div className="flex-shrink-0 w-14 h-14 r-card bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20">
+              <Card className="flex-shrink-0 w-14 h-14 bg-white/15 backdrop-blur-sm flex items-center justify-center border-white/20">
                 <Send className="w-7 h-7 text-white" />
-              </div>
+              </Card>
               <div className="flex-1 min-w-0">
                 <p className="text-emerald-300 t-micro font-bold uppercase tracking-[2px]">Join SCC</p>
                 <h3 className="text-xl lg:text-2xl font-black text-white mt-1">Want to play with us?</h3>
@@ -235,7 +236,7 @@ export function About() {
 
         {/* ── CONTACT & SOCIAL ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900">
+          <Card className="p-5">
             <h3 className="t-micro font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
               <Phone className="w-3 h-3" /> Reach Out
             </h3>
@@ -258,9 +259,9 @@ export function About() {
                 <span>Pune, Maharashtra, India</span>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900">
+          <Card className="p-5">
             <h3 className="t-micro font-bold text-gray-400 uppercase tracking-[1.5px] mb-3 flex items-center gap-1.5">
               <Trophy className="w-3 h-3" /> Find Us On
             </h3>
@@ -284,7 +285,7 @@ export function About() {
                 <ExternalLink className="w-3 h-3 text-gray-400" />
               </a>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* ── FOOTER ─────────────────────────────────────────────────────── */}
@@ -304,10 +305,10 @@ export function About() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function StatPill({ value, label, color }: { value: string | number; label: string; color: string }) {
   return (
-    <div className="bg-white/5 border border-white/10 backdrop-blur-sm r-card px-4 py-3">
+    <Card className="bg-white/5 border-white/10 backdrop-blur-sm px-4 py-3">
       <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${color}`}>{value}</p>
       <p className="t-micro text-gray-500 uppercase tracking-widest mt-1.5 font-bold">{label}</p>
-    </div>
+    </Card>
   );
 }
 

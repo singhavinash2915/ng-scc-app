@@ -836,7 +836,7 @@ export function SeasonFund() {
           </div>
 
           {/* ═════ PREMIUM TABS ═══════════════════════════════════════════════ */}
-          <div className="flex gap-1 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/70 r-card p-1 border border-gray-200 dark:border-gray-700">
+          <Card className="flex gap-1 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-800/70 p-1">
             {tabs.map(tab => (
               <button
                 key={tab.key}
@@ -851,7 +851,7 @@ export function SeasonFund() {
                 <span className="truncate">{tab.label}</span>
               </button>
             ))}
-          </div>
+          </Card>
 
           {/* ===== BOOKINGS TAB ===== */}
           {activeTab === 'bookings' && (

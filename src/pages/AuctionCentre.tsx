@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { Card } from '../components/ui/Card';
 import { Search, Crown, Radio, TrendingUp, Sparkles, Zap } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMembers } from '../hooks/useMembers';
@@ -126,8 +127,7 @@ export function AuctionCentre() {
         {tab === 'live' && (
           <div className="space-y-3">
             {!started && (
-              <div className="r-card bg-white dark:bg-white/5 border border-slate-200
-                              dark:border-white/10 p-6 text-center">
+              <Card className="p-6 text-center">
                 <p className="text-4xl">🔨</p>
                 <h2 className="text-lg font-black text-slate-900 dark:text-white mt-2">
                   Auction night is coming
@@ -139,8 +139,7 @@ export function AuctionCentre() {
                 {/* Say it plainly and say it early. Nobody can audit the draw from
                     the outside, so the least we owe the squad is a clear statement
                     of how the order is decided, before it starts mattering. */}
-                <div className="mt-4 r-card bg-emerald-50 dark:bg-emerald-400/10 border
-                                border-emerald-200 dark:border-emerald-400/20 px-4 py-3 text-left">
+                <Card className="mt-4 bg-emerald-50 dark:bg-emerald-400/10 border-emerald-200 dark:border-emerald-400/20 px-4 py-3 text-left">
                   <p className="t-meta font-black uppercase tracking-widest text-emerald-700
                                 dark:text-emerald-300">🎲 Random order</p>
                   <p className="t-body text-emerald-900/80 dark:text-emerald-100/70 mt-1 leading-snug">
@@ -148,8 +147,8 @@ export function AuctionCentre() {
                     Icons first, then Grade B, then Grade C. There is no running order and
                     nobody, the auctioneer included, knows who is next until it happens.
                   </p>
-                </div>
-              </div>
+                </Card>
+              </Card>
             )}
             {started && featured.length === 0 && (
               <p className="text-sm text-slate-500 dark:text-white/60">
@@ -193,8 +192,7 @@ export function AuctionCentre() {
 
         {/* ── TEAMS ────────────────────────────────────────────────────── */}
         {tab === 'teams' && !started && (
-          <div className="r-card bg-white dark:bg-white/5 border border-slate-200
-                          dark:border-white/10 p-6 text-center">
+          <Card className="p-6 text-center">
             <Crown className="w-8 h-8 text-amber-500 mx-auto" fill="currentColor" />
             <p className="text-sm font-black text-slate-900 dark:text-white mt-2">
               Squads get built on auction night
@@ -202,12 +200,11 @@ export function AuctionCentre() {
             <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
               {SQUAD_SIZE} a side · {formatPrice(PURSE_LAKH)} purse each
             </p>
-          </div>
+          </Card>
         )}
 
         {tab === 'teams' && a && (
-          <div className="r-card bg-white dark:bg-white/5 border border-slate-200
-                          dark:border-white/10 overflow-hidden">
+          <Card className="overflow-hidden">
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-2.5 bg-slate-50
                             dark:bg-white/5 t-micro font-black uppercase tracking-wider text-slate-400">
               <span>Team</span><span className="text-right">Spent</span>
@@ -257,7 +254,7 @@ export function AuctionCentre() {
                 ))}
               </div>
             ))}
-          </div>
+          </Card>
         )}
 
         {/* ── PLAYERS ──────────────────────────────────────────────────── */}
@@ -270,8 +267,7 @@ export function AuctionCentre() {
                            bg-white dark:bg-white/5 pl-9 pr-3 py-2.5 text-sm" />
             </div>
 
-            <div className="r-card bg-white dark:bg-white/5 border border-slate-200
-                            dark:border-white/10 overflow-hidden">
+            <Card className="overflow-hidden">
               {filtered.map(r => {
                 const m = memberById[r.member_id];
                 const pick = pickOf(r.member_id);
@@ -351,7 +347,7 @@ export function AuctionCentre() {
               {filtered.length === 0 && (
                 <p className="px-4 py-6 text-sm text-slate-400 text-center">No players match "{q}".</p>
               )}
-            </div>
+            </Card>
           </div>
         )}
       </div>

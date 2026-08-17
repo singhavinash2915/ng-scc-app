@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Radio, Youtube, Tv } from 'lucide-react';
 import { useLiveStream } from '../hooks/useLiveStream';
@@ -70,7 +71,7 @@ export function Watch() {
               </div>
             </>
           ) : (
-            <div className="r-card bg-white/5 border border-white/10 p-8 text-center">
+            <Card className="bg-white/5 border-white/10 p-8 text-center">
               <Tv className="w-10 h-10 mx-auto text-white/25" />
               <p className="font-display text-lg font-extrabold mt-3">No live stream right now</p>
               <p className="text-white/55 text-sm mt-1.5">
@@ -86,7 +87,7 @@ export function Watch() {
                   <Youtube className="w-4 h-4" /> Watch past matches
                 </a>
               )}
-            </div>
+            </Card>
           )}
 
           {isLive && stream.channel_url && (

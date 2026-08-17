@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Card } from '../components/ui/Card';
 import { Gavel, Crown, Undo2, Check, X, Radio, Wallet, Users, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useAuth } from '../context/AuthContext';
@@ -172,13 +173,13 @@ export function AuctionLive() {
       <div>
         <Header title="Live Auction" subtitle="Admin only" />
         <div className="p-8 max-w-md mx-auto mt-12 text-center">
-          <div className="r-card border border-slate-200 dark:border-white/10 p-8 bg-white dark:bg-white/5">
+          <Card className="p-8">
             <Lock className="w-10 h-10 text-amber-500 mx-auto mb-3" />
             <h2 className="text-lg font-black text-slate-900 dark:text-white">Auction room</h2>
             <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
               The auction is run from the admin screen. Watch it on the big screen 🔨
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -189,13 +190,13 @@ export function AuctionLive() {
       <div>
         <Header title="Live Auction" subtitle="SCC League" />
         <div className="p-8 max-w-lg mx-auto mt-10">
-          <div className="r-card bg-amber-50 dark:bg-amber-500/10 border border-amber-200 p-6">
+          <Card className="bg-amber-50 dark:bg-amber-500/10 border-amber-200 p-6">
             <p className="font-black text-amber-900 dark:text-amber-200">Auction tables not created yet</p>
             <p className="text-sm text-amber-800/80 dark:text-amber-200/70 mt-1.5">
               Run <code className="font-mono">supabase/migrations/add_scc_auction.sql</code> in the
               Supabase SQL editor, then reload.
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -522,8 +523,7 @@ export function AuctionLive() {
                 one. Grouped by set, and the draw is random within a set, so
                 this tells you WHO is coming without giving away the order. */}
             {a.status === 'live' && (remaining.length > 0 || A.unsold.length > 0) && (
-              <div className="r-card bg-white dark:bg-white/5 border border-slate-200
-                              dark:border-white/10 p-4">
+              <Card className="p-4">
                 <div className="flex items-baseline justify-between mb-3">
                   <h3 className="t-meta font-black uppercase tracking-widest text-slate-500">
                     Still to come · 🎲 random order
@@ -583,7 +583,7 @@ export function AuctionLive() {
                     </div>
                   </div>
                 )}
-              </div>
+              </Card>
             )}
 
             {/* ── TEAMS ────────────────────────────────────────────────── */}
@@ -645,7 +645,7 @@ export function AuctionLive() {
 
             {/* ── SOLD LOG ─────────────────────────────────────────────── */}
             {A.picks.length > 0 && (
-              <div className="r-card bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4">
+              <Card className="p-4">
                 <p className="t-micro font-black uppercase tracking-[2px] text-slate-400 mb-2">Auction log</p>
                 <div className="max-h-56 overflow-y-auto space-y-1">
                   {[...A.picks].reverse().map(p => (
@@ -663,7 +663,7 @@ export function AuctionLive() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
             {isAdmin && SHOW_RESET && (
@@ -710,13 +710,13 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
 
   if (!isAdmin) {
     return (
-      <div className="r-card bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 text-center">
+      <Card className="p-8 text-center">
         <Gavel className="w-10 h-10 text-violet-500 mx-auto mb-3" />
         <h2 className="text-lg font-black text-slate-900 dark:text-white">The auction hasn't started</h2>
         <p className="text-sm text-slate-500 dark:text-white/60 mt-1.5">
           Keep this page open — it goes live the moment the first name is called 🔨
         </p>
-      </div>
+      </Card>
     );
   }
 
@@ -749,7 +749,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
   };
 
   return (
-    <div className="r-card bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 space-y-4">
+    <Card className="p-5 space-y-4">
       <div>
         <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
           <Gavel className="w-5 h-5 text-violet-500" /> Set up the auction
@@ -801,7 +801,7 @@ function SetupCard({ league, memberById, baseOf, isAdmin, runningOrder, onStart 
                    disabled:opacity-40">
         {busy ? 'Starting…' : 'Start the auction 🔨'}
       </button>
-    </div>
+    </Card>
   );
 }
 

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
 import {
   Users, Calendar, TrendingUp, Trophy, ChevronRight,
@@ -505,9 +506,9 @@ export function Dashboard() {
                     {showManOfMatch.man_of_match.avatar_url ? (
                       <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-10 h-10 r-card object-cover border border-yellow-400/40" />
                     ) : (
-                      <div className="w-10 h-10 r-card bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center">
+                      <Card className="w-10 h-10 bg-yellow-500/20 border-yellow-400/40 flex items-center justify-center">
                         <span className="text-sm font-black text-yellow-200">{showManOfMatch.man_of_match.name?.charAt(0)}</span>
-                      </div>
+                      </Card>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-yellow-400 t-micro font-bold uppercase tracking-[1.5px]">⭐ Last Man of the Match</p>
@@ -687,9 +688,9 @@ export function Dashboard() {
                 {featuredPlayer.member.avatar_url ? (
                   <img src={featuredPlayer.member.avatar_url} alt="" className="w-14 h-14 r-card object-cover border-2 border-pink-400/40 shadow-lg shadow-pink-500/30 flex-shrink-0" />
                 ) : (
-                  <div className="w-14 h-14 r-card bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-pink-500/30">
+                  <Card className="w-14 h-14 bg-gradient-to-br from-pink-400 to-rose-600 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-pink-500/30">
                     <span className="text-xl font-black text-pink-950">{featuredPlayer.member.name.charAt(0)}</span>
-                  </div>
+                  </Card>
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="text-lg font-black text-slate-900 dark:text-white truncate leading-tight">{featuredPlayer.member.name}</div>

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Card } from '../components/ui/Card';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Radio } from 'lucide-react';
 import { useMatches } from '../hooks/useMatches';
@@ -98,7 +99,7 @@ export function LiveMatch() {
           )}
 
           {/* Growth CTA — the hook for other clubs */}
-          <div className="mt-6 r-card p-5 bg-gradient-to-br from-violet-600/90 via-blue-600/80 to-[#0a1019] border border-white/10">
+          <Card className="mt-6 p-5 bg-gradient-to-br from-violet-600/90 via-blue-600/80 to-[#0a1019] border-white/10">
             <p className="text-sm font-extrabold text-white">
               📱 This is our own club app — live ball-by-ball, stats, predictions &amp; more.
             </p>
@@ -120,7 +121,7 @@ export function LiveMatch() {
               </a>
             </div>
             <p className="t-meta text-white/60 mt-3">📲 {INSTAGRAM}</p>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

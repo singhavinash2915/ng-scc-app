@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Card } from '../components/ui/Card';
 import { useNavigate } from 'react-router-dom';
 import {
   Gavel, Lock, Crown, RotateCcw,
@@ -355,7 +356,7 @@ export function Auction() {
       <div>
         <Header title="Auction" subtitle="Admin only" />
         <div className="p-8 max-w-md mx-auto mt-12">
-          <div className="r-card border border-gray-200 dark:border-gray-700 p-8 text-center bg-white dark:bg-gray-900">
+          <Card className="p-8 text-center">
             <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
               <Lock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
             </div>
@@ -365,7 +366,7 @@ export function Auction() {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Only admins can run an auction. Log in from the sidebar to start.
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -386,9 +387,9 @@ export function Auction() {
               <div className="absolute inset-0 border border-purple-500/30 r-card pointer-events-none" />
               <div className="absolute -top-16 -right-16 w-56 h-56 bg-purple-400/15 rounded-full blur-3xl" />
               <div className="relative flex items-center gap-4">
-                <div className="w-14 h-14 r-card bg-purple-400/20 border-2 border-purple-400/40 flex items-center justify-center flex-shrink-0">
+                <Card className="w-14 h-14 bg-purple-400/20 border-purple-400/40 flex items-center justify-center flex-shrink-0">
                   <Gavel className="w-7 h-7 text-purple-300" />
-                </div>
+                </Card>
                 <div>
                   <h2 className="text-2xl lg:text-3xl font-black text-white">Auction Setup</h2>
                   <p className="text-purple-200/70 text-sm mt-0.5">Configure captains, pool, and budget</p>
@@ -397,7 +398,7 @@ export function Auction() {
             </div>
 
             {/* Match details */}
-            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+            <Card className="p-5 space-y-4">
               <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">Match Details</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
@@ -412,10 +413,10 @@ export function Auction() {
                   onChange={e => setConfig(c => ({ ...c, matchVenue: e.target.value }))}
                 />
               </div>
-            </div>
+            </Card>
 
             {/* Team names — chosen once the captains are known */}
-            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+            <Card className="p-5 space-y-4">
               <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">Team Names</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
@@ -431,10 +432,10 @@ export function Auction() {
                   placeholder={DEFAULT_TEAM_NAMES.bazigars}
                 />
               </div>
-            </div>
+            </Card>
 
             {/* Captains */}
-            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+            <Card className="p-5 space-y-4">
               <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">Pick Captains</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -468,10 +469,10 @@ export function Auction() {
                   </select>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Budget + bid params */}
-            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+            <Card className="p-5 space-y-4">
               <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">Budget & Bidding</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input
@@ -493,10 +494,10 @@ export function Auction() {
                   onChange={e => setConfig(c => ({ ...c, bidIncrement: parseInt(e.target.value) || 0 }))}
                 />
               </div>
-            </div>
+            </Card>
 
             {/* Pool selection */}
-            <div className="r-card border border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-900 space-y-4">
+            <Card className="p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400">
                   Pool ({poolSelected.filter(id => id !== config.dhurCaptainId && id !== config.bazCaptainId).length} players)
@@ -561,7 +562,7 @@ export function Auction() {
                   );
                 })}
               </div>
-            </div>
+            </Card>
 
             <Button onClick={startAuction} className="w-full !py-3.5 text-base">
               <Gavel className="w-5 h-5 mr-2" />
@@ -758,7 +759,7 @@ export function Auction() {
 
             {/* Already sold list */}
             {picks.length > 0 && (
-              <div className="r-card border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+              <Card className="p-4">
                 <p className="t-micro font-bold uppercase tracking-[2px] text-gray-400 mb-2">Auction Log</p>
                 <div className="max-h-40 overflow-y-auto space-y-1">
                   {[...picks].reverse().map((p, idx) => {
@@ -783,7 +784,7 @@ export function Auction() {
                     );
                   })}
                 </div>
-              </div>
+              </Card>
             )}
           </>
         )}
@@ -819,11 +820,11 @@ export function Auction() {
                       </div>
                       <div className="space-y-1.5">
                         {captain && (
-                          <div className="flex items-center gap-2 px-2 py-1.5 r-card bg-amber-400/15 border border-amber-400/30">
+                          <Card className="flex items-center gap-2 px-2 py-1.5 bg-amber-400/15 border-amber-400/30">
                             <Crown className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" fill="currentColor" />
                             <span className="text-sm font-bold text-white truncate flex-1">{captain.name}</span>
                             <span className="t-micro text-amber-300 font-bold">CAPTAIN</span>
-                          </div>
+                          </Card>
                         )}
                         {teamPicks.map(p => {
                           const m = memberById[p.memberId];
@@ -844,7 +845,7 @@ export function Auction() {
             </div>
 
             {savedMatchId ? (
-              <div className="r-card border border-emerald-300 dark:border-emerald-700 p-5 bg-emerald-50 dark:bg-emerald-900/20 text-center">
+              <Card className="border-emerald-300 dark:border-emerald-700 p-5 bg-emerald-50 dark:bg-emerald-900/20 text-center">
                 <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-2" />
                 <p className="font-bold text-emerald-700 dark:text-emerald-300">Internal match created!</p>
                 <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">Both rosters are saved with team assignments + captains.</p>
@@ -852,7 +853,7 @@ export function Auction() {
                   <Button onClick={() => navigate('/matches')}>View on Matches page</Button>
                   <Button variant="secondary" onClick={fullReset}>New Auction</Button>
                 </div>
-              </div>
+              </Card>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button onClick={createInternalMatch} loading={creatingMatch} className="!py-3 text-base">

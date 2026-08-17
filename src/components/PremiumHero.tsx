@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Card } from './ui/Card';
 import { ArrowRight, Target } from 'lucide-react';
 
 interface Props {
@@ -66,8 +67,7 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
           </div>
 
           {/* Win-rate donut — compact, inline on every screen */}
-          <div className="shrink-0 text-center r-card px-3 py-2.5 sm:px-4 sm:py-3
-            bg-slate-50 border border-slate-200/70 dark:bg-white/[0.04] dark:border-white/10">
+          <Card className="shrink-0 text-center px-3 py-2.5 sm:px-4 sm:py-3 bg-slate-50 border-slate-200/70 dark:bg-white/[0.04]">
             <div className="relative w-[78px] h-[78px] sm:w-[104px] sm:h-[104px] mx-auto">
               <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
                 <circle cx="60" cy="60" r="50" fill="none" strokeWidth="11" className="stroke-slate-200 dark:stroke-white/10" />
@@ -80,7 +80,7 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
               <div className="absolute inset-0 flex items-center justify-center font-display text-xl sm:text-[26px] font-extrabold text-slate-900 dark:text-white">{winRate}%</div>
             </div>
             <div className="t-micro sm:text-xs text-slate-400 dark:text-gray-500 font-semibold mt-0.5 sm:mt-1 whitespace-nowrap">Win · {won}W–{lost}L</div>
-          </div>
+          </Card>
         </div>
 
         <p className="relative text-slate-500 dark:text-gray-400 t-body sm:text-[15px] mt-3 max-w-md">

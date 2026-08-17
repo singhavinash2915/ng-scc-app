@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Card } from '../components/ui/Card';
 import { Trophy, Coins, Crown, Check, Users, Info, AlertTriangle } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { MyStatsButton } from '../components/MyStatsButton';
@@ -109,16 +110,16 @@ export function Fantasy() {
 
         {/* Identify yourself */}
         {!myId ? (
-          <div className="r-card border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
+          <Card className="border-dashed p-6 text-center">
             <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
             <p className="font-bold text-gray-700 dark:text-gray-200">Who are you?</p>
             <p className="text-xs text-gray-500 mb-3">Pick your profile to manage a fantasy team.</p>
             <div className="flex justify-center"><MyStatsButton /></div>
-          </div>
+          </Card>
         ) : (
           <>
             {/* Builder controls */}
-            <div className="r-card border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-3">
+            <Card className="p-4 space-y-3">
               <input
                 value={teamName}
                 onChange={e => setTeamName(e.target.value)}
@@ -150,10 +151,10 @@ export function Fantasy() {
               {!valid && (
                 <p className="t-meta text-gray-400 flex items-center gap-1"><Info className="w-3 h-3" /> Pick exactly {SQUAD_SIZE} players within budget and tap a star to set your captain.</p>
               )}
-            </div>
+            </Card>
 
             {/* Player pool */}
-            <div className="r-card border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+            <Card className="overflow-hidden">
               <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                 <span className="t-meta font-black uppercase tracking-[2px] text-gray-600 dark:text-gray-300">Player pool</span>
                 <span className="t-micro text-gray-400 font-semibold">price · last-season pts</span>
@@ -189,12 +190,12 @@ export function Fantasy() {
                   );
                 })}
               </div>
-            </div>
+            </Card>
           </>
         )}
 
         {/* League table */}
-        <div className="r-card border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+        <Card className="overflow-hidden">
           <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
             <Trophy className="w-4 h-4 text-emerald-500" />
             <span className="t-meta font-black uppercase tracking-[2px] text-gray-600 dark:text-gray-300">League table</span>
@@ -217,7 +218,7 @@ export function Fantasy() {
               ))}
             </div>
           )}
-        </div>
+        </Card>
         <div className="h-4" />
       </div>
     </div>
