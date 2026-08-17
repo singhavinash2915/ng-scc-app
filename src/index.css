@@ -17,6 +17,39 @@
 @layer utilities {
   .font-display { font-family: 'Sora', system-ui, sans-serif; letter-spacing: -0.02em; }
 
+  /* ── Design tokens ──────────────────────────────────────────────────────
+     Two seasons of organic growth left the app with SEVEN corner radii and
+     EIGHT arbitrary text sizes (text-[10px] alone appeared 374 times). No
+     single screen looked wrong; together they read as dated, because nothing
+     quite matched anything else.
+
+     These freeze the scale. The point isn't that 14px beats 13px — it's that
+     the choice is made once, here, instead of being re-made every time
+     somebody writes a class name.
+
+     RADII — three, by role:
+       r-control  buttons, inputs, chips
+       r-card     cards, panels, sheets
+       rounded-full  pills and avatars (already consistent, left alone)
+
+     TEXT — six steps. Named for what they're FOR, so picking one is a
+     decision about meaning rather than pixels. */
+
+  .r-control { border-radius: 0.75rem; }   /* 12px */
+  .r-card    { border-radius: 1rem; }      /* 16px */
+
+  .t-micro { font-size: 10px; line-height: 1.4; letter-spacing: 0.06em; }
+  .t-meta  { font-size: 11px; line-height: 1.45; }
+  .t-body  { font-size: 13px; line-height: 1.5; }
+  .t-lead  { font-size: 15px; line-height: 1.45; }
+  .t-title { font-size: 19px; line-height: 1.25; letter-spacing: -0.01em; }
+  .t-hero  { font-size: 30px; line-height: 1.1;  letter-spacing: -0.02em; }
+
+  /* Numbers — scores, prices, stats. Tabular so digits don't jump as they
+     tick over, which is the whole reason a live score needs its own class. */
+  .t-num { font-family: 'Sora', system-ui, sans-serif; font-variant-numeric: tabular-nums;
+           font-weight: 800; letter-spacing: -0.02em; }
+
   /* Accent helpers */
   .accent-grad { background:linear-gradient(120deg,var(--a1),var(--a3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .accent-wordmark { background:linear-gradient(120deg,#fff,var(--a2) 55%,var(--a3)); -webkit-background-clip:text; background-clip:text; color:transparent; }

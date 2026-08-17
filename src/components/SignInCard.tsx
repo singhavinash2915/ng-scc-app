@@ -26,14 +26,14 @@ export function SignInCard() {
   };
 
   return (
-    <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-5">
-      <p className="text-[10px] font-black uppercase tracking-[2px] text-emerald-600 dark:text-emerald-400">
+    <div className="r-card border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-5">
+      <p className="t-micro font-black uppercase tracking-[2px] text-emerald-600 dark:text-emerald-400">
         Make it yours
       </p>
       <p className="font-display text-xl font-extrabold text-slate-900 dark:text-white mt-1">
         Sign in to see your season
       </p>
-      <p className="text-[12px] text-slate-500 dark:text-white/50 mt-1">
+      <p className="t-body text-slate-500 dark:text-white/50 mt-1">
         Your squad place, your balance, your form — no account needed, just the
         number the club already has for you.
       </p>
@@ -42,24 +42,24 @@ export function SignInCard() {
         <input
           type="tel" inputMode="numeric" placeholder="Your phone number"
           value={phone} onChange={e => setPhone(e.target.value)}
-          className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200
+          className="w-full px-4 py-3 r-control bg-slate-50 dark:bg-white/5 border border-slate-200
                      dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400
-                     text-[14px] font-semibold" />
+                     t-lead font-semibold" />
         <div className="flex gap-2">
           <input
             type="password" inputMode="numeric" placeholder="Club PIN"
             value={pin} onChange={e => setPin(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') void submit(); }}
-            className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200
+            className="flex-1 px-4 py-3 r-control bg-slate-50 dark:bg-white/5 border border-slate-200
                        dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400
-                       text-[14px] font-semibold" />
+                       t-lead font-semibold" />
           <button onClick={() => void submit()} disabled={busy}
-            className="px-5 rounded-2xl bg-emerald-500 text-white font-black text-sm
+            className="px-5 r-control bg-emerald-500 text-white font-black text-sm
                        disabled:opacity-40 inline-flex items-center gap-1.5">
             {busy ? '…' : <>Go <ArrowRight className="w-4 h-4" /></>}
           </button>
         </div>
-        {error && <p className="text-[12px] font-semibold text-rose-500 pt-0.5">{error}</p>}
+        {error && <p className="t-body font-semibold text-rose-500 pt-0.5">{error}</p>}
       </div>
     </div>
   );

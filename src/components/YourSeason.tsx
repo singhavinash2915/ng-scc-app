@@ -111,25 +111,25 @@ export function YourSeason({ matches, members }: Props) {
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-5">
+    <div className="r-card border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-5">
       <div className="flex items-center gap-3">
         {me.avatar_url
-          ? <img src={me.avatar_url} alt="" className="w-12 h-12 rounded-2xl object-cover" />
+          ? <img src={me.avatar_url} alt="" className="w-12 h-12 r-card object-cover" />
           : (
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400
+            <div className="w-12 h-12 r-card bg-emerald-500/15 text-emerald-600 dark:text-emerald-400
                             flex items-center justify-center font-black text-lg">
               {first[0]}
             </div>
           )}
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-[2px] text-slate-400">{greet}</p>
+          <p className="t-micro font-black uppercase tracking-[2px] text-slate-400">{greet}</p>
           <p className="font-display text-xl font-extrabold text-slate-900 dark:text-white truncate">
             {first}
           </p>
         </div>
         <button onClick={() => (confirmOut ? signOut() : setConfirmOut(true))}
           onBlur={() => setConfirmOut(false)}
-          className="text-[11px] font-bold text-slate-400 inline-flex items-center gap-1 px-2 py-1">
+          className="t-meta font-bold text-slate-400 inline-flex items-center gap-1 px-2 py-1">
           <LogOut className="w-3.5 h-3.5" />
           {confirmOut ? 'Sure?' : ''}
         </button>
@@ -141,12 +141,12 @@ export function YourSeason({ matches, members }: Props) {
         <div className="mt-4 space-y-1.5">
           {alerts.map(a => (
             <Link key={a.id} to={a.to}
-              className={`block rounded-2xl px-3.5 py-2.5 border ${
+              className={`block r-card px-3.5 py-2.5 border ${
                 a.tone === 'urgent' ? 'border-rose-200 dark:border-rose-400/25 bg-rose-50/70 dark:bg-rose-500/10'
                 : a.tone === 'good' ? 'border-emerald-200 dark:border-emerald-400/25 bg-emerald-50/70 dark:bg-emerald-500/10'
                 : 'border-slate-200 dark:border-white/10'}`}>
-              <p className="font-black text-[13px] text-slate-900 dark:text-white">{a.title}</p>
-              <p className="text-[11px] text-slate-500 dark:text-white/55">{a.body}</p>
+              <p className="font-black t-body text-slate-900 dark:text-white">{a.title}</p>
+              <p className="t-meta text-slate-500 dark:text-white/55">{a.body}</p>
             </Link>
           ))}
         </div>
@@ -155,15 +155,15 @@ export function YourSeason({ matches, members }: Props) {
       <div className="mt-4 space-y-2">
         {items.map(it => (
           <Link key={it.label} to={it.to}
-            className={`flex items-center gap-3 rounded-2xl px-3.5 py-3 border group ${
+            className={`flex items-center gap-3 r-card px-3.5 py-3 border group ${
               it.tone === 'green' ? 'border-emerald-200 dark:border-emerald-400/20 bg-emerald-50/60 dark:bg-emerald-500/10'
               : it.tone === 'amber' ? 'border-amber-200 dark:border-amber-400/20 bg-amber-50/60 dark:bg-amber-500/10'
               : 'border-slate-200 dark:border-white/10'}`}>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{it.label}</p>
-              <p className="font-black text-[15px] text-slate-900 dark:text-white truncate">{it.value}</p>
+              <p className="t-micro font-black uppercase tracking-wider text-slate-400">{it.label}</p>
+              <p className="font-black t-lead text-slate-900 dark:text-white truncate">{it.value}</p>
               {it.detail && (
-                <p className="text-[11px] text-slate-500 dark:text-white/50 truncate">{it.detail}</p>
+                <p className="t-meta text-slate-500 dark:text-white/50 truncate">{it.detail}</p>
               )}
             </div>
             <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-0.5 transition-transform" />

@@ -50,10 +50,10 @@ export function LiveViewer({ view, format, name }: {
   return (
     <div className="space-y-3">
       {/* ── Score ── */}
-      <div className="relative overflow-hidden rounded-3xl text-white shadow-2xl"
+      <div className="relative overflow-hidden r-card text-white shadow-2xl"
         style={{ background: 'linear-gradient(150deg,#052e16,#020617)' }}>
         <div className="p-6 text-center">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[2px] text-emerald-300">
+          <span className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-[2px] text-emerald-300">
             <Radio className="w-3 h-3" /> Live · {view.battingTeam}
           </span>
           <p className="font-display text-6xl font-extrabold tabular-nums mt-2 leading-none">
@@ -68,7 +68,7 @@ export function LiveViewer({ view, format, name }: {
 
           {pct != null && (
             <div className="mt-4">
-              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-white/70">
+              <div className="flex items-center justify-between t-micro font-black uppercase tracking-wider text-white/70">
                 <span>{view.battingTeam} {pct}%</span>
                 <span>{100 - pct}% {view.bowlingTeam}</span>
               </div>
@@ -76,7 +76,7 @@ export function LiveViewer({ view, format, name }: {
                 <div className="h-full bg-white rounded-full transition-all duration-700"
                   style={{ width: `${pct}%` }} />
               </div>
-              <p className="text-[9px] text-white/40 mt-1.5">
+              <p className="t-micro text-white/40 mt-1.5">
                 A rough guide from the run rate and wickets in hand — not a betting line.
               </p>
             </div>
@@ -87,12 +87,12 @@ export function LiveViewer({ view, format, name }: {
       {/* CricHeroes gives us totals, not deliveries. Rather than fake a feed,
           say plainly what this source can and can't show. */}
       {view.source === 'cricheroes' && (
-        <div className="rounded-2xl border border-amber-200 dark:border-amber-400/20
+        <div className="r-card border border-amber-200 dark:border-amber-400/20
                         bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
-          <p className="text-[12px] font-semibold text-amber-800 dark:text-amber-200">
+          <p className="t-body font-semibold text-amber-800 dark:text-amber-200">
             Scored on CricHeroes — live score only
           </p>
-          <p className="text-[11px] text-amber-700/80 dark:text-amber-200/60 mt-0.5">
+          <p className="t-meta text-amber-700/80 dark:text-amber-200/60 mt-0.5">
             Ball-by-ball commentary needs the match to be scored in the app.
           </p>
         </div>
@@ -101,8 +101,8 @@ export function LiveViewer({ view, format, name }: {
       {view.balls.length > 0 && (
         <>
           {/* ── Over by over ── */}
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[1.5px] text-slate-400 mb-3">
+          <div className="r-card border border-slate-200 dark:border-white/10 p-4">
+            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 mb-3">
               Over by over
             </p>
             <div className="flex items-end gap-1 h-20">
@@ -110,7 +110,7 @@ export function LiveViewer({ view, format, name }: {
                 <div key={o.over} className="flex-1 flex flex-col items-center justify-end gap-1">
                   <div className={`w-full rounded-t ${o.wickets ? 'bg-rose-400' : 'bg-emerald-400'}`}
                     style={{ height: `${Math.max(6, (o.runs / maxOver) * 100)}%` }} />
-                  <span className="text-[8px] font-bold text-slate-400 tabular-nums">{o.over + 1}</span>
+                  <span className="t-micro font-bold text-slate-400 tabular-nums">{o.over + 1}</span>
                 </div>
               ))}
             </div>
@@ -118,14 +118,14 @@ export function LiveViewer({ view, format, name }: {
 
           {/* ── Key moments ── */}
           {moments.length > 0 && (
-            <div className="rounded-3xl border border-slate-200 dark:border-white/10 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
+            <div className="r-card border border-slate-200 dark:border-white/10 p-4">
+              <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
                 Key moments
               </p>
               <div className="space-y-1.5">
                 {moments.map(b => (
-                  <p key={b.seq} className="text-[12px] text-slate-700 dark:text-white/75">
-                    <span className={`inline-block w-9 text-center mr-2 rounded font-black text-[10px] py-0.5 ${
+                  <p key={b.seq} className="t-body text-slate-700 dark:text-white/75">
+                    <span className={`inline-block w-9 text-center mr-2 rounded font-black t-micro py-0.5 ${
                       b.wicket_type ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300'
                                     : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'}`}>
                       {b.wicket_type ? 'W' : b.runs_off_bat}
@@ -138,13 +138,13 @@ export function LiveViewer({ view, format, name }: {
           )}
 
           {/* ── Commentary ── */}
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
+          <div className="r-card border border-slate-200 dark:border-white/10 p-4">
+            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 mb-2">
               Commentary
             </p>
             <div className="space-y-1.5 max-h-96 overflow-y-auto">
               {feed.map(b => (
-                <p key={b.seq} className="text-[12px] text-slate-600 dark:text-white/60 leading-snug">
+                <p key={b.seq} className="t-body text-slate-600 dark:text-white/60 leading-snug">
                   <span className="font-black text-slate-400 tabular-nums mr-2">
                     {b.over_no}.{b.ball_no + 1}
                   </span>

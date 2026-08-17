@@ -27,7 +27,7 @@ export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props
   const initials = member.name.split(' ').map(w => w[0]).slice(0, 2).join('');
 
   const inner = (
-    <div className={`relative overflow-hidden rounded-3xl border-2 ${tier.ring}
+    <div className={`relative overflow-hidden r-card border-2 ${tier.ring}
                      bg-white dark:bg-white/5 p-4 h-full
                      transition-transform active:scale-[0.98]`}>
       {/* Tier wash — the card's whole colour identity, kept behind the content. */}
@@ -36,22 +36,22 @@ export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props
 
       <div className="relative flex items-start gap-3">
         {member.avatar_url
-          ? <img src={member.avatar_url} alt="" className="w-14 h-14 rounded-2xl object-cover" />
+          ? <img src={member.avatar_url} alt="" className="w-14 h-14 r-card object-cover" />
           : (
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-white/10 flex items-center
+            <div className="w-14 h-14 r-card bg-slate-100 dark:bg-white/10 flex items-center
                             justify-center font-black text-slate-500 dark:text-white/60">
               {initials}
             </div>
           )}
         <div className="flex-1 min-w-0">
-          <span className={`inline-block text-[9px] font-black uppercase tracking-[1.5px]
+          <span className={`inline-block t-micro font-black uppercase tracking-[1.5px]
                             px-2 py-0.5 rounded-full ${tier.chip}`}>
             {tier.label}
           </span>
           <p className="font-display font-extrabold text-slate-900 dark:text-white truncate mt-1 leading-tight">
             {member.name}
           </p>
-          <p className="text-[11px] font-semibold text-slate-400">{role(stats)}</p>
+          <p className="t-meta font-semibold text-slate-400">{role(stats)}</p>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props
               <p className="font-display text-lg font-extrabold text-slate-900 dark:text-white tabular-nums leading-none">
                 {s.v}
               </p>
-              <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mt-0.5">{s.k}</p>
+              <p className="t-micro font-black uppercase tracking-wider text-slate-400 mt-0.5">{s.k}</p>
             </div>
           ))}
         </div>
