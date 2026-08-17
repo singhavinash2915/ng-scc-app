@@ -352,6 +352,7 @@ export function Dashboard() {
       <div className="px-4 lg:px-8 pt-4 space-y-3">
         <div className="flex justify-end"><AccentSwitcher /></div>
         <PremiumHero
+          greeted={!!me}
           firstName={myMember?.name.split(' ')[0] ?? null}
           profileId={myMember?.id ?? null}
           avatarUrl={myMember?.avatar_url ?? null}

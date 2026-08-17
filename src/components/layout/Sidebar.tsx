@@ -32,26 +32,57 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
-const publicNavItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/members', icon: Users, label: 'Members' },
-  { to: '/matches', icon: Calendar, label: 'Matches' },
-  // Season Kickoff is hidden from the nav until it's refreshed later this
-  // month. The route still works, so any existing link keeps resolving.
-  // { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
-  { to: '/scc-mahasangram', icon: Gavel, label: 'MahaSangram' },
-  { to: '/fantasy', icon: Sparkles, label: 'Fantasy Draft' },
-  { to: '/awards', icon: Award, label: 'Season Awards' },
-  { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
-  { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
-  { to: '/honours', icon: Trophy, label: 'Honours' },
-  { to: '/predictions', icon: Sparkles, label: 'Predictions' },
-  { to: '/finance', icon: Wallet, label: 'Finance' },
-  { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
-  { to: '/league', icon: Trophy, label: 'Season League' },
-  { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
-  { to: '/about', icon: Info, label: 'About' },
-  { to: '/whats-new', icon: Sparkles, label: "What's New" },
+// ─── Navigation ───────────────────────────────────────────────────────────────
+// Was a flat list of 21 destinations, which is more than anyone scans — the
+// effect of adding a feature was to make every other feature harder to find.
+//
+// Grouped into five sections that match how the club actually thinks about the
+// app: the club, the cricket, the league, the money, and admin. Same routes,
+// nothing removed; they're just findable now, and a new feature lands in a
+// section instead of on the end of a list.
+
+const navGroups: Array<{ title: string; items: Array<{ to: string; icon: typeof Users; label: string }> }> = [
+  {
+    title: 'Club',
+    items: [
+      { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/members', icon: Users, label: 'Members' },
+      { to: '/matches', icon: Calendar, label: 'Matches' },
+    ],
+  },
+  {
+    title: 'Cricket',
+    items: [
+      { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
+      { to: '/honours', icon: Trophy, label: 'Honours' },
+      { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
+    ],
+  },
+  {
+    title: 'The League',
+    items: [
+      { to: '/scc-mahasangram', icon: Gavel, label: 'MahaSangram' },
+      { to: '/league', icon: Trophy, label: 'Season League' },
+      { to: '/predictions', icon: Sparkles, label: 'Predictions' },
+      { to: '/fantasy', icon: Sparkles, label: 'Fantasy Draft' },
+      { to: '/awards', icon: Award, label: 'Season Awards' },
+    ],
+  },
+  {
+    title: 'Money',
+    items: [
+      { to: '/finance', icon: Wallet, label: 'Finance' },
+      { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
+      { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
+    ],
+  },
+  {
+    title: 'About',
+    items: [
+      { to: '/about', icon: Info, label: 'About' },
+      { to: '/whats-new', icon: Sparkles, label: "What's New" },
+    ],
+  },
 ];
 
 const adminNavItems = [
@@ -118,26 +149,33 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          {publicNavItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium flex-1">{item.label}</span>
-              {item.to === '/whats-new' && hasUnreadRelease && (
-                <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-black rounded-full uppercase tracking-wide animate-pulse">
-                  New
-                </span>
-              )}
-            </NavLink>
+          {navGroups.map((group, gi) => (
+            <div key={group.title} className={gi > 0 ? 'pt-3' : undefined}>
+              <p className="px-4 pb-1 text-[10px] font-black uppercase tracking-[1.5px] text-gray-400 dark:text-gray-500">
+                {group.title}
+              </p>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`
+                  }
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium flex-1">{item.label}</span>
+                  {item.to === '/whats-new' && hasUnreadRelease && (
+                    <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-black rounded-full uppercase tracking-wide animate-pulse">
+                      New
+                    </span>
+                  )}
+                </NavLink>
+              ))}
+            </div>
           ))}
 
           {/* Admin-only navigation items */}

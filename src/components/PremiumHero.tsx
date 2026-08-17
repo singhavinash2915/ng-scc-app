@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Target } from 'lucide-react';
 
 interface Props {
+  /** True when the personal block above has already greeted this member. */
+  greeted?: boolean;
   firstName: string | null;
   profileId: string | null;
   avatarUrl: string | null;
@@ -35,7 +37,7 @@ function greeting() {
  * next milestone), and a bento stat grid. Carries the member-attracting data
  * the old hero had, in the new design.
  */
-export function PremiumHero({ firstName, profileId, avatarUrl, winRate, won, lost, matchesPlayed, upcomingCount, nextOpponent, nextDate, activeMembers, totalMembers, streak, lastFive, myRuns, myWkts, myMoms, milestone }: Props) {
+export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate, won, lost, matchesPlayed, upcomingCount, nextOpponent, nextDate, activeMembers, totalMembers, streak, lastFive, myRuns, myWkts, myMoms, milestone }: Props) {
   const circ = 2 * Math.PI * 50;
   const offset = circ - (winRate / 100) * circ;
   const nextDateShort = nextDate ? new Date(nextDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : null;
@@ -53,8 +55,13 @@ export function PremiumHero({ firstName, profileId, avatarUrl, winRate, won, los
               <span className="w-2 h-2 rounded-full" style={{ background: 'var(--a1)' }} />
               Season 2025–26 · live
             </span>
+            {/* Signed in, "Your season" has already said hello by name at the
+                top of the page — greeting twice reads like a bug. The hero
+                switches to the club headline instead of repeating it. */}
             <h1 className="font-display text-[22px] sm:text-[28px] lg:text-[34px] font-extrabold leading-[1.08] mt-2.5 sm:mt-3.5 text-slate-900 dark:text-white">
-              {greeting()},<br className="sm:hidden" /> <span className="accent-grad">{firstName || 'Skipper'}</span> 🏏
+              {greeted
+                ? <>Your club, <span className="accent-grad">at a glance</span> 🏏</>
+                : <>{greeting()},<br className="sm:hidden" /> <span className="accent-grad">{firstName || 'Skipper'}</span> 🏏</>}
             </h1>
           </div>
 
