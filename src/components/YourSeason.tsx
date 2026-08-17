@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Card } from './ui/Card';
 import { useMemo, useState } from 'react';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { useMe } from '../context/MemberContext';
@@ -115,7 +116,7 @@ export function YourSeason({ matches, members }: Props) {
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="r-card border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-5">
+    <Card className="p-5">
       <div className="flex items-center gap-3">
         {me.avatar_url
           ? <img src={me.avatar_url} alt="" className="w-12 h-12 r-card object-cover" />
@@ -174,6 +175,6 @@ export function YourSeason({ matches, members }: Props) {
           </Link>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

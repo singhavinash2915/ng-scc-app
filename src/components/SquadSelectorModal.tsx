@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Card } from './ui/Card';
 import { useCardStats } from '../hooks/useCardStats';
 import { tierFor } from '../lib/playerCard';
 import {
@@ -223,7 +224,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
           {/* ── PLAYING XI (left) ─────────────────────────────────────────── */}
-          <div className="r-card border-2 border-emerald-300 dark:border-emerald-800 p-3 bg-emerald-50/30 dark:bg-emerald-900/10">
+          <Card className="border-emerald-300 dark:border-emerald-800 p-3 bg-emerald-50/30 dark:bg-emerald-900/10">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5" fill="currentColor" />
@@ -313,10 +314,10 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                 </div>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* ── BENCH (right) ─────────────────────────────────────────────── */}
-          <div className="r-card border border-gray-200 dark:border-gray-700 p-3">
+          <Card className="p-3">
             <div className="flex items-center justify-between mb-2 gap-2">
               <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" />
@@ -385,7 +386,7 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                 })
               )}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Action buttons */}

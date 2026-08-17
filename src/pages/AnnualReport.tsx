@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Card } from '../components/ui/Card';
 import { Printer, IndianRupee, TrendingUp, TrendingDown, Users, Calendar, ChevronDown, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useTransactions } from '../hooks/useTransactions';
@@ -17,7 +18,7 @@ export function AnnualReport() {
       <div>
         <Header title="Annual Report" subtitle="Admin only" />
         <div className="p-8 max-w-md mx-auto mt-12">
-          <div className="r-card border border-gray-200 dark:border-gray-700 p-8 text-center bg-white dark:bg-gray-900">
+          <Card className="p-8 text-center">
             <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
               <Lock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
             </div>
@@ -28,7 +29,7 @@ export function AnnualReport() {
               The Annual Report contains sensitive financial information.
               Please log in as an admin from the sidebar to view it.
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -177,7 +178,7 @@ export function AnnualReport() {
         </div>
 
         {/* ── Match summary ───────────────────────────────────────────────────── */}
-        <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 p-5">
+        <Card className="p-5">
           <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
             <Calendar className="w-4 h-4 text-primary-500" />
             Match Performance · {year}
@@ -200,11 +201,11 @@ export function AnnualReport() {
               <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">No Result</p>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* ── Two columns: Top contributors + Top expense categories ────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 print:grid-cols-2">
-          <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 p-5">
+          <Card className="p-5">
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
               <Users className="w-4 h-4 text-emerald-500" />
               Top Contributors
@@ -224,9 +225,9 @@ export function AnnualReport() {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
 
-          <div className="bg-white dark:bg-gray-900 r-card border border-gray-200 dark:border-gray-700 p-5">
+          <Card className="p-5">
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
               <TrendingDown className="w-4 h-4 text-red-500" />
               Top Expense Categories
@@ -246,7 +247,7 @@ export function AnnualReport() {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         </div>
 
         <p className="text-xs text-center text-gray-400 dark:text-gray-500 pt-4 print:mt-8">

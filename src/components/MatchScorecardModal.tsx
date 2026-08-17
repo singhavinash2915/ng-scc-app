@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Card } from './ui/Card';
 import { MapPin, Trophy, Loader2, WifiOff, ExternalLink } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { useFullScorecard, type InningsData, type BatterRow, type BowlerRow } from '../hooks/useFullScorecard';
@@ -233,7 +234,7 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
         {data && (
           <div className="p-4 space-y-4">
             {/* Match summary header */}
-            <div className="r-card overflow-hidden border border-white/8">
+            <Card className="overflow-hidden border-white/8">
               {/* Result banner */}
               <div className="px-4 py-3 flex items-center justify-between"
                    style={{ background: 'linear-gradient(135deg, #2d1657 0%, #1a0f3a 100%)' }}>
@@ -270,7 +271,7 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
                   <ExternalLink className="w-3 h-3" />CricHeroes
                 </a>
               </div>
-            </div>
+            </Card>
 
             {/* Innings tabs */}
             {data.innings.length > 1 && (

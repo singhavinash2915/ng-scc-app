@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Card } from './ui/Card';
 import { X, Trash2, CalendarCheck } from 'lucide-react';
 import { HOLD_KINDS, type DayHold, type HoldKind } from '../hooks/useDayHolds';
 
@@ -80,7 +81,7 @@ export function DayHoldModal({
               Opponents cancel and fixtures move, so every one of these needs a
               one-tap way back to available. */}
           {blocker && (
-            <div className="r-card border-2 border-amber-200 bg-amber-50 p-3.5 space-y-2.5">
+            <Card className="border-amber-200 bg-amber-50 p-3.5 space-y-2.5">
               <p className="t-meta font-black uppercase tracking-widest text-amber-700">
                 {blocker.kind === 'auto' ? 'Held for the SCC League'
                   : blocker.kind === 'booking' ? `Booked · ${blocker.status}`
@@ -108,7 +109,7 @@ export function DayHoldModal({
                 <CalendarCheck className="w-4 h-4" />
                 {busy ? 'Freeing…' : 'Make this date available'}
               </button>
-            </div>
+            </Card>
           )}
 
           {blocker && (
@@ -139,7 +140,7 @@ export function DayHoldModal({
 
           {/* an offline booking is a real booking — capture who and how much */}
           {kind === 'offline' && (
-            <div className="space-y-2.5 r-card bg-emerald-50 border border-emerald-200 p-3.5">
+            <Card className="space-y-2.5 bg-emerald-50 border-emerald-200 p-3.5">
               <p className="t-meta font-black uppercase tracking-widest text-emerald-700">
                 Who booked it
               </p>
@@ -156,7 +157,7 @@ export function DayHoldModal({
               <p className="t-micro text-emerald-700/70">
                 External teams just see this date as <b>Booked</b> — the amount is admin-only.
               </p>
-            </div>
+            </Card>
           )}
 
           <div>

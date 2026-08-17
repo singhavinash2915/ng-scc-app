@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Card } from './ui/Card';
 import { CheckCircle2, Lock, Crown, Trophy, Zap, TrendingUp, Target, Flame, BarChart2 } from 'lucide-react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
@@ -227,7 +228,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
 
       {/* Closed banner */}
       {isLocked && step !== 'done' && (
-        <div className="mb-4 p-3 r-card bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-center">
+        <Card className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-center">
           <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mx-auto mb-1.5" />
           <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
             Predictions are closed for this match
@@ -235,11 +236,11 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
           <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
             Predictions lock at 6:00 AM on match day.
           </p>
-        </div>
+        </Card>
       )}
 
       {/* Match context strip */}
-      <div className="mb-4 p-3 r-card bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800">
+      <Card className="mb-4 p-3 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800">
         <p className="t-micro font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Next Match</p>
         <p className="text-base font-black text-gray-900 dark:text-white mt-0.5">
           {isInternal
@@ -255,7 +256,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
             🎰 {predictions.length} {predictions.length === 1 ? 'person has' : 'people have'} predicted
           </p>
         )}
-      </div>
+      </Card>
 
       {/* STEP 1: pick member */}
       {step === 'pick' && (
@@ -316,11 +317,11 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
       {step === 'predict' && (
         <form onSubmit={handleSubmit} className="space-y-4">
           {existing && (
-            <div className="p-2.5 r-card bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <Card className="p-2.5 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
               <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
                 ✏️ Updating your existing prediction
               </p>
-            </div>
+            </Card>
           )}
 
           {/* WINNER */}
@@ -384,7 +385,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
 
           {/* PER-TEAM STARS — internal only */}
           {isInternal && (
-            <div className="r-card bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+            <Card className="bg-gray-50 dark:bg-gray-800/40 p-3 space-y-3">
               <p className="t-micro font-black uppercase tracking-[2px] text-gray-500">⭐ Team Stars</p>
               <div>
                 <label className="flex items-center gap-1.5 t-meta font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5">
@@ -418,7 +419,7 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
                   onChange={(e) => setForm({ ...form, int_baz_top_wicket_id: e.target.value || null })}
                   options={teamOptions.b} disabled={isLocked} />
               </div>
-            </div>
+            </Card>
           )}
 
           {/* MOM */}

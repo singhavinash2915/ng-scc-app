@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Card } from './ui/Card';
 import { Coins, Trophy, ChevronRight } from 'lucide-react';
 import { suggestMom } from '../lib/momSuggest';
 import type { Ball, MatchFormat } from '../lib/cricketRules';
@@ -24,7 +25,7 @@ export function TossSheet({ sides, onStart }: {
   const nameOf = (k: string) => sides.find(s => s.key === k)?.name ?? k;
 
   return (
-    <div className="r-card border-2 border-slate-200 dark:border-white/10 p-5 space-y-4">
+    <Card className="p-5 space-y-4">
       <div>
         <p className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-widest text-amber-600">
           <Coins className="w-3.5 h-3.5" /> Toss
@@ -77,7 +78,7 @@ export function TossSheet({ sides, onStart }: {
           <ChevronRight className="w-4 h-4" />
         </button>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -98,11 +99,11 @@ export function InningsBreak({ battingTeam, chasingTeam, runs, wickets, overs, o
         </p>
         <p className="text-white/55 text-sm mt-1">in {overs} overs</p>
 
-        <div className="mt-5 r-card bg-white/10 border border-white/15 px-4 py-3">
+        <Card className="mt-5 bg-white/10 border-white/15 px-4 py-3">
           <p className="t-meta text-white/60">{chasingTeam} need</p>
           <p className="font-display text-3xl font-extrabold">{runs + 1}</p>
           <p className="t-meta text-white/60">to win</p>
-        </div>
+        </Card>
 
         <button onClick={onStart}
           className="mt-5 w-full r-control bg-white text-slate-900 font-black py-3.5 text-sm">
@@ -177,7 +178,7 @@ export function MatchResult({ first, second, allBalls, secondBalls, members, for
         </div>
       </div>
 
-      <div className="r-card border-2 border-slate-200 dark:border-white/10 p-5">
+      <Card className="p-5">
         <p className="inline-flex items-center gap-1.5 t-micro font-black uppercase tracking-widest text-amber-600">
           <Trophy className="w-3.5 h-3.5" /> Man of the Match
         </p>
@@ -210,7 +211,7 @@ export function MatchResult({ first, second, allBalls, secondBalls, members, for
           Writes the result to the match and marks it app-scored, so the CricHeroes
           sync won't overwrite it.
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

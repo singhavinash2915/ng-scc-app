@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
+import { Card } from './ui/Card';
 import { Download, Share2, Loader2, ExternalLink } from 'lucide-react';
 import { toJpeg } from 'html-to-image';
 import { Modal } from './ui/Modal';
@@ -169,14 +170,14 @@ export function PreMatchPosterModal({ isOpen, onClose, match }: Props) {
       <div className="space-y-4">
 
         {/* Customise header */}
-        <div className="space-y-3 p-3 r-card border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <Card className="space-y-3 p-3 bg-gray-50">
           <Input label="Title (e.g. SCC MATCH DAY)" value={tournamentName} onChange={e => setTournamentName(e.target.value)} />
           {squadSize === 0 && (
             <p className="text-xs text-amber-600 dark:text-amber-400">
               ⚠️ No squad picked yet for this match. The admin can use "Pick Squad" from the match menu.
             </p>
           )}
-        </div>
+        </Card>
 
         {/* The actual poster — portrait list format */}
         <div className="overflow-x-auto r-card bg-black">

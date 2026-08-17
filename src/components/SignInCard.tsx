@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Card } from './ui/Card';
 import { ArrowRight } from 'lucide-react';
 import { useMe } from '../context/MemberContext';
 
@@ -26,7 +27,7 @@ export function SignInCard() {
   };
 
   return (
-    <div className="r-card border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-5">
+    <Card className="p-5">
       <p className="t-micro font-black uppercase tracking-[2px] text-emerald-600 dark:text-emerald-400">
         Make it yours
       </p>
@@ -61,6 +62,6 @@ export function SignInCard() {
         </div>
         {error && <p className="t-body font-semibold text-rose-500 pt-0.5">{error}</p>}
       </div>
-    </div>
+    </Card>
   );
 }
