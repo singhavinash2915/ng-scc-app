@@ -280,14 +280,14 @@ export function Dashboard() {
       {appLive.live && (
         <div className="px-4 lg:px-8 pt-4">
           <Link to={`/score/${appLive.live.matchId}`}
-            className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            className="block relative overflow-hidden r-card px-5 py-4 shadow-lg group"
             style={{ background: 'linear-gradient(110deg,#064e3b,#059669 55%,#10b981)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0">
+              <div className="w-11 h-11 r-card bg-white/25 flex items-center justify-center flex-shrink-0">
                 <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[2px] text-white/75">
+                <p className="t-micro font-black uppercase tracking-[2px] text-white/75">
                   🔴 Live · Innings {appLive.live.innings}
                 </p>
                 <p className="text-white font-black text-lg leading-tight truncate">
@@ -318,7 +318,7 @@ export function Dashboard() {
               }) * 100);
               return (
                 <div className="mt-3">
-                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-white/70">
+                  <div className="flex items-center justify-between t-micro font-black uppercase tracking-wider text-white/70">
                     <span>{appLive.live!.battingTeam} {pct}%</span>
                     <span>{100 - pct}% {appLive.live!.bowlingTeam}</span>
                   </div>
@@ -345,11 +345,11 @@ export function Dashboard() {
         <div className="px-4 lg:px-8 pt-4">
           <Link
             to={liveStream.stream.ch_match_id ? `/live/${liveStream.stream.ch_match_id}` : '/watch'}
-            className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+            className="block relative overflow-hidden r-card px-5 py-4 shadow-lg group"
             style={{ background: 'linear-gradient(110deg,#991b1b,#e11d48 55%,#f97316)' }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0">
+              <div className="w-11 h-11 r-card bg-white/25 flex items-center justify-center flex-shrink-0">
                 <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
               </div>
               <div className="flex-1 min-w-0">
@@ -422,10 +422,10 @@ export function Dashboard() {
           href="/book-match"
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-white/8 border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-colors"
+          className="group flex items-center gap-2.5 px-3.5 py-2 r-control bg-slate-100 dark:bg-white/5 hover:bg-white/8 border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-colors"
         >
-          <span className="text-[14px] flex-shrink-0">📣</span>
-          <span className="flex-1 text-[11px] text-slate-500 dark:text-gray-400 group-hover:text-slate-600 dark:text-gray-300">
+          <span className="t-lead flex-shrink-0">📣</span>
+          <span className="flex-1 t-meta text-slate-500 dark:text-gray-400 group-hover:text-slate-600 dark:text-gray-300">
             Got a team that wants to play SCC? <span className="text-emerald-400/90 font-semibold">Share the booking link</span>
           </span>
           <ChevronRight className="w-3 h-3 text-slate-400 dark:text-gray-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
@@ -435,8 +435,8 @@ export function Dashboard() {
 
         {/* ── LIVE TICKER ──────────────────────────────────────────────── */}
         {tickerItems.length > 0 && (
-          <div className="glass flex items-center gap-3 overflow-x-auto py-2 px-3.5 rounded-xl">
-            <span className="flex items-center gap-1 px-2 py-0.5 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-md flex-shrink-0">
+          <div className="glass flex items-center gap-3 overflow-x-auto py-2 px-3.5 r-control">
+            <span className="flex items-center gap-1 px-2 py-0.5 bg-red-500 text-white t-micro font-black uppercase tracking-widest r-control flex-shrink-0">
               <Radio className="w-2.5 h-2.5 animate-pulse" />
               Live
             </span>
@@ -455,15 +455,15 @@ export function Dashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 auto-rows-[minmax(120px,auto)]">
 
           {/* FEATURED — Next Match (4x2 on lg, full width on mobile) */}
-          <div className="feature-pitch col-span-2 lg:col-span-4 lg:row-span-2 relative overflow-hidden rounded-2xl p-6 lg:p-7 shadow-2xl">
-            <div className="absolute inset-0 border border-emerald-500/25 rounded-2xl pointer-events-none" />
+          <div className="feature-pitch col-span-2 lg:col-span-4 lg:row-span-2 relative overflow-hidden r-card p-6 lg:p-7 shadow-2xl">
+            <div className="absolute inset-0 border border-emerald-500/25 r-card pointer-events-none" />
             {nextUpcomingMatch ? (
               <>
                 <div className="flex items-center gap-2 mb-3 relative">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-[2px]">Next Match</span>
+                  <span className="text-emerald-400 t-micro font-bold uppercase tracking-[2px]">Next Match</span>
                   {nextUpcomingMatch.match_type === 'internal' && (
-                    <span className="bg-yellow-400/20 text-yellow-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-yellow-400/30">INTERNAL</span>
+                    <span className="bg-yellow-400/20 text-yellow-300 t-micro font-bold px-1.5 py-0.5 rounded-full border border-yellow-400/30">INTERNAL</span>
                   )}
                 </div>
                 <h2 className="text-slate-900 dark:text-white text-3xl lg:text-4xl font-black tracking-tight leading-[1.05] relative">
@@ -485,16 +485,16 @@ export function Dashboard() {
                       <span>{matchWeather.emoji}</span>
                       <span className="font-semibold tabular-nums">{matchWeather.tempMax}°/{matchWeather.tempMin}°</span>
                       {matchWeather.precipitation >= 30 && (
-                        <span className="text-blue-300 text-[10px] font-bold">· {matchWeather.precipitation}% rain</span>
+                        <span className="text-blue-300 t-micro font-bold">· {matchWeather.precipitation}% rain</span>
                       )}
                     </span>
                   )}
                 </div>
                 <div className="flex gap-2 mt-5 relative">
                   {[{ v: countdown.days, l: 'Days' }, { v: countdown.hours, l: 'Hrs' }, { v: countdown.mins, l: 'Min' }, { v: countdown.secs, l: 'Sec' }].map(({ v, l }) => (
-                    <div key={l} className="flex flex-col items-center bg-slate-100 dark:bg-white/5 backdrop-blur-sm rounded-xl px-3 py-2.5 min-w-[56px] border border-slate-200 dark:border-white/8">
+                    <div key={l} className="flex flex-col items-center bg-slate-100 dark:bg-white/5 backdrop-blur-sm r-control px-3 py-2.5 min-w-[56px] border border-slate-200 dark:border-white/8">
                       <span className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white tabular-nums leading-none">{String(v).padStart(2, '0')}</span>
-                      <span className="text-slate-400 dark:text-gray-500 text-[9px] font-semibold uppercase tracking-[1.5px] mt-1">{l}</span>
+                      <span className="text-slate-400 dark:text-gray-500 t-micro font-semibold uppercase tracking-[1.5px] mt-1">{l}</span>
                     </div>
                   ))}
                 </div>
@@ -503,14 +503,14 @@ export function Dashboard() {
                 {showManOfMatch?.man_of_match && (
                   <div className="relative mt-6 pt-5 border-t border-slate-200 dark:border-white/8 flex items-center gap-3">
                     {showManOfMatch.man_of_match.avatar_url ? (
-                      <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-10 h-10 rounded-xl object-cover border border-yellow-400/40" />
+                      <img src={showManOfMatch.man_of_match.avatar_url} alt="" className="w-10 h-10 r-control object-cover border border-yellow-400/40" />
                     ) : (
-                      <div className="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center">
+                      <div className="w-10 h-10 r-control bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center">
                         <span className="text-sm font-black text-yellow-200">{showManOfMatch.man_of_match.name?.charAt(0)}</span>
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-yellow-400 text-[9px] font-bold uppercase tracking-[1.5px]">⭐ Last Man of the Match</p>
+                      <p className="text-yellow-400 t-micro font-bold uppercase tracking-[1.5px]">⭐ Last Man of the Match</p>
                       <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">{showManOfMatch.man_of_match.name}
                         <span className="text-slate-500 dark:text-gray-400 font-semibold ml-2">vs {showManOfMatch.opponent}</span>
                       </h3>
@@ -531,22 +531,22 @@ export function Dashboard() {
           </div>
 
           {/* Members (2x1) */}
-          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5">
+          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden r-card p-4 lg:p-5">
             <div className="absolute top-0 left-5 right-5 h-0.5 bg-blue-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-2 relative">
               <Users className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-blue-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Members</span>
+              <span className="text-blue-300/80 t-micro font-bold uppercase tracking-[1.5px]">Members</span>
             </div>
             <p className="font-display text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">{animatedMembers}</p>
-            <p className="text-slate-500 dark:text-gray-400 text-[11px] mt-2 relative">of {stats.totalMembers} · <span className="text-blue-300">active</span></p>
+            <p className="text-slate-500 dark:text-gray-400 t-meta mt-2 relative">of {stats.totalMembers} · <span className="text-blue-300">active</span></p>
           </div>
 
           {/* Club Funds (2x1) */}
-          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5">
+          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden r-card p-4 lg:p-5">
             <div className="absolute top-0 left-5 right-5 h-0.5 bg-emerald-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-2 relative">
               <IndianRupee className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Club Funds</span>
+              <span className="text-emerald-300/80 t-micro font-bold uppercase tracking-[1.5px]">Club Funds</span>
             </div>
             <p className="font-display text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">
               ₹{animatedFunds >= 1000 ? `${(animatedFunds / 1000).toFixed(1)}k` : animatedFunds.toLocaleString('en-IN')}
@@ -557,12 +557,12 @@ export function Dashboard() {
               const starting = stats.totalFunds - seasonNet;
               const pct = starting > 0 ? Math.round((seasonNet / starting) * 100) : 0;
               if (seasonNet === 0 || monthSummary.loading) {
-                return <p className="text-slate-500 dark:text-gray-400 text-[11px] mt-2 relative">Avg ₹{avgBalance >= 1000 ? `${(avgBalance / 1000).toFixed(1)}k` : avgBalance} / member</p>;
+                return <p className="text-slate-500 dark:text-gray-400 t-meta mt-2 relative">Avg ₹{avgBalance >= 1000 ? `${(avgBalance / 1000).toFixed(1)}k` : avgBalance} / member</p>;
               }
               const up = seasonNet > 0;
               return (
                 <div className="relative mt-2 flex items-center gap-2 flex-wrap">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full t-meta font-bold ${
                     up ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                        : 'bg-red-500/15 text-red-300 border border-red-500/30'
                   }`}>
@@ -575,11 +575,11 @@ export function Dashboard() {
           </div>
 
           {/* Win Rate Donut (2x2) */}
-          <div className="glass col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5">
+          <div className="glass col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden r-card p-5">
             <div className="absolute top-0 left-5 right-5 h-0.5 bg-amber-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-3 relative">
               <Trophy className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-              <span className="text-amber-600 dark:text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">Win Rate</span>
+              <span className="text-amber-600 dark:text-amber-300/80 t-micro font-bold uppercase tracking-[1.5px]">Win Rate</span>
             </div>
             <div className="flex items-center gap-5 relative">
               <svg width="110" height="110" viewBox="0 0 42 42" className="flex-shrink-0">
@@ -592,20 +592,20 @@ export function Dashboard() {
                 <div className="flex gap-4">
                   <div>
                     <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{animatedWon}</div>
-                    <div className="text-[9px] text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold">Won</div>
+                    <div className="t-micro text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold">Won</div>
                   </div>
                   <div>
                     <div className="text-2xl font-black text-red-500 dark:text-red-400 tabular-nums">{animatedLost}</div>
-                    <div className="text-[9px] text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold">Lost</div>
+                    <div className="t-micro text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold">Lost</div>
                   </div>
                 </div>
                 {lastFiveResults.length > 0 && (
                   <div className="mt-3">
-                    <div className="text-[9px] text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold mb-1.5">Last 5</div>
+                    <div className="t-micro text-slate-400 dark:text-gray-500 uppercase tracking-widest font-bold mb-1.5">Last 5</div>
                     <div className="flex gap-1.5">
                       {lastFiveResults.map(m => (
                         <div key={m.id}
-                          className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black text-white shadow-md ${
+                          className={`w-6 h-6 r-control flex items-center justify-center t-micro font-black text-white shadow-md ${
                             m.result === 'won' ? 'bg-gradient-to-br from-green-400 to-green-600' :
                             m.result === 'lost' ? 'bg-gradient-to-br from-red-400 to-red-600' :
                             'bg-gradient-to-br from-amber-400 to-amber-600'
@@ -619,7 +619,7 @@ export function Dashboard() {
               </div>
             </div>
             {streak && streak.count >= 2 && (
-              <div className={`inline-flex items-center gap-1 mt-4 px-2.5 py-1 rounded-full text-[10px] font-bold relative ${
+              <div className={`inline-flex items-center gap-1 mt-4 px-2.5 py-1 rounded-full t-micro font-bold relative ${
                 streak.result === 'won' ? 'bg-green-500/15 text-green-300 border border-green-500/30' :
                 streak.result === 'lost' ? 'bg-red-500/15 text-red-300 border border-red-500/30' :
                 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
@@ -632,19 +632,19 @@ export function Dashboard() {
 
           {/* MOM Race Leaderboard (2x2) */}
           {topMOMs.length > 0 && (
-            <div className="glass col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-2xl p-5">
+            <div className="glass col-span-2 lg:col-span-2 lg:row-span-2 relative overflow-hidden r-card p-5">
               <div className="absolute top-0 left-5 right-5 h-0.5 bg-amber-400 rounded-full opacity-70" />
               <div className="flex items-center justify-between mb-3 relative">
                 <div className="flex items-center gap-1.5">
                   <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
-                  <span className="text-amber-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">MOM Race</span>
+                  <span className="text-amber-300/80 t-micro font-bold uppercase tracking-[1.5px]">MOM Race</span>
                 </div>
-                <Link to="/leaderboard" className="text-[10px] text-amber-300/60 hover:text-amber-300 font-semibold">All →</Link>
+                <Link to="/leaderboard" className="t-micro text-amber-300/60 hover:text-amber-300 font-semibold">All →</Link>
               </div>
               <div className="space-y-1 relative">
                 {topMOMs.map((entry, idx) => (
                   <div key={entry.member!.id} className="flex items-center gap-2.5 py-1.5 border-t border-white/6 first:border-0">
-                    <div className={`w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-[10px] font-black ${
+                    <div className={`w-6 h-6 r-control flex-shrink-0 flex items-center justify-center t-micro font-black ${
                       idx === 0 ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-yellow-950 shadow-lg shadow-amber-500/30' :
                       idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-900' :
                       idx === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-500 text-orange-950' :
@@ -654,13 +654,13 @@ export function Dashboard() {
                       <img src={entry.member!.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-slate-200 dark:border-white/10" />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[10px] font-black text-yellow-950">{entry.member!.name.charAt(0)}</span>
+                        <span className="t-micro font-black text-yellow-950">{entry.member!.name.charAt(0)}</span>
                       </div>
                     )}
                     <span className="text-xs font-semibold text-slate-800 dark:text-white truncate flex-1">{entry.member!.name.split(' ').slice(0, 2).join(' ')}</span>
                     <span className="flex items-center gap-0.5 text-amber-300 text-xs font-black tabular-nums">
                       {entry.count}
-                      {idx === 0 && <span className="text-[10px]">🏆</span>}
+                      {idx === 0 && <span className="t-micro">🏆</span>}
                     </span>
                   </div>
                 ))}
@@ -670,32 +670,32 @@ export function Dashboard() {
 
           {/* Player of the Month / Week (2x1) */}
           {featuredPlayer && (
-            <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5">
+            <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden r-card p-4 lg:p-5">
               <div className="absolute top-0 left-5 right-5 h-0.5 bg-pink-400 rounded-full opacity-70" />
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-pink-400/15 rounded-full blur-2xl" />
               <div className="flex items-center justify-between mb-2 relative">
                 <div className="flex items-center gap-1.5">
                   <Crown className="w-3.5 h-3.5 text-pink-300" fill="currentColor" />
-                  <span className="text-pink-600 dark:text-pink-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">{featuredLabel}</span>
+                  <span className="text-pink-600 dark:text-pink-300/80 t-micro font-bold uppercase tracking-[1.5px]">{featuredLabel}</span>
                 </div>
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-pink-400/15 border border-pink-400/30 text-pink-200 text-[10px] font-black">
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-pink-400/15 border border-pink-400/30 text-pink-200 t-micro font-black">
                   <Crown className="w-2.5 h-2.5" fill="currentColor" />
                   {featuredPlayer.moms} MOM{featuredPlayer.moms > 1 ? 's' : ''}
                 </span>
               </div>
               <div className="flex items-center gap-3 relative">
                 {featuredPlayer.member.avatar_url ? (
-                  <img src={featuredPlayer.member.avatar_url} alt="" className="w-14 h-14 rounded-xl object-cover border-2 border-pink-400/40 shadow-lg shadow-pink-500/30 flex-shrink-0" />
+                  <img src={featuredPlayer.member.avatar_url} alt="" className="w-14 h-14 r-control object-cover border-2 border-pink-400/40 shadow-lg shadow-pink-500/30 flex-shrink-0" />
                 ) : (
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-pink-500/30">
+                  <div className="w-14 h-14 r-control bg-gradient-to-br from-pink-400 to-rose-600 border-2 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-lg shadow-pink-500/30">
                     <span className="text-xl font-black text-pink-950">{featuredPlayer.member.name.charAt(0)}</span>
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="text-lg font-black text-slate-900 dark:text-white truncate leading-tight">{featuredPlayer.member.name}</div>
-                  <div className="text-[10px] text-slate-500 dark:text-pink-200/60 mt-0.5 font-semibold">{featuredPlayer.periodLabel}</div>
+                  <div className="t-micro text-slate-500 dark:text-pink-200/60 mt-0.5 font-semibold">{featuredPlayer.periodLabel}</div>
                   {featuredPlayer.tieBroken && (
-                    <div className="text-[9px] text-slate-400 dark:text-pink-300/40 mt-0.5">tie-broken by season MVP score</div>
+                    <div className="t-micro text-slate-400 dark:text-pink-300/40 mt-0.5">tie-broken by season MVP score</div>
                   )}
                 </div>
               </div>
@@ -703,18 +703,18 @@ export function Dashboard() {
           )}
 
           {/* This Month (2x1) */}
-          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden rounded-2xl p-4 lg:p-5">
+          <div className="glass col-span-1 lg:col-span-2 relative overflow-hidden r-card p-4 lg:p-5">
             <div className="absolute top-0 left-5 right-5 h-0.5 bg-emerald-400 rounded-full opacity-70" />
             <div className="flex items-center gap-1.5 mb-2 relative">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-[1.5px]">This Month</span>
+              <span className="text-emerald-300/80 t-micro font-bold uppercase tracking-[1.5px]">This Month</span>
             </div>
             <p className="font-display text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tabular-nums relative leading-none">
               <span className={monthSummary.deposits - monthSummary.expenses >= 0 ? 'text-emerald-300' : 'text-red-300'}>
                 {monthSummary.deposits - monthSummary.expenses >= 0 ? '+' : '−'}₹{Math.abs(monthSummary.deposits - monthSummary.expenses).toLocaleString('en-IN')}
               </span>
             </p>
-            <p className="text-slate-500 dark:text-gray-400 text-[11px] mt-2 relative">
+            <p className="text-slate-500 dark:text-gray-400 t-meta mt-2 relative">
               <span className="text-emerald-400">₹{monthSummary.deposits.toLocaleString('en-IN')} in</span>
               <span className="mx-1.5 text-slate-300 dark:text-gray-600">·</span>
               <span className="text-red-400">₹{monthSummary.expenses.toLocaleString('en-IN')} out</span>
@@ -763,10 +763,10 @@ export function Dashboard() {
 
         {/* ── MATCH DAY banner — takes over when we play today ────────── */}
         {todaysMatch && !liveStream.isLive && (
-          <Link to="/matches" className="block relative overflow-hidden rounded-2xl px-5 py-4 shadow-lg group"
+          <Link to="/matches" className="block relative overflow-hidden r-card px-5 py-4 shadow-lg group"
             style={{ background: 'linear-gradient(110deg,#991b1b,#dc2626 55%,#f97316)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center flex-shrink-0 text-xl animate-pulse">🔴</div>
+              <div className="w-11 h-11 r-card bg-white/25 flex items-center justify-center flex-shrink-0 text-xl animate-pulse">🔴</div>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-black text-base leading-tight truncate">MATCH DAY — vs {todaysMatch.opponent || 'TBD'} 🏏</p>
                 <p className="text-white/90 text-xs font-medium truncate">{todaysMatch.venue || 'Venue TBD'} · squad up, predictions in — let's go!</p>

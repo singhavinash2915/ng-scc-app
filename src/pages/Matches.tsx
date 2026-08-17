@@ -79,7 +79,7 @@ function MatchReactions({ matchId, myMemberId }: { matchId: string; myMemberId: 
         >
           <span>{r.emoji}</span>
           {r.count > 0 && (
-            <span className={`text-[11px] font-bold tabular-nums ${r.reacted ? 'text-amber-700 dark:text-amber-300' : 'text-gray-500 dark:text-gray-400'}`}>
+            <span className={`t-meta font-bold tabular-nums ${r.reacted ? 'text-amber-700 dark:text-amber-300' : 'text-gray-500 dark:text-gray-400'}`}>
               {r.count}
             </span>
           )}
@@ -146,7 +146,7 @@ function MatchComments({ matchId, myMemberId, myMemberName }: {
                       className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-[11px] font-bold text-primary-600 dark:text-primary-400">
+                      <span className="t-meta font-bold text-primary-600 dark:text-primary-400">
                         {(c.member?.name || 'A')[0]}
                       </span>
                     </div>
@@ -154,13 +154,13 @@ function MatchComments({ matchId, myMemberId, myMemberName }: {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{c.member?.name || 'Member'}</span>
-                      <span className="text-[10px] text-gray-400">
+                      <span className="t-micro text-gray-400">
                         {new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </span>
                       {c.member_id === myMemberId && (
                         <button
                           onClick={() => remove(c.id, myMemberId!)}
-                          className="opacity-0 group-hover:opacity-100 ml-auto text-[10px] text-red-400 hover:text-red-600 transition-all font-medium"
+                          className="opacity-0 group-hover:opacity-100 ml-auto t-micro text-red-400 hover:text-red-600 transition-all font-medium"
                         >
                           delete
                         </button>
@@ -181,12 +181,12 @@ function MatchComments({ matchId, myMemberId, myMemberName }: {
                 onChange={e => setDraft(e.target.value)}
                 placeholder={`Comment as ${myMemberName || 'you'}…`}
                 maxLength={280}
-                className="flex-1 min-w-0 text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 min-w-0 text-sm px-3 py-1.5 r-control border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <button
                 type="submit"
                 disabled={!draft.trim() || posting}
-                className="px-3 py-1.5 rounded-lg bg-primary-500 text-white text-xs font-bold disabled:opacity-40 hover:bg-primary-600 transition-colors flex items-center gap-1"
+                className="px-3 py-1.5 r-control bg-primary-500 text-white text-xs font-bold disabled:opacity-40 hover:bg-primary-600 transition-colors flex items-center gap-1"
               >
                 <Send className="w-3 h-3" />
                 {posting ? '…' : 'Post'}
@@ -762,22 +762,22 @@ export function Matches() {
       <div className="p-4 lg:p-8 space-y-6">
         {/* ── Premium next-match hero ──────────────────────────────────── */}
         {nextMatchHero && (
-          <div className="relative overflow-hidden rounded-2xl p-5 lg:p-6 text-white" style={{ background: 'linear-gradient(135deg, var(--a1), var(--a3) 130%)' }}>
+          <div className="relative overflow-hidden r-card p-5 lg:p-6 text-white" style={{ background: 'linear-gradient(135deg, var(--a1), var(--a3) 130%)' }}>
             <div className="absolute -top-10 -right-8 w-44 h-44 rounded-full bg-white/15 blur-3xl pointer-events-none" />
             <div className="relative flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20">● Next match</span>
+                <span className="inline-flex items-center gap-1.5 t-meta font-bold px-2.5 py-1 rounded-full bg-white/20">● Next match</span>
                 <h2 className="font-display text-2xl lg:text-3xl font-extrabold mt-2 leading-tight">
                   {nextMatchHero.match_type === 'internal' ? (nextMatchHero.opponent || 'Internal Match') : <>vs {nextMatchHero.opponent || 'TBD'}</>}
                 </h2>
-                <p className="text-[13px] text-white/90 mt-1 flex items-center gap-3 flex-wrap">
+                <p className="t-body text-white/90 mt-1 flex items-center gap-3 flex-wrap">
                   {nextMatchHero.venue && <span>📍 {nextMatchHero.venue}</span>}
                   <span>🗓️ {new Date(nextMatchHero.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
                 </p>
               </div>
-              <div className="text-center bg-white/15 rounded-2xl px-5 py-3">
+              <div className="text-center bg-white/15 r-card px-5 py-3">
                 <p className="font-display text-3xl lg:text-4xl font-extrabold tabular-nums leading-none">{nextMatchDaysAway}</p>
-                <p className="text-[10px] font-bold uppercase tracking-widest mt-1 text-white/85">{nextMatchDaysAway === 1 ? 'day to go' : 'days to go'}</p>
+                <p className="t-micro font-bold uppercase tracking-widest mt-1 text-white/85">{nextMatchDaysAway === 1 ? 'day to go' : 'days to go'}</p>
               </div>
             </div>
           </div>
@@ -803,14 +803,14 @@ export function Matches() {
                   <button
                     key={f.key}
                     onClick={() => setFilter(f.key)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 r-control text-sm font-medium transition-colors flex items-center gap-1.5 ${
                       filter === f.key
                         ? f.activeCls
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                   >
                     {f.label}
-                    <span className={`text-[10px] tabular-nums font-bold px-1.5 py-0.5 rounded-full ${
+                    <span className={`t-micro tabular-nums font-bold px-1.5 py-0.5 rounded-full ${
                       filter === f.key ? 'bg-white/25' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
                     }`}>{count}</span>
                   </button>
@@ -830,7 +830,7 @@ export function Matches() {
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setMatchTypeFilter('all')}
-              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors ${
+              className={`px-3 py-1.5 r-control font-medium text-sm transition-colors ${
                 matchTypeFilter === 'all'
                   ? 'bg-gray-800 dark:bg-white text-white dark:text-gray-800'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
@@ -840,7 +840,7 @@ export function Matches() {
             </button>
             <button
               onClick={() => setMatchTypeFilter('external')}
-              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+              className={`px-3 py-1.5 r-control font-medium text-sm transition-colors flex items-center gap-1 ${
                 matchTypeFilter === 'external'
                   ? 'bg-green-500 text-white'
                   : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200'
@@ -850,7 +850,7 @@ export function Matches() {
             </button>
             <button
               onClick={() => setMatchTypeFilter('internal')}
-              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+              className={`px-3 py-1.5 r-control font-medium text-sm transition-colors flex items-center gap-1 ${
                 matchTypeFilter === 'internal'
                   ? 'bg-purple-500 text-white'
                   : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200'
@@ -869,7 +869,7 @@ export function Matches() {
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                   {/* Date */}
                   <div className="flex items-center gap-4 lg:w-32">
-                    <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex flex-col items-center justify-center">
+                    <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 r-control flex flex-col items-center justify-center">
                       <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">
                         {new Date(match.date).toLocaleDateString('en-IN', { month: 'short' })}
                       </span>
@@ -934,12 +934,12 @@ export function Matches() {
                       ? (match.dhurandars_captain || match.bazigars_captain) && (
                           <div className="flex flex-wrap gap-2 mt-2">
                             {match.dhurandars_captain && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full t-meta font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                                 🦁 🅒 {match.dhurandars_captain.name}
                               </span>
                             )}
                             {match.bazigars_captain && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full t-meta font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
                                 🐅 🅒 {match.bazigars_captain.name}
                               </span>
                             )}
@@ -948,13 +948,13 @@ export function Matches() {
                       : (match.captain || match.vice_captain) && (
                           <div className="flex flex-wrap gap-2 mt-2">
                             {match.captain && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full t-meta font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                                 <span className="font-black">🅒</span>
                                 {match.captain.name}
                               </span>
                             )}
                             {match.vice_captain && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full t-meta font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                                 <span className="font-black">🅥🅒</span>
                                 {match.vice_captain.name}
                               </span>
@@ -984,8 +984,8 @@ export function Matches() {
                       return (
                         <div className="mt-3 grid grid-cols-2 gap-2">
                           {/* Dhurandars */}
-                          <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-2">
-                            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1.5">
+                          <div className="r-control bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-2">
+                            <p className="t-micro font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1.5">
                               🦁 Dhurandars <span className="font-normal opacity-60">({dPlayers.length})</span>
                             </p>
                             <div className="flex flex-wrap gap-1">
@@ -993,7 +993,7 @@ export function Matches() {
                                 const m = members.find(mb => mb.id === p.member_id);
                                 const isCaptain = p.member_id === match.dhurandars_captain_id;
                                 return m ? (
-                                  <span key={p.member_id} className={`text-[11px] px-1.5 py-0.5 rounded-full ${isCaptain ? 'bg-blue-600 text-white font-bold' : 'text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40'}`}>
+                                  <span key={p.member_id} className={`t-meta px-1.5 py-0.5 rounded-full ${isCaptain ? 'bg-blue-600 text-white font-bold' : 'text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40'}`}>
                                     {m.name.split(' ')[0]}{isCaptain ? ' 🅒' : ''}
                                   </span>
                                 ) : null;
@@ -1001,8 +1001,8 @@ export function Matches() {
                             </div>
                           </div>
                           {/* Bazigars */}
-                          <div className="rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/50 p-2">
-                            <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">
+                          <div className="r-control bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/50 p-2">
+                            <p className="t-micro font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">
                               🐅 Bazigars <span className="font-normal opacity-60">({bPlayers.length})</span>
                             </p>
                             <div className="flex flex-wrap gap-1">
@@ -1010,7 +1010,7 @@ export function Matches() {
                                 const m = members.find(mb => mb.id === p.member_id);
                                 const isCaptain = p.member_id === match.bazigars_captain_id;
                                 return m ? (
-                                  <span key={p.member_id} className={`text-[11px] px-1.5 py-0.5 rounded-full ${isCaptain ? 'bg-purple-600 text-white font-bold' : 'text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40'}`}>
+                                  <span key={p.member_id} className={`t-meta px-1.5 py-0.5 rounded-full ${isCaptain ? 'bg-purple-600 text-white font-bold' : 'text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40'}`}>
                                     {m.name.split(' ')[0]}{isCaptain ? ' 🅒' : ''}
                                   </span>
                                 ) : null;
@@ -1019,7 +1019,7 @@ export function Matches() {
                           </div>
                           {noTeam.length > 0 && (
                             <div className="col-span-2">
-                              <p className="text-[10px] text-gray-400">
+                              <p className="t-micro text-gray-400">
                                 Unassigned: {noTeam.map(p => members.find(mb => mb.id === p.member_id)?.name?.split(' ')[0]).filter(Boolean).join(', ')}
                               </p>
                             </div>
@@ -1129,7 +1129,7 @@ export function Matches() {
                         }
                       }}
                       title={match.result === 'upcoming' ? 'Pre-Match Squad Poster' : 'Result Poster'}
-                      className="p-2 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/30 hover:from-amber-200 hover:to-amber-300 dark:hover:from-amber-900/50 dark:hover:to-amber-800/50 transition-colors flex items-center gap-1.5"
+                      className="p-2 r-control bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/30 hover:from-amber-200 hover:to-amber-300 dark:hover:from-amber-900/50 dark:hover:to-amber-800/50 transition-colors flex items-center gap-1.5"
                     >
                       <ImageDown className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                       <span className="hidden sm:inline text-xs font-bold text-amber-700 dark:text-amber-400">
@@ -1142,7 +1142,7 @@ export function Matches() {
                     <div className="relative">
                       <button
                         onClick={() => setMenuOpen(menuOpen === match.id ? null : match.id)}
-                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="p-2 r-control hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <MoreVertical className="w-5 h-5 text-gray-500" />
                       </button>
@@ -1150,7 +1150,7 @@ export function Matches() {
                         <>
                           {/* Backdrop — closes the menu; also dims on mobile bottom-sheet */}
                           <div className="fixed inset-0 z-[60] bg-black/40 sm:bg-transparent sm:z-40" onClick={() => setMenuOpen(null)} />
-                          <div className="fixed sm:absolute left-0 right-0 bottom-0 sm:left-auto sm:right-0 sm:bottom-auto sm:mt-2 w-full sm:w-48 bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-[70] sm:z-50 max-h-[80vh] overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-1">
+                          <div className="fixed sm:absolute left-0 right-0 bottom-0 sm:left-auto sm:right-0 sm:bottom-auto sm:mt-2 w-full sm:w-48 bg-white dark:bg-gray-800 rounded-t-2xl sm:r-control shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-[70] sm:z-50 max-h-[80vh] overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-1">
                           <button
                             onClick={() => openEditModal(match)}
                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -1279,11 +1279,11 @@ export function Matches() {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Match" size="lg">
         <form onSubmit={handleAddMatch} className="space-y-4">
           {/* Match Type Toggle */}
-          <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 r-control">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, match_type: 'external', winning_team: '' })}
-              className={`flex-1 py-2 px-4 rounded-md font-medium text-sm transition-colors ${
+              className={`flex-1 py-2 px-4 r-control font-medium text-sm transition-colors ${
                 formData.match_type === 'external'
                   ? 'bg-white dark:bg-gray-700 text-primary-600 shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
@@ -1298,7 +1298,7 @@ export function Matches() {
                 setSelectedPlayers([]);
                 setPlayerTeams({});
               }}
-              className={`flex-1 py-2 px-4 rounded-md font-medium text-sm transition-colors ${
+              className={`flex-1 py-2 px-4 r-control font-medium text-sm transition-colors ${
                 formData.match_type === 'internal'
                   ? 'bg-white dark:bg-gray-700 text-primary-600 shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
@@ -1309,7 +1309,7 @@ export function Matches() {
           </div>
 
           {formData.match_type === 'internal' && (
-            <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 r-control border border-blue-200 dark:border-blue-800">
               <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 🏏 {TEAM_NAMES.dhurandars} vs {TEAM_NAMES.bazigars}
               </p>
@@ -1375,7 +1375,7 @@ export function Matches() {
 
           {/* Match Result - Only show for current or past dates */}
           {isCurrentOrPastDate && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 r-control space-y-4">
               <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 Match Result (optional - can be added later)
               </p>
@@ -1402,7 +1402,7 @@ export function Matches() {
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, winning_team: 'dhurandars' })}
-                          className={`p-3 rounded-xl border-2 transition-all ${
+                          className={`p-3 r-control border-2 transition-all ${
                             formData.winning_team === 'dhurandars'
                               ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                               : 'border-gray-200 dark:border-gray-700'
@@ -1413,7 +1413,7 @@ export function Matches() {
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, winning_team: 'bazigars' })}
-                          className={`p-3 rounded-xl border-2 transition-all ${
+                          className={`p-3 r-control border-2 transition-all ${
                             formData.winning_team === 'bazigars'
                               ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                               : 'border-gray-200 dark:border-gray-700'
@@ -1476,7 +1476,7 @@ export function Matches() {
               )}
               {/* Man of the Match - Only show for Won matches */}
               {formData.result === 'won' && (
-                <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 r-control border border-amber-200 dark:border-amber-800">
                   <div className="flex items-center gap-2 mb-3">
                     <Star className="w-5 h-5 text-amber-500" />
                     <label className="text-sm font-medium text-amber-700 dark:text-amber-300">
@@ -1520,13 +1520,13 @@ export function Matches() {
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, deduct_from_balance: true })}
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-3 p-4 r-control border-2 transition-all ${
                   formData.deduct_from_balance
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${
+                <div className={`p-2 r-control ${
                   formData.deduct_from_balance
                     ? 'bg-primary-100 dark:bg-primary-900/30'
                     : 'bg-gray-100 dark:bg-gray-800'
@@ -1549,13 +1549,13 @@ export function Matches() {
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, deduct_from_balance: false })}
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-3 p-4 r-control border-2 transition-all ${
                   !formData.deduct_from_balance
                     ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${
+                <div className={`p-2 r-control ${
                   !formData.deduct_from_balance
                     ? 'bg-orange-100 dark:bg-orange-900/30'
                     : 'bg-gray-100 dark:bg-gray-800'
@@ -1595,7 +1595,7 @@ export function Matches() {
 
           {/* Captain — internal matches: per-team; external: single captain/vc */}
           {formData.match_type === 'internal' ? (
-            <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
+            <div className="p-3 r-control border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Team Captains</p>
               <div className="grid grid-cols-2 gap-3">
                 <Select
@@ -1641,7 +1641,7 @@ export function Matches() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
+            <div className="grid grid-cols-2 gap-3 p-3 r-control border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
               <Select
                 label="🅒 Captain"
                 value={formData.captain_id}
@@ -1677,7 +1677,7 @@ export function Matches() {
 
           {/* Availability Poll - Only for future matches */}
           {!isCurrentOrPastDate && (
-            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl space-y-3 border border-indigo-200 dark:border-indigo-800">
+            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 r-control space-y-3 border border-indigo-200 dark:border-indigo-800">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -1719,7 +1719,7 @@ export function Matches() {
                       key={f}
                       type="button"
                       onClick={() => setPlayerFilter(f)}
-                      className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
+                      className={`px-2 py-1 text-xs r-control font-medium transition-colors ${
                         playerFilter === f
                           ? 'bg-primary-500 text-white'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -1730,13 +1730,13 @@ export function Matches() {
                   ))}
                 </div>
               </div>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
+              <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 r-control p-2 space-y-1">
                 {filteredMembers.map(member => (
                   <button
                     key={member.id}
                     type="button"
                     onClick={() => togglePlayer(member.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 r-control transition-colors ${
                       selectedPlayers.includes(member.id)
                         ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                         : 'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -1753,7 +1753,7 @@ export function Matches() {
                     </div>
                     <span className="flex-1 text-left flex items-center gap-2">
                       {member.name}
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      <span className={`t-micro px-1.5 py-0.5 rounded-full font-medium ${
                         isActive(member.id)
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
@@ -1775,7 +1775,7 @@ export function Matches() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 {/* Dhurandars Team */}
-                <div className="border-2 border-blue-200 dark:border-blue-800 rounded-xl p-3 bg-blue-50/50 dark:bg-blue-900/10">
+                <div className="border-2 border-blue-200 dark:border-blue-800 r-control p-3 bg-blue-50/50 dark:bg-blue-900/10">
                   <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2 text-sm">
                     🦁 {TEAM_NAMES.dhurandars} ({getPlayersByTeam('dhurandars').length})
                   </h4>
@@ -1795,7 +1795,7 @@ export function Matches() {
                 </div>
 
                 {/* Bazigars Team */}
-                <div className="border-2 border-purple-200 dark:border-purple-800 rounded-xl p-3 bg-purple-50/50 dark:bg-purple-900/10">
+                <div className="border-2 border-purple-200 dark:border-purple-800 r-control p-3 bg-purple-50/50 dark:bg-purple-900/10">
                   <h4 className="font-semibold text-purple-700 dark:text-purple-300 mb-2 text-sm">
                     🐅 {TEAM_NAMES.bazigars} ({getPlayersByTeam('bazigars').length})
                   </h4>
@@ -1827,7 +1827,7 @@ export function Matches() {
                         key={f}
                         type="button"
                         onClick={() => setPlayerFilter(f)}
-                        className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
+                        className={`px-2 py-1 text-xs r-control font-medium transition-colors ${
                           playerFilter === f
                             ? 'bg-primary-500 text-white'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -1838,12 +1838,12 @@ export function Matches() {
                     ))}
                   </div>
                 </div>
-                <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
+                <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 r-control p-2 space-y-1">
                   {filteredMembers.filter(m => !playerTeams[m.id]).map(member => (
                     <div key={member.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
                       <span className="flex-1 text-sm flex items-center gap-1.5">
                         {member.name}
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        <span className={`t-micro px-1.5 py-0.5 rounded-full font-medium ${
                           isActive(member.id)
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
@@ -1946,13 +1946,13 @@ export function Matches() {
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, deduct_from_balance: true })}
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-3 p-4 r-control border-2 transition-all ${
                   formData.deduct_from_balance
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${
+                <div className={`p-2 r-control ${
                   formData.deduct_from_balance
                     ? 'bg-primary-100 dark:bg-primary-900/30'
                     : 'bg-gray-100 dark:bg-gray-800'
@@ -1975,13 +1975,13 @@ export function Matches() {
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, deduct_from_balance: false })}
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-3 p-4 r-control border-2 transition-all ${
                   !formData.deduct_from_balance
                     ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${
+                <div className={`p-2 r-control ${
                   !formData.deduct_from_balance
                     ? 'bg-orange-100 dark:bg-orange-900/30'
                     : 'bg-gray-100 dark:bg-gray-800'
@@ -2021,7 +2021,7 @@ export function Matches() {
 
           {/* Captain — internal matches: per-team; external: single captain/vc (Edit) */}
           {formData.match_type === 'internal' ? (
-            <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
+            <div className="p-3 r-control border border-blue-200 dark:border-blue-800/40 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 space-y-3">
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Team Captains</p>
               <div className="grid grid-cols-2 gap-3">
                 <Select
@@ -2067,7 +2067,7 @@ export function Matches() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
+            <div className="grid grid-cols-2 gap-3 p-3 r-control border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10">
               <Select
                 label="🅒 Captain"
                 value={formData.captain_id}
@@ -2113,7 +2113,7 @@ export function Matches() {
                     key={f}
                     type="button"
                     onClick={() => setPlayerFilter(f)}
-                    className={`px-2 py-1 text-xs rounded-md font-medium transition-colors ${
+                    className={`px-2 py-1 text-xs r-control font-medium transition-colors ${
                       playerFilter === f
                         ? 'bg-primary-500 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -2124,13 +2124,13 @@ export function Matches() {
                 ))}
               </div>
             </div>
-            <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1">
+            <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 r-control p-2 space-y-1">
               {filteredMembers.map(member => (
                 <button
                   key={member.id}
                   type="button"
                   onClick={() => togglePlayer(member.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2 r-control transition-colors ${
                     selectedPlayers.includes(member.id)
                       ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -2147,7 +2147,7 @@ export function Matches() {
                   </div>
                   <span className="flex-1 text-left flex items-center gap-2">
                     {member.name}
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    <span className={`t-micro px-1.5 py-0.5 rounded-full font-medium ${
                       isActive(member.id)
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
@@ -2179,7 +2179,7 @@ export function Matches() {
       {/* Update Result Modal */}
       <Modal isOpen={showResultModal} onClose={() => setShowResultModal(false)} title="Update Match Result">
         <form onSubmit={handleUpdateResult} className="space-y-4">
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4">
+          <div className="bg-gray-50 dark:bg-gray-900 r-control p-4 mb-4">
             <p className="text-sm text-gray-500">Match</p>
             <p className="font-semibold text-gray-900 dark:text-white">
               {selectedMatch?.match_type === 'internal'
@@ -2212,7 +2212,7 @@ export function Matches() {
                     {resultSides.map(({ key, label, on, text }) => (
                       <button key={key} type="button"
                         onClick={() => setResultData({ ...resultData, winning_team: key })}
-                        className={`p-3 rounded-xl border-2 transition-all ${
+                        className={`p-3 r-control border-2 transition-all ${
                           resultData.winning_team === key ? on : 'border-gray-200 dark:border-gray-700'
                         }`}
                       >
@@ -2272,7 +2272,7 @@ export function Matches() {
 
           {/* Man of the Match - Only show for Won matches */}
           {resultData.result === 'won' && (
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 r-control border border-amber-200 dark:border-amber-800">
               <div className="flex items-center gap-2 mb-3">
                 <Star className="w-5 h-5 text-amber-500" />
                 <label className="text-sm font-medium text-amber-700 dark:text-amber-300">
@@ -2320,7 +2320,7 @@ export function Matches() {
         <div className="space-y-6">
           {/* Match Info */}
           {selectedMatch && (
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-900 r-control p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">
@@ -2367,7 +2367,7 @@ export function Matches() {
               />
               <label
                 htmlFor="match-photo-upload"
-                className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-primary-500 dark:hover:border-primary-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+                className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 r-control hover:border-primary-500 dark:hover:border-primary-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800/50"
               >
                 {photoUploading ? (
                   <div className="flex flex-col items-center gap-2">
@@ -2397,7 +2397,7 @@ export function Matches() {
                 Photos ({getPhotosByMatch(selectedMatch.id).length})
               </h4>
               {getPhotosByMatch(selectedMatch.id).length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 r-control">
                   <Camera className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500 text-sm">No photos uploaded yet</p>
                 </div>
@@ -2408,7 +2408,7 @@ export function Matches() {
                       <img
                         src={photo.photo_url}
                         alt={photo.caption || 'Match photo'}
-                        className="w-full aspect-square object-cover rounded-lg"
+                        className="w-full aspect-square object-cover r-control"
                       />
                       {photo.caption && (
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2 rounded-b-lg truncate">
