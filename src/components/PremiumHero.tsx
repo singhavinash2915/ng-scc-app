@@ -93,8 +93,13 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
           </Link>
         </div>
 
-        {/* ── Personal strip ── */}
-        {profileId && (
+        {/* ── Personal strip ──
+            Suppressed when signed in: "Your season" at the top of the page
+            already shows this avatar, name and season line, so keeping it here
+            repeats the lot AND greets the member a second time a few hundred
+            pixels below the first. Signed out there's no personal block, so
+            this is the only place these numbers appear. */}
+        {profileId && !greeted && (
           <div className="relative mt-5 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
               {avatarUrl
