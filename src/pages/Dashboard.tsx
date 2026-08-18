@@ -45,16 +45,16 @@ import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useMonthSummary } from '../hooks/useMonthSummary';
 
 // Lazy-loaded heavy components (photos, sponsor data load on-demand)
-// ─── The cut ──────────────────────────────────────────────────────────────────
-// The Dashboard had grown to 16 blocks and 5.8 screens of scrolling, which
-// meant everything below the fold — sponsor included — was effectively
-// invisible. The club's call: keep Next match, Your season, Last match and
-// Sponsor; everything else lives on the page it belongs to.
+// ─── Me / Club ────────────────────────────────────────────────────────────────
+// Two questions were competing for one screen: "what do I need to do?" and
+// "how are we doing?". They're both worth answering — the club stats are the
+// best-looking thing in the app — but stacking them made the page 5.8 screens
+// and buried everything below the fold.
 //
-// Gated rather than deleted. Nothing here is broken, it is just not earning a
-// place on the home screen, and that is a judgement worth being able to undo
-// without archaeology.
-const LEGACY_BLOCKS = false;
+// So they become two views of the same page rather than one long scroll. Me is
+// the default because a member opening the app usually wants their own next
+// match, not the all-time win rate.
+type DashView = 'me' | 'club';
 
 const DashboardStars = lazy(() => import('../components/DashboardStars'));
 const DashboardDeferred = lazy(() => import('../components/DashboardDeferred'));
@@ -107,6 +107,7 @@ export function Dashboard() {
   const liveStream = useLiveStream();
   const appLive = useAppLiveMatch();
   const { me, loading: meLoading } = useMe();
+  const [view, setView] = useState<DashView>('me');
   // Match Day mode — an upcoming match dated today takes over the top banner
   const { todaysMatch } = useMemo(() => {
     const now = new Date();
@@ -380,14 +381,35 @@ export function Dashboard() {
           Above the club-wide hero on purpose: a signed-in member wants to know
           whether THEY are playing before they want the club's win rate. Signed
           out this is the sign-in card, and everything below still works. */}
-      {!meLoading && (
+      {!meLoading && view === 'me' && (
         <div className="px-4 lg:px-8 pt-4">
           {me ? <YourSeason matches={matches} members={members} /> : <SignInCard />}
         </div>
       )}
 
+      {/* ── ME / CLUB ────────────────────────────────────────────────────
+          Both views are worth having — the club stats are the best-looking
+          thing in the app — but stacked they made the page 5.8 screens and
+          buried the sponsor. Side by side they each get a full screen. */}
+      <div className="px-4 lg:px-8 pt-4">
+        <div className="flex gap-1 p-1 r-control bg-slate-100 dark:bg-white/5">
+          {([
+            { k: 'me' as const, label: me ? 'Your season' : 'Home' },
+            { k: 'club' as const, label: 'The club' },
+          ]).map(t => (
+            <button key={t.k} onClick={() => setView(t.k)}
+              className={`flex-1 py-2 r-control t-body font-black transition-colors ${
+                view === t.k
+                  ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 dark:text-white/50'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── PREMIUM HERO (theme-aware: light + dark) ──────────────────── */}
-      {LEGACY_BLOCKS && (
+      {view === 'club' && (
         <div className="px-4 lg:px-8 pt-4 space-y-3">
         <div className="flex justify-end"><AccentSwitcher /></div>
         <PremiumHero
@@ -425,11 +447,11 @@ export function Dashboard() {
              card below carries the result instead. */}
 
         {/* ── EL CLÁSICO CHAMPIONS — 24h heroic victory showcase ────────── */}
-        {LEGACY_BLOCKS && <ElClasicoChampionBanner matches={matches} />}
+        {view === 'club' && <ElClasicoChampionBanner matches={matches} />}
 
         {/* ── ALERTS ─────────────────────────────────────────────────────── */}
         <BirthdayBanner members={members} />
-        {LEGACY_BLOCKS && <RenewalReminderBanner members={members} />}
+        {view === 'club' && <RenewalReminderBanner members={members} />}
 
         {/* ── BOOK A MATCH — subtle, share-with-opponents prompt ─────────── */}
         <a
@@ -466,7 +488,7 @@ export function Dashboard() {
         )}
 
         {/* ── BENTO GRID ────────────────────────────── */}
-        {LEGACY_BLOCKS && (
+        {view === 'club' && (
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 auto-rows-[minmax(120px,auto)]">
 
           {/* FEATURED — Next Match (4x2 on lg, full width on mobile) */}
@@ -740,7 +762,7 @@ export function Dashboard() {
         )}
 
         {/* ── MATCH CENTRE — pre-match analytics for the next match ───── */}
-        {nextUpcomingMatch && (
+        {view === 'me' && nextUpcomingMatch && (
           <MatchCentreCard
             nextMatch={nextUpcomingMatch}
             matches={matches}
@@ -754,22 +776,22 @@ export function Dashboard() {
              "On This Day / From the Archives" is gone. It surfaced whatever
              happened to share today's date, which on most days is nothing, and
              on the rest is a year-old league game nobody was asking about. */}
-        {lastAnyCompletedMatch && (
+        {view === 'me' && lastAnyCompletedMatch && (
           <MatchSummaryCard match={lastAnyCompletedMatch} />
         )}
 
         {/* ── BIRTHDAYS ─────────────────────────────────────────────────── */}
-        <BirthdayBoard members={members} />
+        {view === 'me' && <BirthdayBoard members={members} />}
 
         {/* ── SEASON STARS (lazy — loads cricketStats on demand) ────────── */}
-        {showDeferred && (
+        {view === 'club' && showDeferred && (
           <Suspense fallback={null}>
             <DashboardStars momCounts={momCounts} />
           </Suspense>
         )}
 
         {/* ── MAHASANGRAM — this season's internal competition ─────────── */}
-        {LEGACY_BLOCKS && <MahaSangramCard matches={matches} />}
+        {view === 'club' && <MahaSangramCard matches={matches} />}
 
         {/* ── INTERNAL BATTLE ─────────────────────────────────────────────
              The Dhurandars vs Bazigars rivalry is off the Dashboard: it's a
@@ -793,10 +815,10 @@ export function Dashboard() {
         )}
 
         {/* ── SQUAD POLL ───────────────────────────────────────────────── */}
-        {LEGACY_BLOCKS && <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />}
+        {view === 'club' && <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />}
 
         {/* ── EXPLORE — everything that used to be inlined above ──────── */}
-        {LEGACY_BLOCKS && <ExploreGrid />}
+        {view === 'club' && <ExploreGrid />}
 
         {/* ── SPONSOR (always at bottom) ─────────── */}
         {showDeferred && (
