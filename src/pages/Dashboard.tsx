@@ -606,6 +606,14 @@ export function Dashboard() {
                     {up ? '↑' : '↓'} {Math.abs(pct)}%
                     <span className="opacity-70 font-semibold">this season</span>
                   </span>
+                  {/* Without a reason, a red down-arrow reads as "the club is
+                      in trouble". Falling club funds normally mean fees were
+                      collected and spent on grounds — the money doing its job,
+                      not going missing. */}
+                  <span className="t-meta text-slate-400 dark:text-gray-500">
+                    {up ? 'more in the wallets than at season start'
+                        : 'spent on grounds and match fees'}
+                  </span>
                 </div>
               );
             })()}

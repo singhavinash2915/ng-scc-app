@@ -133,7 +133,11 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
           { v: won, l: 'Won', tag: streak && streak.result === 'won' && streak.count >= 2 ? `🔥 ${streak.count} win streak` : 'this season', accent: true },
           { v: `${winRate}%`, l: 'Win %', tag: `${won}W · ${lost}L`, accent: false },
           nextOpponent
-            ? { v: <span className="text-[20px] lg:text-[22px]">vs {nextOpponent}</span>, l: 'Next match', tag: nextDateShort ? `🗓️ ${nextDateShort}` : 'upcoming', accent: true }
+            ? { v: <span className="text-[20px] lg:text-[22px]">
+                    {/* Internal fixtures already read "A vs B" — prefixing
+                        another "vs" gives "vs A vs B". */}
+                    {/\bvs\b/i.test(nextOpponent ?? '') ? nextOpponent : `vs ${nextOpponent}`}
+                  </span>, l: 'Next match', tag: nextDateShort ? `🗓️ ${nextDateShort}` : 'upcoming', accent: true }
             : { v: upcomingCount, l: 'Upcoming', tag: `${activeMembers}/${totalMembers} active`, accent: false },
         ].map((s, i) => (
           <div key={i} className="rounded-[18px] p-4
