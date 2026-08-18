@@ -381,12 +381,6 @@ export function Dashboard() {
           Above the club-wide hero on purpose: a signed-in member wants to know
           whether THEY are playing before they want the club's win rate. Signed
           out this is the sign-in card, and everything below still works. */}
-      {!meLoading && view === 'me' && (
-        <div className="px-4 lg:px-8 pt-4">
-          {me ? <YourSeason matches={matches} /> : <SignInCard />}
-        </div>
-      )}
-
       {/* ── ME / CLUB ────────────────────────────────────────────────────
           Both views are worth having — the club stats are the best-looking
           thing in the app — but stacked they made the page 5.8 screens and
@@ -407,6 +401,12 @@ export function Dashboard() {
           ))}
         </div>
       </div>
+
+      {!meLoading && view === 'me' && (
+        <div className="px-4 lg:px-8 pt-4">
+          {me ? <YourSeason matches={matches} /> : <SignInCard />}
+        </div>
+      )}
 
       {/* ── PREMIUM HERO (theme-aware: light + dark) ──────────────────── */}
       {view === 'club' && (
