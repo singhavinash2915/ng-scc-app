@@ -383,7 +383,7 @@ export function Dashboard() {
           out this is the sign-in card, and everything below still works. */}
       {!meLoading && view === 'me' && (
         <div className="px-4 lg:px-8 pt-4">
-          {me ? <YourSeason matches={matches} members={members} /> : <SignInCard />}
+          {me ? <YourSeason matches={matches} /> : <SignInCard />}
         </div>
       )}
 
