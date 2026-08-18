@@ -138,7 +138,7 @@ export function AnnualReport() {
         </div>
 
         {/* ── Summary cards ───────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print:gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 print:gap-2">
           <div className="r-card p-5 print:border print:border-gray-300"
                style={{ background: 'linear-gradient(135deg, #065f46 0%, #0a1019 100%)' }}>
             <div className="flex items-center gap-1.5 text-emerald-300/80 mb-1">
@@ -156,14 +156,6 @@ export function AnnualReport() {
             <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">{fmt(data.expenses)}</p>
           </div>
           <div className="r-card p-5"
-               style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)' }}>
-            <div className="flex items-center gap-1.5 text-blue-300/80 mb-1">
-              <IndianRupee className="w-3.5 h-3.5" />
-              <span className="t-micro font-bold uppercase tracking-[1.5px]">Match Fees</span>
-            </div>
-            <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">{fmt(data.matchFees)}</p>
-          </div>
-          <div className="r-card p-5"
                style={{ background: data.net >= 0
                  ? 'linear-gradient(135deg, #14532d 0%, #0a1019 100%)'
                  : 'linear-gradient(135deg, #7c2d12 0%, #0a1019 100%)' }}>
@@ -176,6 +168,40 @@ export function AnnualReport() {
             </p>
           </div>
         </div>
+
+        {/* ── Match fees — deliberately NOT in the row above ────────────────
+            Deposits, expenses and net flow are one story: money in, money out,
+            the difference. Match fees is a different KIND of number — it moves
+            from a member's wallet to the club, so it is neither new money nor
+            money leaving. Sitting in the same row of four it invited arithmetic
+            that cannot work, which is why fees exceeding deposits looked like a
+            bug rather than a normal year. */}
+        <div className="mt-3 r-card p-5"
+             style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)' }}>
+          <div className="flex items-center gap-1.5 text-blue-300/80 mb-1">
+            <IndianRupee className="w-3.5 h-3.5" />
+            <span className="t-micro font-bold uppercase tracking-[1.5px]">
+              Match fees collected · internal transfer
+            </span>
+          </div>
+          <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">
+            {fmt(data.matchFees)}
+          </p>
+          <p className="t-meta text-blue-200/60 mt-2 leading-snug">
+            Moved from member wallets to the club, so it is not counted in net
+            flow — that would double-count money already recorded as a deposit.
+            It can exceed deposits in a year when members spend balance they
+            topped up in an earlier one.
+          </p>
+        </div>
+
+        {/* Net flow, shown as its workings so the sign needs no explaining. */}
+        <p className="mt-3 t-meta text-gray-400 text-center">
+          Net flow = deposits {fmt(data.deposits)} − expenses {fmt(data.expenses)}
+          {' '}= <span className={data.net >= 0 ? 'text-emerald-300' : 'text-red-300'}>
+            {data.net >= 0 ? '+' : '−'}{fmt(Math.abs(data.net))}
+          </span>
+        </p>
 
         {/* ── Match summary ───────────────────────────────────────────────────── */}
         <Card className="p-5">
