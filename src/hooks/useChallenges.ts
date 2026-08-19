@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useMe } from '../context/MemberContext';
 import { useCricketStats } from './useCricketStats';
-import { suggestChallenges, standingFromScorecards,
-         type Metric, type Suggestion, type SeasonLine } from '../lib/challenges';
+import { suggestChallenges, standingFromScorecards, standingFromBalls,
+         metricDef, type Metric, type Suggestion, type SeasonLine,
+         type Standing } from '../lib/challenges';
+import type { Ball } from '../lib/cricketRules';
 
 // ─── Challenges ───────────────────────────────────────────────────────────────
 // Reads the same season stats the leaderboard uses, so a challenge can never
@@ -20,6 +22,9 @@ export interface ChallengeRow {
   title: string | null;
   status: 'open' | 'live' | 'settled' | 'declined' | 'cancelled';
   winner_id: string | null;
+  stake: string | null;
+  /** Frozen at settlement — see the migration comment. */
+  final_standings: Standing[] | null;
   players?: Array<{ member_id: string; accepted: boolean }>;
 }
 
@@ -32,6 +37,12 @@ export function useChallenges() {
   const [rows, setRows] = useState<ChallengeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tableMissing, setTableMissing] = useState(false);
+  /**
+   * Every ball we've scored ourselves. Only needed for the four ball-level
+   * metrics, so it's fetched once and only when a live challenge actually uses
+   * one — a page of scorecard challenges shouldn't pay for it.
+   */
+  const [balls, setBalls] = useState<Ball[]>([]);
 
   const fetchRows = useCallback(async () => {
     const { data, error } = await supabase
@@ -45,6 +56,19 @@ export function useChallenges() {
   }, []);
 
   useEffect(() => { void fetchRows(); }, [fetchRows]);
+
+  const needsBalls = useMemo(
+    () => rows.some(r => r.status !== 'settled' && metricDef(r.metric).needsBalls),
+    [rows]);
+
+  useEffect(() => {
+    if (!needsBalls || balls.length) return;
+    void (async () => {
+      const { data } = await supabase.from('scc_ball_by_ball')
+        .select('seq, over_no, ball_no, striker_id, non_striker_id, bowler_id, runs_off_bat, extra_type, extra_runs, wicket_type, dismissed_id, fielder_id, innings');
+      setBalls((data as Ball[]) ?? []);
+    })();
+  }, [needsBalls, balls.length]);
 
   /** Season lines, shared by the suggestion engine and every leaderboard. */
   const lines = useMemo<SeasonLine[]>(() => stats.map(s => ({
@@ -67,8 +91,21 @@ export function useChallenges() {
   }, [me, lines, rows]);
 
   /** Where everyone stands in one challenge, computed not stored. */
-  const standingsFor = useCallback((c: ChallengeRow) => {
+  const standingsFor = useCallback((c: ChallengeRow): Standing[] => {
+    // A finished challenge keeps the numbers it finished on. Recomputing it
+    // would let a later scorecard correction quietly change who won.
+    if (c.status === 'settled' && c.final_standings) return c.final_standings;
+
     const ids = new Set((c.players ?? []).filter(p => p.accepted).map(p => p.member_id));
+
+    if (metricDef(c.metric).needsBalls) {
+      // Chase strike rate only counts second-innings deliveries — runs against
+      // a required rate are a different thing from runs at a free total.
+      const src = c.metric === 'chase_strike_rate'
+        ? balls.filter(b => (b as Ball & { innings?: number }).innings === 2)
+        : balls;
+      return standingFromBalls(c.metric, src, [...ids]);
+    }
     const rowsForChallenge = stats
       .filter(s => ids.has(s.member_id))
       .map(s => ({
@@ -91,14 +128,16 @@ export function useChallenges() {
         fielding_catches: s.fielding_catches ?? 0,
       }));
     return standingFromScorecards(c.metric, rowsForChallenge);
-  }, [stats]);
+  }, [stats, balls]);
 
   const create = useCallback(async (
-    metric: Metric, opponentIds: string[], closesOn: string | null, title?: string,
+    metric: Metric, opponentIds: string[], closesOn: string | null,
+    title?: string, stake?: string | null,
   ) => {
     if (!me) return 'Sign in first';
     const { data, error } = await supabase.from('scc_challenges')
-      .insert({ metric, kind: 'h2h', created_by: me.id, closes_on: closesOn, title: title ?? null })
+      .insert({ metric, kind: 'h2h', created_by: me.id, closes_on: closesOn,
+                title: title ?? null, stake: stake || null })
       .select().single();
     if (error) return error.message;
 
@@ -125,10 +164,29 @@ export function useChallenges() {
     await fetchRows();
   }, [me, fetchRows]);
 
+  /**
+   * End a challenge and freeze the result. Either player can settle — a
+   * challenge that needs an admin to close it never gets closed, and between
+   * two people who agreed to it there is nobody to defraud.
+   */
+  const settle = useCallback(async (c: ChallengeRow) => {
+    const standings = standingsFor(c);
+    const qualified = standings.filter(s => s.qualified);
+    // Nobody qualified means nobody won. Declaring a winner off two balls
+    // faced would make the whole feature untrustworthy.
+    const winner = qualified.length ? qualified[0].memberId : null;
+    await supabase.from('scc_challenges').update({
+      status: 'settled', winner_id: winner,
+      final_standings: standings, settled_at: new Date().toISOString(),
+    }).eq('id', c.id);
+    await fetchRows();
+    return winner;
+  }, [standingsFor, fetchRows]);
+
   /** Mine first — a member opens this page to see their own, not the club's. */
   const mine = useMemo(() =>
     rows.filter(r => (r.players ?? []).some(p => p.member_id === me?.id)), [rows, me]);
 
-  return { rows, mine, suggestions, standingsFor, create, respond,
+  return { rows, mine, suggestions, standingsFor, create, respond, settle,
            loading, tableMissing, refetch: fetchRows };
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Swords, Check, X, Plus } from 'lucide-react';
+import { Swords, Check, X, Plus, Trophy, Share2 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { SignInCard } from '../components/SignInCard';
@@ -21,6 +21,7 @@ export function Challenges() {
   const [picking, setPicking] = useState(false);
   const [metric, setMetric] = useState<Metric>('runs');
   const [opponent, setOpponent] = useState<string | null>(null);
+  const [stake, setStake] = useState('');
   const [busy, setBusy] = useState(false);
 
   const name = (id: string | null) => members.find(m => m.id === id)?.name ?? '—';
@@ -53,11 +54,26 @@ export function Challenges() {
     );
   }
 
-  const send = async (m: Metric, oppId: string) => {
+  const send = async (m: Metric, oppId: string, withStake?: string) => {
     setBusy(true);
-    const err = await C.create(m, [oppId], null, autoTitle(m, [me.name, name(oppId)]));
+    const err = await C.create(m, [oppId], null,
+      autoTitle(m, [me.name, name(oppId)]), withStake ?? null);
     setBusy(false);
-    if (err) alert(err); else { setPicking(false); setOpponent(null); }
+    if (err) alert(err); else { setPicking(false); setOpponent(null); setStake(''); }
+  };
+
+  /**
+   * The result, written to be pasted into the group. A challenge settled
+   * silently in an app is a challenge nobody remembers losing — the stake only
+   * means anything if the whole club sees who owes it.
+   */
+  const shareResult = async (title: string, winnerId: string | null, st: string | null) => {
+    const text = winnerId
+      ? `⚔️ ${title}\n\n🏆 ${name(winnerId)} wins.${st ? `\n\nThat\u2019s a ${st} owed.` : ''}\n\nsangriacricket.club`
+      : `⚔️ ${title}\n\nNobody qualified — nothing settled.\n\nsangriacricket.club`;
+    if (navigator.share) { try { await navigator.share({ text }); return; } catch { /* dismissed */ } }
+    await navigator.clipboard.writeText(text);
+    alert('Copied — paste it into the group.');
   };
 
   return (
@@ -104,6 +120,18 @@ export function Challenges() {
                     {c.title ?? metricDef(c.metric).label}
                   </p>
                   <p className="t-meta text-slate-400">{metricDef(c.metric).hint}</p>
+                  {c.stake && (
+                    <p className="t-body font-bold text-amber-600 dark:text-amber-300 mt-1.5">
+                      🍵 Loser {c.stake}
+                    </p>
+                  )}
+                  {c.status === 'settled' && (
+                    <p className="t-body font-black text-emerald-600 dark:text-emerald-300 mt-1.5
+                                  inline-flex items-center gap-1.5">
+                      <Trophy className="w-4 h-4" />
+                      {c.winner_id ? `${name(c.winner_id)} won` : 'Nobody qualified'}
+                    </p>
+                  )}
 
                   {pending ? (
                     <div className="flex gap-2 mt-3">
@@ -133,6 +161,27 @@ export function Challenges() {
                       ))}
                       {standings.length === 0 && (
                         <p className="t-meta text-slate-400">Waiting for them to accept.</p>
+                      )}
+
+                      {/* Either player can settle. A challenge that needs an
+                          admin to close it never gets closed. */}
+                      {c.status !== 'settled' && standings.length > 1 && (
+                        <button onClick={async () => {
+                          const w = await C.settle(c);
+                          void shareResult(c.title ?? metricDef(c.metric).label, w, c.stake);
+                        }}
+                          className="w-full mt-2 py-2 r-control border border-slate-200
+                                     dark:border-white/10 t-meta font-black text-slate-500">
+                          Settle it
+                        </button>
+                      )}
+                      {c.status === 'settled' && (
+                        <button onClick={() => void shareResult(
+                          c.title ?? metricDef(c.metric).label, c.winner_id, c.stake)}
+                          className="w-full mt-2 py-2 r-control bg-emerald-500 text-white
+                                     t-meta font-black inline-flex items-center justify-center gap-1.5">
+                          <Share2 className="w-3.5 h-3.5" /> Share the result
+                        </button>
                       )}
                     </div>
                   )}
@@ -185,8 +234,20 @@ export function Challenges() {
               ))}
             </div>
 
+            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 pt-1">
+              Stake <span className="normal-case tracking-normal text-slate-300">optional</span>
+            </p>
+            <input value={stake} onChange={e => setStake(e.target.value)}
+              placeholder="buys chai · carries the kit bag"
+              className="w-full px-4 py-2.5 r-control bg-slate-50 dark:bg-white/5 border
+                         border-slate-200 dark:border-white/10 text-slate-900 dark:text-white
+                         placeholder:text-slate-400 t-body" />
+            <p className="t-micro text-slate-400 -mt-1">
+              Between the two of you — the app doesn't collect it, and it's never money.
+            </p>
+
             <button disabled={!opponent || busy}
-              onClick={() => opponent && void send(metric, opponent)}
+              onClick={() => opponent && void send(metric, opponent, stake)}
               className="w-full py-3 r-control bg-emerald-500 text-white font-black t-body disabled:opacity-40">
               {busy ? 'Sending…' : 'Send challenge'}
             </button>
