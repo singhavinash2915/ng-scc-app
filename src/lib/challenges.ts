@@ -84,18 +84,22 @@ export function standingFromScorecards(
     by.get(r.member_id)!.push(r);
   }
 
+  // "1 wkts" undermines every careful thing on the card. Same trap as the
+  // suggestion pitches, one layer down.
+  const n = (v: number, one: string, many: string) => `${v} ${v === 1 ? one : many}`;
+
   const out: Standing[] = [];
   for (const [memberId, rs] of by) {
     const sum = (f: (r: ScorecardRow) => number) => rs.reduce((s, r) => s + (f(r) || 0), 0);
     let value = 0, qualified = true, detail = '';
 
     switch (metric) {
-      case 'runs':    value = sum(r => r.batting_runs); detail = `${value} runs`; break;
-      case 'wickets': value = sum(r => r.bowling_wickets); detail = `${value} wkts`; break;
-      case 'fours':   value = sum(r => r.batting_fours ?? 0); detail = `${value} fours`; break;
-      case 'sixes':   value = sum(r => r.batting_sixes ?? 0); detail = `${value} sixes`; break;
-      case 'fifties': value = sum(r => r.batting_fifties ?? 0); detail = `${value} fifties`; break;
-      case 'catches': value = sum(r => r.fielding_catches ?? 0); detail = `${value} catches`; break;
+      case 'runs':    value = sum(r => r.batting_runs); detail = n(value, 'run', 'runs'); break;
+      case 'wickets': value = sum(r => r.bowling_wickets); detail = n(value, 'wkt', 'wkts'); break;
+      case 'fours':   value = sum(r => r.batting_fours ?? 0); detail = n(value, 'four', 'fours'); break;
+      case 'sixes':   value = sum(r => r.batting_sixes ?? 0); detail = n(value, 'six', 'sixes'); break;
+      case 'fifties': value = sum(r => r.batting_fifties ?? 0); detail = n(value, 'fifty', 'fifties'); break;
+      case 'catches': value = sum(r => r.fielding_catches ?? 0); detail = n(value, 'catch', 'catches'); break;
       case 'strike_rate': {
         const runs = sum(r => r.batting_runs), balls = sum(r => r.batting_balls ?? 0);
         // A strike rate off a handful of balls is noise, not form.
