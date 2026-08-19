@@ -15,13 +15,12 @@ import { useMe } from '../context/MemberContext';
 export function SignInCard() {
   const { signIn } = useMe();
   const [phone, setPhone] = useState('');
-  const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submit = async () => {
     setBusy(true); setError(null);
-    const res = await signIn(phone, pin);
+    const res = await signIn(phone);
     if (!res.ok) setError(res.error ?? 'Could not sign in.');
     setBusy(false);
   };
@@ -35,21 +34,15 @@ export function SignInCard() {
         Sign in to see your season
       </p>
       <p className="t-body text-slate-500 dark:text-white/50 mt-1">
-        Your squad place, your balance, your form — no account needed, just the
-        number the club already has for you.
+        Your squad place, your balance, your form. No password — just the number
+        the club already has for you.
       </p>
 
       <div className="mt-4 space-y-2">
-        <input
-          type="tel" inputMode="numeric" placeholder="Your phone number"
-          value={phone} onChange={e => setPhone(e.target.value)}
-          className="w-full px-4 py-3 r-control bg-slate-50 dark:bg-white/5 border border-slate-200
-                     dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400
-                     t-lead font-semibold" />
         <div className="flex gap-2">
           <input
-            type="password" inputMode="numeric" placeholder="Club PIN"
-            value={pin} onChange={e => setPin(e.target.value)}
+            type="tel" inputMode="numeric" placeholder="Your phone number"
+            value={phone} onChange={e => setPhone(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') void submit(); }}
             className="flex-1 px-4 py-3 r-control bg-slate-50 dark:bg-white/5 border border-slate-200
                        dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400

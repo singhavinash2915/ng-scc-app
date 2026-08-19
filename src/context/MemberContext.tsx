@@ -13,23 +13,28 @@ import type { Member } from '../types';
 // fixtures", and every personal feature — notifications, goals, ratings, Wrapped
 // — needs to know who's asking before it can exist.
 //
-// Sign-in is phone number + the club PIN, deliberately. Phone + OTP is the
-// proper answer but needs an SMS provider and a per-message fee; for a club of
-// 46 who all know each other, the phone number IS the identity claim and the
-// shared PIN is the "you're one of us" check. There is nothing here worth
-// attacking — the data was already public to anyone with the URL, since RLS is
-// open and the anon key ships in the bundle. This is about personalisation, not
-// security, and it should not be mistaken for it.
+// Sign-in is the phone number alone. No PIN, no password, no OTP.
+//
+// Worth being explicit about what that means: anyone who knows a member's
+// number can sign in as them and see their balance, and in a club WhatsApp
+// group everyone has everyone's number. The club chose this knowingly — a
+// shared PIN was one more thing to forget and ask about, while stopping nobody
+// who was already in the group.
+//
+// It is defensible here only because there is nothing to protect: RLS is open
+// and the anon key ships in the bundle, so members, matches and balances were
+// already readable by anyone with the URL. This is personalisation — the app
+// knowing who you are so it can show you your own season — and it must not be
+// mistaken for security. If member data ever needs protecting, the answer is
+// RLS plus real auth together, not a secret on the sign-in form.
 
 const STORAGE_KEY = 'scc-me';
-/** Shared club PIN. Same trust model as the admin password in lib/supabase. */
-const CLUB_PIN = '2026';
 
 interface MemberContextType {
   me: Member | null;
   /** Still reading localStorage / refetching on boot. */
   loading: boolean;
-  signIn: (phone: string, pin: string) => Promise<{ ok: boolean; error?: string }>;
+  signIn: (phone: string) => Promise<{ ok: boolean; error?: string }>;
   signOut: () => void;
 }
 
@@ -55,8 +60,7 @@ export function MemberProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const signIn = useCallback(async (phone: string, pin: string) => {
-    if (pin.trim() !== CLUB_PIN) return { ok: false, error: 'Wrong club PIN.' };
+  const signIn = useCallback(async (phone: string) => {
     const want = digits(phone);
     if (want.length < 10) return { ok: false, error: 'Enter your 10-digit number.' };
 
