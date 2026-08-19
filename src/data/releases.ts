@@ -20,6 +20,22 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.19',
+    date: '19 August 2026',
+    title: 'Season 3 — the app knows who you are 🏏',
+    subtitle: 'Sign in with your number · your own player card · live scoring · a Dashboard that fits',
+    notes: [
+      { emoji: '📱', title: 'Sign in with your phone number', tag: 'new', desc: 'No password, no account to create. Type the number the club already has for you and the app becomes yours — your next match, whether you\u2019re picked, your balance, your card.' },
+      { emoji: '🪪', title: 'Your player card', tag: 'new', desc: 'Legend, Elite, Pro or Squad — earned from match data, not handed out. Your tier, role and season figures, and it changes through the season because you do.' },
+      { emoji: '⏱️', title: 'Your season, at the top', tag: 'new', desc: 'A live countdown to the next match, a \u201cyou\u2019re picked\u201d badge when you\u2019re in the squad, and the next milestone you\u2019re chasing.' },
+      { emoji: '🏠', title: 'Me / The club', tag: 'improved', desc: 'The Dashboard was six screens of scrolling, so the sponsor and half the club stats were never seen. Now two tabs: what you need, and how we\u2019re doing.' },
+      { emoji: '🔴', title: 'Scoring inside the app', tag: 'new', desc: 'When CricHeroes stalls we can score ball by ball here instead — with commentary, over-by-over and a win probability. Every match now has a \u201cScore in App\u201d option.' },
+      { emoji: '📅', title: 'Matches grouped by month', tag: 'improved', desc: '210 matches in one scroll gave you nowhere to stand. Now grouped with a sticky month header, and each card is ringed by its result.' },
+      { emoji: '🎁', title: 'Season Wrapped', tag: 'new', desc: 'Your season as a set of cards worth sending to the group — runs, wickets, who you played most alongside, and how it ended.' },
+      { emoji: '🧹', title: 'Cleaner throughout', tag: 'fixed', desc: 'Six unused pages removed, the sidebar grouped into five sections, one type scale and one card across every screen, and the annual report no longer makes match fees look like a mistake.' },
+    ],
+  },
+  {
     version: '2026.06.30',
     date: '30 June 2026',
     title: 'Premium UI Redesign ✨',
