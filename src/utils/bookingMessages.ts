@@ -93,3 +93,30 @@ export const notifyTeamUrl = (b: BookingDetails, kind: 'confirmed' | 'rejected',
     b.contactPhone,
     kind === 'confirmed' ? bookingConfirmedMessage(b) : bookingRejectedMessage(b, reason),
   );
+
+// ─── Challenges ───────────────────────────────────────────────────────────────
+// A challenge nobody knows about is a row in a table. The club lives in
+// WhatsApp, not in the app, so this is what actually reaches the person you
+// called out — the in-app alert only catches them if they happen to open it.
+
+export function challengeMessage(opts: {
+  from: string; contest: string; stake?: string | null;
+}): string {
+  return [
+    `⚔️ *I've challenged you on the SCC app.*`,
+    ``,
+    `*Contest:* ${opts.contest}`,
+    opts.stake ? `*Stake:* loser ${opts.stake}` : null,
+    ``,
+    `Your match performances count towards it automatically — nothing to log.`,
+    `Accept it here: sangriacricket.club/challenges`,
+    ``,
+    `— ${opts.from}`,
+  ].filter(Boolean).join('\n');
+}
+
+/** wa.me link to the person being challenged. Null if we have no number. */
+export const challengeUrl = (
+  phone: string | null | undefined,
+  opts: { from: string; contest: string; stake?: string | null },
+) => (phone ? generateWhatsAppUrl(phone, challengeMessage(opts)) : null);

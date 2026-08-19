@@ -7,6 +7,7 @@ import { useMe } from '../context/MemberContext';
 import { useMembers } from '../hooks/useMembers';
 import { useChallenges } from '../hooks/useChallenges';
 import { METRICS, metricDef, autoTitle, type Metric } from '../lib/challenges';
+import { challengeUrl } from '../utils/bookingMessages';
 
 // ─── Challenges ───────────────────────────────────────────────────────────────
 // CricHeroes announced this and opens a four-screen form, because it cannot
@@ -60,7 +61,17 @@ export function Challenges() {
     const err = await C.create(m, [oppId], null,
       autoTitle(m, [me.name, name(oppId)]), withStake ?? null);
     setBusy(false);
-    if (err) alert(err); else { setPicking(false); setOpponent(null); setStake(''); }
+    if (err) { alert(err); return; }
+
+    // The in-app alert only catches them if they open the app. This is what
+    // actually reaches them — same handoff the match bookings use.
+    const opp = members.find(x => x.id === oppId);
+    const url = challengeUrl(opp?.phone, {
+      from: me.name, contest: metricDef(m).label, stake: withStake || null,
+    });
+    if (url) window.open(url, '_blank', 'noopener');
+
+    setPicking(false); setOpponent(null); setStake('');
   };
 
   /**

@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { useMe } from '../context/MemberContext';
 import type { Match } from '../types';
+import { supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react';
 
 // ─── Notifications that mean something ────────────────────────────────────────
 // Push already existed but said the same thing to all 46 members, which is how
@@ -25,8 +27,49 @@ export interface Alert {
 const daysUntil = (iso: string) =>
   Math.ceil((new Date(iso + 'T00:00:00').getTime() - Date.now()) / 86400000);
 
+/**
+ * Challenges someone has thrown at you and you haven't answered.
+ *
+ * Fetched separately from the rest of the alerts because it's the only one
+ * that isn't derivable from data the Dashboard already holds — and without it
+ * a challenge sits unanswered forever, since nothing else tells you it exists.
+ */
+function usePendingChallenges(meId: string | null) {
+  const [pending, setPending] = useState<Array<{ id: string; title: string; from: string }>>([]);
+
+  useEffect(() => {
+    if (!meId) { setPending([]); return; }
+    void (async () => {
+      const { data, error } = await supabase
+        .from('scc_challenge_players')
+        .select('challenge_id, accepted, challenge:scc_challenges(id, title, status, created_by)')
+        .eq('member_id', meId).eq('accepted', false);
+      if (error) return;                      // table missing or offline — stay quiet
+      // PostgREST returns an embedded many-to-one as an OBJECT, while the
+      // generated types describe an array. Taking the types at their word
+      // type-checks perfectly and then matches nothing at runtime — which is
+      // exactly what happened here. Accept either shape.
+      type Embedded = { title: string | null; status: string; created_by: string | null };
+      type Row = { challenge_id: string; challenge: Embedded | Embedded[] | null };
+      const rows = (data ?? []) as unknown as Row[];
+      const one = (c: Row['challenge']): Embedded | undefined =>
+        Array.isArray(c) ? c[0] : (c ?? undefined);
+
+      setPending(rows
+        .map(r => ({ id: r.challenge_id, c: one(r.challenge) }))
+        // A settled or cancelled challenge is not still waiting on you.
+        .filter(x => x.c && x.c.status !== 'settled' && x.c.status !== 'cancelled')
+        .map(x => ({ id: x.id, title: x.c!.title ?? 'A challenge',
+                     from: x.c!.created_by ?? '' })));
+    })();
+  }, [meId]);
+
+  return pending;
+}
+
 export function usePersonalAlerts(matches: Match[]) {
   const { me } = useMe();
+  const pendingChallenges = usePendingChallenges(me?.id ?? null);
 
   return useMemo<Alert[]>(() => {
     if (!me) return [];
@@ -94,7 +137,21 @@ export function usePersonalAlerts(matches: Match[]) {
       }
     }
 
+    // ── Someone called you out ─────────────────────────────────────────────
+    // Deliberately 'good' rather than 'urgent': being challenged is an
+    // invitation, not a problem, and it shouldn't sit in the same red as a
+    // balance that will stop you playing.
+    for (const c of pendingChallenges) {
+      out.push({
+        id: `challenge-${c.id}`,
+        tone: 'good',
+        title: 'You’ve been challenged',
+        body: `${c.title} — accept or decline.`,
+        to: '/challenges',
+      });
+    }
+
     const rank: Record<AlertTone, number> = { urgent: 0, good: 1, info: 2 };
     return out.sort((a, b) => rank[a.tone] - rank[b.tone]);
-  }, [me, matches]);
+  }, [me, matches, pendingChallenges]);
 }
