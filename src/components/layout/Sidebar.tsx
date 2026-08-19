@@ -24,6 +24,7 @@ import {
   ExternalLink,
   // Rocket,  — re-add with the Season Kickoff nav item
   Gavel,
+  Swords,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -64,7 +65,7 @@ const navGroups: Array<{ title: string; items: Array<{ to: string; icon: typeof 
       { to: '/scc-mahasangram', icon: Gavel, label: 'MahaSangram' },
       { to: '/league', icon: Trophy, label: 'Season League' },
       { to: '/predictions', icon: Sparkles, label: 'Predictions' },
-      { to: '/fantasy', icon: Sparkles, label: 'Fantasy Draft' },
+      { to: '/challenges', icon: Swords, label: 'Challenges' },
       { to: '/awards', icon: Award, label: 'Season Awards' },
     ],
   },

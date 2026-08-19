@@ -27,6 +27,7 @@ const Honours = lazy(() => import('./pages/Honours').then(m => ({ default: m.Hon
 const SCCLeague = lazy(() => import('./pages/SCCLeague').then(m => ({ default: m.SCCLeague })));
 const LiveScoring = lazy(() => import('./pages/LiveScoring'));
 const Wrapped = lazy(() => import('./pages/Wrapped'));
+const Challenges = lazy(() => import('./pages/Challenges'));
 const AuctionLive = lazy(() => import('./pages/AuctionLive').then(m => ({ default: m.AuctionLive })));
 const AuctionCentre = lazy(() => import('./pages/AuctionCentre').then(m => ({ default: m.AuctionCentre })));
 const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
@@ -114,6 +115,7 @@ const AppRoutes = () => (
         <Route path="/kickoff"       element={<Suspense fallback={<PageLoader />}><SeasonKickoff /></Suspense>} />
         {/* Live scoring — any member with a profile can score; everyone else
             sees the same page as a live scoreboard. */}
+        <Route path="/challenges" element={<Suspense fallback={<PageLoader />}><Challenges /></Suspense>} />
         <Route path="/wrapped" element={<Suspense fallback={<PageLoader />}><Wrapped /></Suspense>} />
         <Route path="/score/:matchId" element={<Suspense fallback={<PageLoader />}><LiveScoring /></Suspense>} />
         <Route path="/scc-mahasangram" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><SCCLeague /></Suspense> : <Navigate to="/" replace />} />

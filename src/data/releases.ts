@@ -20,6 +20,18 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.20',
+    date: '20 August 2026',
+    title: 'Challenges ⚔️',
+    subtitle: 'Call out a teammate — the app already knows who you should be racing',
+    notes: [
+      { emoji: '⚔️', title: 'Challenges are here', tag: 'new', desc: 'Take on a teammate over runs, wickets, catches, sixes, strike rate or economy. Your match performances count towards it automatically — nothing to log.' },
+      { emoji: '🎯', title: 'One tap, no forms', tag: 'new', desc: 'The app knows who you\u2019re close to. \u201cRohan is 12 runs ahead of you this season\u201d \u2014 tap once and it\u2019s on. Only genuinely close races are suggested.' },
+      { emoji: '🔬', title: 'Contests nobody else can run', tag: 'new', desc: 'Because we score ball by ball, you can also challenge on death-over economy, dot-ball percentage, strike rate in a chase, or partnership runs. Those count on matches scored in this app.' },
+      { emoji: '🃏', title: 'Fantasy Draft is paused', tag: 'improved', desc: 'Challenges takes its place in the menu for now. Nothing is lost \u2014 if the club wants Fantasy back for next season, it returns as it was.' },
+    ],
+  },
+  {
     version: '2026.08.19',
     date: '19 August 2026',
     title: 'Season 3 — the app knows who you are 🏏',
