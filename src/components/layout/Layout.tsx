@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useUsageTracking } from '../../hooks/useUsage';
 import { Capacitor } from '@capacitor/core';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
@@ -14,6 +15,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
+  useUsageTracking();
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <OfflineIndicator />

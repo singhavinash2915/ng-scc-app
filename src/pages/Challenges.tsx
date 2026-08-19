@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Swords, Check, X, Plus, Trophy, Share2 } from 'lucide-react';
+import { Swords, Check, X, Plus, Trophy, Share2, HelpCircle, ChevronDown } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { SignInCard } from '../components/SignInCard';
@@ -22,6 +22,7 @@ export function Challenges() {
   const [metric, setMetric] = useState<Metric>('runs');
   const [opponent, setOpponent] = useState<string | null>(null);
   const [stake, setStake] = useState('');
+  const [howOpen, setHowOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const name = (id: string | null) => members.find(m => m.id === id)?.name ?? '—';
@@ -253,6 +254,68 @@ export function Challenges() {
             </button>
             <button onClick={() => setPicking(false)}
               className="w-full t-meta font-bold text-slate-400">Cancel</button>
+          </Card>
+        )}
+
+        {/* ── How it works ──────────────────────────────────────────────
+            Collapsed, because someone who already gets it shouldn't scroll
+            past the explanation on every visit — and someone who doesn't will
+            look for exactly this. */}
+        <button onClick={() => setHowOpen(o => !o)}
+          className="w-full flex items-center gap-2 py-2 t-meta font-bold text-slate-400">
+          <HelpCircle className="w-4 h-4" /> How challenges work
+          <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${howOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {howOpen && (
+          <Card className="p-4 space-y-3 t-body text-slate-600 dark:text-white/70">
+            <div>
+              <p className="font-black text-slate-900 dark:text-white">Nothing to log</p>
+              <p className="mt-0.5">
+                Your match performances count towards a challenge automatically. The
+                standings read the same season stats as the leaderboard, so the two
+                can never disagree — and if a scorecard is corrected, the challenge
+                corrects with it.
+              </p>
+            </div>
+            <div>
+              <p className="font-black text-slate-900 dark:text-white">Both of you have to agree</p>
+              <p className="mt-0.5">
+                A challenge you're invited to stays pending until you accept. Nobody
+                appears on a public board because somebody else named them.
+              </p>
+            </div>
+            <div>
+              <p className="font-black text-slate-900 dark:text-white">Some contests need a minimum</p>
+              <p className="mt-0.5">
+                Strike rate needs 30 balls, economy 4 overs, death economy 12 balls.
+                A strike rate off four deliveries isn't a strike rate. Until you reach
+                it you're shown as unqualified rather than winning by accident.
+              </p>
+            </div>
+            <div>
+              <p className="font-black text-slate-900 dark:text-white">Four contests need app scoring</p>
+              <p className="mt-0.5">
+                Death-over economy, dot percentage, strike rate in a chase and
+                partnership runs are worked out ball by ball, so they only count
+                matches scored in this app — not the ones synced from CricHeroes.
+                They're badged "app-scored only" when you pick.
+              </p>
+            </div>
+            <div>
+              <p className="font-black text-slate-900 dark:text-white">Either of you can settle it</p>
+              <p className="mt-0.5">
+                Whoever taps Settle freezes the result, so a later stat correction
+                can't rewrite who won. If neither of you reached the minimum, nobody
+                wins — the app won't invent a winner.
+              </p>
+            </div>
+            <div>
+              <p className="font-black text-slate-900 dark:text-white">Stakes are between you</p>
+              <p className="mt-0.5">
+                "Loser buys chai" is recorded and shown, never collected. The app
+                doesn't touch your balance — stakes are never money.
+              </p>
+            </div>
           </Card>
         )}
 
