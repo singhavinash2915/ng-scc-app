@@ -49,8 +49,13 @@ export function Challenges() {
     .slice(0, 8);
   const matchLabel = (id: string | null) => {
     const m = matches.find(x => x.id === id);
-    return m ? `${m.opponent || 'SCC'} · ${new Date(m.date + 'T00:00:00')
-      .toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : 'Any match';
+    if (!m) return 'Any match';
+    // Non-breaking space, so "1 Oct" can't wrap to "1" / "Oct" — a date split
+    // across two lines reads as two separate facts.
+    const d = new Date(m.date + 'T00:00:00')
+      .toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+      .replace(' ', '\u00a0');
+    return `${m.opponent || 'SCC'} · ${d}`;
   };
 
   if (!me) {
@@ -496,10 +501,14 @@ export function Challenges() {
           </div>
 
           <input value={stake} onChange={e => setStake(e.target.value)}
-            placeholder="Stake — buys chai, carries the kit bag (optional)"
+            placeholder="Stake (optional)"
             className="w-full px-4 py-2.5 r-control bg-slate-50 dark:bg-white/5 border
                        border-slate-200 dark:border-white/10 text-slate-900 dark:text-white
                        placeholder:text-slate-400 t-body" />
+
+          <p className="t-micro text-slate-400 -mt-2">
+            e.g. buys chai · carries the kit bag. Between the two of you — never money.
+          </p>
 
           <button disabled={!opponent || busy}
             onClick={() => opponent && void send(metric, opponent, stake)}
@@ -533,7 +542,7 @@ export function Challenges() {
                 <Card key={c.id} tone={c.status === 'settled' ? 'good' : 'plain'} className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-black text-slate-900 dark:text-white truncate">
+                      <p className="font-black text-slate-900 dark:text-white leading-tight">
                         {names.join(' v ') || 'Challenge'}
                       </p>
                       {/* Same fix as the inbox: "First to 30" without saying
