@@ -332,6 +332,8 @@ export const TARGET_METRICS: Metric[] = ['runs', 'wickets', 'fours', 'sixes'];
 
 export interface ScorecardMatchRow {
   matchId: string;
+  /** Needed to answer "who got there FIRST", which is what the label promises. */
+  date?: string;
   /** Raw scorecard name, matched to a member by buildMatcher. */
   name: string;
   runs: number; wickets: number; fours: number; sixes: number; catches: number;
@@ -342,6 +344,8 @@ export interface TargetStanding {
   best: number;
   hit: boolean;
   matchId: string | null;
+  /** Date of the match where they first reached the target. */
+  hitOn?: string | null;
   detail: string;
 }
 
@@ -355,7 +359,11 @@ export function standingFromTarget(
 ): TargetStanding[] {
   const want = new Set(memberIds);
   if (onlyMatchId) rows = rows.filter(r => r.matchId === onlyMatchId);
+  // Chronological, so "first" means first.
+  rows = [...rows].sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
   const best = new Map<string, { v: number; matchId: string }>();
+  /** The match where each player FIRST reached the target. */
+  const firstHit = new Map<string, { matchId: string; date: string }>();
 
   for (const r of rows) {
     const id = match(r.name);
@@ -363,6 +371,10 @@ export function standingFromTarget(
     const v = (r as unknown as Record<string, number>)[metric] ?? 0;
     const cur = best.get(id);
     if (!cur || v > cur.v) best.set(id, { v, matchId: r.matchId });
+    // Rows are in date order, so the first qualifying one is the first one.
+    if (v >= target && !firstHit.has(id)) {
+      firstHit.set(id, { matchId: r.matchId, date: r.date ?? '' });
+    }
   }
 
   // Stripping a trailing "s" gives "sixe" and "catche". Spelled out instead —
@@ -375,11 +387,13 @@ export function standingFromTarget(
   const [one, many] = UNIT[metric] ?? ['', ''];
   return memberIds.map(memberId => {
     const b = best.get(memberId);
+    const f = firstHit.get(memberId);
     const v = b?.v ?? 0;
     const hit = v >= target;
     return {
       memberId, best: v, hit,
-      matchId: hit ? (b?.matchId ?? null) : null,
+      matchId: hit ? (f?.matchId ?? b?.matchId ?? null) : null,
+      hitOn: f?.date ?? null,
       // "Best so far 0 sixes" on a match nobody has played reads as broken
       // rather than as pending. Zero before the game means "not yet", and
       // that's a different sentence.
@@ -389,5 +403,12 @@ export function standingFromTarget(
           ? 'Not played yet'
           : `Best so far ${v} ${v === 1 ? one : many}`,
     };
-  }).sort((a, b) => (a.hit !== b.hit ? (a.hit ? -1 : 1) : b.best - a.best));
+  }).sort((a, b) => {
+    // "First to N" means FIRST. Ranking the winners by highest score would
+    // hand it to whoever eventually made the biggest number, which is a
+    // different contest from the one the card promises.
+    if (a.hit !== b.hit) return a.hit ? -1 : 1;
+    if (a.hit && b.hit) return (a.hitOn ?? '').localeCompare(b.hitOn ?? '');
+    return b.best - a.best;    // nobody there yet — closest first
+  });
 }

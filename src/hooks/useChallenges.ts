@@ -85,23 +85,25 @@ export function useChallenges() {
    */
   const matchRows = useMemo<ScorecardMatchRow[]>(() => {
     const out: ScorecardMatchRow[] = [];
+    const dateOf = new Map(matches.map(m => [m.id, m.date]));
     for (const sc of scorecards ?? []) {
+      const date = dateOf.get(sc.match_id) ?? '';
       for (const inn of [
         { bat: sc.innings1_batting, bowl: sc.innings1_bowling },
         { bat: sc.innings2_batting, bowl: sc.innings2_bowling },
       ]) {
         for (const b of inn.bat ?? []) {
-          out.push({ matchId: sc.match_id, name: b.name, runs: b.runs ?? 0,
+          out.push({ matchId: sc.match_id, date, name: b.name, runs: b.runs ?? 0,
                      fours: b['4s'] ?? 0, sixes: b['6s'] ?? 0, wickets: 0, catches: 0 });
         }
         for (const b of inn.bowl ?? []) {
-          out.push({ matchId: sc.match_id, name: b.name, wickets: b.wickets ?? 0,
+          out.push({ matchId: sc.match_id, date, name: b.name, wickets: b.wickets ?? 0,
                      runs: 0, fours: 0, sixes: 0, catches: 0 });
         }
       }
     }
     return out;
-  }, [scorecards]);
+  }, [scorecards, matches]);
 
   const nameMatcher = useMemo(() => buildMatcher(members), [members]);
 

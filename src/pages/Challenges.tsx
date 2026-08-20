@@ -141,11 +141,20 @@ export function Challenges() {
                 <p className="font-black text-slate-900 dark:text-white">
                   {c.created_by ? `${name(c.created_by)} challenged you` : 'A challenge'}
                 </p>
-                <p className="t-body text-slate-600 dark:text-white/70 mt-0.5">
+                {/* The contest, not just the number. "First to 3" without
+                    saying 3 WHAT is a question you can't answer, and this card
+                    is asking you to accept or decline. */}
+                <p className="t-body font-bold text-slate-800 dark:text-white/85 mt-0.5">
                   {c.kind === 'target'
-                    ? `First to ${c.target}${c.match_id ? ` — ${matchLabel(c.match_id)}` : ' in any match'}`
+                    ? `First to ${c.target} ${metricDef(c.metric).label
+                        .replace(/^Most /, '').replace(/^Best /, '')} in a match`
                     : metricDef(c.metric).label}
                 </p>
+                {c.kind === 'target' && (
+                  <p className="t-meta text-slate-500 dark:text-white/55">
+                    {c.match_id ? matchLabel(c.match_id) : 'Any match'}
+                  </p>
+                )}
                 {c.stake && (
                   <p className="t-meta font-bold text-amber-600 dark:text-amber-300 mt-1">
                     🍵&nbsp; Loser {c.stake}
@@ -516,8 +525,10 @@ export function Challenges() {
             </p>
             {C.club.map(c => {
               const standings = C.standingsFor(c);
-              const names = (c.players ?? []).filter(p => p.accepted)
-                .map(p => name(p.member_id).split(' ')[0]);
+              // ALL participants, not just those who accepted — a board entry
+              // reading "Shubham" alone tells you nothing about the contest.
+              // Who has agreed is shown by the "not accepted yet" chip instead.
+              const names = (c.players ?? []).map(p => name(p.member_id).split(' ')[0]);
               return (
                 <Card key={c.id} tone={c.status === 'settled' ? 'good' : 'plain'} className="p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -525,11 +536,17 @@ export function Challenges() {
                       <p className="font-black text-slate-900 dark:text-white truncate">
                         {names.join(' v ') || 'Challenge'}
                       </p>
-                      <p className="t-meta text-slate-400">
+                      {/* Same fix as the inbox: "First to 30" without saying
+                          30 of what is not a contest anyone can follow. */}
+                      <p className="t-meta text-slate-500 dark:text-white/55">
                         {c.kind === 'target'
-                          ? `First to ${c.target}${c.match_id ? ` — ${matchLabel(c.match_id)}` : ''}`
+                          ? `First to ${c.target} ${metricDef(c.metric).label
+                              .replace(/^Most /, '').replace(/^Best /, '')}`
                           : metricDef(c.metric).label}
                       </p>
+                      {c.kind === 'target' && c.match_id && (
+                        <p className="t-micro text-slate-400">{matchLabel(c.match_id)}</p>
+                      )}
                     </div>
                     {c.status !== 'settled' &&
                      !(c.players ?? []).every(p => p.accepted) && (
