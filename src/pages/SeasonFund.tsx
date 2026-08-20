@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { PrepaidAdvance, type PrepaidGroup } from '../components/PrepaidAdvance';
 import {
   Landmark,
   Plus,
@@ -282,8 +283,37 @@ export function SeasonFund() {
 
     // Expenses
     const totalGroundCost   = bookings.reduce((s, b) => s + Number(b.cost), 0);
-    const paidToGround      = bookings.filter(b => b.payment_status === 'paid').reduce((s, b) => s + Number(b.cost), 0);
-    const pendingToGround   = totalGroundCost - paidToGround;
+    // Slots a MEMBER paid for don't belong in "paid to ground owner" — that
+    // money went to another team, out of someone's own pocket. Counting it
+    // there would overstate what the club has settled by exactly the amount it
+    // still owes that member.
+    const prepaid           = bookings.filter(b => (b as { prepaid_by?: string | null }).prepaid_by);
+    const paidToGround      = bookings
+      .filter(b => b.payment_status === 'paid' && !(b as { prepaid_by?: string | null }).prepaid_by)
+      .reduce((s, b) => s + Number(b.cost), 0);
+    const pendingToGround   = totalGroundCost - paidToGround
+      - prepaid.reduce((s, b) => s + Number(b.cost), 0);
+
+    // ── What the club owes its own members ─────────────────────────────────
+    // Grouped by who paid and who they paid for, so two different advances
+    // never get added together into one meaningless number.
+    const prepaidGroups: PrepaidGroup[] = [];
+    for (const b of prepaid) {
+      const bb = b as unknown as {
+        prepaid_by: string; prepaid_settled?: boolean;
+        opponent_name?: string | null; cost: number;
+      };
+      const who = members.find(x => x.id === bb.prepaid_by)?.name ?? 'A member';
+      const key = `${who}|${bb.opponent_name ?? ''}`;
+      let g = prepaidGroups.find(x => `${x.memberName}|${x.opponent ?? ''}` === key);
+      if (!g) {
+        g = { memberName: who, opponent: bb.opponent_name ?? null,
+              total: 0, settled: 0, slots: 0, slotsSettled: 0 };
+        prepaidGroups.push(g);
+      }
+      g.total += Number(bb.cost); g.slots += 1;
+      if (bb.prepaid_settled) { g.settled += Number(bb.cost); g.slotsSettled += 1; }
+    }
 
     // Balance
     const netBalance        = totalIncome - totalGroundCost;
@@ -310,6 +340,7 @@ export function SeasonFund() {
     const sponsorPct  = totalIncome > 0 ? (sponsorIncome / totalIncome) * 100 : 0;
 
     return {
+      prepaidGroups,
       memberIncome, opponentIncome, sponsorIncome, totalIncome,
       totalGroundCost, paidToGround, pendingToGround, netBalance,
       totalSessions, paidSessions, matchesVsOpponent, avgCost, avgNetCost,
@@ -1018,6 +1049,12 @@ export function SeasonFund() {
           {/* ===== OVERVIEW / SEASON FINANCE TAB ===== */}
           {activeTab === 'overview' && overviewStats && (
             <div className="space-y-4">
+
+              {/* ── 0. What the club owes its own members ────────────────
+                  Above the income breakdown deliberately. A debt to a
+                  teammate is the one number on this page that involves
+                  somebody being personally out of pocket. */}
+              <PrepaidAdvance groups={overviewStats.prepaidGroups} />
 
               {/* ── 1. Income Breakdown ─────────────────────────────────── */}
               <Card animate>
