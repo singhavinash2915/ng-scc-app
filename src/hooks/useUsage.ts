@@ -42,10 +42,15 @@ export function useUsageTracking() {
     if (sent.has(route)) return;
     sent.add(route);
 
+    // Who's signed in, if anyone. Signed-out visits still count towards the
+    // totals — they simply have no name attached.
+    const memberId = typeof window !== 'undefined'
+      ? localStorage.getItem('scc-me') : null;
+
     // Fire and forget. A failed count must never interrupt anyone's browsing,
     // and the unique constraint makes a duplicate harmless.
     void supabase.from('scc_usage')
-      .insert({ route, session_key: sessionKey() })
+      .insert({ route, session_key: sessionKey(), member_id: memberId })
       .then(() => undefined, () => undefined);
   }, [pathname]);
 }
@@ -54,18 +59,21 @@ export function useUsageTracking() {
 
 export interface DayCount { day: string; people: number; views: number }
 export interface RouteCount { route: string; people: number }
+export interface MemberUse { memberId: string; days: number; views: number; last: string }
 
 export async function fetchUsage(days = 30): Promise<{
-  byDay: DayCount[]; byRoute: RouteCount[]; missing: boolean;
+  byDay: DayCount[]; byRoute: RouteCount[]; byMember: MemberUse[];
+  distinctMembers: number; missing: boolean;
 }> {
   const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
   const { data, error } = await supabase
-    .from('scc_usage').select('day, route, session_key').gte('day', since);
+    .from('scc_usage').select('day, route, session_key, member_id').gte('day', since);
 
   if (error && (error.code === '42P01' || error.code === 'PGRST205')) {
-    return { byDay: [], byRoute: [], missing: true };
+    return { byDay: [], byRoute: [], byMember: [], distinctMembers: 0, missing: true };
   }
-  const rows = (data as Array<{ day: string; route: string; session_key: string }>) ?? [];
+  const rows = (data as Array<{
+    day: string; route: string; session_key: string; member_id: string | null }>) ?? [];
 
   // Distinct sessions per day is the closest honest proxy for "people". It
   // over-counts anyone who opens the app twice in a day on two devices, and
@@ -80,7 +88,25 @@ export async function fetchUsage(days = 30): Promise<{
     routeMap.get(r.route)!.add(r.session_key);
   }
 
+  // ── Per member ───────────────────────────────────────────────────────────
+  // Days active rather than raw hits: someone with the app pinned in a tab
+  // isn't more engaged than someone who opens it every morning, and counting
+  // page loads would say otherwise.
+  const memberMap = new Map<string, { days: Set<string>; views: number; last: string }>();
+  for (const r of rows) {
+    if (!r.member_id) continue;
+    const cur = memberMap.get(r.member_id)
+      ?? { days: new Set<string>(), views: 0, last: r.day };
+    cur.days.add(r.day); cur.views += 1;
+    if (r.day > cur.last) cur.last = r.day;
+    memberMap.set(r.member_id, cur);
+  }
+
   return {
+    byMember: [...memberMap.entries()]
+      .map(([memberId, v]) => ({ memberId, days: v.days.size, views: v.views, last: v.last }))
+      .sort((a, b) => b.days - a.days || b.views - a.views),
+    distinctMembers: memberMap.size,
     byDay: [...dayMap.entries()]
       .map(([day, v]) => ({ day, people: v.s.size, views: v.views }))
       .sort((a, b) => a.day.localeCompare(b.day)),

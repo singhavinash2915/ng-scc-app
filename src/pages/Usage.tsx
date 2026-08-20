@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Users } from 'lucide-react';
+import { TrendingUp, Users, Eye } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
-import { fetchUsage, type DayCount, type RouteCount } from '../hooks/useUsage';
+import { fetchUsage, type DayCount, type RouteCount, type MemberUse } from '../hooks/useUsage';
+import { useMembers } from '../hooks/useMembers';
 
 // ─── Usage ────────────────────────────────────────────────────────────────────
 // Its own page rather than a block wedged into Settings, where a chart sat
@@ -23,7 +24,10 @@ const LABEL: Record<string, string> = {
 
 export function Usage() {
   const { isAdmin } = useAuth();
-  const [d, setD] = useState<{ byDay: DayCount[]; byRoute: RouteCount[]; missing: boolean } | null>(null);
+  const { members } = useMembers();
+  const [d, setD] = useState<{
+    byDay: DayCount[]; byRoute: RouteCount[]; byMember: MemberUse[];
+    distinctMembers: number; missing: boolean } | null>(null);
 
   useEffect(() => { void fetchUsage(30).then(setD); }, []);
 
@@ -75,7 +79,7 @@ export function Usage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { l: 'Today', v: today },
-            { l: 'Busiest day', v: busiest },
+            { l: 'Members using it', v: `${d.distinctMembers}/${members.length}` },
             { l: 'Days with visits', v: active },
             { l: 'Page views', v: views },
           ].map(x => (
@@ -135,12 +139,54 @@ export function Usage() {
           )}
         </Card>
 
+        {/* ── Who's using it ───────────────────────────────────────────────
+            Ranked by DAYS ACTIVE, not page loads. Someone with the app pinned
+            in a tab isn't more engaged than someone who opens it each morning,
+            and counting hits would claim otherwise. */}
+        {d.byMember.length > 0 && (
+          <Card className="p-5">
+            <div className="flex items-center gap-1.5 text-slate-400 mb-3">
+              <Eye className="w-4 h-4" />
+              <span className="t-micro font-black uppercase tracking-[1.5px]">
+                Who's using it · admin only
+              </span>
+            </div>
+            {d.byMember.map((m, i) => {
+              const name = members.find(x => x.id === m.memberId)?.name ?? 'Unknown member';
+              return (
+                <div key={m.memberId}
+                  className="flex items-center gap-2 py-1.5 border-b border-slate-50 dark:border-white/5">
+                  <span className="w-5 t-num text-sm text-slate-400">{i + 1}</span>
+                  <span className="flex-1 t-body font-bold text-slate-800 dark:text-white/85 truncate">
+                    {name}
+                  </span>
+                  <span className="t-meta text-slate-500 dark:text-white/55 tabular-nums">
+                    {m.days} {m.days === 1 ? 'day' : 'days'}
+                  </span>
+                  <span className="t-micro text-slate-400 tabular-nums w-14 text-right">
+                    {new Date(m.last + 'T00:00:00').toLocaleDateString('en-IN',
+                      { day: 'numeric', month: 'short' })}
+                  </span>
+                </div>
+              );
+            })}
+            {/* Members who signed in but haven't been back. Worth knowing:
+                these are the people the app has already lost. */}
+            {members.length > d.byMember.length && (
+              <p className="t-meta text-slate-400 mt-2">
+                {members.length - d.byMember.length} members haven't opened it in this period.
+              </p>
+            )}
+          </Card>
+        )}
+
         <Card tone="quiet" className="p-4">
           <p className="t-meta text-slate-500 dark:text-white/55 leading-snug">
-            Counts browser sessions, not members — nobody is identified. Admin traffic
-            is excluded, so testing a page repeatedly doesn't inflate the numbers.
-            Members signed in to see their own season, not to be logged, so there is
-            deliberately no "who opened it most" here.
+            Admin traffic is excluded, so testing a page repeatedly doesn't inflate
+            the numbers. Members are told on the sign-in card that their use is
+            recorded and visible to admins — tracking people who weren't told is the
+            part that would be wrong, not the tracking. Ranked by days active rather
+            than page loads, so a pinned tab doesn't look like enthusiasm.
           </p>
         </Card>
       </div>
