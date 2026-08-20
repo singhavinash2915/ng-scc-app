@@ -36,10 +36,25 @@ export function ClubMoneyCard() {
           </div>
           <p className="t-num text-2xl text-slate-900 dark:text-white">{rupees(m.cashInHand)}</p>
           <p className="t-micro text-slate-400 mt-1 leading-snug">
-            {rupees(m.cashIn)} received · {rupees(m.cashOut)} paid out.
+            {rupees(m.cashIn)} in · {rupees(m.cashOut)} out, this season.
           </p>
         </Card>
       </div>
+
+      {/* ── The rule ────────────────────────────────────────────────────
+          Written down so nobody has to argue it later. A member who fronts
+          money for the club should know before they do it that they'll be
+          repaid, and from where. */}
+      <Card tone="quiet" className="p-4">
+        <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400">
+          How opponent money is used
+        </p>
+        <p className="t-body text-slate-600 dark:text-white/70 mt-1 leading-snug">
+          Income from teams booking slots from us repays members who pay club costs
+          out of their own pocket, before anything else. Whatever is left goes to
+          the ground owner alongside member contributions.
+        </p>
+      </Card>
 
       <Card className="p-4">
         <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 mb-2">

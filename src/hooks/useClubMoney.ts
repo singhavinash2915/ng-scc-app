@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-// ─── Member credit vs cash in hand ────────────────────────────────────────────
+// ─── Member credit vs cash in hand, FOR ONE SEASON ────────────────────────────
+//
+// Scoped to the active season, and that is the whole point. A lifetime cash
+// figure swallows a closed season's spending — last season's ground payments
+// at A2Z Lavale were funded by last season's contributions — and produces a
+// number that answers no question anyone asks. It read ₹22,000 when the club
+// actually had ₹56,000 available this season, which is the difference between
+// being able to settle with a member and not.
+//
 // Once the ground fund became wallet money these stopped being the same number
 // and can never be the same number again.
 //
@@ -34,9 +42,18 @@ export function useClubMoney(): ClubMoney {
 
   useEffect(() => {
     void (async () => {
+      // The active season is the unit. Everything below is filtered to it.
+      const { data: seasonRow } = await supabase
+        .from('seasons').select('id').eq('status', 'active')
+        .order('start_date', { ascending: false }).limit(1).maybeSingle();
+      const seasonId = (seasonRow as { id?: string } | null)?.id ?? null;
+
       const [mem, gb, bk] = await Promise.all([
         supabase.from('members').select('balance'),
-        supabase.from('ground_bookings').select('cost, payment_status, prepaid_by'),
+        seasonId
+          ? supabase.from('ground_bookings')
+              .select('cost, payment_status, prepaid_by').eq('season_id', seasonId)
+          : supabase.from('ground_bookings').select('cost, payment_status, prepaid_by'),
         supabase.from('match_bookings').select('amount, payment_status, status'),
       ]);
 
@@ -65,30 +82,26 @@ export function useClubMoney(): ClubMoney {
           && b.status !== 'cancelled' && b.status !== 'rejected')
         .reduce((s, x) => s + Number(x.amount), 0);
 
-      // Wallet deposits are the club receiving money; match fees are internal
-      // and move nothing, so they're excluded from both sides.
-      //
-      // PAGINATED, and that is not optional here. PostgREST caps a response at
-      // 1,000 rows; the club is past 1,097 transactions, so a plain select
-      // returned a partial set and produced a confidently wrong total — cash in
-      // hand read minus ₹2.5 lakh. The query succeeded, which is what made it
-      // dangerous.
-      let deposits = 0, expenses = 0;
-      const PAGE = 1000;
-      for (let from = 0; ; from += PAGE) {
-        const { data: page, error } = await supabase
-          .from('transactions').select('type, amount').range(from, from + PAGE - 1);
-        if (error || !page?.length) break;
-        for (const t of page as Array<{ type: string; amount: number }>) {
-          const a = Math.abs(Number(t.amount));
-          if (t.type === 'deposit') deposits += a;
-          else if (t.type === 'expense') expenses += a;
-        }
-        if (page.length < PAGE) break;
-      }
+      // What members put in FOR THIS SEASON — the ground fund, not their
+      // lifetime wallet history. Season-linked rather than date-filtered,
+      // because contributions arrive months before a season starts.
+      const { data: sfp } = seasonId
+        ? await supabase.from('season_fund_payments')
+            .select('amount').eq('season_id', seasonId)
+        : { data: [] };
+      const memberContributions = ((sfp ?? []) as Array<{ amount: number }>)
+        .reduce((s, x) => s + Number(x.amount), 0);
 
-      const cashIn = deposits + bookingCash;
-      const cashOut = expenses + paidToOwner;
+      // Reimbursements to members who paid club costs personally. Tagged in the
+      // description so they can be recognised without a schema change.
+      const { data: reimb } = await supabase
+        .from('transactions').select('amount')
+        .eq('type', 'expense').like('description', 'Reimbursed%');
+      const reimbursed = ((reimb ?? []) as Array<{ amount: number }>)
+        .reduce((s, x) => s + Math.abs(Number(x.amount)), 0);
+
+      const cashIn = memberContributions + bookingCash;
+      const cashOut = paidToOwner + reimbursed;
 
       setM({
         memberCredit, cashIn, cashOut,
