@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useOpponentIncome } from '../hooks/useOpponentIncome';
 import { Card } from '../components/ui/Card';
 import { Printer, IndianRupee, TrendingUp, TrendingDown, Users, Calendar, ChevronDown, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
@@ -8,6 +9,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useAuth } from '../context/AuthContext';
 
 export function AnnualReport() {
+  const { byDate: opponentByDate } = useOpponentIncome();
   const { isAdmin } = useAuth();
   const { transactions } = useTransactions();
   const { members } = useMembers();
@@ -56,6 +58,17 @@ export function AnnualReport() {
     const expenses = yearTxns.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
     const matchFees = yearTxns.filter(t => t.type === 'match_fee').reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
 
+    // ── Booking income ───────────────────────────────────────────────────────
+    // Teams paying to play SCC is real cash in, and none of it was reaching
+    // this page: those payments never became transactions, so an annual report
+    // was understating the club's income by every rupee opponents had paid.
+    // Read from the bookings themselves, and only what's VERIFIED — an agreed
+    // booking is not money until it lands.
+    let bookingIncome = 0;
+    for (const [date, day] of opponentByDate) {
+      if (date >= start && date <= end) bookingIncome += day.paid;
+    }
+
     // Top 10 contributors (by deposit amount this year)
     const byMember: Record<string, number> = {};
     yearTxns.filter(t => t.type === 'deposit' && t.member_id).forEach(t => {
@@ -86,8 +99,10 @@ export function AnnualReport() {
     const drawn = completed.filter(m => m.result === 'draw').length;
 
     return {
-      deposits, expenses, matchFees,
-      net: deposits - expenses,
+      deposits, expenses, matchFees, bookingIncome,
+      // Net flow is real money in minus real money out. Booking income is as
+      // real as a deposit — it just came from another club rather than a member.
+      net: deposits + bookingIncome - expenses,
       yearTxns: yearTxns.length,
       topContributors,
       topCategories,
@@ -138,7 +153,7 @@ export function AnnualReport() {
         </div>
 
         {/* ── Summary cards ───────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 print:gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print:gap-2">
           <div className="r-card p-5 print:border print:border-gray-300"
                style={{ background: 'linear-gradient(135deg, #065f46 0%, #0a1019 100%)' }}>
             <div className="flex items-center gap-1.5 text-emerald-300/80 mb-1">
@@ -147,6 +162,20 @@ export function AnnualReport() {
             </div>
             <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">{fmt(data.deposits)}</p>
           </div>
+          {/* Money from other clubs. Was missing entirely, which made every
+              annual report understate income by whatever opponents had paid. */}
+          <div className="r-card p-5"
+               style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)' }}>
+            <div className="flex items-center gap-1.5 text-blue-300/80 mb-1">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span className="t-micro font-bold uppercase tracking-[1.5px]">Booking Income</span>
+            </div>
+            <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">
+              {fmt(data.bookingIncome)}
+            </p>
+            <p className="t-micro text-blue-200/50 mt-1.5">Teams paying to play us</p>
+          </div>
+
           <div className="r-card p-5"
                style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)' }}>
             <div className="flex items-center gap-1.5 text-red-300/80 mb-1">
@@ -197,7 +226,9 @@ export function AnnualReport() {
 
         {/* Net flow, shown as its workings so the sign needs no explaining. */}
         <p className="mt-3 t-meta text-gray-400 text-center">
-          Net flow = deposits {fmt(data.deposits)} − expenses {fmt(data.expenses)}
+          Net flow = deposits {fmt(data.deposits)}
+          {data.bookingIncome > 0 && <> + bookings {fmt(data.bookingIncome)}</>}
+          {' '}− expenses {fmt(data.expenses)}
           {' '}= <span className={data.net >= 0 ? 'text-emerald-300' : 'text-red-300'}>
             {data.net >= 0 ? '+' : '−'}{fmt(Math.abs(data.net))}
           </span>

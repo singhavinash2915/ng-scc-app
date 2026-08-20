@@ -1098,6 +1098,38 @@ export function SeasonFund() {
           {activeTab === 'overview' && overviewStats && (
             <div className="space-y-4">
 
+              {/* ── Bookings with nowhere to land ────────────────────────
+                  A team can book a date the club has no ground session for.
+                  The join is by date, so such a booking would simply never
+                  appear — money received and invisible. Say so instead. */}
+              {(() => {
+                const sessionDates = new Set((selectedSeason?.bookings ?? []).map(b => b.date));
+                const orphans = [...opponentByDate.values()]
+                  .filter(d => !sessionDates.has(d.date) && d.paid > 0);
+                if (!orphans.length) return null;
+                return (
+                  <Card tone="warn" className="p-4">
+                    <p className="font-black text-slate-900 dark:text-white">
+                      {orphans.length} booking{orphans.length > 1 ? 's' : ''} with no ground session
+                    </p>
+                    <p className="t-meta text-slate-600 dark:text-white/70 mt-1">
+                      Money received for a date this season has no session booked, so it
+                      isn't offsetting any ground cost. Add the session, or the income
+                      stays invisible.
+                    </p>
+                    <div className="mt-2 space-y-0.5">
+                      {orphans.map(o => (
+                        <p key={o.date} className="t-meta text-slate-500 dark:text-white/55">
+                          {new Date(o.date + 'T00:00:00').toLocaleDateString('en-IN',
+                            { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {' · '}{o.team} · ₹{o.paid.toLocaleString('en-IN')}
+                        </p>
+                      ))}
+                    </div>
+                  </Card>
+                );
+              })()}
+
               {/* ── 0. What the club owes its own members ────────────────
                   Above the income breakdown deliberately. A debt to a
                   teammate is the one number on this page that involves
