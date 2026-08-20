@@ -350,6 +350,8 @@ export function standingFromTarget(
   rows: ScorecardMatchRow[], match: NameMatcher, memberIds: string[],
   /** When set, only this fixture counts — the contest is about that Sunday. */
   onlyMatchId?: string | null,
+  /** True when that fixture hasn't been played. Changes what zero MEANS. */
+  notPlayedYet?: boolean,
 ): TargetStanding[] {
   const want = new Set(memberIds);
   if (onlyMatchId) rows = rows.filter(r => r.matchId === onlyMatchId);
@@ -378,9 +380,14 @@ export function standingFromTarget(
     return {
       memberId, best: v, hit,
       matchId: hit ? (b?.matchId ?? null) : null,
+      // "Best so far 0 sixes" on a match nobody has played reads as broken
+      // rather than as pending. Zero before the game means "not yet", and
+      // that's a different sentence.
       detail: hit
         ? `Done it — ${v} in a match`
-        : `Best so far ${v} ${v === 1 ? one : many}`,
+        : notPlayedYet && v === 0
+          ? 'Not played yet'
+          : `Best so far ${v} ${v === 1 ? one : many}`,
     };
   }).sort((a, b) => (a.hit !== b.hit ? (a.hit ? -1 : 1) : b.best - a.best));
 }

@@ -8,6 +8,7 @@ import { suggestChallenges, standingFromScorecards, standingFromBalls,
          type Standing, type ScorecardMatchRow } from '../lib/challenges';
 import { useAllScorecards } from './useAllScorecards';
 import { useMembers } from './useMembers';
+import { useMatches } from './useMatches';
 import type { Ball } from '../lib/cricketRules';
 
 // ─── Challenges ───────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ export function useChallenges() {
   const { me } = useMe();
   const { stats } = useCricketStats('2025-26');
   const { members } = useMembers();
+  const { matches } = useMatches();
   const { scorecards } = useAllScorecards();
   const [rows, setRows] = useState<ChallengeRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,7 +135,9 @@ export function useChallenges() {
 
     // "First to N in a match" — a single-match feat, not a season total.
     if (c.kind === 'target' && c.target) {
-      return standingFromTarget(c.metric, c.target, matchRows, nameMatcher, [...ids], c.match_id)
+      const fixture = c.match_id ? matches.find(m => m.id === c.match_id) : null;
+      return standingFromTarget(c.metric, c.target, matchRows, nameMatcher, [...ids],
+                                c.match_id, fixture?.result === 'upcoming')
         .map(t => ({ memberId: t.memberId, value: t.best, qualified: t.hit, detail: t.detail }));
     }
 
@@ -167,7 +171,7 @@ export function useChallenges() {
         fielding_catches: s.fielding_catches ?? 0,
       }));
     return standingFromScorecards(c.metric, rowsForChallenge);
-  }, [stats, balls, matchRows, nameMatcher]);
+  }, [stats, balls, matchRows, nameMatcher, matches]);
 
   const create = useCallback(async (
     metric: Metric, opponentIds: string[], closesOn: string | null,

@@ -148,7 +148,7 @@ export function Challenges() {
                 </p>
                 {c.stake && (
                   <p className="t-meta font-bold text-amber-600 dark:text-amber-300 mt-1">
-                    🍵 Loser {c.stake}
+                    🍵&nbsp; Loser {c.stake}
                   </p>
                 )}
                 <div className="flex gap-2 mt-3">
@@ -179,6 +179,17 @@ export function Challenges() {
               const standings = C.standingsFor(c);
               return (
                 <Card key={c.id} tone={pending ? 'warn' : 'plain'} className="p-4">
+                  {/* Who you're playing, first. The generated title for a
+                      target challenge ("3 sixes in a match") never said, which
+                      made a page of them indistinguishable. */}
+                  <p className="t-micro font-black uppercase tracking-wider text-slate-400">
+                    {(() => {
+                      const them = (c.players ?? [])
+                        .filter(p => p.member_id !== me.id)
+                        .map(p => name(p.member_id).split(' ')[0]);
+                      return them.length ? `You v ${them.join(', ')}` : 'You';
+                    })()}
+                  </p>
                   <p className="font-black text-slate-900 dark:text-white">
                     {c.title ?? metricDef(c.metric).label}
                   </p>
@@ -189,7 +200,7 @@ export function Challenges() {
                   </p>
                   {c.stake && (
                     <p className="t-body font-bold text-amber-600 dark:text-amber-300 mt-1.5">
-                      🍵 Loser {c.stake}
+                      🍵&nbsp; Loser {c.stake}
                     </p>
                   )}
                   {c.status === 'settled' && (
@@ -214,7 +225,15 @@ export function Challenges() {
                     </div>
                   ) : (
                     <div className="mt-3 space-y-1.5">
-                      {standings.map((st, i) => (
+                      {/* A leaderboard of one is not a leaderboard. Until they
+                          accept, say what's actually happening. */}
+                      {(c.players ?? []).some(p => p.member_id !== me.id && !p.accepted) ? (
+                        <p className="t-meta text-slate-400">
+                          Waiting for {(c.players ?? [])
+                            .filter(p => p.member_id !== me.id && !p.accepted)
+                            .map(p => name(p.member_id).split(' ')[0]).join(', ')} to accept.
+                        </p>
+                      ) : standings.map((st, i) => (
                         <div key={st.memberId} className="flex items-center gap-2">
                           <span className="w-5 t-num text-sm text-slate-400">{i + 1}</span>
                           <span className="flex-1 t-body font-bold text-slate-800 dark:text-white/85 truncate">
@@ -297,7 +316,11 @@ export function Challenges() {
 
                       {/* Either player can settle. A challenge that needs an
                           admin to close it never gets closed. */}
-                      {c.status !== 'settled' && standings.length > 1 && (
+                      {/* A fixture-pinned challenge can't be settled before
+                          the fixture. Offering it made "Settle it" look like a
+                          button that decides the result rather than records it. */}
+                      {c.status !== 'settled' && standings.length > 1 &&
+                       !(c.match_id && matches.find(x => x.id === c.match_id)?.result === 'upcoming') && (
                         <button onClick={async () => {
                           const w = await C.settle(c);
                           void shareResult(c.title ?? metricDef(c.metric).label, w, c.stake);
@@ -528,7 +551,7 @@ export function Challenges() {
 
                   {c.stake && (
                     <p className="t-meta font-bold text-amber-600 dark:text-amber-300 mt-1">
-                      🍵 Loser {c.stake}
+                      🍵&nbsp; Loser {c.stake}
                     </p>
                   )}
 
