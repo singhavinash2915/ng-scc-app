@@ -92,16 +92,14 @@ export function useClubMoney(): ClubMoney {
       const memberContributions = ((sfp ?? []) as Array<{ amount: number }>)
         .reduce((s, x) => s + Number(x.amount), 0);
 
-      // Reimbursements to members who paid club costs personally. Tagged in the
-      // description so they can be recognised without a schema change.
-      const { data: reimb } = await supabase
-        .from('transactions').select('amount')
-        .eq('type', 'expense').like('description', 'Reimbursed%');
-      const reimbursed = ((reimb ?? []) as Array<{ amount: number }>)
-        .reduce((s, x) => s + Math.abs(Number(x.amount)), 0);
-
       const cashIn = memberContributions + bookingCash;
-      const cashOut = paidToOwner + reimbursed;
+
+      // Ground spending ALREADY includes the slots the club reimbursed a member
+      // for — once they're settled they're marked paid like any other session.
+      // Adding the reimbursement transaction on top counted the same ₹28,000
+      // twice and reported ₹0 in hand when there was ₹28,000. The money left
+      // once; the session being paid is the record of it.
+      const cashOut = paidToOwner;
 
       setM({
         memberCredit, cashIn, cashOut,
