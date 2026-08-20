@@ -95,8 +95,13 @@ export function YourSeason({ matches }: Props) {
     out.push({
       label: 'Your balance',
       value: `₹${Math.round(me.balance).toLocaleString('en-IN')}`,
-      detail: low ? 'Running low — top up before the next match' : 'Covered for the next few matches',
-      to: '/payment',
+      detail: low
+        ? 'Running low — hand your top-up to an admin'
+        : 'Covered for the next few matches',
+      // Their own statement, not the Razorpay page. Online payment costs the
+      // club a fee on money members already hand over directly, which is why
+      // it's hidden from the nav — linking to it here undid that.
+      to: `/profile/${me.id}`,
       tone: low ? 'amber' : 'green',
     });
 

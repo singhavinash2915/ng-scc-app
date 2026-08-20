@@ -130,8 +130,10 @@ export function usePersonalAlerts(matches: Match[]) {
         id: 'balance',
         tone: me.balance < 200 ? 'urgent' : 'info',
         title: `Balance is ₹${Math.round(me.balance)}`,
-        body: 'Top up before the next match so the fee clears.',
-        to: '/payment',
+        body: 'Hand your top-up to an admin before the next match.',
+        // Not the online-payment page: it charges the club a fee on money
+        // members already pay directly over UPI.
+        to: `/profile/${me.id}`,
       });
     }
 
