@@ -6,7 +6,8 @@ import { SignInCard } from '../components/SignInCard';
 import { useMe } from '../context/MemberContext';
 import { useMembers } from '../hooks/useMembers';
 import { useChallenges } from '../hooks/useChallenges';
-import { CATEGORY, metricDef, autoTitle, type Metric, type Category } from '../lib/challenges';
+import { CATEGORY, TARGET_METRICS, metricDef, autoTitle,
+         type Metric, type Category } from '../lib/challenges';
 import { challengeUrl } from '../utils/bookingMessages';
 
 // ─── Challenges ───────────────────────────────────────────────────────────────
@@ -24,6 +25,8 @@ export function Challenges() {
   const [stake, setStake] = useState('');
   const [howOpen, setHowOpen] = useState(false);
   const [cat, setCat] = useState<Category>('batting');
+  const [mode, setMode] = useState<'h2h' | 'target'>('h2h');
+  const [target, setTarget] = useState('');
   const [busy, setBusy] = useState(false);
 
   const name = (id: string | null) => members.find(m => m.id === id)?.name ?? '—';
@@ -57,9 +60,13 @@ export function Challenges() {
   }
 
   const send = async (m: Metric, oppId: string, withStake?: string) => {
+    const n = mode === 'target' ? Number(target) : null;
+    if (mode === 'target' && (!n || n < 1)) { alert('Set a target first.'); return; }
     setBusy(true);
-    const err = await C.create(m, [oppId], null,
-      autoTitle(m, [me.name, name(oppId)]), withStake ?? null);
+    const title = n
+      ? `${n} ${metricDef(m).label.replace(/^Most /, '').replace(/^Best /, '')} in a match`
+      : autoTitle(m, [me.name, name(oppId)]);
+    const err = await C.create(m, [oppId], null, title, withStake ?? null, n);
     setBusy(false);
     if (err) { alert(err); return; }
 
@@ -113,7 +120,11 @@ export function Challenges() {
                   <p className="font-black text-slate-900 dark:text-white">
                     {c.title ?? metricDef(c.metric).label}
                   </p>
-                  <p className="t-meta text-slate-400">{metricDef(c.metric).hint}</p>
+                  <p className="t-meta text-slate-400">
+                    {c.kind === 'target'
+                      ? `First to ${c.target} in a single match`
+                      : metricDef(c.metric).hint}
+                  </p>
                   {c.stake && (
                     <p className="t-body font-bold text-amber-600 dark:text-amber-300 mt-1.5">
                       🍵 Loser {c.stake}
@@ -195,6 +206,30 @@ export function Challenges() {
             Call someone out
           </p>
 
+          {/* Two shapes of contest, and they answer different questions:
+              "who ends up ahead over the season" vs "who does it first in a
+              single match". Worth choosing before anything else. */}
+          <div className="flex gap-2">
+            {([
+              { k: 'h2h' as const, l: 'Head to head', h: 'Most over the season' },
+              { k: 'target' as const, l: 'First to…', h: 'In a single match' },
+            ]).map(o => (
+              <button key={o.k}
+                onClick={() => {
+                  setMode(o.k);
+                  // Only some contests make sense as a one-match feat.
+                  if (o.k === 'target' && !TARGET_METRICS.includes(metric)) setMetric('runs');
+                }}
+                className={`flex-1 py-2 r-control border-2 ${
+                  mode === o.k
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
+                    : 'border-slate-200 dark:border-white/10'}`}>
+                <span className="block t-body font-black text-slate-800 dark:text-white/85">{o.l}</span>
+                <span className="block t-micro text-slate-400">{o.h}</span>
+              </button>
+            ))}
+          </div>
+
           <div className="flex gap-2">
             {(Object.keys(CATEGORY) as Category[]).map(k => (
               <button key={k} onClick={() => { setCat(k); setMetric(CATEGORY[k].metrics[0]); }}
@@ -209,7 +244,9 @@ export function Challenges() {
 
           {/* Contest chips — horizontal scroll rather than a wall of buttons. */}
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-            {CATEGORY[cat].metrics.map(k => {
+            {CATEGORY[cat].metrics
+              .filter(k => mode === 'h2h' || TARGET_METRICS.includes(k))
+              .map(k => {
               const d = metricDef(k);
               return (
                 <button key={k} onClick={() => setMetric(k)}
@@ -228,6 +265,21 @@ export function Challenges() {
               );
             })}
           </div>
+
+          {mode === 'target' && (
+            <div className="flex items-center gap-2">
+              <span className="t-body font-bold text-slate-600 dark:text-white/70">First to</span>
+              <input type="number" inputMode="numeric" min={1} value={target}
+                onChange={e => setTarget(e.target.value)}
+                placeholder="4"
+                className="w-20 px-3 py-2 r-control text-center t-num text-lg
+                           bg-slate-50 dark:bg-white/5 border border-slate-200
+                           dark:border-white/10 text-slate-900 dark:text-white" />
+              <span className="t-body font-bold text-slate-600 dark:text-white/70">
+                {metricDef(metric).label.replace(/^Most /, '')} in one match
+              </span>
+            </div>
+          )}
 
           {/* Opponent — faces, not a dropdown. You're picking a person. */}
           <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 pt-1">Against</p>

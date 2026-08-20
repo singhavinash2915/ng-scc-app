@@ -325,7 +325,10 @@ export interface MatchFeat {
  * feat are supported — "best economy in a match" is a season stat wearing a
  * disguise.
  */
-export const TARGET_METRICS: Metric[] = ['runs', 'wickets', 'fours', 'sixes', 'catches'];
+// Catches are absent from the synced innings JSON, so a "3 catches in a match"
+// target could never resolve. Offering a contest that can't be won is worse
+// than not offering it.
+export const TARGET_METRICS: Metric[] = ['runs', 'wickets', 'fours', 'sixes'];
 
 export interface ScorecardMatchRow {
   matchId: string;

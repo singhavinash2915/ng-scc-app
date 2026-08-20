@@ -3,8 +3,11 @@ import { supabase } from '../lib/supabase';
 import { useMe } from '../context/MemberContext';
 import { useCricketStats } from './useCricketStats';
 import { suggestChallenges, standingFromScorecards, standingFromBalls,
-         metricDef, type Metric, type Suggestion, type SeasonLine,
-         type Standing } from '../lib/challenges';
+         standingFromTarget, buildMatcher, metricDef,
+         type Metric, type Suggestion, type SeasonLine,
+         type Standing, type ScorecardMatchRow } from '../lib/challenges';
+import { useAllScorecards } from './useAllScorecards';
+import { useMembers } from './useMembers';
 import type { Ball } from '../lib/cricketRules';
 
 // ─── Challenges ───────────────────────────────────────────────────────────────
@@ -34,6 +37,8 @@ const isMissing = (e: { code?: string } | null) =>
 export function useChallenges() {
   const { me } = useMe();
   const { stats } = useCricketStats('2025-26');
+  const { members } = useMembers();
+  const { scorecards } = useAllScorecards();
   const [rows, setRows] = useState<ChallengeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tableMissing, setTableMissing] = useState(false);
@@ -70,6 +75,32 @@ export function useChallenges() {
     })();
   }, [needsBalls, balls.length]);
 
+  /**
+   * Per-match rows, flattened out of the innings JSON. A target challenge asks
+   * "did you do it in ONE match", which season totals cannot answer.
+   */
+  const matchRows = useMemo<ScorecardMatchRow[]>(() => {
+    const out: ScorecardMatchRow[] = [];
+    for (const sc of scorecards ?? []) {
+      for (const inn of [
+        { bat: sc.innings1_batting, bowl: sc.innings1_bowling },
+        { bat: sc.innings2_batting, bowl: sc.innings2_bowling },
+      ]) {
+        for (const b of inn.bat ?? []) {
+          out.push({ matchId: sc.match_id, name: b.name, runs: b.runs ?? 0,
+                     fours: b['4s'] ?? 0, sixes: b['6s'] ?? 0, wickets: 0, catches: 0 });
+        }
+        for (const b of inn.bowl ?? []) {
+          out.push({ matchId: sc.match_id, name: b.name, wickets: b.wickets ?? 0,
+                     runs: 0, fours: 0, sixes: 0, catches: 0 });
+        }
+      }
+    }
+    return out;
+  }, [scorecards]);
+
+  const nameMatcher = useMemo(() => buildMatcher(members), [members]);
+
   /** Season lines, shared by the suggestion engine and every leaderboard. */
   const lines = useMemo<SeasonLine[]>(() => stats.map(s => ({
     memberId: s.member_id,
@@ -97,6 +128,12 @@ export function useChallenges() {
     if (c.status === 'settled' && c.final_standings) return c.final_standings;
 
     const ids = new Set((c.players ?? []).filter(p => p.accepted).map(p => p.member_id));
+
+    // "First to N in a match" — a single-match feat, not a season total.
+    if (c.kind === 'target' && c.target) {
+      return standingFromTarget(c.metric, c.target, matchRows, nameMatcher, [...ids])
+        .map(t => ({ memberId: t.memberId, value: t.best, qualified: t.hit, detail: t.detail }));
+    }
 
     if (metricDef(c.metric).needsBalls) {
       // Chase strike rate only counts second-innings deliveries — runs against
@@ -128,15 +165,16 @@ export function useChallenges() {
         fielding_catches: s.fielding_catches ?? 0,
       }));
     return standingFromScorecards(c.metric, rowsForChallenge);
-  }, [stats, balls]);
+  }, [stats, balls, matchRows, nameMatcher]);
 
   const create = useCallback(async (
     metric: Metric, opponentIds: string[], closesOn: string | null,
-    title?: string, stake?: string | null,
+    title?: string, stake?: string | null, target?: number | null,
   ) => {
     if (!me) return 'Sign in first';
     const { data, error } = await supabase.from('scc_challenges')
-      .insert({ metric, kind: 'h2h', created_by: me.id, closes_on: closesOn,
+      .insert({ metric, kind: target ? 'target' : 'h2h', target: target ?? null,
+                created_by: me.id, closes_on: closesOn,
                 title: title ?? null, stake: stake || null })
       .select().single();
     if (error) return error.message;
