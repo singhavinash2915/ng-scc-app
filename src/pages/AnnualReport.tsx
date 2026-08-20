@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useOpponentIncome } from '../hooks/useOpponentIncome';
+import { useSeasonFund } from '../hooks/useSeasonFund';
 import { Card } from '../components/ui/Card';
 import { Printer, IndianRupee, TrendingUp, TrendingDown, Users, Calendar, ChevronDown, Lock } from 'lucide-react';
 import { Header } from '../components/layout/Header';
@@ -10,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 
 export function AnnualReport() {
   const { byDate: opponentByDate } = useOpponentIncome();
+  const { seasons } = useSeasonFund();
   const { isAdmin } = useAuth();
   const { transactions } = useTransactions();
   const { members } = useMembers();
@@ -37,20 +39,42 @@ export function AnnualReport() {
     );
   }
 
-  // Available years (from transactions + matches)
-  const years = useMemo(() => {
+  /**
+   * What the report can cover.
+   *
+   * A calendar year cuts a cricket season in half — Oct-to-May straddles two
+   * of them, so "FY 2026" mixes the back end of one season with the front of
+   * the next and belongs to neither. Seasons come first because that's the
+   * unit the club actually thinks and talks in; the FY view stays for anyone
+   * reconciling against a bank statement.
+   */
+  interface Period { key: string; label: string; start: string; end: string }
+
+  const periods = useMemo<Period[]>(() => {
+    const out: Period[] = seasons.map(s => ({
+      key: `season-${s.id}`,
+      label: s.name,
+      start: s.start_date,
+      end: s.end_date,
+    }));
     const set = new Set<number>();
     transactions.forEach(t => set.add(new Date(t.date).getFullYear()));
     matches.forEach(m => set.add(new Date(m.date).getFullYear()));
-    const arr = Array.from(set).sort((a, b) => b - a);
-    return arr.length ? arr : [new Date().getFullYear()];
-  }, [transactions, matches]);
+    Array.from(set).sort((a, b) => b - a).forEach(y => out.push({
+      key: `fy-${y}`, label: `FY ${y}`, start: `${y}-01-01`, end: `${y}-12-31`,
+    }));
+    return out.length ? out : [{
+      key: 'fy-now', label: `FY ${new Date().getFullYear()}`,
+      start: `${new Date().getFullYear()}-01-01`, end: `${new Date().getFullYear()}-12-31`,
+    }];
+  }, [seasons, transactions, matches]);
 
-  const [year, setYear] = useState(years[0]);
+  const [periodKey, setPeriodKey] = useState<string>('');
+  const period = periods.find(p => p.key === periodKey) ?? periods[0];
 
   const data = useMemo(() => {
-    const start = `${year}-01-01`;
-    const end = `${year}-12-31`;
+    const start = period.start;
+    const end = period.end;
     const yearTxns = transactions.filter(t => t.date >= start && t.date <= end);
     const yearMatches = matches.filter(m => m.date >= start && m.date <= end);
 
@@ -65,9 +89,23 @@ export function AnnualReport() {
     // Read from the bookings themselves, and only what's VERIFIED — an agreed
     // booking is not money until it lands.
     let bookingIncome = 0;
+    let bookingDue = 0;
     for (const [date, day] of opponentByDate) {
-      if (date >= start && date <= end) bookingIncome += day.paid;
+      if (date >= start && date <= end) {
+        bookingIncome += day.paid;
+        bookingDue += day.amount - day.paid;    // agreed, not yet received
+      }
     }
+
+    // ── Money paid OUT to another club ───────────────────────────────────────
+    // The CricBot slots: SCC paid them for ground, rather than being paid to
+    // play. Netting it against booking income is the only way "what we made
+    // from opponents" means anything — otherwise the page shows ₹56,000 coming
+    // in and quietly omits ₹28,000 going the other way.
+    const paidToOpponents = (seasons.flatMap(s => s.bookings ?? []))
+      .filter(b => b.date >= start && b.date <= end
+        && (b as { prepaid_by?: string | null }).prepaid_by)
+      .reduce((sum, b) => sum + Number(b.cost), 0);
 
     // Top 10 contributors (by deposit amount this year)
     const byMember: Record<string, number> = {};
@@ -99,7 +137,7 @@ export function AnnualReport() {
     const drawn = completed.filter(m => m.result === 'draw').length;
 
     return {
-      deposits, expenses, matchFees, bookingIncome,
+      deposits, expenses, matchFees, bookingIncome, bookingDue, paidToOpponents,
       // Net flow is real money in minus real money out. Booking income is as
       // real as a deposit — it just came from another club rather than a member.
       net: deposits + bookingIncome - expenses,
@@ -109,13 +147,13 @@ export function AnnualReport() {
       matchesPlayed: completed.length,
       won, lost, drawn,
     };
-  }, [year, transactions, matches, members]);
+  }, [period, transactions, matches, members]);
 
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
   return (
     <div>
-      <Header title="Annual Report" subtitle={`Financial Year ${year} · P&L Summary`} />
+      <Header title="Annual Report" subtitle={`${period.label} · P&L Summary`} />
 
       <div className="p-4 lg:p-8 space-y-5 print:p-0">
 
@@ -123,11 +161,11 @@ export function AnnualReport() {
         <div className="flex items-center justify-between flex-wrap gap-3 print:hidden">
           <div className="relative">
             <select
-              value={year}
-              onChange={e => setYear(Number(e.target.value))}
+              value={period.key}
+              onChange={e => setPeriodKey(e.target.value)}
               className="appearance-none pl-3 pr-9 py-2 r-control border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 font-semibold text-sm cursor-pointer"
             >
-              {years.map(y => <option key={y} value={y}>FY {y}</option>)}
+              {periods.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -146,7 +184,7 @@ export function AnnualReport() {
             <img src="/scc-logo.jpg" alt="SCC" className="w-14 h-14 r-card" />
             <div>
               <h1 className="text-2xl font-black">Sangria Cricket Club</h1>
-              <p className="text-sm text-gray-600">Annual Report · Financial Year {year}</p>
+              <p className="text-sm text-gray-600">Annual Report · {period.label}</p>
               <p className="text-xs text-gray-500">Generated on {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
           </div>
@@ -198,6 +236,57 @@ export function AnnualReport() {
           </div>
         </div>
 
+        {/* ── The opponent ledger ──────────────────────────────────────────
+            "We received ₹56,000 from bookings" is only half a sentence while
+            ₹28,000 went the other way to CricBot. Both directions, and the
+            difference, on one card — so nobody has to hold two numbers from
+            two pages in their head to work out what playing other clubs
+            actually earned. */}
+        {(data.bookingIncome > 0 || data.paidToOpponents > 0) && (
+          <div className="mt-3 r-card p-5"
+               style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0a1019 100%)' }}>
+            <div className="flex items-center gap-1.5 text-teal-300/80 mb-3">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span className="t-micro font-bold uppercase tracking-[1.5px]">
+                Opponents · in and out
+              </span>
+            </div>
+
+            <div className="space-y-1.5 t-body">
+              <div className="flex justify-between text-white/85">
+                <span>Teams paid us to play</span>
+                <span className="tabular-nums text-emerald-300">+{fmt(data.bookingIncome)}</span>
+              </div>
+              {data.paidToOpponents > 0 && (
+                <div className="flex justify-between text-white/85">
+                  <span>We paid CricBot XI for ground</span>
+                  <span className="tabular-nums text-red-300">−{fmt(data.paidToOpponents)}</span>
+                </div>
+              )}
+              <div className="flex justify-between pt-2 mt-1 border-t border-white/15 font-black">
+                <span className="text-white">Net from opponents</span>
+                <span className={`tabular-nums ${
+                  data.bookingIncome - data.paidToOpponents >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                  {data.bookingIncome - data.paidToOpponents >= 0 ? '+' : '−'}
+                  {fmt(Math.abs(data.bookingIncome - data.paidToOpponents))}
+                </span>
+              </div>
+            </div>
+
+            {data.bookingDue > 0 && (
+              <p className="t-meta text-amber-300/80 mt-3">
+                {fmt(data.bookingDue)} more agreed but not yet received — not counted above.
+              </p>
+            )}
+            {data.paidToOpponents > 0 && (
+              <p className="t-micro text-teal-200/50 mt-2 leading-snug">
+                The CricBot payment was made by Avinash personally, so the club still
+                owes him that amount — see the season page.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* ── Match fees — deliberately NOT in the row above ────────────────
             Deposits, expenses and net flow are one story: money in, money out,
             the difference. Match fees is a different KIND of number — it moves
@@ -238,7 +327,7 @@ export function AnnualReport() {
         <Card className="p-5">
           <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
             <Calendar className="w-4 h-4 text-primary-500" />
-            Match Performance · {year}
+            Match Performance · {period.label}
           </h3>
           <div className="grid grid-cols-4 gap-2 text-center">
             <div>
