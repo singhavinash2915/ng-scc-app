@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Check, X, Trophy, Share2, HelpCircle, ChevronDown, Swords, Search } from 'lucide-react';
+import { Check, X, Trophy, Share2, HelpCircle, ChevronDown, Swords, Search,
+         Pencil, Trash2 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { SignInCard } from '../components/SignInCard';
@@ -31,6 +32,9 @@ export function Challenges() {
   const [target, setTarget] = useState('');
   const [matchId, setMatchId] = useState<string | null>(null);
   const [q, setQ] = useState('');
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editStake, setEditStake] = useState('');
+  const [editTarget, setEditTarget] = useState('');
   const [busy, setBusy] = useState(false);
 
   const name = (id: string | null) => members.find(m => m.id === id)?.name ?? '—';
@@ -183,6 +187,71 @@ export function Challenges() {
                       ))}
                       {standings.length === 0 && (
                         <p className="t-meta text-slate-400">Waiting for them to accept.</p>
+                      )}
+
+                      {/* Yours, and nobody has taken it up — so the terms are
+                          still open. Once they accept this disappears: that's
+                          the moment a stake becomes real, and letting someone
+                          delete a contest they're losing would make the whole
+                          thing worthless. */}
+                      {c.created_by === me.id && c.status !== 'settled' &&
+                       !(c.players ?? []).some(p => p.member_id !== me.id && p.accepted) && (
+                        editing === c.id ? (
+                          <div className="mt-2 space-y-2">
+                            {c.kind === 'target' && (
+                              <input type="number" inputMode="numeric" min={1}
+                                value={editTarget} onChange={e => setEditTarget(e.target.value)}
+                                placeholder="Target"
+                                className="w-full px-3 py-2 r-control bg-slate-50 dark:bg-white/5
+                                           border border-slate-200 dark:border-white/10 t-body
+                                           text-slate-900 dark:text-white" />
+                            )}
+                            <input value={editStake} onChange={e => setEditStake(e.target.value)}
+                              placeholder="Stake (optional)"
+                              className="w-full px-3 py-2 r-control bg-slate-50 dark:bg-white/5
+                                         border border-slate-200 dark:border-white/10 t-body
+                                         text-slate-900 dark:text-white" />
+                            <div className="flex gap-2">
+                              <button onClick={async () => {
+                                const err = await C.edit(c, {
+                                  stake: editStake || null,
+                                  ...(c.kind === 'target' && editTarget
+                                    ? { target: Number(editTarget) } : {}),
+                                });
+                                if (err) alert(err); else setEditing(null);
+                              }}
+                                className="flex-1 py-2 r-control bg-emerald-500 text-white
+                                           t-meta font-black">Save</button>
+                              <button onClick={() => setEditing(null)}
+                                className="px-4 r-control border border-slate-200
+                                           dark:border-white/10 t-meta font-black text-slate-500">
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2 mt-2">
+                            <button onClick={() => {
+                              setEditing(c.id);
+                              setEditStake(c.stake ?? '');
+                              setEditTarget(c.target ? String(c.target) : '');
+                            }}
+                              className="flex-1 py-2 r-control border border-slate-200
+                                         dark:border-white/10 t-meta font-black text-slate-500
+                                         inline-flex items-center justify-center gap-1.5">
+                              <Pencil className="w-3.5 h-3.5" /> Edit
+                            </button>
+                            <button onClick={async () => {
+                              if (!confirm('Withdraw this challenge?')) return;
+                              const err = await C.withdraw(c);
+                              if (err) alert(err);
+                            }}
+                              className="px-4 r-control border border-rose-200 dark:border-rose-400/25
+                                         text-rose-500 inline-flex items-center justify-center">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )
                       )}
 
                       {/* Either player can settle. A challenge that needs an

@@ -223,6 +223,40 @@ export function useChallenges() {
   }, [me, fetchRows]);
 
   /**
+   * Withdraw a challenge nobody has taken up.
+   *
+   * Only while it's unaccepted, and only by whoever sent it. Once the other
+   * person has agreed it stops being yours to cancel — that's the moment a
+   * stake becomes real, and letting the loser quietly delete a contest they're
+   * behind in would make the whole thing worthless.
+   */
+  const withdraw = useCallback(async (c: ChallengeRow) => {
+    if (!me || c.created_by !== me.id) return 'Not yours to withdraw';
+    if ((c.players ?? []).some(p => p.member_id !== me.id && p.accepted)) {
+      return 'They\u2019ve already accepted — this one has to be played out.';
+    }
+    await supabase.from('scc_challenge_players').delete().eq('challenge_id', c.id);
+    const { error } = await supabase.from('scc_challenges').delete().eq('id', c.id);
+    if (error) return error.message;
+    await fetchRows();
+    return null;
+  }, [me, fetchRows]);
+
+  /** Change the terms while it's still unaccepted. Same rule as withdraw. */
+  const edit = useCallback(async (
+    c: ChallengeRow, patch: { target?: number | null; stake?: string | null; match_id?: string | null },
+  ) => {
+    if (!me || c.created_by !== me.id) return 'Not yours to edit';
+    if ((c.players ?? []).some(p => p.member_id !== me.id && p.accepted)) {
+      return 'They\u2019ve already accepted — the terms are fixed now.';
+    }
+    const { error } = await supabase.from('scc_challenges').update(patch).eq('id', c.id);
+    if (error) return error.message;
+    await fetchRows();
+    return null;
+  }, [me, fetchRows]);
+
+  /**
    * End a challenge and freeze the result. Either player can settle — a
    * challenge that needs an admin to close it never gets closed, and between
    * two people who agreed to it there is nobody to defraud.
@@ -255,5 +289,6 @@ export function useChallenges() {
     (r.players ?? []).some(p => p.accepted)), [rows, me]);
 
   return { rows, mine, club, suggestions, standingsFor, create, respond, settle,
+           withdraw, edit,
            loading, tableMissing, refetch: fetchRows };
 }

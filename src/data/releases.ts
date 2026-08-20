@@ -20,6 +20,19 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.21',
+    date: '21 August 2026',
+    title: 'Challenges — now about a specific Sunday ⚔️',
+    subtitle: 'Pin it to a fixture · see everyone else\u2019s · notifications when you\u2019re called out',
+    notes: [
+      { emoji: '📅', title: 'Challenge someone for one match', tag: 'new', desc: '\u201cFirst to 4 sixes\u201d used to mean first to 4 sixes ever. Now you pick an upcoming fixture, so you both know exactly when it settles \u2014 and the club knows which game to watch.' },
+      { emoji: '👀', title: 'Around the club', tag: 'new', desc: 'Every accepted challenge is now visible to everyone, with live standings. Once it\u2019s settled you can see who won and what they owe. A stake only bites when the club is watching.' },
+      { emoji: '🔔', title: 'You\u2019ll know you\u2019ve been challenged', tag: 'new', desc: 'A notification on your phone, a WhatsApp message, an alert on your home screen and a count on the Challenges menu. Previously you\u2019d only have found out by chance.' },
+      { emoji: '🔍', title: 'Search for who you want', tag: 'improved', desc: 'Type a name instead of swiping through 47 faces.' },
+      { emoji: '✏️', title: 'Change your mind', tag: 'new', desc: 'Edit the target or the stake, or withdraw the challenge entirely \u2014 right up until they accept. After that the terms are fixed, because a contest you can cancel when you\u2019re losing isn\u2019t a contest.' },
+    ],
+  },
+  {
     version: '2026.08.20',
     date: '20 August 2026',
     title: 'Challenges ⚔️',
