@@ -36,6 +36,8 @@ const daysUntil = (iso: string) =>
  */
 function usePendingChallenges(meId: string | null) {
   const [pending, setPending] = useState<Array<{ id: string; title: string; from: string }>>([]);
+  /** Ones you've BOTH agreed to — a contest that's actually running. */
+  const [live, setLive] = useState<Array<{ id: string; title: string }>>([]);
 
   useEffect(() => {
     if (!meId) { setPending([]); return; }
@@ -43,33 +45,43 @@ function usePendingChallenges(meId: string | null) {
       const { data, error } = await supabase
         .from('scc_challenge_players')
         .select('challenge_id, accepted, challenge:scc_challenges(id, title, status, created_by)')
-        .eq('member_id', meId).eq('accepted', false);
+        .eq('member_id', meId);
       if (error) return;                      // table missing or offline — stay quiet
       // PostgREST returns an embedded many-to-one as an OBJECT, while the
       // generated types describe an array. Taking the types at their word
       // type-checks perfectly and then matches nothing at runtime — which is
       // exactly what happened here. Accept either shape.
       type Embedded = { title: string | null; status: string; created_by: string | null };
-      type Row = { challenge_id: string; challenge: Embedded | Embedded[] | null };
+      type Row = { challenge_id: string; accepted: boolean;
+                   challenge: Embedded | Embedded[] | null };
       const rows = (data ?? []) as unknown as Row[];
       const one = (c: Row['challenge']): Embedded | undefined =>
         Array.isArray(c) ? c[0] : (c ?? undefined);
 
-      setPending(rows
-        .map(r => ({ id: r.challenge_id, c: one(r.challenge) }))
-        // A settled or cancelled challenge is not still waiting on you.
-        .filter(x => x.c && x.c.status !== 'settled' && x.c.status !== 'cancelled')
+      // rows already IS the response — index-matching it against `data` was a
+      // needless second source of truth waiting to drift.
+      const openOnes = rows
+        .map(r => ({ id: r.challenge_id, accepted: r.accepted, c: one(r.challenge) }))
+        .filter(x => x.c && x.c.status !== 'settled' && x.c.status !== 'cancelled');
+
+      setPending(openOnes.filter(x => !x.accepted)
         .map(x => ({ id: x.id, title: x.c!.title ?? 'A challenge',
                      from: x.c!.created_by ?? '' })));
+
+      // Accepted and running. Worth a place on the home screen for BOTH
+      // players: a contest you agreed to and then never see again is one you
+      // forget you're in, which is how a stake stops mattering.
+      setLive(openOnes.filter(x => x.accepted)
+        .map(x => ({ id: x.id, title: x.c!.title ?? 'A challenge' })));
     })();
   }, [meId]);
 
-  return pending;
+  return { pending, live };
 }
 
 export function usePersonalAlerts(matches: Match[]) {
   const { me } = useMe();
-  const pendingChallenges = usePendingChallenges(me?.id ?? null);
+  const { pending: pendingChallenges, live: liveChallenges } = usePendingChallenges(me?.id ?? null);
 
   return useMemo<Alert[]>(() => {
     if (!me) return [];
@@ -151,7 +163,19 @@ export function usePersonalAlerts(matches: Match[]) {
       });
     }
 
+    // ── Challenges you're actually in ──────────────────────────────────────
+    // Toned 'info': it needs no action, it just shouldn't be invisible.
+    for (const c of liveChallenges) {
+      out.push({
+        id: `live-challenge-${c.id}`,
+        tone: 'info',
+        title: 'Challenge running',
+        body: `${c.title} — see where you stand.`,
+        to: '/challenges',
+      });
+    }
+
     const rank: Record<AlertTone, number> = { urgent: 0, good: 1, info: 2 };
     return out.sort((a, b) => rank[a.tone] - rank[b.tone]);
-  }, [me, matches, pendingChallenges]);
+  }, [me, matches, pendingChallenges, liveChallenges]);
 }

@@ -126,13 +126,54 @@ export function Challenges() {
             in practice it kept offering the same contest against three
             different people, which read as noise rather than a nudge. */}
 
+        {/* ── Waiting on you ────────────────────────────────────────────
+            Members kept asking where they could see who had challenged them.
+            The answer used to be "somewhere in your list", which is not an
+            answer. It's the first thing on the page now, and it says who. */}
+        {C.inbox.length > 0 && (
+          <>
+            <p className="t-micro font-black uppercase tracking-[1.5px] text-emerald-600
+                          dark:text-emerald-400 px-1">
+              ⚔️ You've been challenged
+            </p>
+            {C.inbox.map(c => (
+              <Card key={c.id} tone="good" className="p-4">
+                <p className="font-black text-slate-900 dark:text-white">
+                  {c.created_by ? `${name(c.created_by)} challenged you` : 'A challenge'}
+                </p>
+                <p className="t-body text-slate-600 dark:text-white/70 mt-0.5">
+                  {c.kind === 'target'
+                    ? `First to ${c.target}${c.match_id ? ` — ${matchLabel(c.match_id)}` : ' in any match'}`
+                    : metricDef(c.metric).label}
+                </p>
+                {c.stake && (
+                  <p className="t-meta font-bold text-amber-600 dark:text-amber-300 mt-1">
+                    🍵 Loser {c.stake}
+                  </p>
+                )}
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => void C.respond(c.id, true)}
+                    className="flex-1 py-2.5 r-control bg-emerald-500 text-white font-black t-body
+                               inline-flex items-center justify-center gap-1.5">
+                    <Check className="w-4 h-4" /> Accept
+                  </button>
+                  <button onClick={() => void C.respond(c.id, false)}
+                    className="px-4 r-control border border-slate-200 dark:border-white/10 text-slate-500">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </Card>
+            ))}
+          </>
+        )}
+
         {/* ── Yours ───────────────────────────────────────────────────── */}
-        {C.mine.length > 0 && (
+        {C.active.length > 0 && (
           <>
             <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 px-1 pt-2">
               Your challenges
             </p>
-            {C.mine.map(c => {
+            {C.active.map(c => {
               const my = (c.players ?? []).find(p => p.member_id === me.id);
               const pending = my && !my.accepted;
               const standings = C.standingsFor(c);
@@ -467,6 +508,14 @@ export function Challenges() {
                           : metricDef(c.metric).label}
                       </p>
                     </div>
+                    {c.status !== 'settled' &&
+                     !(c.players ?? []).every(p => p.accepted) && (
+                      <span className="flex-shrink-0 t-micro font-black uppercase tracking-wider
+                                       px-2 py-1 rounded-full bg-slate-100 text-slate-500
+                                       dark:bg-white/10 dark:text-white/50">
+                        Not accepted yet
+                      </span>
+                    )}
                     {c.status === 'settled' && c.winner_id && (
                       <span className="flex-shrink-0 t-micro font-black uppercase tracking-wider
                                        px-2 py-1 rounded-full bg-emerald-100 text-emerald-700
@@ -486,7 +535,8 @@ export function Challenges() {
                   {/* Live standings while it runs; the frozen result once it's
                       settled — both come from the same scorecards. */}
                   <div className="mt-2 space-y-1">
-                    {standings.slice(0, 4).map((st, i) => (
+                    {(c.players ?? []).every(p => p.accepted) &&
+                     standings.slice(0, 4).map((st, i) => (
                       <div key={st.memberId} className="flex items-center gap-2 t-meta">
                         <span className="w-4 t-num text-slate-400">{i + 1}</span>
                         <span className="flex-1 font-bold text-slate-700 dark:text-white/75 truncate">
@@ -566,7 +616,7 @@ export function Challenges() {
           </Card>
         )}
 
-        {C.mine.length === 0 && (
+        {C.active.length === 0 && C.inbox.length === 0 && (
           <p className="t-body text-slate-400 text-center py-6">
 No challenges yet. Pick someone and call them out.
           </p>

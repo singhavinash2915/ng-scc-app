@@ -280,15 +280,29 @@ export function useChallenges() {
     rows.filter(r => (r.players ?? []).some(p => p.member_id === me?.id)), [rows, me]);
 
   /**
+   * Waiting on YOU. Members kept asking "where do I see who challenged me",
+   * which meant the answer — buried among your own challenges — wasn't an
+   * answer. It gets its own section at the top now.
+   */
+  const inbox = useMemo(() => mine.filter(r =>
+    r.status !== 'settled' &&
+    (r.players ?? []).some(p => p.member_id === me?.id && !p.accepted)), [mine, me]);
+
+  /** Yours, already agreed or sent — the ones actually running. */
+  const active = useMemo(() => mine.filter(r => !inbox.includes(r)), [mine, inbox]);
+
+  /**
    * Everyone else's. A challenge nobody can see is a private bet, and the
    * stake only bites when the club is watching — so the club board shows every
    * accepted challenge and, once settled, who won.
    */
-  const club = useMemo(() => rows.filter(r =>
-    !(r.players ?? []).some(p => p.member_id === me?.id) &&
-    (r.players ?? []).some(p => p.accepted)), [rows, me]);
+  // Everything that isn't yours, PENDING INCLUDED. The club asked to see all
+  // of them: a board that only shows agreed contests hides exactly the ones
+  // people are gossiping about — "has he accepted yet?" is half the fun.
+  const club = useMemo(() =>
+    rows.filter(r => !(r.players ?? []).some(p => p.member_id === me?.id)), [rows, me]);
 
-  return { rows, mine, club, suggestions, standingsFor, create, respond, settle,
+  return { rows, mine, inbox, active, club, suggestions, standingsFor, create, respond, settle,
            withdraw, edit,
            loading, tableMissing, refetch: fetchRows };
 }
