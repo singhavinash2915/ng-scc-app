@@ -67,13 +67,24 @@ export function useClubMoney(): ClubMoney {
 
       // Wallet deposits are the club receiving money; match fees are internal
       // and move nothing, so they're excluded from both sides.
-      const { data: txns } = await supabase
-        .from('transactions').select('type, amount');
+      //
+      // PAGINATED, and that is not optional here. PostgREST caps a response at
+      // 1,000 rows; the club is past 1,097 transactions, so a plain select
+      // returned a partial set and produced a confidently wrong total — cash in
+      // hand read minus ₹2.5 lakh. The query succeeded, which is what made it
+      // dangerous.
       let deposits = 0, expenses = 0;
-      for (const t of (txns ?? []) as Array<{ type: string; amount: number }>) {
-        const a = Math.abs(Number(t.amount));
-        if (t.type === 'deposit') deposits += a;
-        else if (t.type === 'expense') expenses += a;
+      const PAGE = 1000;
+      for (let from = 0; ; from += PAGE) {
+        const { data: page, error } = await supabase
+          .from('transactions').select('type, amount').range(from, from + PAGE - 1);
+        if (error || !page?.length) break;
+        for (const t of page as Array<{ type: string; amount: number }>) {
+          const a = Math.abs(Number(t.amount));
+          if (t.type === 'deposit') deposits += a;
+          else if (t.type === 'expense') expenses += a;
+        }
+        if (page.length < PAGE) break;
       }
 
       const cashIn = deposits + bookingCash;
