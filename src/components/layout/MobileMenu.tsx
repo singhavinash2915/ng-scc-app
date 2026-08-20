@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePendingChallengeCount } from '../../hooks/usePendingChallengeCount';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Rocket, Gavel, Swords} from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Gavel, Swords} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -73,25 +73,43 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               <ExternalLink className="w-4 h-4 ml-auto opacity-60" />
             </a>
 
-            {/* Public navigation items */}
-            {[
-              { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-              { to: '/members', icon: Users, label: 'Members' },
-              { to: '/matches', icon: Calendar, label: 'Matches' },
-              { to: '/kickoff', icon: Rocket, label: 'Season Kickoff' },
-              { to: '/scc-mahasangram', icon: Gavel, label: 'MahaSangram' },
-              { to: '/challenges', icon: Swords, label: 'Challenges' },
-              { to: '/awards', icon: Award, label: 'Season Awards' },
-              { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
-              { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
-              { to: '/honours', icon: Trophy, label: 'Honours' },
-              { to: '/predictions', icon: Sparkles, label: 'Predictions' },
-              { to: '/finance', icon: Wallet, label: 'Finance' },
-              { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
-              { to: '/league', icon: Trophy, label: 'Season League' },
-              { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
-              { to: '/about', icon: Info, label: 'About' },
-            ].map((item) => (
+            {/* Public navigation, grouped — same five sections as the
+                sidebar. A flat list of sixteen is exactly as hard to scan on a
+                phone as it was on a desktop, and worse for the thumb. */}
+            {([
+              { title: 'Club', items: [
+                { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+                { to: '/members', icon: Users, label: 'Members' },
+                { to: '/matches', icon: Calendar, label: 'Matches' },
+              ]},
+              { title: 'Cricket', items: [
+                { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
+                { to: '/honours', icon: Trophy, label: 'Honours' },
+                { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
+              ]},
+              { title: 'The League', items: [
+                { to: '/scc-mahasangram', icon: Gavel, label: 'MahaSangram' },
+                { to: '/league', icon: Trophy, label: 'Season League' },
+                { to: '/predictions', icon: Sparkles, label: 'Predictions' },
+                { to: '/challenges', icon: Swords, label: 'Challenges' },
+                { to: '/awards', icon: Award, label: 'Season Awards' },
+              ]},
+              { title: 'Money', items: [
+                { to: '/finance', icon: Wallet, label: 'Finance' },
+                { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
+                { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
+              ]},
+              { title: 'About', items: [
+                { to: '/about', icon: Info, label: 'About' },
+              ]},
+            ]).map(group => (
+              <div key={group.title} className="pt-2 first:pt-0">
+                <p className="px-4 pb-1 t-micro font-black uppercase tracking-[1.5px]
+                              text-gray-400 dark:text-gray-500">
+                  {group.title}
+                </p>
+                {group.items.map((item) => (
+
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -113,6 +131,8 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   </span>
                 )}
               </NavLink>
+                ))}
+              </div>
             ))}
 
             {/* Admin-only navigation items */}

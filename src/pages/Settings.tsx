@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { fetchUsage, type DayCount, type RouteCount } from '../hooks/useUsage';
+import { Link } from 'react-router-dom';
 import {
   Shield,
   LogOut,
@@ -25,7 +25,7 @@ import {
   QrCode,
   Camera,
   Radio,
-  Bell, TrendingUp} from 'lucide-react';
+  Bell, TrendingUp, ChevronRight} from 'lucide-react';
 import { useGroundSettings } from '../hooks/useGroundSettings';
 import { useLiveStream, youtubeVideoId } from '../hooks/useLiveStream';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -53,8 +53,7 @@ export function Settings() {
   // No names, by design — see add_usage_stats.sql. This answers "is anyone
   // using it", which is the question worth asking, and refuses to answer
   // "who", which is the one that gets used against people.
-  const [usage, setUsage] = useState<{ byDay: DayCount[]; byRoute: RouteCount[]; missing: boolean } | null>(null);
-  useEffect(() => { void fetchUsage(30).then(setUsage); }, []);
+
   const { isAdmin, loginLoading, login, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { members } = useMembers();
@@ -927,59 +926,24 @@ export function Settings() {
         </Card>
 
         {/* Live Stream (Admin Only) */}
-        {isAdmin && usage && !usage.missing && (
+        {/* Usage moved to its own page — it was a chart wedged between a theme
+            toggle and a data export, belonging with neither. */}
+        {isAdmin && (
           <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-500" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Usage · last 30 days</h3>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { l: 'Today', v: usage.byDay.at(-1)?.people ?? 0 },
-                  { l: 'Busiest day', v: Math.max(0, ...usage.byDay.map(d => d.people)) },
-                  { l: 'Page views', v: usage.byDay.reduce((s, d) => s + d.views, 0) },
-                ].map(x => (
-                  <div key={x.l} className="text-center">
-                    <p className="t-num text-2xl text-slate-900 dark:text-white leading-none">{x.v}</p>
-                    <p className="t-micro font-black uppercase tracking-wider text-slate-400 mt-1">{x.l}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Daily people, as bars. A trend is the only thing worth reading
-                  here — the absolute number is small by definition. */}
-              <div className="flex items-end gap-0.5 h-16">
-                {usage.byDay.slice(-30).map(d => {
-                  const max = Math.max(1, ...usage.byDay.map(x => x.people));
-                  return (
-                    <div key={d.day} title={`${d.day}: ${d.people}`}
-                      className="flex-1 bg-emerald-400 rounded-t"
-                      style={{ height: `${Math.max(4, (d.people / max) * 100)}%` }} />
-                  );
-                })}
-              </div>
-
-              <div>
-                <p className="t-micro font-black uppercase tracking-wider text-slate-400 mb-1.5">
-                  Most opened
-                </p>
-                {usage.byRoute.slice(0, 8).map(r => (
-                  <div key={r.route} className="flex justify-between t-body py-0.5">
-                    <span className="text-slate-700 dark:text-white/80">{r.route}</span>
-                    <span className="tabular-nums text-slate-400">{r.people}</span>
-                  </div>
-                ))}
-              </div>
-
-              <p className="t-micro text-slate-400 leading-snug">
-                Counts sessions, not members — nobody is identified. Members signed in
-                to see their own season, not to be logged, so there is deliberately no
-                "who opened it most" here. Turnout and squad polls already show
-                engagement that actually matters.
-              </p>
+            <CardContent className="p-4">
+              <Link to="/usage" className="flex items-center gap-3 group">
+                <div className="w-10 h-10 r-control bg-emerald-100 dark:bg-emerald-500/15
+                                flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 dark:text-white">App usage</p>
+                  <p className="t-meta text-gray-500">
+                    How the club is using the app · last 30 days
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-300 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
             </CardContent>
           </Card>
         )}

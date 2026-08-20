@@ -28,6 +28,12 @@ export function useUsageTracking() {
   const { pathname } = useLocation();
 
   useEffect(() => {
+    // Admins don't count. An admin testing a page thirty times swamps a club
+    // of 46, and the resulting "65 sessions today" answers nothing — it was
+    // mostly one person with the app open in a dozen tabs. The question this
+    // page exists to answer is whether MEMBERS are using it.
+    if (typeof window !== 'undefined' && localStorage.getItem('scc-admin') === 'true') return;
+
     // Collapse ids out of the path: /profile/abc and /profile/def are both
     // "profile". A route list with 48 profile entries tells you nothing.
     const route = pathname
