@@ -260,3 +260,121 @@ export function suggestChallenges(me: SeasonLine, others: SeasonLine[], limit = 
     .filter(s => (seen.has(s.opponentId) ? false : (seen.add(s.opponentId), true)))
     .slice(0, limit);
 }
+
+// ─── Target challenges ────────────────────────────────────────────────────────
+// "Four sixes in a match." Different from everything above: not a season total
+// but a SINGLE-MATCH feat, and the first person to do it wins outright.
+//
+// Resolving it needs per-match rows, and CricHeroes gives those keyed by its
+// own player_id and a name — there is no member id in a synced scorecard. So
+// names have to be matched, which is the exact thing that once inflated a
+// player's stats when two Adityas were conflated.
+//
+// Hence the deliberate omission below: this port of the sync's matcher stops
+// after the unambiguous tiers and has NO fuzzy fallback. A challenge can carry
+// a stake, and crediting the wrong Aditya with winning someone's chai is worse
+// than crediting nobody. Ambiguous means unresolved, and unresolved means the
+// challenge simply stays open.
+
+const norm = (s: string) =>
+  s.replace(/\([^)]*\)/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+export interface NameMatcher { (raw: string): string | null }
+
+/** Build a scorecard-name → member-id resolver. Unambiguous matches only. */
+export function buildMatcher(members: Array<{ id: string; name: string }>): NameMatcher {
+  const names = new Map(members.map(m => [m.id, norm(m.name)]));
+  const toks = new Map(members.map(m => [m.id, new Set(norm(m.name).split(' ').filter(Boolean))]));
+
+  return (raw: string) => {
+    const n = norm(raw);
+    if (!n) return null;
+    const t = new Set(n.split(' ').filter(Boolean));
+
+    // 1. Exact.
+    for (const [id, nm] of names) if (nm === n) return id;
+
+    // 2. Member's full name sits inside the scorecard name — "Shaan" in
+    //    "Shaan Shaikh". Most specific wins.
+    const contained = [...toks.entries()]
+      .filter(([, mt]) => mt.size > 0 && [...mt].every(x => t.has(x)))
+      .map(([id]) => id);
+    if (contained.length) {
+      return contained.reduce((a, b) => (toks.get(a)!.size >= toks.get(b)!.size ? a : b));
+    }
+
+    // 3. Scorecard name is a subset of exactly ONE member — "Raushan" →
+    //    "Raushan Kumar". More than one match is the two-Adityas case, and we
+    //    stop rather than guess.
+    const supersets = [...toks.entries()]
+      .filter(([, mt]) => [...t].every(x => mt.has(x)))
+      .map(([id]) => id);
+    return supersets.length === 1 ? supersets[0] : null;
+  };
+}
+
+export interface MatchFeat {
+  memberId: string;
+  matchId: string;
+  value: number;
+}
+
+/**
+ * Best single-match figure per player for a target metric, plus whether they
+ * hit the target and when. Only the metrics that make sense as a one-match
+ * feat are supported — "best economy in a match" is a season stat wearing a
+ * disguise.
+ */
+export const TARGET_METRICS: Metric[] = ['runs', 'wickets', 'fours', 'sixes', 'catches'];
+
+export interface ScorecardMatchRow {
+  matchId: string;
+  /** Raw scorecard name, matched to a member by buildMatcher. */
+  name: string;
+  runs: number; wickets: number; fours: number; sixes: number; catches: number;
+}
+
+export interface TargetStanding {
+  memberId: string;
+  best: number;
+  hit: boolean;
+  matchId: string | null;
+  detail: string;
+}
+
+export function standingFromTarget(
+  metric: Metric, target: number,
+  rows: ScorecardMatchRow[], match: NameMatcher, memberIds: string[],
+): TargetStanding[] {
+  const want = new Set(memberIds);
+  const best = new Map<string, { v: number; matchId: string }>();
+
+  for (const r of rows) {
+    const id = match(r.name);
+    if (!id || !want.has(id)) continue;
+    const v = (r as unknown as Record<string, number>)[metric] ?? 0;
+    const cur = best.get(id);
+    if (!cur || v > cur.v) best.set(id, { v, matchId: r.matchId });
+  }
+
+  // Stripping a trailing "s" gives "sixe" and "catche". Spelled out instead —
+  // English plurals are not a regex.
+  const UNIT: Partial<Record<Metric, [string, string]>> = {
+    runs: ['run', 'runs'], wickets: ['wkt', 'wkts'],
+    fours: ['four', 'fours'], sixes: ['six', 'sixes'],
+    catches: ['catch', 'catches'],
+  };
+  const [one, many] = UNIT[metric] ?? ['', ''];
+  return memberIds.map(memberId => {
+    const b = best.get(memberId);
+    const v = b?.v ?? 0;
+    const hit = v >= target;
+    return {
+      memberId, best: v, hit,
+      matchId: hit ? (b?.matchId ?? null) : null,
+      detail: hit
+        ? `Done it — ${v} in a match`
+        : `Best so far ${v} ${v === 1 ? one : many}`,
+    };
+  }).sort((a, b) => (a.hit !== b.hit ? (a.hit ? -1 : 1) : b.best - a.best));
+}

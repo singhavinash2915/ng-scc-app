@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePendingChallengeCount } from '../../hooks/usePendingChallengeCount';
 import { NavLink, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -98,6 +99,7 @@ const adminNavItems = [
 
 export function Sidebar() {
   const { isAdmin, loginLoading, login, logout } = useAuth();
+  const pendingChallenges = usePendingChallengeCount();
   const { getPendingCount } = useRequests();
   const pendingCount = getPendingCount();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -170,6 +172,12 @@ export function Sidebar() {
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium flex-1">{item.label}</span>
+                  {item.to === '/challenges' && pendingChallenges > 0 && (
+                    <span className="px-1.5 py-0.5 bg-rose-500 text-white t-micro font-black
+                                     rounded-full tabular-nums">
+                      {pendingChallenges}
+                    </span>
+                  )}
                   {item.to === '/whats-new' && hasUnreadRelease && (
                     <span className="px-1.5 py-0.5 bg-emerald-500 text-white t-micro font-black rounded-full uppercase tracking-wide animate-pulse">
                       New

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePendingChallengeCount } from '../../hooks/usePendingChallengeCount';
 import { NavLink } from 'react-router-dom';
 import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Rocket, Gavel, Swords} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +15,7 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
+  const pendingChallenges = usePendingChallengeCount();
   const { isAdmin, loginLoading, login, logout } = useAuth();
   const { getPendingCount } = useRequests();
   const pendingCount = getPendingCount();
@@ -103,7 +105,13 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 }
               >
                 <item.icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium flex-1">{item.label}</span>
+                {item.to === '/challenges' && pendingChallenges > 0 && (
+                  <span className="px-1.5 py-0.5 bg-rose-500 text-white t-micro font-black
+                                   rounded-full tabular-nums">
+                    {pendingChallenges}
+                  </span>
+                )}
               </NavLink>
             ))}
 
