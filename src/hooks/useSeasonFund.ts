@@ -256,20 +256,28 @@ export function useSeasonFund() {
     opponentByDate?: Map<string, { paid: number }>,
   ) => {
     const bookings = season.bookings || [];
-    const activeBookings = bookings.filter(b => b.status !== 'cancelled');
+    const allActive = bookings.filter(b => b.status !== 'cancelled');
+
+    // ── The season booking, and everything else ──────────────────────────────
+    // "Ground cost" means the Four Star season booking. Slots bought from
+    // another team are a separate arrangement — different counterparty, paid by
+    // a member, not part of the deal with the ground owner — and folding them
+    // in makes the one figure a treasurer needs impossible to read against the
+    // contract.
+    const extraSlots = allActive.filter(
+      b => (b as { prepaid_by?: string | null }).prepaid_by);
+    const activeBookings = allActive.filter(
+      b => !(b as { prepaid_by?: string | null }).prepaid_by);
+
+    const extraSlotsCost = extraSlots.reduce((sum, b) => sum + Number(b.cost), 0);
     const totalSpent = activeBookings.reduce((sum, b) => sum + Number(b.cost), 0);
     const totalOpponentCollection = activeBookings.reduce((sum, b) => {
       const day = opponentByDate?.get(b.date);
       return sum + (day ? day.paid : Number(b.opponent_collection || 0));
     }, 0);
     const netCost = totalSpent - totalOpponentCollection;
-    // Slots a MEMBER paid for personally are paid — but not by the club, and
-    // not to the ground owner. Counting them here would show the club as
-    // having settled money it still owes that member.
-    const clubPaid = activeBookings.filter(
-      b => !(b as { prepaid_by?: string | null }).prepaid_by);
-    const paidBookings = clubPaid.filter(b => b.payment_status === 'paid');
-    const pendingBookings = clubPaid.filter(b => b.payment_status === 'pending');
+    const paidBookings = activeBookings.filter(b => b.payment_status === 'paid');
+    const pendingBookings = activeBookings.filter(b => b.payment_status === 'pending');
 
     const totalCollected = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
@@ -281,6 +289,7 @@ export function useSeasonFund() {
       totalCollected,
       totalSpent,
       totalOpponentCollection,
+      extraSlotsCost, extraSlotsCount: extraSlots.length,
       netCost,
       totalTarget,
       outstanding: totalTarget - totalCollected,

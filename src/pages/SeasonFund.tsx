@@ -839,7 +839,7 @@ export function SeasonFund() {
           {/* ═════ PREMIUM STATS CARDS ════════════════════════════════════════ */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
             {[
-              { icon: Landmark,    label: 'Ground Cost',  value: stats?.totalSpent || 0,              accent: 'orange', text: 'text-orange-600 dark:text-orange-400',  bgIcon: 'bg-orange-100 dark:bg-orange-900/30',  iconColor: 'text-orange-500' },
+              { icon: Landmark,    label: 'Four Star Ground',  value: stats?.totalSpent || 0,              accent: 'orange', text: 'text-orange-600 dark:text-orange-400',  bgIcon: 'bg-orange-100 dark:bg-orange-900/30',  iconColor: 'text-orange-500' },
               { icon: Handshake,   label: 'Opponent',     value: stats?.totalOpponentCollection || 0, accent: 'blue',   text: 'text-blue-600 dark:text-blue-400',      bgIcon: 'bg-blue-100 dark:bg-blue-900/30',      iconColor: 'text-blue-500' },
               { icon: Target,      label: 'Net Cost',     value: stats?.netCost || 0,                 accent: 'purple', text: 'text-purple-600 dark:text-purple-400',  bgIcon: 'bg-purple-100 dark:bg-purple-900/30',  iconColor: 'text-purple-500' },
               { icon: TrendingUp,  label: 'Collected',    value: stats?.totalCollected || 0,          accent: 'green',  text: 'text-green-600 dark:text-green-400',    bgIcon: 'bg-green-100 dark:bg-green-900/30',    iconColor: 'text-green-500' },
@@ -885,6 +885,34 @@ export function SeasonFund() {
                   />
                 </div>
                 <p className="t-meta text-gray-500 mt-1.5">{formatCurrency(stats.groundOwnerPaid)} of {formatCurrency(stats.totalSpent)}</p>
+              </div>
+            )}
+
+            {/* ── Slots bought from another team ──────────────────────────
+                Kept out of the Four Star figure above on purpose. Different
+                counterparty, paid by a member rather than the club — folding
+                it in makes the season booking impossible to read against the
+                actual contract with the ground owner. */}
+            {stats && stats.extraSlotsCost > 0 && (
+              <div className="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 r-card p-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                      Extra slots · not Four Star
+                    </p>
+                  </div>
+                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                    {stats.extraSlotsCount} sessions
+                  </p>
+                </div>
+                <p className="t-num text-xl text-slate-900 dark:text-white mt-1.5">
+                  {formatCurrency(stats.extraSlotsCost)}
+                </p>
+                <p className="t-meta text-gray-500 mt-0.5">
+                  Bought from CricBot XI and paid by a member — the club owes them,
+                  not the ground owner.
+                </p>
               </div>
             )}
           </div>
@@ -1131,7 +1159,8 @@ export function SeasonFund() {
                 );
               })()}
 
-              {/* ── The two numbers that must never be conflated ──────────
+              {/* placeholder-anchor */}
+        {/* ── The two numbers that must never be conflated ──────────
                   Once ground fund money became wallet money, "club funds" and
                   "cash in hand" permanently stopped being the same figure.
                   Showing only the first is how a club convinces itself it is
