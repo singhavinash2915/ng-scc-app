@@ -1,4 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
+import { MemberStatement } from '../components/MemberStatement';
+import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/ui/Card';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
@@ -122,12 +124,21 @@ function AchievementCard({ a }: { a: Achievement }) {
   );
 }
 
-type Tab = 'overview' | 'achievements' | 'photos' | 'memories' | 'matches';
+type Tab = 'overview' | 'achievements' | 'photos' | 'memories' | 'matches' | 'money';
 
 export function MemberProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { members } = useMembers();
+  const { isAdmin } = useAuth();
+  /**
+   * Who may see the money. Your own statement, or an admin's — a page showing
+   * what a teammate has contributed shouldn't be open to the whole club, even
+   * though the underlying data is readable. Audits are done by core members,
+   * and they log in as admins.
+   */
+  const canSeeMoney = isAdmin || (typeof window !== 'undefined'
+    && localStorage.getItem('scc-me') === id);
   const { matches } = useMatches();
   const { stats } = useCricketStats('2025-26');
   const { counts: momCounts } = useMOMCounts();
@@ -232,6 +243,9 @@ export function MemberProfile() {
     { id: 'photos', label: 'Photos', icon: <Camera className="w-3.5 h-3.5" />, count: memberPhotos.length },
     { id: 'memories', label: 'Memories', icon: <CalIcon className="w-3.5 h-3.5" />, count: memories.length },
     { id: 'matches', label: 'Matches', icon: <Trophy className="w-3.5 h-3.5" />, count: matchesPlayed.length },
+    ...(canSeeMoney
+      ? [{ id: 'money' as Tab, label: 'Money', icon: <Wallet className="w-3.5 h-3.5" /> }]
+      : []),
   ];
 
   return (
@@ -628,6 +642,13 @@ export function MemberProfile() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Money — own statement or admin only. Every rupee this member has
+            put in, across both pots, because that is the question an audit
+            asks and neither ledger could answer alone. */}
+        {tab === 'money' && canSeeMoney && (
+          <MemberStatement memberId={member.id} name={member.name} />
         )}
 
         {tab === 'matches' && (
