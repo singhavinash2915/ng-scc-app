@@ -149,6 +149,22 @@ export function useChallenges() {
     ];
     const { error: e2 } = await supabase.from('scc_challenge_players').insert(players);
     if (e2) return e2.message;
+
+    // Reach their phone even with the app closed. Targeted at the one person
+    // challenged — broadcasting this to all 46 is how an app gets muted.
+    // Fire-and-forget: a failed push must never fail the challenge.
+    for (const id of opponentIds) {
+      void supabase.functions.invoke('send-push', {
+        body: {
+          memberId: id,
+          title: `${me.name} challenged you ⚔️`,
+          body: `${metricDef(metric).label}${stake ? ` — loser ${stake}` : ''}`,
+          url: '/challenges',
+          tag: `challenge-${data.id}`,
+        },
+      }).then(() => undefined, () => undefined);
+    }
+
     await fetchRows();
     return null;
   }, [me, fetchRows]);

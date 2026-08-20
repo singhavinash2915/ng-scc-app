@@ -8,6 +8,7 @@
 //
 // Call from the app:
 //   supabase.functions.invoke('send-push', { body: { title, body, url } })
+//   ...add memberId to reach ONE member instead of the whole club.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import webpush from 'https://esm.sh/web-push@3.6.7';
@@ -28,7 +29,11 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { title, body, url, tag } = await req.json();
+    // memberId targets ONE person. Without it this broadcasts, which is right
+    // for "match day tomorrow" and completely wrong for "Avinash challenged
+    // you" — 46 people getting a notification about someone else's challenge
+    // is how an app gets muted for good.
+    const { title, body, url, tag, memberId } = await req.json();
     if (!title) {
       return new Response(JSON.stringify({ error: 'title is required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -50,9 +55,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY')!,
     );
 
-    const { data: subs, error } = await supabase
-      .from('push_subscriptions')
-      .select('id, endpoint, p256dh, auth');
+    let q = supabase.from('push_subscriptions').select('id, endpoint, p256dh, auth');
+    if (memberId) q = q.eq('member_id', memberId);
+    const { data: subs, error } = await q;
     if (error) throw error;
 
     const payload = JSON.stringify({ title, body: body ?? '', url: url ?? '/', tag: tag ?? 'scc' });

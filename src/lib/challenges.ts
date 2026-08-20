@@ -50,6 +50,14 @@ export const METRICS: MetricDef[] = [
   { key: 'partnership', label: 'Best partnership', hint: 'Runs added while you were both at the crease', needsBalls: true },
 ];
 
+export type Category = 'batting' | 'bowling' | 'fielding';
+
+export const CATEGORY: Record<Category, { label: string; emoji: string; metrics: Metric[] }> = {
+  batting:  { label: 'Batting',  emoji: '🏏', metrics: ['runs', 'fours', 'sixes', 'fifties', 'strike_rate', 'chase_strike_rate', 'partnership'] },
+  bowling:  { label: 'Bowling',  emoji: '⚡', metrics: ['wickets', 'economy', 'death_economy', 'dot_percent'] },
+  fielding: { label: 'Fielding', emoji: '🧤', metrics: ['catches'] },
+};
+
 export const metricDef = (m: Metric) => METRICS.find(x => x.key === m) ?? METRICS[0];
 
 /** A player's standing in one challenge. */

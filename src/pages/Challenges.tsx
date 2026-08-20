@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Swords, Check, X, Plus, Trophy, Share2, HelpCircle, ChevronDown } from 'lucide-react';
+import { Check, X, Trophy, Share2, HelpCircle, ChevronDown, Swords } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { SignInCard } from '../components/SignInCard';
 import { useMe } from '../context/MemberContext';
 import { useMembers } from '../hooks/useMembers';
 import { useChallenges } from '../hooks/useChallenges';
-import { METRICS, metricDef, autoTitle, type Metric } from '../lib/challenges';
+import { CATEGORY, metricDef, autoTitle, type Metric, type Category } from '../lib/challenges';
 import { challengeUrl } from '../utils/bookingMessages';
 
 // ─── Challenges ───────────────────────────────────────────────────────────────
@@ -19,11 +19,11 @@ export function Challenges() {
   const { me } = useMe();
   const { members } = useMembers();
   const C = useChallenges();
-  const [picking, setPicking] = useState(false);
   const [metric, setMetric] = useState<Metric>('runs');
   const [opponent, setOpponent] = useState<string | null>(null);
   const [stake, setStake] = useState('');
   const [howOpen, setHowOpen] = useState(false);
+  const [cat, setCat] = useState<Category>('batting');
   const [busy, setBusy] = useState(false);
 
   const name = (id: string | null) => members.find(m => m.id === id)?.name ?? '—';
@@ -71,7 +71,7 @@ export function Challenges() {
     });
     if (url) window.open(url, '_blank', 'noopener');
 
-    setPicking(false); setOpponent(null); setStake('');
+    setOpponent(null); setStake('');
   };
 
   /**
@@ -93,28 +93,10 @@ export function Challenges() {
       <Header title="Challenges" subtitle="Take on a teammate" />
       <div className="p-4 max-w-md mx-auto space-y-3">
 
-        {/* ── Suggested — the one-tap path ────────────────────────────────
-            Only genuinely close gaps get here. "400 runs behind Shaan" is a
-            discouragement, not a challenge, and offering it once teaches
-            people to ignore the whole page. */}
-        {C.suggestions.length > 0 && (
-          <>
-            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 px-1">
-              Rivalries worth settling
-            </p>
-            {C.suggestions.map((s, n) => (
-              <Card key={`${s.metric}-${s.opponentId}`} className={`p-4 m-enter m-${Math.min(n + 1, 6)}`}>
-                <p className="font-black text-slate-900 dark:text-white">{name(s.opponentId)}</p>
-                <p className="t-body text-slate-500 dark:text-white/60 mt-0.5">{s.pitch}</p>
-                <button disabled={busy} onClick={() => void send(s.metric, s.opponentId)}
-                  className="mt-3 w-full py-2.5 r-control bg-emerald-500 text-white font-black t-body
-                             disabled:opacity-40 inline-flex items-center justify-center gap-1.5">
-                  <Swords className="w-4 h-4" /> {metricDef(s.metric).label}
-                </button>
-              </Card>
-            ))}
-          </>
-        )}
+        {/* Suggested rivalries were removed at the club's request. The
+            engine still exists in lib/challenges.ts if it's ever wanted back —
+            in practice it kept offering the same contest against three
+            different people, which read as noise rather than a nudge. */}
 
         {/* ── Yours ───────────────────────────────────────────────────── */}
         {C.mine.length > 0 && (
@@ -203,70 +185,92 @@ export function Challenges() {
           </>
         )}
 
-        {/* ── Custom — the rare case ──────────────────────────────────── */}
-        {!picking ? (
-          <button onClick={() => setPicking(true)}
-            className="w-full py-3 r-control border-2 border-dashed border-slate-200 dark:border-white/10
-                       text-slate-500 font-bold t-body inline-flex items-center justify-center gap-1.5">
-            <Plus className="w-4 h-4" /> Challenge someone else
-          </button>
-        ) : (
-          <Card className="p-4 space-y-3">
-            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400">Pick a contest</p>
-            <div className="grid grid-cols-2 gap-2">
-              {METRICS.map(m => (
-                <button key={m.key} onClick={() => setMetric(m.key)}
-                  className={`p-2.5 r-control border-2 text-left ${
-                    metric === m.key
+        {/* ── Start one ─────────────────────────────────────────────────
+            Always open rather than hidden behind a button. This IS the page —
+            asking someone to tap "create" before they can see what a challenge
+            even offers is a screen of nothing. Category chips first so the
+            twelve contests read as three choices. */}
+        <Card className="p-4 space-y-3">
+          <p className="font-display text-lg font-extrabold text-slate-900 dark:text-white">
+            Call someone out
+          </p>
+
+          <div className="flex gap-2">
+            {(Object.keys(CATEGORY) as Category[]).map(k => (
+              <button key={k} onClick={() => { setCat(k); setMetric(CATEGORY[k].metrics[0]); }}
+                className={`flex-1 py-2.5 r-control t-body font-black transition-colors ${
+                  cat === k
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'}`}>
+                {CATEGORY[k].emoji} {CATEGORY[k].label}
+              </button>
+            ))}
+          </div>
+
+          {/* Contest chips — horizontal scroll rather than a wall of buttons. */}
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {CATEGORY[cat].metrics.map(k => {
+              const d = metricDef(k);
+              return (
+                <button key={k} onClick={() => setMetric(k)}
+                  className={`flex-shrink-0 px-3 py-2 r-control border-2 text-left min-w-[9.5rem] ${
+                    metric === k
                       ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
                       : 'border-slate-200 dark:border-white/10'}`}>
-                  <span className="block t-body font-black text-slate-800 dark:text-white/85">{m.label}</span>
-                  <span className="block t-micro text-slate-400 leading-tight mt-0.5">{m.hint}</span>
-                  {m.needsBalls && (
+                  <span className="block t-body font-black text-slate-800 dark:text-white/85">{d.label}</span>
+                  <span className="block t-micro text-slate-400 leading-tight mt-0.5">{d.hint}</span>
+                  {d.needsBalls && (
                     <span className="inline-block mt-1 t-micro font-black uppercase tracking-wider
                                      px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700
-                                     dark:bg-sky-400/20 dark:text-sky-200">
-                      app-scored only
-                    </span>
+                                     dark:bg-sky-400/20 dark:text-sky-200">app-scored</span>
                   )}
                 </button>
-              ))}
-            </div>
+              );
+            })}
+          </div>
 
-            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 pt-1">Against</p>
-            <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto">
-              {squad.map(m => (
-                <button key={m.id} onClick={() => setOpponent(m.id)}
-                  className={`py-2 r-control border t-body font-bold truncate px-2 ${
-                    opponent === m.id
-                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
-                      : 'border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80'}`}>
-                  {m.name}
-                </button>
-              ))}
-            </div>
+          {/* Opponent — faces, not a dropdown. You're picking a person. */}
+          <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 pt-1">Against</p>
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {squad.map(m => (
+              <button key={m.id} onClick={() => setOpponent(m.id)}
+                className={`flex-shrink-0 w-[4.5rem] text-center ${
+                  opponent === m.id ? '' : 'opacity-60'}`}>
+                {m.avatar_url
+                  ? <img src={m.avatar_url} alt="" className={`w-14 h-14 rounded-full object-cover mx-auto border-2 ${
+                      opponent === m.id ? 'border-emerald-500' : 'border-transparent'}`} />
+                  : <div className={`w-14 h-14 rounded-full mx-auto flex items-center justify-center
+                                     font-black text-slate-500 dark:text-white/60 border-2 ${
+                        opponent === m.id
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
+                          : 'border-transparent bg-slate-100 dark:bg-white/10'}`}>
+                      {m.name[0]}
+                    </div>}
+                <span className="block t-micro font-bold text-slate-600 dark:text-white/70 truncate mt-1">
+                  {m.name.split(' ')[0]}
+                </span>
+              </button>
+            ))}
+          </div>
 
-            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 pt-1">
-              Stake <span className="normal-case tracking-normal text-slate-300">optional</span>
-            </p>
-            <input value={stake} onChange={e => setStake(e.target.value)}
-              placeholder="buys chai · carries the kit bag"
-              className="w-full px-4 py-2.5 r-control bg-slate-50 dark:bg-white/5 border
-                         border-slate-200 dark:border-white/10 text-slate-900 dark:text-white
-                         placeholder:text-slate-400 t-body" />
-            <p className="t-micro text-slate-400 -mt-1">
-              Between the two of you — the app doesn't collect it, and it's never money.
-            </p>
+          <input value={stake} onChange={e => setStake(e.target.value)}
+            placeholder="Stake — buys chai, carries the kit bag (optional)"
+            className="w-full px-4 py-2.5 r-control bg-slate-50 dark:bg-white/5 border
+                       border-slate-200 dark:border-white/10 text-slate-900 dark:text-white
+                       placeholder:text-slate-400 t-body" />
 
-            <button disabled={!opponent || busy}
-              onClick={() => opponent && void send(metric, opponent, stake)}
-              className="w-full py-3 r-control bg-emerald-500 text-white font-black t-body disabled:opacity-40">
-              {busy ? 'Sending…' : 'Send challenge'}
-            </button>
-            <button onClick={() => setPicking(false)}
-              className="w-full t-meta font-bold text-slate-400">Cancel</button>
-          </Card>
-        )}
+          <button disabled={!opponent || busy}
+            onClick={() => opponent && void send(metric, opponent, stake)}
+            className="w-full py-3.5 r-control bg-emerald-500 text-white font-black
+                       disabled:opacity-40 inline-flex items-center justify-center gap-2">
+            <Swords className="w-4 h-4" />
+            {busy ? 'Sending…'
+              : opponent ? `Challenge ${name(opponent).split(' ')[0]}` : 'Pick someone'}
+          </button>
+          <p className="t-micro text-slate-400 text-center -mt-1">
+            They get a notification, a WhatsApp message and an alert in the app.
+          </p>
+        </Card>
 
         {/* ── How it works ──────────────────────────────────────────────
             Collapsed, because someone who already gets it shouldn't scroll
@@ -330,9 +334,9 @@ export function Challenges() {
           </Card>
         )}
 
-        {C.suggestions.length === 0 && C.mine.length === 0 && !picking && (
+        {C.mine.length === 0 && (
           <p className="t-body text-slate-400 text-center py-6">
-            No close rivalries yet — play a few more matches and they'll show up here.
+No challenges yet. Pick someone and call them out.
           </p>
         )}
       </div>
