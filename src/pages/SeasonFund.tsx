@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useMatches } from '../hooks/useMatches';
 import { PrepaidAdvance, type PrepaidGroup } from '../components/PrepaidAdvance';
 import { useOpponentIncome } from '../hooks/useOpponentIncome';
+import { ClubMoneyCard } from '../components/ClubMoneyCard';
 import {
   Landmark,
   Plus,
@@ -1129,6 +1130,13 @@ export function SeasonFund() {
                   </Card>
                 );
               })()}
+
+              {/* ── The two numbers that must never be conflated ──────────
+                  Once ground fund money became wallet money, "club funds" and
+                  "cash in hand" permanently stopped being the same figure.
+                  Showing only the first is how a club convinces itself it is
+                  rich three months before it cannot pay a ground bill. */}
+              <ClubMoneyCard />
 
               {/* ── 0. What the club owes its own members ────────────────
                   Above the income breakdown deliberately. A debt to a
