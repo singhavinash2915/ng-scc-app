@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useMatches } from '../hooks/useMatches';
 import { PrepaidAdvance, type PrepaidGroup } from '../components/PrepaidAdvance';
+import { useOpponentIncome } from '../hooks/useOpponentIncome';
 import {
   Landmark,
   Plus,
@@ -92,6 +94,8 @@ const formatDate = (date: string) => {
 };
 
 export function SeasonFund() {
+  const { byDate: opponentByDate } = useOpponentIncome();
+  const { matches } = useMatches();
   const {
     seasons, payments, loading,
     addSeason, updateSeason, deleteSeason,
@@ -190,7 +194,7 @@ export function SeasonFund() {
   }, [selectedSeasonId, fetchPayments]);
 
   const selectedSeason = useMemo(() => seasons.find(s => s.id === selectedSeasonId) || null, [seasons, selectedSeasonId]);
-  const stats = useMemo(() => selectedSeason ? getSeasonStats(selectedSeason) : null, [selectedSeason, getSeasonStats]);
+  const stats = useMemo(() => selectedSeason ? getSeasonStats(selectedSeason, opponentByDate) : null, [selectedSeason, getSeasonStats, opponentByDate]);
 
   // Group bookings by month
   const bookingsByMonth = useMemo(() => {
@@ -214,7 +218,7 @@ export function SeasonFund() {
         label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`,
         bookings,
         totalCost: bookings.reduce((s, b) => s + Number(b.cost), 0),
-        totalOpponent: bookings.reduce((s, b) => s + Number(b.opponent_collection || 0), 0),
+        totalOpponent: bookings.reduce((s, b) => s + Number(b.opponent_collection || 0), 0),   // manual column only; the live figure comes from opponentByDate
         paidCount: bookings.filter(b => b.payment_status === 'paid').length,
       };
     });
@@ -273,7 +277,19 @@ export function SeasonFund() {
 
     // Income
     const memberIncome   = payments.reduce((s, p) => s + Number(p.amount), 0);
-    const opponentIncome = bookings.reduce((s, b) => s + Number(b.opponent_collection || 0), 0);
+    // Was reading opponent_collection, a column nobody was filling in — hence
+    // OPPONENT ₹0 on a season with ₹56,000 of confirmed bookings. Now reads the
+    // bookings themselves, falling back to the column if it IS set by hand.
+    const opponentIncome = bookings.reduce((s, b) => {
+      const day = opponentByDate.get(b.date);
+      return s + (day ? day.paid : Number(b.opponent_collection || 0));
+    }, 0);
+    // Agreed but not yet verified — worth showing separately, because counting
+    // a promise as income is how a club finds a shortfall in May.
+    const opponentPromised = bookings.reduce((s, b) => {
+      const day = opponentByDate.get(b.date);
+      return s + (day ? day.amount - day.paid : 0);
+    }, 0);
     let sponsorIncome = 0;
     try {
       const parsed = selectedSeason.notes ? JSON.parse(selectedSeason.notes) : null;
@@ -312,7 +328,13 @@ export function SeasonFund() {
         prepaidGroups.push(g);
       }
       g.total += Number(bb.cost); g.slots += 1;
-      if (bb.prepaid_settled) { g.settled += Number(bb.cost); g.slotsSettled += 1; }
+      // Repaid when the match has been PLAYED — that's when the fees for it
+      // were deducted and handed on. Derived rather than stored, so nobody has
+      // to remember to tick a box; prepaid_settled stays as a manual override
+      // for the odd case the fixture list can't describe.
+      const played = matches.some(mm => mm.date === (b as { date: string }).date
+        && ['won', 'lost', 'draw'].includes(mm.result));
+      if (bb.prepaid_settled || played) { g.settled += Number(bb.cost); g.slotsSettled += 1; }
     }
 
     // Balance
@@ -340,14 +362,14 @@ export function SeasonFund() {
     const sponsorPct  = totalIncome > 0 ? (sponsorIncome / totalIncome) * 100 : 0;
 
     return {
-      prepaidGroups,
+      prepaidGroups, opponentPromised,
       memberIncome, opponentIncome, sponsorIncome, totalIncome,
       totalGroundCost, paidToGround, pendingToGround, netBalance,
       totalSessions, paidSessions, matchesVsOpponent, avgCost, avgNetCost,
       memberTarget, membersPaidCount, totalMembersCount, memberOutstanding,
       perMemberCost, memberPct, opponentPct, sponsorPct,
     };
-  }, [selectedSeason, payments]);
+  }, [selectedSeason, opponentByDate, matches, payments]);
 
   // ---- Handlers ----
   const handleCreateSeason = async () => {
@@ -958,7 +980,9 @@ export function SeasonFund() {
                                   {group.bookings.map(booking => {
                                     const d = new Date(booking.date);
                                     const isSat = d.getDay() === 6;
-                                    const net = Number(booking.cost) - Number(booking.opponent_collection || 0);
+                                    const day = opponentByDate.get(booking.date);
+                                    const net = Number(booking.cost)
+                                      - (day ? day.paid : Number(booking.opponent_collection || 0));
                                     const isPast = d < new Date();
 
                                     return (
@@ -988,11 +1012,35 @@ export function SeasonFund() {
                                           {formatCurrency(Number(booking.cost))}
                                         </td>
                                         <td className="text-right py-2 px-2">
-                                          {Number(booking.opponent_collection) > 0 ? (
-                                            <span className="text-blue-600 dark:text-blue-400">+{formatCurrency(Number(booking.opponent_collection))}</span>
-                                          ) : (
-                                            <span className="text-gray-300 dark:text-gray-600">—</span>
-                                          )}
+                                          {(() => {
+                                            // Real booking for this date, if there is one.
+                                            const day = opponentByDate.get(booking.date);
+                                            const manual = Number(booking.opponent_collection) || 0;
+                                            if (!day && !manual) {
+                                              return <span className="text-gray-300 dark:text-gray-600">—</span>;
+                                            }
+                                            if (!day) {
+                                              return <span className="text-blue-600 dark:text-blue-400">+{formatCurrency(manual)}</span>;
+                                            }
+                                            const due = day.amount - day.paid;
+                                            return (
+                                              <div className="leading-tight">
+                                                <span className="text-blue-600 dark:text-blue-400">
+                                                  +{formatCurrency(day.paid)}
+                                                </span>
+                                                {/* Agreed but not received. Shown separately so a
+                                                    promise never reads as money in hand. */}
+                                                {due > 0 && (
+                                                  <span className="block t-micro text-amber-600 dark:text-amber-400">
+                                                    {formatCurrency(due)} due
+                                                  </span>
+                                                )}
+                                                <span className="block t-micro text-gray-400 truncate max-w-[9rem]">
+                                                  {day.team}
+                                                </span>
+                                              </div>
+                                            );
+                                          })()}
                                         </td>
                                         <td className="text-right py-2 px-2 font-medium text-gray-900 dark:text-white">
                                           {formatCurrency(net)}

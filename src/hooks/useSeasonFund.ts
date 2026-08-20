@@ -243,14 +243,33 @@ export function useSeasonFund() {
   };
 
   // ---- Computed Helpers ----
-  const getSeasonStats = useCallback((season: Season) => {
+  /**
+   * Season headline figures.
+   *
+   * Takes opponent income by date because the season page can't derive it: a
+   * match booking points at a SLOT, and only the slot knows the date. Without
+   * it this returned ₹0 opponent income on a season carrying ₹56,000 of
+   * confirmed bookings.
+   */
+  const getSeasonStats = useCallback((
+    season: Season,
+    opponentByDate?: Map<string, { paid: number }>,
+  ) => {
     const bookings = season.bookings || [];
     const activeBookings = bookings.filter(b => b.status !== 'cancelled');
     const totalSpent = activeBookings.reduce((sum, b) => sum + Number(b.cost), 0);
-    const totalOpponentCollection = activeBookings.reduce((sum, b) => sum + Number(b.opponent_collection || 0), 0);
+    const totalOpponentCollection = activeBookings.reduce((sum, b) => {
+      const day = opponentByDate?.get(b.date);
+      return sum + (day ? day.paid : Number(b.opponent_collection || 0));
+    }, 0);
     const netCost = totalSpent - totalOpponentCollection;
-    const paidBookings = activeBookings.filter(b => b.payment_status === 'paid');
-    const pendingBookings = activeBookings.filter(b => b.payment_status === 'pending');
+    // Slots a MEMBER paid for personally are paid — but not by the club, and
+    // not to the ground owner. Counting them here would show the club as
+    // having settled money it still owes that member.
+    const clubPaid = activeBookings.filter(
+      b => !(b as { prepaid_by?: string | null }).prepaid_by);
+    const paidBookings = clubPaid.filter(b => b.payment_status === 'paid');
+    const pendingBookings = clubPaid.filter(b => b.payment_status === 'pending');
 
     const totalCollected = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
