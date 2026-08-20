@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Check, X, Trophy, Share2, HelpCircle, ChevronDown, Swords } from 'lucide-react';
+import { Check, X, Trophy, Share2, HelpCircle, ChevronDown, Swords, Search } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { SignInCard } from '../components/SignInCard';
 import { useMe } from '../context/MemberContext';
+import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
 import { useChallenges } from '../hooks/useChallenges';
 import { CATEGORY, TARGET_METRICS, metricDef, autoTitle,
@@ -19,6 +20,7 @@ import { challengeUrl } from '../utils/bookingMessages';
 export function Challenges() {
   const { me } = useMe();
   const { members } = useMembers();
+  const { matches } = useMatches();
   const C = useChallenges();
   const [metric, setMetric] = useState<Metric>('runs');
   const [opponent, setOpponent] = useState<string | null>(null);
@@ -27,11 +29,25 @@ export function Challenges() {
   const [cat, setCat] = useState<Category>('batting');
   const [mode, setMode] = useState<'h2h' | 'target'>('h2h');
   const [target, setTarget] = useState('');
+  const [matchId, setMatchId] = useState<string | null>(null);
+  const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
 
   const name = (id: string | null) => members.find(m => m.id === id)?.name ?? '—';
   const squad = members.filter(m => m.status === 'active' && m.id !== me?.id)
+    .filter(m => !q.trim() || m.name.toLowerCase().includes(q.trim().toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  /** Fixtures you could pin a target challenge to. */
+  const upcoming = matches
+    .filter(m => m.result === 'upcoming')
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 8);
+  const matchLabel = (id: string | null) => {
+    const m = matches.find(x => x.id === id);
+    return m ? `${m.opponent || 'SCC'} · ${new Date(m.date + 'T00:00:00')
+      .toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : 'Any match';
+  };
 
   if (!me) {
     return (
@@ -66,7 +82,8 @@ export function Challenges() {
     const title = n
       ? `${n} ${metricDef(m).label.replace(/^Most /, '').replace(/^Best /, '')} in a match`
       : autoTitle(m, [me.name, name(oppId)]);
-    const err = await C.create(m, [oppId], null, title, withStake ?? null, n);
+    const err = await C.create(m, [oppId], null, title, withStake ?? null, n,
+      mode === 'target' ? matchId : null);
     setBusy(false);
     if (err) { alert(err); return; }
 
@@ -78,7 +95,7 @@ export function Challenges() {
     });
     if (url) window.open(url, '_blank', 'noopener');
 
-    setOpponent(null); setStake('');
+    setOpponent(null); setStake(''); setQ(''); setMatchId(null);
   };
 
   /**
@@ -122,7 +139,7 @@ export function Challenges() {
                   </p>
                   <p className="t-meta text-slate-400">
                     {c.kind === 'target'
-                      ? `First to ${c.target} in a single match`
+                      ? `First to ${c.target}${c.match_id ? ` — ${matchLabel(c.match_id)}` : ' in any match'}`
                       : metricDef(c.metric).hint}
                   </p>
                   {c.stake && (
@@ -281,8 +298,39 @@ export function Challenges() {
             </div>
           )}
 
+          {mode === 'target' && (
+            <>
+              <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400">
+                Which match
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                {/* "Any match" is really "ever", which nobody waits on. Naming
+                    the fixture makes it a bet about Sunday — but it stays an
+                    option, because an open-ended target is still valid. */}
+                {[{ id: null as string | null, label: 'Any match' },
+                  ...upcoming.map(m => ({ id: m.id, label: matchLabel(m.id) }))].map(o => (
+                  <button key={o.id ?? 'any'} onClick={() => setMatchId(o.id)}
+                    className={`flex-shrink-0 px-3 py-2 r-control border-2 t-body font-bold ${
+                      matchId === o.id
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600'
+                        : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70'}`}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
           {/* Opponent — faces, not a dropdown. You're picking a person. */}
           <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 pt-1">Against</p>
+          {/* 47 faces is a lot of swiping to reach a name you already know. */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search a teammate"
+              className="w-full pl-9 pr-3 py-2 r-control bg-slate-50 dark:bg-white/5 border
+                         border-slate-200 dark:border-white/10 text-slate-900 dark:text-white
+                         placeholder:text-slate-400 t-body" />
+          </div>
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
             {squad.map(m => (
               <button key={m.id} onClick={() => setOpponent(m.id)}
@@ -323,6 +371,69 @@ export function Challenges() {
             They get a notification, a WhatsApp message and an alert in the app.
           </p>
         </Card>
+
+        {/* ── The club board ─────────────────────────────────────────────
+            A challenge nobody can see is a private bet. The stake only bites
+            when the club is watching — so every accepted challenge shows here,
+            and once it's settled, who won and what they're owed. */}
+        {C.club.length > 0 && (
+          <>
+            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 px-1 pt-2">
+              Around the club
+            </p>
+            {C.club.map(c => {
+              const standings = C.standingsFor(c);
+              const names = (c.players ?? []).filter(p => p.accepted)
+                .map(p => name(p.member_id).split(' ')[0]);
+              return (
+                <Card key={c.id} tone={c.status === 'settled' ? 'good' : 'plain'} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-black text-slate-900 dark:text-white truncate">
+                        {names.join(' v ') || 'Challenge'}
+                      </p>
+                      <p className="t-meta text-slate-400">
+                        {c.kind === 'target'
+                          ? `First to ${c.target}${c.match_id ? ` — ${matchLabel(c.match_id)}` : ''}`
+                          : metricDef(c.metric).label}
+                      </p>
+                    </div>
+                    {c.status === 'settled' && c.winner_id && (
+                      <span className="flex-shrink-0 t-micro font-black uppercase tracking-wider
+                                       px-2 py-1 rounded-full bg-emerald-100 text-emerald-700
+                                       dark:bg-emerald-400/20 dark:text-emerald-200
+                                       inline-flex items-center gap-1">
+                        <Trophy className="w-3 h-3" /> {name(c.winner_id).split(' ')[0]}
+                      </span>
+                    )}
+                  </div>
+
+                  {c.stake && (
+                    <p className="t-meta font-bold text-amber-600 dark:text-amber-300 mt-1">
+                      🍵 Loser {c.stake}
+                    </p>
+                  )}
+
+                  {/* Live standings while it runs; the frozen result once it's
+                      settled — both come from the same scorecards. */}
+                  <div className="mt-2 space-y-1">
+                    {standings.slice(0, 4).map((st, i) => (
+                      <div key={st.memberId} className="flex items-center gap-2 t-meta">
+                        <span className="w-4 t-num text-slate-400">{i + 1}</span>
+                        <span className="flex-1 font-bold text-slate-700 dark:text-white/75 truncate">
+                          {name(st.memberId)}
+                        </span>
+                        <span className="tabular-nums text-slate-500 dark:text-white/55">
+                          {st.detail}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })}
+          </>
+        )}
 
         {/* ── How it works ──────────────────────────────────────────────
             Collapsed, because someone who already gets it shouldn't scroll

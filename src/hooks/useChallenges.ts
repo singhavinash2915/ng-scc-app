@@ -26,6 +26,8 @@ export interface ChallengeRow {
   status: 'open' | 'live' | 'settled' | 'declined' | 'cancelled';
   winner_id: string | null;
   stake: string | null;
+  /** Target challenges: the fixture that decides it. Null = any match. */
+  match_id: string | null;
   /** Frozen at settlement — see the migration comment. */
   final_standings: Standing[] | null;
   players?: Array<{ member_id: string; accepted: boolean }>;
@@ -131,7 +133,7 @@ export function useChallenges() {
 
     // "First to N in a match" — a single-match feat, not a season total.
     if (c.kind === 'target' && c.target) {
-      return standingFromTarget(c.metric, c.target, matchRows, nameMatcher, [...ids])
+      return standingFromTarget(c.metric, c.target, matchRows, nameMatcher, [...ids], c.match_id)
         .map(t => ({ memberId: t.memberId, value: t.best, qualified: t.hit, detail: t.detail }));
     }
 
@@ -170,10 +172,12 @@ export function useChallenges() {
   const create = useCallback(async (
     metric: Metric, opponentIds: string[], closesOn: string | null,
     title?: string, stake?: string | null, target?: number | null,
+    matchId?: string | null,
   ) => {
     if (!me) return 'Sign in first';
     const { data, error } = await supabase.from('scc_challenges')
       .insert({ metric, kind: target ? 'target' : 'h2h', target: target ?? null,
+                match_id: matchId ?? null,
                 created_by: me.id, closes_on: closesOn,
                 title: title ?? null, stake: stake || null })
       .select().single();
@@ -241,6 +245,15 @@ export function useChallenges() {
   const mine = useMemo(() =>
     rows.filter(r => (r.players ?? []).some(p => p.member_id === me?.id)), [rows, me]);
 
-  return { rows, mine, suggestions, standingsFor, create, respond, settle,
+  /**
+   * Everyone else's. A challenge nobody can see is a private bet, and the
+   * stake only bites when the club is watching — so the club board shows every
+   * accepted challenge and, once settled, who won.
+   */
+  const club = useMemo(() => rows.filter(r =>
+    !(r.players ?? []).some(p => p.member_id === me?.id) &&
+    (r.players ?? []).some(p => p.accepted)), [rows, me]);
+
+  return { rows, mine, club, suggestions, standingsFor, create, respond, settle,
            loading, tableMissing, refetch: fetchRows };
 }

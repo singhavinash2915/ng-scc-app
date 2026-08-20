@@ -348,8 +348,11 @@ export interface TargetStanding {
 export function standingFromTarget(
   metric: Metric, target: number,
   rows: ScorecardMatchRow[], match: NameMatcher, memberIds: string[],
+  /** When set, only this fixture counts — the contest is about that Sunday. */
+  onlyMatchId?: string | null,
 ): TargetStanding[] {
   const want = new Set(memberIds);
+  if (onlyMatchId) rows = rows.filter(r => r.matchId === onlyMatchId);
   const best = new Map<string, { v: number; matchId: string }>();
 
   for (const r of rows) {
