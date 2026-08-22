@@ -134,3 +134,42 @@ export const RESULT_TONE: Record<ResultKey, CardTier> = {
 /** Falls back to "no result" for anything unexpected in the data. */
 export const resultTone = (r: string | null | undefined): CardTier =>
   RESULT_TONE[(r ?? 'draw') as ResultKey] ?? RESULT_TONE.draw;
+
+
+// ─── Printed jerseys ──────────────────────────────────────────────────────────
+// The club had shirts made: Brahmos in black and purple, Agni in navy and gold,
+// both with a rocket. A member's squad number is the most personal thing the
+// app can show them — it's on their back every match — so it belongs on their
+// card rather than buried on a kit page nobody opens twice.
+//
+// Colours are lifted from the actual print, not invented, so the card and the
+// shirt are recognisably the same thing.
+
+export type JerseyTeam = 'brahmos' | 'agni';
+
+export interface JerseyKit {
+  name: string;
+  /** Shirt body — the card's number plate uses this. */
+  bg: string;
+  /** Number and name print colour. */
+  ink: string;
+  crest: string;
+}
+
+export const JERSEY: Record<JerseyTeam, JerseyKit> = {
+  brahmos: {
+    name: 'SCC Brahmos',
+    bg: 'linear-gradient(150deg,#1a0b2e 0%,#3b1578 55%,#0a0a12 100%)',
+    ink: '#f0b429',
+    crest: '/team-logos/brahmos.png',
+  },
+  agni: {
+    name: 'SCC Agni',
+    bg: 'linear-gradient(150deg,#16233f 0%,#1e3a5f 55%,#0d1526 100%)',
+    ink: '#f5a623',
+    crest: '/team-logos/agni.png',
+  },
+};
+
+export const jerseyOf = (t: string | null | undefined): JerseyKit | null =>
+  t === 'brahmos' || t === 'agni' ? JERSEY[t] : null;

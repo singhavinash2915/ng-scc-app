@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { tierFor, role, type CardStats } from '../lib/playerCard';
+import { tierFor, role, jerseyOf, type CardStats } from '../lib/playerCard';
 import type { Member } from '../types';
 
 // ─── Player card ──────────────────────────────────────────────────────────────
@@ -24,6 +24,10 @@ interface Props {
 
 export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props) {
   const tier = tierFor(stats, all);
+  // Their printed shirt, if they have one. Nothing renders when they don't —
+  // an empty plate would just ask a question the card can't answer.
+  const kit = jerseyOf((member as { jersey_team?: string | null }).jersey_team);
+  const number = (member as { jersey_number?: number | null }).jersey_number;
   const initials = member.name.split(' ').map(w => w[0]).slice(0, 2).join('');
 
   const inner = (
@@ -43,7 +47,22 @@ export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props
               {initials}
             </div>
           )}
-        <div className="flex-1 min-w-0">
+        {/* ── The number plate ────────────────────────────────────────
+            In the shirt's own colours, so the card and the jersey read as the
+            same object rather than two designs that happen to share a name. */}
+        {kit && number != null && (
+          <div className="absolute top-3 right-3 w-12 h-14 r-control overflow-hidden
+                          flex flex-col items-center justify-center shadow-lg"
+            style={{ background: kit.bg }}
+            title={`${kit.name} · #${number}`}>
+            <img src={kit.crest} alt="" className="w-4 h-4 object-contain opacity-90" />
+            <span className="t-num text-xl leading-none mt-0.5" style={{ color: kit.ink }}>
+              {number}
+            </span>
+          </div>
+        )}
+
+        <div className={`flex-1 min-w-0 ${kit && number != null ? 'pr-12' : ''}`}>
           <span className={`inline-block t-micro font-black uppercase tracking-[1.5px]
                             px-2 py-0.5 rounded-full ${tier.chip}`}>
             {tier.label}
