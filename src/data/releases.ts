@@ -20,12 +20,17 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
-    version: '2026.08.22',
+    version: '2026.08.22.2',
     date: '22 August 2026',
-    title: 'Your squad number is on your card 🔢',
-    subtitle: 'Brahmos and Agni shirts — 30 printed, 15 a side',
+    title: 'Getting ready for the new season \u26a1',
+    subtitle: 'A season-long challenge ladder \u00b7 match day takeover \u00b7 your squad number',
     notes: [
-      { emoji: '\ud83d\udd22', title: 'Your number, in your team\u2019s colours', tag: 'new', desc: 'Your printed squad number now sits on your player card, in your side\u2019s own colours \u2014 so you see it every time the card shows up.' },
+      { emoji: '\ud83c\udfc6', title: 'The season ladder', tag: 'new',
+        desc: 'Challenges used to vanish the moment they settled \u2014 win five in a row and you were exactly where you started. Now every settled challenge counts towards a season-long table: wins, played, and a streak. Win two on the bounce and you get a flame next to your name.' },
+      { emoji: '\ud83d\udd25', title: 'The app wakes up on match day', tag: 'new',
+        desc: 'On the morning of a game the home screen becomes the match \u2014 the ground with one-tap directions, whether you\u2019re in the XI, the full squad, and every challenge riding on that day. You\u2019ll see it first on 1 October.' },
+      { emoji: '\ud83d\udd22', title: 'Your number, in your team\u2019s colours', tag: 'new',
+        desc: 'Your printed squad number now sits on your player card, in your side\u2019s own colours \u2014 so you see it every time the card shows up.' },
     ],
   },
 
