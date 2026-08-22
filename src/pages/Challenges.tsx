@@ -10,6 +10,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useChallenges } from '../hooks/useChallenges';
 import { CATEGORY, TARGET_METRICS, metricDef, autoTitle,
          type Metric, type Category } from '../lib/challenges';
+import { ChallengeLadder } from '../components/ChallengeLadder';
 import { challengeUrl } from '../utils/bookingMessages';
 
 // ─── Challenges ───────────────────────────────────────────────────────────────
@@ -522,6 +523,11 @@ export function Challenges() {
             They get a notification, a WhatsApp message and an alert in the app.
           </p>
         </Card>
+
+        {/* ── Season ladder ─────────────────────────────────────────────
+            The thread between challenges: without it every one starts from
+            nothing and is forgotten the moment it settles. */}
+        <ChallengeLadder rows={C.rows} members={members} />
 
         {/* ── The club board ─────────────────────────────────────────────
             A challenge nobody can see is a private bet. The stake only bites

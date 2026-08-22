@@ -31,6 +31,8 @@ export interface ChallengeRow {
   match_id: string | null;
   /** Frozen at settlement — see the migration comment. */
   final_standings: Standing[] | null;
+  /** Set when it was settled — the ladder needs an order to read streaks from. */
+  settled_at?: string | null;
   players?: Array<{ member_id: string; accepted: boolean }>;
 }
 

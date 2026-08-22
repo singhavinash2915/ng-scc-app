@@ -14,6 +14,7 @@ import { AccentSwitcher } from '../components/AccentSwitcher';
 import { PremiumHero } from '../components/PremiumHero';
 
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
+import { MatchDay } from '../components/MatchDay';
 import { DashboardPoll } from '../components/DashboardPoll';
 import { BirthdayBanner } from '../components/BirthdayBanner';
 
@@ -375,6 +376,15 @@ export function Dashboard() {
             </div>
           </Link>
         </div>
+      )}
+
+      {/* ── MATCH DAY — the takeover. On the one day all 46 open the app,
+             the match owns the first screen instead of a line of text
+             fifteenth down the page. Sits under the live score, which is the
+             only thing that outranks it. ── */}
+      {todaysMatch && (
+        <MatchDay match={todaysMatch} members={members}
+          compact={liveStream.isLive || !!appLive.live} />
       )}
 
       {/* ── YOUR SEASON — the club data, addressed to one person ────────
@@ -806,21 +816,6 @@ export function Dashboard() {
              different competition from MahaSangram and having both sets of
              internal teams on one screen just reads as confusion. Its record
              is intact and still shown on the Matches and Records pages. */}
-
-        {/* ── MATCH DAY banner — takes over when we play today ────────── */}
-        {todaysMatch && !liveStream.isLive && (
-          <Link to="/matches" className="block relative overflow-hidden r-card px-5 py-4 shadow-lg group"
-            style={{ background: 'linear-gradient(110deg,#991b1b,#dc2626 55%,#f97316)' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 r-card bg-white/25 flex items-center justify-center flex-shrink-0 text-xl animate-pulse">🔴</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-base leading-tight truncate">MATCH DAY — vs {todaysMatch.opponent || 'TBD'} 🏏</p>
-                <p className="text-white/90 text-xs font-medium truncate">{todaysMatch.venue || 'Venue TBD'} · squad up, predictions in — let's go!</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </Link>
-        )}
 
         {/* ── SQUAD POLL ───────────────────────────────────────────────── */}
         {view === 'club' && <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />}
