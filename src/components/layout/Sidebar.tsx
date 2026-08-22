@@ -25,8 +25,7 @@ import {
   ExternalLink,
   // Rocket,  — re-add with the Season Kickoff nav item
   Gavel,
-  Swords,
-} from 'lucide-react';
+  Swords, Shirt} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { CURRENT_VERSION, STORAGE_KEY } from '../../data/releases';
@@ -57,6 +56,7 @@ const navGroups: Array<{ title: string; items: Array<{ to: string; icon: typeof 
     items: [
       { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
       { to: '/honours', icon: Trophy, label: 'Honours' },
+      { to: '/kit', icon: Shirt, label: 'The Kit' },
       { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
     ],
   },
