@@ -22,14 +22,13 @@ export const RELEASES: Release[] = [
   {
     version: '2026.08.22',
     date: '22 August 2026',
-    title: 'The new kit is here 🏏',
-    subtitle: 'SCC Brahmos and SCC Agni — with your name and number on it',
+    title: 'Your squad number is on your card 🔢',
+    subtitle: 'Brahmos and Agni shirts — 30 printed, 15 a side',
     notes: [
-      { emoji: '👕', title: 'Your shirt, in the app', tag: 'new', desc: 'The Kit page opens on YOUR jersey \u2014 your name, your number, your team\u2019s colours. Share it to the group in one tap.' },
-      { emoji: '🔢', title: 'Your number on your card', tag: 'new', desc: 'Your squad number now sits on your player card in the shirt\u2019s own colours, so you see it every time you open the app.' },
-      { emoji: '📋', title: 'Both squads by number', tag: 'new', desc: '30 shirts \u2014 15 Brahmos, 15 Agni \u2014 listed by number the way a team sheet reads, with yours highlighted.' },
+      { emoji: '\ud83d\udd22', title: 'Your number, in your team\u2019s colours', tag: 'new', desc: 'Your printed squad number now sits on your player card, in your side\u2019s own colours \u2014 so you see it every time the card shows up.' },
     ],
   },
+
   {
     version: '2026.08.21',
     date: '21 August 2026',

@@ -39,30 +39,33 @@ export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props
                        blur-2xl pointer-events-none`} />
 
       <div className="relative flex items-start gap-3">
-        {member.avatar_url
-          ? <img src={member.avatar_url} alt="" className="w-14 h-14 r-card object-cover" />
-          : (
-            <div className="w-14 h-14 r-card bg-slate-100 dark:bg-white/10 flex items-center
-                            justify-center font-black text-slate-500 dark:text-white/60">
-              {initials}
-            </div>
-          )}
-        {/* ── The number plate ────────────────────────────────────────
-            In the shirt's own colours, so the card and the jersey read as the
-            same object rather than two designs that happen to share a name. */}
-        {kit && number != null && (
-          <div className="absolute top-3 right-3 w-12 h-14 r-control overflow-hidden
-                          flex flex-col items-center justify-center shadow-lg"
-            style={{ background: kit.bg }}
-            title={`${kit.name} · #${number}`}>
-            <img src={kit.crest} alt="" className="w-4 h-4 object-contain opacity-90" />
-            <span className="t-num text-xl leading-none mt-0.5" style={{ color: kit.ink }}>
-              {number}
+        {/* ── Face + number ───────────────────────────────────────────
+            The number rides the avatar rather than sitting in its own plate.
+            In a two-column grid the card is ~160px wide, and anything anchored
+            to the right edge lands on top of the name — which is exactly what
+            the plate did. Pinned here it costs no text width at any card size. */}
+        <div className="relative shrink-0">
+          {member.avatar_url
+            ? <img src={member.avatar_url} alt="" className="w-14 h-14 r-card object-cover" />
+            : (
+              <div className="w-14 h-14 r-card bg-slate-100 dark:bg-white/10 flex items-center
+                              justify-center font-black text-slate-500 dark:text-white/60">
+                {initials}
+              </div>
+            )}
+          {kit && number != null && (
+            <span className="absolute -bottom-1.5 -right-1.5 min-w-[26px] h-[26px] px-1 rounded-full
+                             flex items-center justify-center shadow-md
+                             ring-2 ring-white dark:ring-slate-900"
+              style={{ background: kit.bg }}
+              title={`${kit.name} \u00b7 #${number}`}>
+              <span className="t-num text-[13px] leading-none" style={{ color: kit.ink }}>
+                {number}
+              </span>
             </span>
-          </div>
-        )}
-
-        <div className={`flex-1 min-w-0 ${kit && number != null ? 'pr-12' : ''}`}>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
           <span className={`inline-block t-micro font-black uppercase tracking-[1.5px]
                             px-2 py-0.5 rounded-full ${tier.chip}`}>
             {tier.label}

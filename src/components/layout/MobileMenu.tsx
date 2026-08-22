@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePendingChallengeCount } from '../../hooks/usePendingChallengeCount';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Gavel, Swords, Shirt} from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Gavel, Swords} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -85,7 +85,6 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { title: 'Cricket', items: [
                 { to: '/leaderboard', icon: ListOrdered, label: 'Leaderboard' },
                 { to: '/honours', icon: Trophy, label: 'Honours' },
-                { to: '/kit', icon: Shirt, label: 'The Kit' },
                 { to: '/ai-insights', icon: Brain, label: 'AI Insights' },
               ]},
               { title: 'The League', items: [

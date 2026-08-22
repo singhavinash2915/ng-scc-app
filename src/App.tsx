@@ -29,7 +29,6 @@ const LiveScoring = lazy(() => import('./pages/LiveScoring'));
 const Wrapped = lazy(() => import('./pages/Wrapped'));
 const Challenges = lazy(() => import('./pages/Challenges'));
 const Usage = lazy(() => import('./pages/Usage'));
-const Kit = lazy(() => import('./pages/Kit'));
 const AuctionLive = lazy(() => import('./pages/AuctionLive').then(m => ({ default: m.AuctionLive })));
 const AuctionCentre = lazy(() => import('./pages/AuctionCentre').then(m => ({ default: m.AuctionCentre })));
 const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
@@ -117,7 +116,6 @@ const AppRoutes = () => (
         <Route path="/kickoff"       element={<Suspense fallback={<PageLoader />}><SeasonKickoff /></Suspense>} />
         {/* Live scoring — any member with a profile can score; everyone else
             sees the same page as a live scoreboard. */}
-        <Route path="/kit" element={<Suspense fallback={<PageLoader />}><Kit /></Suspense>} />
         <Route path="/usage" element={<Suspense fallback={<PageLoader />}><Usage /></Suspense>} />
         <Route path="/challenges" element={<Suspense fallback={<PageLoader />}><Challenges /></Suspense>} />
         <Route path="/wrapped" element={<Suspense fallback={<PageLoader />}><Wrapped /></Suspense>} />
