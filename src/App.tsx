@@ -12,6 +12,7 @@ import { FEATURES } from './config/features';
 import { MatchPoll } from './pages/MatchPoll';
 
 // Book-match: lazy-loaded but the route only registers in DEV (local testing only)
+const Availability = lazy(() => import('./pages/Availability'));
 const BookMatch = lazy(() => import('./pages/BookMatch').then(m => ({ default: m.BookMatch })));
 
 // All pages lazy loaded (Dashboard loads fast — recharts/photos deferred further)
@@ -110,6 +111,7 @@ const AppRoutes = () => (
         <Route path="/members"       element={<Suspense fallback={<PageLoader />}><Members /></Suspense>} />
         <Route path="/matches"       element={<Suspense fallback={<PageLoader />}><Matches /></Suspense>} />
         <Route path="/calendar"      element={<Suspense fallback={<PageLoader />}><Calendar /></Suspense>} />
+        <Route path="/availability" element={<Suspense fallback={<PageLoader />}><Availability /></Suspense>} />
         <Route path="/tournaments"   element={<Suspense fallback={<PageLoader />}><Tournaments /></Suspense>} />
         <Route path="/league"        element={<Suspense fallback={<PageLoader />}><SeasonLeague /></Suspense>} />
         <Route path="/awards"        element={<Suspense fallback={<PageLoader />}><SeasonAwards /></Suspense>} />

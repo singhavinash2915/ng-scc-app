@@ -19,6 +19,8 @@ export interface Member {
   batting_style: BattingStyle | null;
   bowling_style: BowlingStyle | null;
   jersey_number: number | null;
+  /** MahaSangram side, from the auction: 'brahmos' | 'agni' | null. */
+  jersey_team?: string | null;
   membership_expires_at: string | null;
   membership_tier: 'full' | 'associate' | 'youth' | null;
   created_at: string;

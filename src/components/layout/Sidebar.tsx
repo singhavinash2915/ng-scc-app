@@ -25,7 +25,7 @@ import {
   ExternalLink,
   // Rocket,  — re-add with the Season Kickoff nav item
   Gavel,
-  Swords} from 'lucide-react';
+  Swords, CalendarOff} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { CURRENT_VERSION, STORAGE_KEY } from '../../data/releases';
@@ -49,6 +49,7 @@ const navGroups: Array<{ title: string; items: Array<{ to: string; icon: typeof 
       { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
       { to: '/members', icon: Users, label: 'Members' },
       { to: '/matches', icon: Calendar, label: 'Matches' },
+      { to: '/availability', icon: CalendarOff, label: 'Availability' },
     ],
   },
   {
