@@ -4,6 +4,7 @@ import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { SignInCard } from '../components/SignInCard';
 import { RangeCalendar } from '../components/RangeCalendar';
+import { AwayClashes } from '../components/AwayClashes';
 import { useMe } from '../context/MemberContext';
 import { useAuth } from '../context/AuthContext';
 import { useMembers } from '../hooks/useMembers';
@@ -246,6 +247,9 @@ export default function Availability() {
       ))}
 
       {/* ── EVERYONE (admin) ───────────────────────────────────────────────── */}
+      {tab === 'everyone' && isAdmin && (
+        <AwayClashes matches={matches} members={members} />
+      )}
       {tab === 'everyone' && isAdmin && (
         <Card className="p-4">
           {U.rows.length === 0 ? (

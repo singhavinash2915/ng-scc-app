@@ -53,6 +53,7 @@ import { MatchPosterModal } from '../components/MatchPosterModal';
 import { PreMatchPosterModal } from '../components/PreMatchPosterModal';
 import { MatchScorecardModal } from '../components/MatchScorecardModal';
 import { SquadSelectorModal } from '../components/SquadSelectorModal';
+import { useUnavailability } from '../hooks/useUnavailability';
 import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
 import { useReactions, type ReactionEmoji } from '../hooks/useReactions';
 import { useMatchComments } from '../hooks/useMatchComments';
@@ -237,6 +238,7 @@ export function Matches() {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [matchCentre, setMatchCentre] = useState<Match | null>(null);
+  const unavailability = useUnavailability();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -405,11 +407,23 @@ export function Matches() {
   const [playerFilter, setPlayerFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Filter members based on active/inactive toggle
+  // Who has told us they're away on the date currently in the form.
+  const awayOnFormDate = useMemo(
+    () => (formData.date ? unavailability.awayOn(formData.date) : new Set<string>()),
+    [unavailability, formData.date],
+  );
+
   const filteredMembers = useMemo(() => {
-    if (playerFilter === 'active') return members.filter(m => isActive(m.id));
-    if (playerFilter === 'inactive') return members.filter(m => !isActive(m.id));
-    return members;
-  }, [members, isActive, playerFilter]);
+    const base = playerFilter === 'active' ? members.filter(m => isActive(m.id))
+               : playerFilter === 'inactive' ? members.filter(m => !isActive(m.id))
+               : members;
+    // Away players sink to the bottom rather than being removed. Removing them
+    // would hide a real option — people come back early, and a captain short of
+    // eleven needs to see everyone. Sorting them out of the way means they
+    // can't be picked by accident, which is the actual failure being prevented.
+    return [...base].sort((a, b) =>
+      Number(awayOnFormDate.has(a.id)) - Number(awayOnFormDate.has(b.id)));
+  }, [members, isActive, playerFilter, awayOnFormDate]);
 
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1771,6 +1785,15 @@ export function Matches() {
                   ))}
                 </div>
               </div>
+              {/* ── Scheduling guard ──────────────────────────────────────
+                  Says how many regulars are away BEFORE the squad is picked,
+                  rather than leaving it to be discovered on the morning. */}
+              {awayOnFormDate.size > 0 && (
+                <p className="t-meta font-bold text-amber-600 dark:text-amber-400 mb-2">
+                  {awayOnFormDate.size} {awayOnFormDate.size === 1 ? 'player has' : 'players have'}
+                  {' '}said they're away on this date — listed last, marked AWAY.
+                </p>
+              )}
               <Card className="max-h-48 overflow-y-auto p-2 space-y-1">
                 {filteredMembers.map(member => (
                   <button
@@ -1794,6 +1817,13 @@ export function Matches() {
                     </div>
                     <span className="flex-1 text-left flex items-center gap-2">
                       {member.name}
+                      {/* Told us they're away on this date. Stated, not hidden:
+                          the captain decides, but never by accident. */}
+                      {awayOnFormDate.has(member.id) && (
+                        <span className="t-micro px-1.5 py-0.5 rounded-full font-black
+                                         bg-rose-100 text-rose-700 dark:bg-rose-500/20
+                                         dark:text-rose-300">AWAY</span>
+                      )}
                       <span className={`t-micro px-1.5 py-0.5 rounded-full font-medium ${
                         isActive(member.id)
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
@@ -2165,6 +2195,12 @@ export function Matches() {
                 ))}
               </div>
             </div>
+            {awayOnFormDate.size > 0 && (
+              <p className="t-meta font-bold text-amber-600 dark:text-amber-400 mb-2">
+                {awayOnFormDate.size} {awayOnFormDate.size === 1 ? 'player has' : 'players have'}
+                {' '}said they're away on this date — listed last, marked AWAY.
+              </p>
+            )}
             <Card className="max-h-48 overflow-y-auto p-2 space-y-1">
               {filteredMembers.map(member => (
                 <button
@@ -2188,6 +2224,11 @@ export function Matches() {
                   </div>
                   <span className="flex-1 text-left flex items-center gap-2">
                     {member.name}
+                    {awayOnFormDate.has(member.id) && (
+                      <span className="t-micro px-1.5 py-0.5 rounded-full font-black
+                                       bg-rose-100 text-rose-700 dark:bg-rose-500/20
+                                       dark:text-rose-300">AWAY</span>
+                    )}
                     <span className={`t-micro px-1.5 py-0.5 rounded-full font-medium ${
                       isActive(member.id)
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'

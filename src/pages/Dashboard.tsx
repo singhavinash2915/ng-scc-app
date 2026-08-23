@@ -16,6 +16,8 @@ import { PremiumHero } from '../components/PremiumHero';
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { MatchDay } from '../components/MatchDay';
 import { useGroundDates } from '../hooks/useGroundDates';
+import { useAuth } from '../context/AuthContext';
+import { AwayClashes } from '../components/AwayClashes';
 import { DashboardPoll } from '../components/DashboardPoll';
 import { BirthdayBanner } from '../components/BirthdayBanner';
 
@@ -110,6 +112,7 @@ export function Dashboard() {
   const appLive = useAppLiveMatch();
   const { me, loading: meLoading } = useMe();
   const ground = useGroundDates();
+  const { isAdmin } = useAuth();
   const [view, setView] = useState<DashView>('me');
   // Match Day mode — today's cricket takes over the top of the page.
   //
@@ -394,6 +397,10 @@ export function Dashboard() {
         <MatchDay match={todaysMatch} slot={todaysSlot} members={members}
           compact={liveStream.isLive || !!appLive.live} />
       )}
+
+      {/* ── LATE CHANGES — admin only. A member seeing "3 away for Saturday"
+             can do nothing with it; the person picking the squad can. ── */}
+      {isAdmin && <AwayClashes matches={matches} members={members} limit={2} />}
 
       {/* ── YOUR SEASON — the club data, addressed to one person ────────
           Above the club-wide hero on purpose: a signed-in member wants to know

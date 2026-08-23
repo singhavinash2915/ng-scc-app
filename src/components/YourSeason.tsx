@@ -6,6 +6,7 @@ import { usePersonalAlerts } from '../hooks/usePersonalAlerts';
 import { useCardStats } from '../hooks/useCardStats';
 import { PlayerCard } from './PlayerCard';
 import { Card } from './ui/Card';
+import { AvailabilityNudge } from './AvailabilityNudge';
 import type { Match } from '../types';
 
 // ─── Your season ──────────────────────────────────────────────────────────────
@@ -191,6 +192,9 @@ export function YourSeason({ matches }: Props) {
           </div>
         </Card>
       )}
+
+      {/* ── Ask about the festive weeks ── */}
+      <AvailabilityNudge />
 
       {/* ── Alerts ── */}
       {alerts.map((a, n) => (
