@@ -5,6 +5,8 @@ import { Card } from '../components/ui/Card';
 import { SignInCard } from '../components/SignInCard';
 import { RangeCalendar } from '../components/RangeCalendar';
 import { AwayClashes } from '../components/AwayClashes';
+import { AvailabilityChart, type DayPoint } from '../components/AvailabilityChart';
+import { AvailabilityHeatmap } from '../components/AvailabilityHeatmap';
 import { useMe } from '../context/MemberContext';
 import { useAuth } from '../context/AuthContext';
 import { useMembers } from '../hooks/useMembers';
@@ -48,6 +50,7 @@ export default function Availability() {
   const [reason, setReason] = useState('');
   const [editing, setEditing] = useState<Unavailability | null>(null);
   const [busy, setBusy] = useState(false);
+  const [dateView, setDateView] = useState<'calendar' | 'chart' | 'list'>('calendar');
 
   const byId = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
   const mine = U.mine(me?.id);
@@ -108,6 +111,24 @@ export default function Availability() {
       };
     });
   }, [activeMembers, U, ground.upcoming, matches]);
+
+  /** Every booked slot ahead, shaped for the calendar and the chart. */
+  const points = useMemo<DayPoint[]>(() => {
+    const matchOn = new Map(matches.filter(m => m.result === 'upcoming').map(m => [m.date, m]));
+    return ground.upcoming.map(b => {
+      const away = U.awayOn(b.date);
+      const free = activeMembers.filter(m => !away.has(m.id));
+      return {
+        date: b.date,
+        label: new Date(b.date + 'T00:00:00').toLocaleDateString('en-GB',
+          { day: 'numeric', month: 'short' }),
+        total: free.length,
+        brahmos: free.filter(m => m.jersey_team === 'brahmos').length,
+        agni: free.filter(m => m.jersey_team === 'agni').length,
+        hasFixture: matchOn.has(b.date),
+      };
+    });
+  }, [ground.upcoming, U, activeMembers, matches]);
 
   if (U.tableMissing) {
     return (
@@ -290,9 +311,22 @@ export default function Availability() {
       {/* ── BEST DATES (admin) ─────────────────────────────────────────────── */}
       {tab === 'dates' && isAdmin && (
         <Card className="p-4">
-          <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400">
-            Your booked slots
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400">
+              Your booked slots
+            </p>
+            {/* Three readings of one dataset. The calendar shows WHERE a travel
+                season sits, the chart shows the shape of the dip, the list gives
+                the names. None of them replaces the others. */}
+            <div className="flex gap-1 p-0.5 r-control bg-slate-100 dark:bg-white/5">
+              {(['calendar', 'chart', 'list'] as const).map(v => (
+                <button key={v} onClick={() => setDateView(v)}
+                  className={`px-2.5 py-1 r-control t-micro font-black capitalize ${
+                    dateView === v ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-sm'
+                                   : 'text-slate-500'}`}>{v}</button>
+              ))}
+            </div>
+          </div>
           <p className="t-meta text-slate-500 dark:text-white/50 mt-1">
             The ground slots you’ve actually booked — not every weekend, since the
             club plays Tue/Thu/Sat. Counting the {activeMembers.length} regulars
@@ -300,7 +334,24 @@ export default function Availability() {
             separately because an internal fixture needs both squads: 11–3 is a
             worse date than 8–8 even though more people are free.
           </p>
-          <div className="mt-3 space-y-1">
+          {dateView === 'calendar' && (
+            <div className="mt-3">
+              <AvailabilityHeatmap points={points} />
+            </div>
+          )}
+
+          {dateView === 'chart' && (
+            <div className="mt-3">
+              <AvailabilityChart data={points} />
+              <p className="t-micro text-slate-400 mt-1">
+                Every booked slot to the end of the season. The side lines matter
+                more than the total: a healthy 22 free can still hide a squad
+                with six.
+              </p>
+            </div>
+          )}
+
+          <div className={`mt-3 space-y-1 ${dateView === 'list' ? '' : 'hidden'}`}>
             {bestDates.map(d => {
               // Internal viability is the smaller side — that's what caps the game.
               const internal = Math.min(d.brahmos, d.agni);
