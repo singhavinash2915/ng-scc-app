@@ -7,6 +7,10 @@ import { useTournaments } from '../hooks/useTournaments';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useAIInsight } from '../hooks/useAIInsight';
 import { useScorecardHighlights } from '../hooks/useScorecardHighlights';
+import { useMahaSangram } from '../hooks/useMahaSangram';
+import { useChallenges } from '../hooks/useChallenges';
+import { buildLadder } from '../lib/challengeLadder';
+import { CLUB_FACTS } from '../lib/clubFacts';
 import { useAuth } from '../context/AuthContext';
 import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 import { PLAYING_LABEL } from '../config/season2';
@@ -76,6 +80,12 @@ export function AIInsights() {
   const { generateInsight, error: aiError } = useAIInsight();
   const { matchHighlights, seasonRecords, playerCareerBests } = useScorecardHighlights();
   const { isAdmin } = useAuth();
+  // Scorecards are omitted: standings and the series score come from each
+  // fixture's winning_team, and the MVP race is the only thing that needs
+  // ball-by-ball. Pulling every scorecard to answer "who's winning
+  // MahaSangram" would be a large fetch on a page that may never be asked.
+  const maha = useMahaSangram(matches, members, null);
+  const challenges = useChallenges();
 
   // Club finances (wallet balances, deposits, expenses, transactions) are
   // member-only — same gate as the Finance & Members pages. Outside/public
@@ -324,10 +334,16 @@ export function AIInsights() {
       const memberTxns = transactions.filter(t => t.member_id === m.id);
       const totalDeposited = memberTxns.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
       const totalFeesPaid  = memberTxns.filter(t => t.type === 'match_fee').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const jt = (m as { jersey_team?: string | null }).jersey_team ?? null;
       return {
         name: m.name,
         status: m.status,
         matches_played: m.matches_played,
+        // Which MahaSangram side they were auctioned to, and the number printed
+        // on their shirt. Members ask "who's on Agni" constantly and the model
+        // had no way to answer it.
+        mahasangram_side: jt ? (jt === 'brahmos' ? 'SCC Brahmos' : 'SCC Agni') : null,
+        jersey_number: (m as { jersey_number?: number | null }).jersey_number ?? null,
         ...(financeAccess ? {
           wallet_balance: m.balance,
           total_deposited: totalDeposited,
@@ -442,8 +458,51 @@ export function AIInsights() {
     // Top 30 players by season runs — covers all active SCC members
     const topCareerStats = playerCareerBests.slice(0, 30);
 
+    // ── MahaSangram — the internal competition, as a table ──────────────────
+    const nameOf = (id: string) => members.find(x => x.id === id)?.name ?? 'Unknown';
+    const SIDE = (t: string | null) =>
+      t === 'brahmos' ? 'SCC Brahmos' : t === 'agni' ? 'SCC Agni' : null;
+    const mahaSangram = {
+      whatItIs: 'SCC\u2019s internal competition: SCC Brahmos vs SCC Agni, squads filled by auction.',
+      played: maha.played,
+      upcoming: maha.upcoming,
+      seriesScore: maha.seriesScore,
+      leader: SIDE(maha.leader),
+      standings: maha.standings.map(st => ({
+        side: SIDE(st.side), played: st.played, won: st.won, lost: st.lost,
+        noResult: st.noResult, points: st.points,
+      })),
+      fixtures: maha.fixtures.map(f => ({
+        date: f.date, result: f.result, winner: SIDE(f.winning_team),
+      })),
+    };
+
+    // ── Challenges — the most-used feature in the app ────────────────────────
+    // Members ask "who has challenged me" and "who's winning" more than they
+    // ask anything else, and the chat could not answer either.
+    const challengeRows = challenges.rows.map(c => ({
+      title: c.title,
+      status: c.status,
+      metric: c.metric,
+      target: c.target,
+      stake: c.stake,
+      pinnedToMatch: c.match_id
+        ? matches.find(x => x.id === c.match_id)?.date ?? 'a fixture'
+        : 'any match',
+      players: (c.players ?? []).map(pl => ({
+        name: nameOf(pl.member_id), accepted: pl.accepted,
+      })),
+      winner: c.winner_id ? nameOf(c.winner_id) : null,
+    }));
+    const challengeLadder = buildLadder(challenges.rows).map(r => ({
+      name: nameOf(r.memberId), won: r.won, played: r.played,
+      currentStreak: r.streak, bestStreak: r.bestStreak,
+    }));
+
     const result = await generateInsight('club_chat', {
       question: userMsg,
+      // What the club IS — definitions the database can't hold.
+      clubFacts: CLUB_FACTS,
       // Signals to the edge function whether the asker may see club finances.
       // When false, no financial data is included and the AI is instructed to
       // politely decline money/fund/balance questions.
@@ -461,6 +520,10 @@ export function AIInsights() {
       matchHighlights: recentMatchHighlights,  // [{date, scores, best_batter, best_bowler, ...}]
       seasonRecords,                            // highest individual, best bowling, highest team total, lowest all-out
       playerCareerBests: topCareerStats,        // [{name, highest_score, best_bowling, total_runs, total_wickets}]
+      // ── Season 2026-27 additions ──
+      mahaSangram,                              // internal competition table + fixtures
+      challenges: challengeRows,                // every challenge, who's in it, who won
+      challengeLadder,                          // season-long wins/streaks
     });
 
     setChatMessages(prev => [...prev, { role: 'ai', text: result || 'Sorry, I could not generate a response.' }]);

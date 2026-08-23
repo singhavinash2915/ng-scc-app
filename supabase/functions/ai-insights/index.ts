@@ -303,8 +303,17 @@ Compare: (1) Overall who has better numbers, (2) Batting comparison, (3) Fieldin
         const financeRule = financeAccess
           ? `- wallet_balance is the member's current club wallet balance; total_deposited is how much they've paid in total; total_fees_paid is match fees deducted
 - For financial questions, use recentTransactions and clubFinancials`
-          : `- FINANCES ARE PRIVATE: This user is not a logged-in member. You must NOT reveal or estimate any money figures — club funds, wallet balances, deposits, expenses, match fees, or transactions. If asked anything about money/funds/balances/payments, politely reply that financial details are visible to club members only and suggest they log in with the member PIN. Never guess amounts.`;
-        systemPrompt = `You are SCC's AI assistant — an expert on Sangria Cricket Club (SCC). Answer ONLY from the data below.
+          : `- FINANCES ARE PRIVATE: This user is not a logged-in member. You must NOT reveal or estimate any money figures — club funds, wallet balances, deposits, expenses, match fees, or transactions. If asked anything about money/funds/balances/payments, politely reply that financial details are visible to club members only and suggest they sign in on the app with their phone number (the one the club holds for them — there is no password or PIN). Never guess amounts.`;
+        // Club knowledge travels with the request. It lives in one place
+        // (src/lib/clubFacts.ts) rather than being duplicated here, where the
+        // two copies would drift and the model would confidently state the
+        // stale one. Older clients that don't send it simply get the data-only
+        // prompt they had before.
+        const clubFacts = typeof data.clubFacts === 'string' && data.clubFacts.length
+          ? `\n${data.clubFacts}\n`
+          : '';
+        systemPrompt = `You are SCC's AI assistant — an expert on Sangria Cricket Club (SCC). Answer ONLY from the club knowledge and data below.
+${clubFacts}
 
 IMPORTANT RULES:
 - Match member names approximately/fuzzily (e.g. "Aditya Jaiswal" matches "Aaditya Jaiswal", "Shubham" could be any of the Shubhams — list all matches)
@@ -319,6 +328,9 @@ ${financeRule}
 - For SEASON RECORDS (highest individual score, best bowling, highest team total, lowest all-out), use seasonRecords
 - For MOM tally / leaderboard, use momLeaderboard
 - For tournament questions, use tournaments
+- For MAHASANGRAM / Brahmos vs Agni / the internal competition, use mahaSangram (table, series score, fixtures). A member's side and shirt number are on allMembers[*].mahasangram_side and jersey_number
+- For CHALLENGES ("who challenged me", "what challenges are running", "who's winning"), use challenges; for the season-long wins/streaks table use challengeLadder
+- The club knowledge above explains what these competitions ARE. Use it for "what is X" questions and never guess at a definition it doesn't cover
 
 CLUB SUMMARY & FINANCIALS:
 ${JSON.stringify(data.clubSummary)}
@@ -348,7 +360,16 @@ RECENT TRANSACTIONS (last 50):
 ${JSON.stringify(data.recentTransactions)}
 
 TOURNAMENTS:
-${JSON.stringify(data.tournaments)}`;
+${JSON.stringify(data.tournaments)}
+
+SCC MAHASANGRAM — the internal Brahmos vs Agni competition:
+${JSON.stringify(data.mahaSangram)}
+
+CHALLENGES — member-vs-member contests (${data.challenges?.length ?? 0}):
+${JSON.stringify(data.challenges)}
+
+CHALLENGE SEASON LADDER (wins, played, streaks):
+${JSON.stringify(data.challengeLadder)}`;
         break;
       }
 
