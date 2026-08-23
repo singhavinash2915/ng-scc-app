@@ -8,8 +8,9 @@ import { useMe } from '../context/MemberContext';
 import { useAuth } from '../context/AuthContext';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
-import { useUnavailability, ymd, type Unavailability } from '../hooks/useUnavailability';
+import { useUnavailability, type Unavailability } from '../hooks/useUnavailability';
 import { useMemberActivity } from '../hooks/useMemberActivity';
+import { useGroundDates } from '../hooks/useGroundDates';
 
 // ─── Availability ─────────────────────────────────────────────────────────────
 // Squad polling asks "can you play on the 4th", which needs the fixture to
@@ -36,6 +37,10 @@ export default function Availability() {
   // weekend look like a 48-man squad and every date equally green, which tells
   // an admin nothing. The regulars are the pool a fixture is picked from.
   const { activeMembers } = useMemberActivity(members, matches);
+  // The bookings, not the fixture list. Most booked slots have no fixture row
+  // yet, and the club plays Tue/Thu/Sat rather than Sundays — so both "is there
+  // cricket that day" and "which dates can we even use" come from here.
+  const ground = useGroundDates();
 
   const [tab, setTab] = useState<Tab>('mine');
   const [sel, setSel] = useState<{ from: string; to: string } | null>(null);
@@ -46,11 +51,12 @@ export default function Availability() {
   const byId = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
   const mine = U.mine(me?.id);
 
-  /** Fixture dates, so the calendar can show what a block would cost you. */
-  const fixtureDates = useMemo(
-    () => new Set(matches.filter(m => m.result === 'upcoming').map(m => m.date)),
-    [matches],
-  );
+  /** Play dates: every booked ground slot, plus any fixture without one. */
+  const fixtureDates = useMemo(() => {
+    const s = new Set(ground.dates);
+    for (const m of matches) if (m.result === 'upcoming') s.add(m.date);
+    return s;
+  }, [ground.dates, matches]);
 
   const meta = (date: string) => {
     const away = U.awayOn(date);
@@ -85,29 +91,22 @@ export default function Availability() {
   // a plain headcount would rank as the best of the month.
   const bestDates = useMemo(() => {
     const active = activeMembers;
-    const out: Array<{
-      date: string; total: number; brahmos: number; agni: number;
-      awayNames: string[]; hasFixture: boolean;
-    }> = [];
-    const d = new Date(); d.setHours(0, 0, 0, 0);
-    const end = new Date(d); end.setDate(end.getDate() + 70);
-    for (; d <= end; d.setDate(d.getDate() + 1)) {
-      const dow = d.getDay();
-      if (dow !== 0 && dow !== 6) continue;          // weekends only
-      const key = ymd(d);
-      const away = U.awayOn(key);
+    const matchOn = new Map(matches.filter(m => m.result === 'upcoming').map(m => [m.date, m]));
+    return ground.upcoming.slice(0, 24).map(b => {
+      const away = U.awayOn(b.date);
       const free = active.filter(m => !away.has(m.id));
-      out.push({
-        date: key,
+      return {
+        date: b.date,
+        slot: b.time_slot,
         total: free.length,
         brahmos: free.filter(m => m.jersey_team === 'brahmos').length,
         agni: free.filter(m => m.jersey_team === 'agni').length,
         awayNames: active.filter(m => away.has(m.id)).map(m => m.name.split(' ')[0]),
-        hasFixture: fixtureDates.has(key),
-      });
-    }
-    return out;
-  }, [activeMembers, U, fixtureDates]);
+        fixture: matchOn.get(b.date)?.opponent ?? null,
+        hasFixture: matchOn.has(b.date),
+      };
+    });
+  }, [activeMembers, U, ground.upcoming, matches]);
 
   if (U.tableMissing) {
     return (
@@ -288,11 +287,12 @@ export default function Availability() {
       {tab === 'dates' && isAdmin && (
         <Card className="p-4">
           <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400">
-            Weekends, next 10 weeks
+            Your booked slots
           </p>
           <p className="t-meta text-slate-500 dark:text-white/50 mt-1">
-            Counting the {activeMembers.length} regulars — members who played in at
-            least one of the last ten matches. Brahmos and Agni are counted
+            The ground slots you’ve actually booked — not every weekend, since the
+            club plays Tue/Thu/Sat. Counting the {activeMembers.length} regulars
+            (played one of the last ten matches). Brahmos and Agni are counted
             separately because an internal fixture needs both squads: 11–3 is a
             worse date than 8–8 even though more people are free.
           </p>
@@ -311,11 +311,14 @@ export default function Availability() {
                     <p className="font-bold t-body text-slate-900 dark:text-white">
                       {new Date(d.date + 'T00:00:00').toLocaleDateString('en-GB',
                         { weekday: 'short', day: 'numeric', month: 'short' })}
-                      {d.hasFixture && (
-                        <span className="t-micro font-black text-emerald-600 dark:text-emerald-400"> · booked</span>
-                      )}
+                      {/* A slot with no fixture is the one worth acting on — the
+                          ground is paid for and nothing is scheduled on it. */}
+                      {d.hasFixture
+                        ? <span className="t-micro font-black text-emerald-600 dark:text-emerald-400"> · {d.fixture}</span>
+                        : <span className="t-micro font-black text-amber-600 dark:text-amber-400"> · no fixture yet</span>}
                     </p>
                     <p className="t-micro text-slate-400 truncate">
+                      {d.slot ? `${d.slot} · ` : ''}
                       {d.awayNames.length ? `Away: ${d.awayNames.join(', ')}` : 'Everyone free'}
                     </p>
                   </div>

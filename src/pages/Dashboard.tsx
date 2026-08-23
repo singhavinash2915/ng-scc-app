@@ -15,6 +15,7 @@ import { PremiumHero } from '../components/PremiumHero';
 
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { MatchDay } from '../components/MatchDay';
+import { useGroundDates } from '../hooks/useGroundDates';
 import { DashboardPoll } from '../components/DashboardPoll';
 import { BirthdayBanner } from '../components/BirthdayBanner';
 
@@ -108,18 +109,25 @@ export function Dashboard() {
   const liveStream = useLiveStream();
   const appLive = useAppLiveMatch();
   const { me, loading: meLoading } = useMe();
+  const ground = useGroundDates();
   const [view, setView] = useState<DashView>('me');
-  // Match Day mode — an upcoming match dated today takes over the top banner
-  const { todaysMatch } = useMemo(() => {
+  // Match Day mode — today's cricket takes over the top of the page.
+  //
+  // Keyed on the GROUND BOOKING, not the fixture list. The club books and pays
+  // for slots a season ahead (98 of them) and creates a `matches` row for only
+  // some (21). Triggering off fixtures alone meant match day silently failed to
+  // appear on most of the days the club was actually at the ground.
+  const { todaysMatch, todaysSlot } = useMemo(() => {
     const now = new Date();
     const today = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+    const slot = ground.byDate.get(today) ?? null;
     const tm = matches.find(m => m.result === 'upcoming' && m.date === today) ?? null;
     const next = league.upcoming[0];
     const days = next
       ? Math.max(0, Math.ceil((new Date(next.date + 'T00:00:00').getTime() - now.getTime()) / 86400000))
       : null;
-    return { todaysMatch: tm, daysToKickoff: days };
-  }, [matches, league.upcoming]);
+    return { todaysMatch: tm, todaysSlot: slot, daysToKickoff: days };
+  }, [matches, league.upcoming, ground.byDate]);
   const { counts: momCounts } = useMOMCounts();
   const monthSummary = useMonthSummary();
   const { stats: cricketStats } = useCricketStats('2025-26');
@@ -382,8 +390,8 @@ export function Dashboard() {
              the match owns the first screen instead of a line of text
              fifteenth down the page. Sits under the live score, which is the
              only thing that outranks it. ── */}
-      {todaysMatch && (
-        <MatchDay match={todaysMatch} members={members}
+      {(todaysMatch || todaysSlot) && (
+        <MatchDay match={todaysMatch} slot={todaysSlot} members={members}
           compact={liveStream.isLive || !!appLive.live} />
       )}
 

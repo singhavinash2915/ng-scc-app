@@ -4,6 +4,7 @@ import { MapPin, Navigation, Swords, ChevronRight } from 'lucide-react';
 import { useMe } from '../context/MemberContext';
 import { useChallenges } from '../hooks/useChallenges';
 import type { Match, Member } from '../types';
+import type { GroundDate } from '../hooks/useGroundDates';
 
 // ─── Match day ────────────────────────────────────────────────────────────────
 // Usage said two things at once: the home screen and the challenges board are
@@ -20,20 +21,23 @@ import type { Match, Member } from '../types';
 // Dashboard, below the birthdays. It was correct and nobody saw it.
 
 interface Props {
-  match: Match;
+  /** Null when the ground is booked but no fixture row exists yet. */
+  match: Match | null;
+  /** Today's booked slot, which is what actually says there is cricket on. */
+  slot: GroundDate | null;
   members: Member[];
   /** Live scoring already owns the top of the page — don't compete with it. */
   compact?: boolean;
 }
 
-export function MatchDay({ match, members, compact = false }: Props) {
+export function MatchDay({ match, slot, members, compact = false }: Props) {
   const { me } = useMe();
   const { rows } = useChallenges();
 
   const byId = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
   const squad = useMemo(
-    () => (match.players ?? []).map(p => byId.get(p.member_id)).filter(Boolean) as Member[],
-    [match.players, byId],
+    () => (match?.players ?? []).map(p => byId.get(p.member_id)).filter(Boolean) as Member[],
+    [match?.players, byId],
   );
   const picked = !!me && squad.some(s => s.id === me.id);
 
@@ -42,8 +46,8 @@ export function MatchDay({ match, members, compact = false }: Props) {
    * that shows an empty squad is worse than one that shows who said yes.
    */
   const available = useMemo(
-    () => (match.polls ?? []).filter(p => p.response === 'available').length,
-    [match.polls],
+    () => (match?.polls ?? []).filter(p => p.response === 'available').length,
+    [match?.polls],
   );
 
   /**
@@ -56,14 +60,17 @@ export function MatchDay({ match, members, compact = false }: Props) {
     const playing = new Set(squad.map(s => s.id));
     return rows.filter(c =>
       (c.status === 'live' || c.status === 'open') &&
-      (c.match_id === match.id || c.match_id === null) &&
+      (c.match_id === match?.id || c.match_id === null) &&
       (c.players ?? []).some(p => p.accepted && playing.has(p.member_id)),
     );
-  }, [rows, squad, match.id]);
+  }, [rows, squad, match?.id]);
 
   const nameOf = (id: string) => byId.get(id)?.name.split(' ')[0] ?? '—';
-  const mapUrl = match.venue
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(match.venue)}`
+  // The slot's venue is the booked one; a fixture's venue is what someone
+  // typed. Prefer the booking.
+  const venue = slot?.venue || match?.venue || null;
+  const mapUrl = venue
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`
     : null;
 
   return (
@@ -86,14 +93,19 @@ export function MatchDay({ match, members, compact = false }: Props) {
         </div>
 
         <p className="font-display text-3xl font-extrabold mt-1 leading-tight">
-          {match.opponent || 'SCC'}
+          {match?.opponent || slot?.opponent_name || 'Ground booked'}
         </p>
+        {/* The slot time is the single most useful line on a match morning and
+            it lives only on the booking. */}
+        {slot?.time_slot && (
+          <p className="t-meta font-bold text-white/80 mt-0.5">{slot.time_slot}</p>
+        )}
 
-        {match.venue && (
+        {venue && (
           <div className="flex items-center gap-2 mt-2.5">
             <p className="t-meta text-white/75 inline-flex items-center gap-1 min-w-0 flex-1">
               <MapPin className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{match.venue}</span>
+              <span className="truncate">{venue}</span>
             </p>
             {/* The single most useful thing an app can do on the morning of a
                 match, and it was nowhere in the club's version of one. */}
@@ -130,13 +142,14 @@ export function MatchDay({ match, members, compact = false }: Props) {
                   </div>
                 </>
               ) : (
-                <Link to={`/poll/${match.id}`} className="flex items-center gap-2">
+                <Link to={match ? `/poll/${match.id}` : '/matches'} className="flex items-center gap-2">
                   <div className="flex-1">
                     <p className="t-micro font-black uppercase tracking-[1.5px] text-white/60">
-                      Squad not picked yet
+                      {match ? 'Squad not picked yet' : 'No fixture on this slot yet'}
                     </p>
                     <p className="font-black t-lead mt-0.5">
-                      {available} said they're available
+                      {match ? `${available} said they're available`
+                             : 'Ground is booked — add the opponent'}
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/70" />
