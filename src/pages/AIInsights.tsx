@@ -9,6 +9,10 @@ import { useAIInsight } from '../hooks/useAIInsight';
 import { useScorecardHighlights } from '../hooks/useScorecardHighlights';
 import { useMahaSangram } from '../hooks/useMahaSangram';
 import { useChallenges } from '../hooks/useChallenges';
+import { useSquads } from '../hooks/useSquads';
+import { useUnavailability } from '../hooks/useUnavailability';
+import { useGroundDates } from '../hooks/useGroundDates';
+import { useSeasonLeague } from '../hooks/useSeasonLeague';
 import { buildLadder } from '../lib/challengeLadder';
 import { CLUB_FACTS } from '../lib/clubFacts';
 import { useAuth } from '../context/AuthContext';
@@ -92,6 +96,13 @@ export function AIInsights() {
   // MahaSangram" would be a large fetch on a page that may never be asked.
   const maha = useMahaSangram(matches, members, null);
   const challenges = useChallenges();
+  // The auctioned squads (and their captains), who's away, the booked calendar
+  // and the league table. All of it is on a page in the app and none of it was
+  // reaching the chat.
+  const { squads } = useSquads(members);
+  const unavail = useUnavailability();
+  const groundDates = useGroundDates();
+  const seasonLeague = useSeasonLeague();
 
   // Club finances (wallet balances, deposits, expenses, transactions) are
   // member-only — same gate as the Finance & Members pages. Outside/public
@@ -515,6 +526,60 @@ export function AIInsights() {
       currentStreak: r.streak, bestStreak: r.bestStreak,
     }));
 
+    // ── MahaSangram squads, with captains ───────────────────────────────────
+    const mahaSquads = squads.map(sq => ({
+      team: sq.name,
+      captain: sq.captain,
+      purse_lakh: sq.purse,
+      spent_lakh: sq.spent,
+      players: sq.players.map(pl => ({
+        name: pl.name, price_lakh: pl.price, isCaptain: pl.isCaptain,
+      })),
+    }));
+
+    // ── Who is away, and the club's real playing calendar ───────────────────
+    // Names and reasons are ADMIN-ONLY, matching the availability page itself:
+    // a member there sees a count, never who or why. Everyone gets the counts,
+    // because "how many are around on the 7th" is a fair question for anyone.
+    // An explicit shape, not a bare list. Sent as `null` for a non-admin and
+    // `[]` for "nobody is away", the model cannot tell the two apart — and it
+    // guessed wrong, telling an admin their own data was admin-only. `visible`
+    // separates permission from emptiness; `loaded` separates both from a fetch
+    // that simply hadn't returned when the question was asked.
+    const awayDetail = {
+      visible: isAdmin,
+      loaded: !unavail.loading,
+      entries: isAdmin ? unavail.rows.map(r => ({
+        name: members.find(m => m.id === r.member_id)?.name ?? 'Unknown',
+        from: r.from_date, to: r.to_date, reason: r.reason,
+      })) : [],
+    };
+
+    const playingCalendar = groundDates.upcoming.slice(0, 60).map(b => {
+      const away = unavail.awayOn(b.date);
+      const free = members.filter(m => m.status === 'active' && !away.has(m.id));
+      const fx = matches.find(m => m.result === 'upcoming' && m.date === b.date);
+      return {
+        date: b.date,
+        time: b.time_slot,
+        venue: b.venue,
+        fixture: fx?.opponent ?? null,
+        awayCount: away.size,
+        freeBrahmos: free.filter(m => m.jersey_team === 'brahmos').length,
+        freeAgni: free.filter(m => m.jersey_team === 'agni').length,
+      };
+    });
+
+    const leagueTable = {
+      name: seasonLeague.name,
+      window: seasonLeague.window,
+      played: seasonLeague.played.length,
+      upcoming: seasonLeague.upcoming.length,
+      won: seasonLeague.won, lost: seasonLeague.lost, draw: seasonLeague.draw,
+      winPct: seasonLeague.winPct, points: seasonLeague.points,
+      totalFixtures: seasonLeague.totalFixtures,
+    };
+
     const result = await generateInsight('club_chat', {
       question: userMsg,
       // What the club IS — definitions the database can't hold.
@@ -540,6 +605,10 @@ export function AIInsights() {
       mahaSangram,                              // internal competition table + fixtures
       challenges: challengeRows,                // every challenge, who's in it, who won
       challengeLadder,                          // season-long wins/streaks
+      mahaSquads,                               // both squads, captains, auction prices
+      awayDetail,                               // admin only: who's away and why
+      playingCalendar,                          // booked slots + who's free
+      leagueTable,                              // this season's league record
     });
 
     setChatMessages(prev => [...prev, { role: 'ai', text: result || 'Sorry, I could not generate a response.' }]);

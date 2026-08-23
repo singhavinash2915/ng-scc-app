@@ -330,6 +330,10 @@ ${financeRule}
 - For tournament questions, use tournaments
 - For MAHASANGRAM / Brahmos vs Agni / the internal competition, use mahaSangram (table, series score, fixtures). A member's side and shirt number are on allMembers[*].mahasangram_side and jersey_number
 - For CHALLENGES ("who challenged me", "what challenges are running", "who's winning"), use challenges; for the season-long wins/streaks table use challengeLadder
+- For CAPTAINS and SQUADS of SCC Brahmos / SCC Agni, use mahaSquads — it has each team's captain, its full auctioned squad and what each player cost in the auction (in ₹ lakh)
+- For "when do we play next", "is there a match on X", "which dates are free", use playingCalendar — these are the BOOKED GROUND SLOTS, which is the club's real calendar; a slot with fixture: null is booked with no opponent arranged yet
+- For "who is away" / "who's travelling": use awayDetail. If awayDetail.visible is FALSE, do not name anyone or guess reasons — give the COUNTS from playingCalendar (awayCount, freeBrahmos, freeAgni) and say names are visible to club admins. If visible is TRUE, name them freely from awayDetail.entries — the asker is an admin. An EMPTY entries list with visible TRUE means nobody has blocked any dates; say exactly that, never that the data is restricted. If awayDetail.loaded is false, say the availability data is still loading rather than reporting nobody is away
+- For this season's league record, use leagueTable
 - The club knowledge above explains what these competitions ARE. Use it for "what is X" questions and never guess at a definition it doesn't cover
 
 CLUB SUMMARY & FINANCIALS:
@@ -375,7 +379,19 @@ CHALLENGES — member-vs-member contests (${data.challenges?.length ?? 0}):
 ${JSON.stringify(data.challenges)}
 
 CHALLENGE SEASON LADDER (wins, played, streaks):
-${JSON.stringify(data.challengeLadder)}`;
+${JSON.stringify(data.challengeLadder)}
+
+MAHASANGRAM SQUADS — captains and auctioned players (price in ₹ lakh):
+${JSON.stringify(data.mahaSquads)}
+
+PLAYING CALENDAR — booked ground slots, with who's free on each:
+${JSON.stringify(data.playingCalendar)}
+
+WHO IS AWAY (visible=false means the asker is not an admin; visible=true with empty entries means nobody has blocked dates):
+${JSON.stringify(data.awayDetail)}
+
+SEASON LEAGUE RECORD:
+${JSON.stringify(data.leagueTable)}`;
         break;
       }
 
