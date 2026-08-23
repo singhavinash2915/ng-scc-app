@@ -58,17 +58,26 @@ function bestOfBowling(rows: BowlerRow[] | null): BowlerRow | null {
   })[0] || null;
 }
 
-export function useScorecardHighlights(seasonStart = '2025-10-01') {
+export function useScorecardHighlights(seasonStart: string | null = '2025-10-01') {
   const [cards, setCards] = useState<CardRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Explicit columns, never `*`: the table carries a `raw` column holding
+      // the untouched CricHeroes payload — ~16KB a row, ~2MB across the club —
+      // that nothing here reads. Selecting it pulled the whole archive over the
+      // wire on every page load to compute a few dozen highlight lines.
       const { data, error } = await supabase
         .from('match_scorecards')
-        .select('*, match:matches(date, opponent, ch_match_id)')
-        .gte('match.date', seasonStart)
+        .select(`match_id, ch_match_id,
+                 innings1_team_name, innings1_summary, innings1_batting, innings1_bowling,
+                 innings2_team_name, innings2_summary, innings2_batting, innings2_bowling,
+                 match:matches(date, opponent, ch_match_id)`)
+        // seasonStart null = the club's whole history. The AI is asked about
+        // seasons that ended long ago and had no way to answer.
+        .gte('match.date', seasonStart ?? '1970-01-01')
         .order('match(date)', { ascending: false });
 
       if (cancelled) return;

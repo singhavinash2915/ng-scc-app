@@ -322,7 +322,7 @@ ${financeRule}
 - Be conversational and concise (under 200 words unless the question needs more detail)
 - Use actual numbers from the data, never make up stats
 - For match history, use allMatches (internal SCC records) or chMatches (full CricHeroes history)
-- For SEASON cricket stats (totals over the season), use allMembers[*].cricketStats
+- For THIS SEASON's cricket stats use allMembers[*] batting_/bowling_ fields; for ALL-TIME or CAREER totals use the career_* fields (career_runs, career_wickets, career_matches, career_highest_score, career_best_bowling). NEVER present a season figure as all-time or vice versa — say which one you are quoting
 - For PER-MATCH stats (e.g. "what did Avinash score on May 7?"), use matchHighlights — each entry has the date, scores, best_batter and best_bowler for that match
 - For PLAYER career bests this season (highest score, best bowling figures), use playerCareerBests
 - For SEASON RECORDS (highest individual score, best bowling, highest team total, lowest all-out), use seasonRecords
@@ -335,14 +335,20 @@ ${financeRule}
 CLUB SUMMARY & FINANCIALS:
 ${JSON.stringify(data.clubSummary)}
 
-ALL MEMBERS WITH STATS + WALLET INFO (${data.allMembers?.length} players):
+ALL MEMBERS (${data.allMembers?.length} players).
+Each player has TWO sets of numbers and they are NOT interchangeable:
+  \u2022 career_* fields  = ALL-TIME, every season summed. Use these for "all time", "career", "ever", "in total".
+  \u2022 batting_*/bowling_* fields = THIS SEASON ONLY. Use these for "this season", "this year", "currently".
+Example: a player can have bowling_wickets 93 (this season) and career_wickets 93, while another has
+bowling_wickets 76 but career_wickets 133 \u2014 the second is the all-time leader. Always compare the
+SAME field across players, and say which basis you are quoting:
 ${JSON.stringify(data.allMembers)}
 
 ALL MATCHES — SCC INTERNAL RECORDS (${data.allMatches?.length} total):
 ${JSON.stringify(data.allMatches)}
 
-CRICHEROES FULL MATCH HISTORY (${data.chMatches?.length ?? 0} matches, most recent first):
-${JSON.stringify(data.chMatches?.slice(0, 80))}
+CRICHEROES FULL MATCH HISTORY (${data.chMatches?.length ?? 0} matches, most recent first \u2014 this is the COMPLETE list, not a sample):
+${JSON.stringify(data.chMatches)}
 
 PER-MATCH HIGHLIGHTS — best batter & best bowler from CricHeroes scorecards for the most recent ${data.matchHighlights?.length ?? 0} matches:
 ${JSON.stringify(data.matchHighlights)}
@@ -350,7 +356,7 @@ ${JSON.stringify(data.matchHighlights)}
 SEASON RECORDS (highest individual score, best bowling, highest team total, lowest all-out):
 ${JSON.stringify(data.seasonRecords)}
 
-PLAYER CAREER BESTS THIS SEASON (sorted by total runs, top ${data.playerCareerBests?.length ?? 0} players):
+PER-PLAYER BESTS FROM SCORECARDS \u2014 every match on record, all seasons (${data.playerCareerBests?.length ?? 0} players):
 ${JSON.stringify(data.playerCareerBests)}
 
 MOM LEADERBOARD:
@@ -381,15 +387,30 @@ ${JSON.stringify(data.challengeLadder)}`;
     }
 
     const message = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 1024,
-      system: systemPrompt,
+      model: 'claude-sonnet-4-5',
+      // 1024 truncated longer answers mid-sentence — a match report or a squad
+      // rationale runs past it. Chat replies are held short by the prompt, not
+      // by the ceiling.
+      max_tokens: 4096,
+      // The club data is now the whole archive rather than a window, which
+      // makes the system prompt large and almost entirely identical between
+      // questions. Caching it means the second and later questions in a
+      // sitting are billed at a tenth of the rate for the shared part; without
+      // it, sending everything would multiply the cost of every question.
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: prompt }],
     });
+    // Surfaced in the function logs so cache behaviour is checkable rather
+    // than assumed — a stray timestamp anywhere in the prompt would silently
+    // drop the hit rate to zero and nothing else would show it.
+    console.log('usage', JSON.stringify(message.usage));
 
     const content = message.content[0].type === 'text' ? message.content[0].text : '';
 
-    return new Response(JSON.stringify({ content, type }), {
+    // usage travels back so cache behaviour and cost are observable from the
+    // client. A stray timestamp in the prompt would drop cache hits to zero
+    // and nothing else in the app would show it.
+    return new Response(JSON.stringify({ content, type, usage: message.usage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

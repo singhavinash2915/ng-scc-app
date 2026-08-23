@@ -77,8 +77,14 @@ export function AIInsights() {
   const { transactions } = useTransactions();
   const { tournaments } = useTournaments();
   const { stats, getLeaderboard } = useCricketStats();
+  // Career totals as well as this season's. With only the season row loaded the
+  // model answered "who has the most wickets all-time" from 2025-26 figures and
+  // called them all-time — a confident wrong answer, which is the worst kind.
+  const { stats: careerStats } = useCricketStats('all');
   const { generateInsight, error: aiError } = useAIInsight();
-  const { matchHighlights, seasonRecords, playerCareerBests } = useScorecardHighlights();
+  // null = the club's entire history. Members ask about seasons that ended
+  // years ago; restricting this to the current one guaranteed a wrong answer.
+  const { matchHighlights, seasonRecords, playerCareerBests } = useScorecardHighlights(null);
   const { isAdmin } = useAuth();
   // Scorecards are omitted: standings and the series score come from each
   // fixture's winning_team, and the MVP race is the only thing that needs
@@ -334,6 +340,7 @@ export function AIInsights() {
       const memberTxns = transactions.filter(t => t.member_id === m.id);
       const totalDeposited = memberTxns.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
       const totalFeesPaid  = memberTxns.filter(t => t.type === 'match_fee').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const c = careerStats.find(st => st.member_id === m.id);
       const jt = (m as { jersey_team?: string | null }).jersey_team ?? null;
       return {
         name: m.name,
@@ -343,6 +350,13 @@ export function AIInsights() {
         // on their shirt. Members ask "who's on Agni" constantly and the model
         // had no way to answer it.
         mahasangram_side: jt ? (jt === 'brahmos' ? 'SCC Brahmos' : 'SCC Agni') : null,
+        // Career = every season summed. The fields below without this prefix
+        // are the CURRENT season only.
+        career_runs: c?.batting_runs ?? null,
+        career_wickets: c?.bowling_wickets ?? null,
+        career_matches: c?.batting_innings ?? null,
+        career_highest_score: c?.batting_highest_score ?? null,
+        career_best_bowling: c?.bowling_best_figures ?? null,
         jersey_number: (m as { jersey_number?: number | null }).jersey_number ?? null,
         ...(financeAccess ? {
           wallet_balance: m.balance,
@@ -454,9 +468,11 @@ export function AIInsights() {
     };
 
     // Compact scorecard summaries (only most recent 50 matches to keep prompt size sane)
-    const recentMatchHighlights = matchHighlights.slice(0, 50);
+    // Everything, not a window. These are already one compact line per match
+    // (~100 tokens), so the whole archive costs less than the member list.
+    const recentMatchHighlights = matchHighlights;
     // Top 30 players by season runs — covers all active SCC members
-    const topCareerStats = playerCareerBests.slice(0, 30);
+    const topCareerStats = playerCareerBests;
 
     // ── MahaSangram — the internal competition, as a table ──────────────────
     const nameOf = (id: string) => members.find(x => x.id === id)?.name ?? 'Unknown';
@@ -553,7 +569,7 @@ export function AIInsights() {
         <div className="grid grid-cols-3 gap-3 mt-4">
           {[
             { label: 'Members', value: members.length },
-            { label: 'Matches', value: recentMatches.length },
+            { label: 'Matches', value: matches.length },
             { label: 'Stats Loaded', value: stats.length },
           ].map(s => (
             <div key={s.label} className="bg-white/15 r-card p-3 text-center border border-white/20">

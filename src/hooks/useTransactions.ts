@@ -10,17 +10,27 @@ export function useTransactions() {
   const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('transactions')
-        .select(`
-          *,
-          member:members(id, name),
-          match:matches(id, venue, date)
-        `)
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-      setTransactions(data || []);
+      // PostgREST caps a plain select at 1000 rows and says nothing about it.
+      // The ledger passed 1000 entries some time ago, so the oldest ones were
+      // silently missing from every total computed off this hook — and from
+      // everything the AI was told about club money.
+      const PAGE = 1000;
+      const all: Transaction[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select(`
+            *,
+            member:members(id, name),
+            match:matches(id, venue, date)
+          `)
+          .order('date', { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        all.push(...((data || []) as Transaction[]));
+        if (!data || data.length < PAGE) break;
+      }
+      setTransactions(all);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
     } finally {
