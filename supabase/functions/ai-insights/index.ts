@@ -321,10 +321,10 @@ IMPORTANT RULES:
 ${financeRule}
 - Be conversational and concise (under 200 words unless the question needs more detail)
 - Use actual numbers from the data, never make up stats
-- For match history, use allMatches (internal SCC records) or chMatches (full CricHeroes history)
+- For match history use allMatches — it is the COMPLETE list of every match the club has played, not a sample
 - For THIS SEASON's cricket stats use allMembers[*] batting_/bowling_ fields; for ALL-TIME or CAREER totals use the career_* fields (career_runs, career_wickets, career_matches, career_highest_score, career_best_bowling). NEVER present a season figure as all-time or vice versa — say which one you are quoting
-- For PER-MATCH stats (e.g. "what did Avinash score on May 7?"), use matchHighlights — each entry has the date, scores, best_batter and best_bowler for that match
-- For PLAYER career bests this season (highest score, best bowling figures), use playerCareerBests
+- For PER-MATCH stats (e.g. "what did Avinash score on May 7?"), use matchHighlights — the 40 most recent matches, each with date, scores, best_batter and best_bowler. For older matches use seasonRecords and playerCareerBests, and say you only hold per-ball detail for recent games
+- For PLAYER career bests (highest score, best bowling figures), use playerCareerBests — SCC members only; you do not hold career records for opposition players
 - For SEASON RECORDS (highest individual score, best bowling, highest team total, lowest all-out), use seasonRecords
 - For MOM tally / leaderboard, use momLeaderboard
 - For tournament questions, use tournaments
@@ -350,9 +350,6 @@ ${JSON.stringify(data.allMembers)}
 
 ALL MATCHES — SCC INTERNAL RECORDS (${data.allMatches?.length} total):
 ${JSON.stringify(data.allMatches)}
-
-CRICHEROES FULL MATCH HISTORY (${data.chMatches?.length ?? 0} matches, most recent first \u2014 this is the COMPLETE list, not a sample):
-${JSON.stringify(data.chMatches)}
 
 PER-MATCH HIGHLIGHTS — best batter & best bowler from CricHeroes scorecards for the most recent ${data.matchHighlights?.length ?? 0} matches:
 ${JSON.stringify(data.matchHighlights)}
@@ -403,7 +400,11 @@ ${JSON.stringify(data.leagueTable)}`;
     }
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-5',
+      // Haiku 4.5: $1/$5 per MTok against Sonnet 4.5's $3/$15. These are lookups
+      // over structured data the prompt already contains, not reasoning tasks —
+      // the payload does the work, and paying three times the rate to read it
+      // back was the expensive half of a bill that ran out.
+      model: 'claude-haiku-4-5',
       // 1024 truncated longer answers mid-sentence — a match report or a squad
       // rationale runs past it. Chat replies are held short by the prompt, not
       // by the ceiling.
@@ -413,7 +414,14 @@ ${JSON.stringify(data.leagueTable)}`;
       // questions. Caching it means the second and later questions in a
       // sitting are billed at a tenth of the rate for the shared part; without
       // it, sending everything would multiply the cost of every question.
-      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+      // The 5-minute default, deliberately, not the 1-hour TTL. A 1h write
+      // costs 2x base against 1.25x, and needs three reads to pay for itself.
+      // This page sees a handful of sessions a week, most of them one or two
+      // questions — so the long TTL would have made the common case 60% dearer
+      // while trying to make it cheaper. At 5 minutes the break-even is two
+      // questions, which a single sitting usually clears.
+      system: [{ type: 'text', text: systemPrompt,
+                 cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: prompt }],
     });
     // Surfaced in the function logs so cache behaviour is checkable rather

@@ -14,6 +14,7 @@ import { useUnavailability } from '../hooks/useUnavailability';
 import { useGroundDates } from '../hooks/useGroundDates';
 import { useSeasonLeague } from '../hooks/useSeasonLeague';
 import { buildLadder } from '../lib/challengeLadder';
+import { buildMatcher } from '../lib/challenges';
 import { CLUB_FACTS } from '../lib/clubFacts';
 import { useAuth } from '../context/AuthContext';
 import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
@@ -479,11 +480,16 @@ export function AIInsights() {
     };
 
     // Compact scorecard summaries (only most recent 50 matches to keep prompt size sane)
-    // Everything, not a window. These are already one compact line per match
-    // (~100 tokens), so the whole archive costs less than the member list.
-    const recentMatchHighlights = matchHighlights;
+    // A window again. Per-match highlights are asked about for RECENT games —
+    // "what did he score last week" — while anything older is already covered
+    // by seasonRecords and the career bests below, at a fraction of the size.
+    const recentMatchHighlights = matchHighlights.slice(0, 40);
     // Top 30 players by season runs — covers all active SCC members
-    const topCareerStats = playerCareerBests;
+    // Scorecards name everyone who batted, so this was carrying career bests
+    // for 681 players — 647 of them opposition. That was 37k tokens a question,
+    // 41% of the whole payload, to answer questions nobody asks. Keep our own.
+    const matchToMember = buildMatcher(members);
+    const topCareerStats = playerCareerBests.filter(p => matchToMember(p.name));
 
     // ── MahaSangram — the internal competition, as a table ──────────────────
     const nameOf = (id: string) => members.find(x => x.id === id)?.name ?? 'Unknown';
@@ -590,8 +596,9 @@ export function AIInsights() {
       financeAccess,
       clubSummary,
       allMembers: allMemberProfiles,
+      // One list, sent once. `chMatches` used to be this same array under a
+      // second name — 12k tokens of literal duplication on every question.
       allMatches: allMatchesData,
-      chMatches: allMatchesData, // same source — populated by CricHeroes sync
       momLeaderboard,
       recentTransactions: financeAccess ? recentTxns : [],
       tournaments: tournamentsData,
