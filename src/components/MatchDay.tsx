@@ -3,6 +3,8 @@ import { useMemo } from 'react';
 import { MapPin, Navigation, Swords, ChevronRight } from 'lucide-react';
 import { useMe } from '../context/MemberContext';
 import { useChallenges } from '../hooks/useChallenges';
+import { useAuth } from '../context/AuthContext';
+import { GoLiveControl } from './GoLiveControl';
 import type { Match, Member } from '../types';
 import type { GroundDate } from '../hooks/useGroundDates';
 
@@ -33,6 +35,7 @@ interface Props {
 export function MatchDay({ match, slot, members, compact = false }: Props) {
   const { me } = useMe();
   const { rows } = useChallenges();
+  const { isAdmin } = useAuth();
 
   const byId = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
   const squad = useMemo(
@@ -117,6 +120,14 @@ export function MatchDay({ match, slot, members, compact = false }: Props) {
               </a>
             )}
           </div>
+        )}
+
+        {/* Going live belongs on the screen the admin is already looking at,
+            on the one day it applies — not six taps deep in Settings. */}
+        {isAdmin && (
+          <GoLiveControl
+            matchTitle={match?.opponent ? `SCC v ${match.opponent}` : 'Sangria Cricket Club'}
+            chMatchId={match?.ch_match_id} />
         )}
 
         {!compact && (

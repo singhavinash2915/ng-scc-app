@@ -81,11 +81,23 @@ export function useLiveStream() {
 
   useEffect(() => { fetchStream(); }, [fetchStream]);
 
-  // Re-check every 60s so the banner appears/disappears for members already
-  // sitting on the page when an admin flips the switch at the ground.
+  // Live, not polled. On a 60s interval a member opening the app just after
+  // the switch is flipped waited up to a minute to be told there's cricket on,
+  // and the banner outlived the match by the same amount. Both are the worst
+  // possible minute to be wrong in.
+  //
+  // The poll is kept as a slow backstop: realtime can silently drop a
+  // connection (backgrounded tab, flaky ground wifi) and the banner is not
+  // something that should be able to get stuck on because a socket died.
   useEffect(() => {
-    const id = setInterval(() => { fetchStream(); }, 60_000);
-    return () => clearInterval(id);
+    const channel = supabase
+      .channel('live_stream_changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'app_configs', filter: `key=eq.${STREAM_KEY}` },
+        () => { fetchStream(); })
+      .subscribe();
+    const id = setInterval(() => { fetchStream(); }, 5 * 60_000);
+    return () => { supabase.removeChannel(channel); clearInterval(id); };
   }, [fetchStream]);
 
   const saveStream = useCallback(async (next: LiveStreamSettings) => {

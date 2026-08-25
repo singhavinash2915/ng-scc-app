@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo , useState} from 'react';
 import { Card } from '../components/ui/Card';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, Radio } from 'lucide-react';
+import { ArrowRight, Radio, EyeOff } from 'lucide-react';
 import { useMatches } from '../hooks/useMatches';
 import { useLiveScore } from '../hooks/useLiveScore';
 import { useLiveStream } from '../hooks/useLiveStream';
@@ -23,6 +23,20 @@ import { APP_URL, CLUB_NAME, GET_APP_CTA, INSTAGRAM } from '../data/appMeta';
  * from our own matches table when available.
  */
 export function LiveMatch() {
+  // ── Spoiler guard ─────────────────────────────────────────────────────────
+  // YouTube live runs roughly 20-30 seconds behind the ground. Our scorecard
+  // does not — so a viewer sees "WICKET" in the score before the ball reaches
+  // the video, which is the one thing that makes a stream not worth watching.
+  //
+  // Hidden by default while a stream is playing, and the choice is remembered:
+  // asking someone the same question every over is its own kind of annoying.
+  const [showScore, setShowScore] = useState(
+    () => localStorage.getItem('scc-live-show-score') === '1',
+  );
+  const revealScore = (v: boolean) => {
+    setShowScore(v);
+    localStorage.setItem('scc-live-show-score', v ? '1' : '0');
+  };
   const { chMatchId } = useParams<{ chMatchId: string }>();
   const { matches } = useMatches();
 
@@ -39,6 +53,8 @@ export function LiveMatch() {
   const { stream, videoId: streamVideoId, isLive: streamIsLive } = useLiveStream();
   const showStream = streamIsLive
     && (!stream.ch_match_id || String(stream.ch_match_id) === String(chMatchId));
+  // Only guard spoilers when there is actually a video to be behind.
+  const watching = showStream && !!streamVideoId;
 
   return (
     <div className="dark min-h-screen bg-[#070b14] text-gray-100">
@@ -81,8 +97,27 @@ export function LiveMatch() {
             </div>
           )}
 
-          {/* Live scorecard */}
-          {chMatchId ? (
+          {/* Live scorecard — behind a spoiler guard while the stream plays. */}
+          {watching && !showScore && (
+            <button onClick={() => revealScore(true)}
+              className="w-full mb-5 p-4 r-card border border-white/10 bg-white/5 text-left">
+              <p className="font-black text-white inline-flex items-center gap-2">
+                <EyeOff className="w-4 h-4" /> Score hidden
+              </p>
+              <p className="t-meta text-gray-400 mt-0.5">
+                The stream runs about 30 seconds behind the ground. Tap to show the
+                live score anyway — you'll see wickets before they reach the video.
+              </p>
+            </button>
+          )}
+          {watching && showScore && (
+            <button onClick={() => revealScore(false)}
+              className="t-meta font-bold text-gray-400 inline-flex items-center gap-1.5 mb-2">
+              <EyeOff className="w-3.5 h-3.5" /> Hide score (avoid spoilers)
+            </button>
+          )}
+
+          {chMatchId && (!watching || showScore) ? (
             <LiveScorecard
               data={data}
               loading={loading}
@@ -94,9 +129,9 @@ export function LiveMatch() {
               matchVenue={match?.venue}
               matchDate={match?.date}
             />
-          ) : (
+          ) : !chMatchId ? (
             <p className="text-center text-gray-400 py-12">No match specified.</p>
-          )}
+          ) : null}
 
           {/* Growth CTA — the hook for other clubs */}
           <Card className="mt-6 p-5 bg-gradient-to-br from-violet-600/90 via-blue-600/80 to-[#0a1019] border-white/10">
