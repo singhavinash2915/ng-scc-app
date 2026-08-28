@@ -12,6 +12,7 @@ import { FEATURES } from './config/features';
 import { MatchPoll } from './pages/MatchPoll';
 
 // Book-match: lazy-loaded but the route only registers in DEV (local testing only)
+const SquadConfirm = lazy(() => import('./pages/SquadConfirm'));
 const Availability = lazy(() => import('./pages/Availability'));
 const BookMatch = lazy(() => import('./pages/BookMatch').then(m => ({ default: m.BookMatch })));
 
@@ -108,6 +109,7 @@ const AppRoutes = () => (
     <Routes>
       {/* Standalone pages — no sidebar/layout */}
       <Route path="/poll/:matchId" element={<MatchPoll />} />
+      <Route path="/squad/:matchId" element={<Suspense fallback={<PageLoader />}><SquadConfirm /></Suspense>} />
       <Route path="/watch" element={<Suspense fallback={<PageLoader />}><Watch /></Suspense>} />
       <Route path="/book-match" element={<Suspense fallback={<PageLoader />}><BookMatch /></Suspense>} />
       <Route path="/live/:chMatchId" element={<Suspense fallback={<PageLoader />}><LiveMatch /></Suspense>} />

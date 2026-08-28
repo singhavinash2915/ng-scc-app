@@ -12,6 +12,8 @@ import { Input } from './ui/Input';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useMatchPolls } from '../hooks/useMatchPolls';
+import { useUnavailability } from '../hooks/useUnavailability';
+import { APP_URL } from '../data/appMeta';
 import type { Match, Member, MatchPoll } from '../types';
 
 interface Props {
@@ -68,6 +70,12 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
   }, [polls]);
 
   // Filter + sort the bench (members not in squad)
+  // Who has told us they're away on this date. The poll has 7 responses in its
+  // lifetime; availability has 33 from 22 members. Picking a squad off the
+  // emptier of the two was the reason this screen felt like guesswork.
+  const U = useUnavailability();
+  const away = useMemo(() => U.awayOn(match.date), [U, match.date]);
+
   const benchMembers = useMemo(() => {
     return members
       .filter(m => m.status === 'active')
@@ -85,12 +93,17 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
         const order = { available: 0, maybe: 1, unavailable: 3 } as Record<string, number>;
         const ra = pollByMember[a.id]?.response;
         const rb = pollByMember[b.id]?.response;
+        // Anyone away sinks below everyone else, whatever the poll says: a
+        // stale "available" from three weeks ago does not outrank someone
+        // telling us this week that they're in their hometown.
+        const aa = away.has(a.id) ? 1 : 0, ab = away.has(b.id) ? 1 : 0;
+        if (aa !== ab) return aa - ab;
         const oa = ra ? order[ra] : 2;
         const ob = rb ? order[rb] : 2;
         if (oa !== ob) return oa - ob;
         return a.name.localeCompare(b.name);
       });
-  }, [members, squad, filter, search, pollByMember]);
+  }, [members, squad, filter, search, pollByMember, away]);
 
   // Helpers
   const memberById = useMemo(() => {
@@ -101,10 +114,13 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
 
   // Auto-pick top 12 — fills based on poll responses (available > maybe > rest)
   const autoPickSquad = () => {
-    const available = members.filter(m => m.status === 'active' && pollByMember[m.id]?.response === 'available');
-    const maybe = members.filter(m => m.status === 'active' && pollByMember[m.id]?.response === 'maybe');
-    const others = members.filter(m =>
-      m.status === 'active' &&
+    // Away is a hard exclusion, not a ranking. Someone who has said they are
+    // out of Pune that week cannot be auto-picked at all — the whole point of
+    // collecting the dates is that nobody has to remember them.
+    const eligible = members.filter(m => m.status === 'active' && !away.has(m.id));
+    const available = eligible.filter(m => pollByMember[m.id]?.response === 'available');
+    const maybe = eligible.filter(m => pollByMember[m.id]?.response === 'maybe');
+    const others = eligible.filter(m =>
       pollByMember[m.id]?.response !== 'available' &&
       pollByMember[m.id]?.response !== 'maybe' &&
       pollByMember[m.id]?.response !== 'unavailable'
@@ -167,7 +183,11 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
   const handleShareWhatsApp = () => {
     const xi = squad.map((id, i) => `${i + 1}. ${memberById[id]?.name || '—'}${id === captainId ? ' (C)' : id === viceCaptainId ? ' (VC)' : ''}`).join('\n');
     const dateStr = new Date(match.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
-    const msg = `🏏 *SCC Squad* 🏏\n\n📅 ${dateStr}\n📍 ${match.venue}${match.opponent ? `\nvs ${match.opponent}` : ''}\n\n*Playing 12:*\n${xi}\n\n- Sangria Cricket Club`;
+    // The link is the whole point. A squad list in the group is an
+    // announcement; a squad list with a confirm link is a question that
+    // answers itself back into the app.
+    const link = `${APP_URL}/squad/${match.id}`;
+    const msg = `🏏 *SCC Squad* 🏏\n\n📅 ${dateStr}\n📍 ${match.venue}${match.opponent ? `\nvs ${match.opponent}` : ''}\n\n*Playing 12:*\n${xi}\n\nTap to confirm you're playing 👇\n${link}\n\n- Sangria Cricket Club`;
     if (navigator.share) {
       navigator.share({ text: msg }).catch(() => navigator.clipboard.writeText(msg));
     } else {
@@ -198,6 +218,20 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
             }`}>
               {squad.length} / 12
             </span>
+            {/* An internal fixture needs BOTH squads, so the total is the wrong
+                number to watch: 12 players all from Brahmos is not a match. */}
+            {match.match_type === 'internal' && (() => {
+              const b = squad.filter(id => memberById[id]?.jersey_team === 'brahmos').length;
+              const a = squad.filter(id => memberById[id]?.jersey_team === 'agni').length;
+              const even = Math.abs(b - a) <= 1;
+              return (
+                <span className={`t-micro font-black px-2 py-0.5 rounded-full ${
+                  even ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
+                       : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'}`}>
+                  B{b} · A{a}
+                </span>
+              );
+            })()}
             <span className="text-xs text-gray-400">selected</span>
           </div>
         </div>
@@ -371,6 +405,15 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
                           {m.name}
                           {m.role && <span className="ml-1 text-gray-400">{ROLE_ICON[m.role]}</span>}
                           {m.jersey_number != null && <span className="ml-1 t-micro text-gray-400">#{m.jersey_number}</span>}
+                          {/* Stated where the decision is made. They can still
+                              be picked — people come back early — but never
+                              without the captain seeing it. */}
+                          {away.has(m.id) && (
+                            <span className="ml-1.5 t-micro px-1.5 py-0.5 rounded-full font-black
+                                             bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">
+                              AWAY
+                            </span>
+                          )}
                         </p>
                         {note && <p className="t-micro text-gray-400 italic truncate">"{note}"</p>}
                       </div>
