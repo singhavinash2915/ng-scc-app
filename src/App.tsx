@@ -58,9 +58,16 @@ const isNative = Capacitor.isNativePlatform();
 
 // Minimal spinner shown while lazy page chunks load
 function PageLoader() {
+  // The crest rather than a bare spinner. A route change is a moment the club's
+  // own mark can fill instead of a generic ring — and it matches the boot
+  // splash, so a cold open and a page change feel like one app.
   return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+    <div className="flex flex-col items-center justify-center h-64 gap-3">
+      <img src="/icons/icon-180.png" alt=""
+        className="w-12 h-12 r-card object-cover animate-pulse" />
+      <div className="w-16 h-0.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+        <div className="h-full w-1/3 rounded-full bg-emerald-500 animate-[shimmer_1.1s_ease-in-out_infinite]" />
+      </div>
     </div>
   );
 }

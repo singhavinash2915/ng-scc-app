@@ -81,6 +81,17 @@ async function init() {
       <App />
     </StrictMode>,
   );
+
+  // Clear the boot splash once React has actually painted. Two frames, not a
+  // timer: the first commits the tree, the second is after the browser has
+  // drawn it — removing it any earlier flashes white between the splash going
+  // and the app appearing, which is worse than the wait it replaced.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const splash = document.getElementById('scc-splash');
+    if (!splash) return;
+    splash.classList.add('gone');
+    setTimeout(() => splash.remove(), 320);   // after the fade
+  }));
 }
 
 init();

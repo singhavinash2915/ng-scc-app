@@ -7,10 +7,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="description" content="Sangria Cricket Club - Member and Fund Management App" />
     <meta name="theme-color" content="#10b981" />
+    <!-- ── Link previews ─────────────────────────────────────────────────────
+         Members reach this app almost entirely by tapping a link in the club
+         WhatsApp group, and until now those links rendered as a bare URL with
+         no title, no image and no clue what they were.
+
+         These have to live in the served HTML: WhatsApp's crawler does not run
+         JavaScript, so react-helmet and friends do nothing for it. That also
+         means one preview for the whole site — GitHub Pages returns this same
+         file for every route. A per-match card ("SCC v Out of Office XI") needs
+         HTML rendered per match, which is a separate job.
+
+         og:image must be absolute. A relative path is silently ignored and you
+         get a card with no picture. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sangria Cricket Club" />
+    <meta property="og:title" content="Sangria Cricket Club" />
+    <meta property="og:description" content="Squad, availability, challenges and live scores for SCC. Sign in with your phone number." />
+    <meta property="og:url" content="https://sangriacricket.club/" />
+    <meta property="og:image" content="https://sangriacricket.club/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Sangria Cricket Club" />
+    <meta property="og:locale" content="en_IN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sangria Cricket Club" />
+    <meta name="twitter:description" content="Squad, availability, challenges and live scores for SCC." />
+    <meta name="twitter:image" content="https://sangriacricket.club/og-image.png" />
+
     <!-- PWA iOS Support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="SCC" />
+
+    <!-- ── Boot splash ───────────────────────────────────────────────────────
+         The first thing a member saw on a cold open was a white screen while
+         the bundle downloaded — the app looked slow before it had done
+         anything. This paints the club crest immediately instead.
+
+         The logo is inlined at 128px (~10KB). The full-size one in
+         src/assets is 462KB, which would have delayed the very paint this
+         exists to cover. No network request, so it shows on the first frame.
+
+         It removes itself when React mounts, and gives up on its own after
+         eight seconds so a failed bundle can never leave someone staring at
+         a logo forever. -->
+    <style>
+      #scc-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;
+        justify-content:center;flex-direction:column;gap:18px;
+        background:linear-gradient(160deg,#065f46 0%,#064e3b 55%,#022c22 100%);
+        transition:opacity .28s ease}
+      #scc-splash.gone{opacity:0;pointer-events:none}
+      #scc-splash img{width:88px;height:88px;border-radius:22px;object-fit:cover;
+        box-shadow:0 12px 40px rgba(0,0,0,.35);animation:sccPulse 1.6s ease-in-out infinite}
+      #scc-splash .n{color:#fff;font:800 15px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;
+        letter-spacing:.14em;text-transform:uppercase;opacity:.92}
+      #scc-splash .b{width:112px;height:3px;border-radius:99px;background:rgba(255,255,255,.18);
+        overflow:hidden}
+      #scc-splash .b i{display:block;width:40%;height:100%;border-radius:99px;
+        background:#6ee7b7;animation:sccSlide 1.1s ease-in-out infinite}
+      @keyframes sccPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+      @keyframes sccSlide{0%{transform:translateX(-110%)}100%{transform:translateX(310%)}}
+      @media (prefers-reduced-motion:reduce){
+        #scc-splash img,#scc-splash .b i{animation:none}
+      }
+    </style>
     <title>Sangria Cricket Club</title>
     <!-- Start Single Page Apps for GitHub Pages (web only, not used by native app) -->
     <script type="text/javascript">
@@ -33,6 +94,16 @@
     <!-- End Single Page Apps for GitHub Pages -->
   </head>
   <body>
+        <div id="scc-splash">
+      <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAgKADAAQAAAABAAAAgAAAAAD/wAARCACAAIADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMDAwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQHBAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/90ABAAI/9oADAMBAAIRAxEAPwD8oYYcgYFaMUQPB7U2KI8AHOa1YY8cn7tf1LCmfkE5jI4hjkVfiiGBjvU8MGRWpBal2CgZJ4AreySuzjlPoinDCS+BWnHbEda1J9Gv9NnNvqFvJbS4DbZUKNg9OGAPNWY7QtxWtKCkrp6HHWqWdmZ8cGR0qYQbTx0+lbKWgA4FadnpNxeyrDawvPK3REUsTj2GTW0lGPxOxyc99kc6lvlTgVL9lBHTpXSzaVc2UrQ3ULQyr1V1KsPqDSpZg5IFbU0pK8Xc56lXldmc39lLc96X7MQeldMbIgYxU1ro17qEphsreS5kCltsaFiAOpwoPA9aucVFXk7GSquTtFHJG3w2R3pPs7dlrpjagHaw59Mc1G9qF+taxpdTCWI6HM/ZyuSeDVOeFvvGurltlxxVB7fcMHtSnSsi4V7s/9D8wYYT345rZii7EcGlhgwwB5zW1b2wxgnk9a/rGNPU/DqtYjityOnevV/Auta14P0DxX4p8F26y+K9OtImsJzGJpbOF5VW7ubeNuDPHEfkPVclgNwFcNb2wHHWvRfh+lxbeMdFltXMbm7hUlf7ruFZT6hlJBHQg8152f4J1cHOKduv3a2fky8sxip4iLavfT7z6A+HOo6d+0J8OIvD3ibWZ768jZRpWq6lcNc3NheyAL5F1cP8z2t6+MnlbedlwWVyB4hb/Dbxo+v3fhWDQ7yfVrKVoZrWGB5ZY5EJBVlQE9a8XX4gXPwt+OPiK+0uwjh0E6jd201ogzC0XmvEwKMSMMuSR93JIwFOB9n/ABQ8V/F3xhpdv4g0T4m6mvgm9iRIoLdzE8TKm0wzyRGMynC/K8u9mA+YllY15mRSxFSmpYRJcy1i9OV913T7aamGbVqOGruljpPT4ZJX5l2fZr8jJtPg7P4Jmi1j4ywtpVkNn2fSop4P7X1O4kYJDa29tuMiGRmAaR0CouW5xX0d4i8P+PvDPhJJrLxLL4Jik0y/vk0bwmBZRW7WpgWKOfUNr3N3JiUmSR2UFh8o2gk/mJ8Kv7N039oLRfMuZboIt20b3DBi9x5EhUnAAz1I75xX6T+PfGgu/DYiZ+U0XVw3XrvsyORx27kfiM4/jfxv8Ss8w/FOFymjO1K15NLfeyV72Stvuz904N4ZwU8nnjKa95vS+56L8LfBfj74leDfNvtal+IFtHpOm30uk+Jh9qMr3qytIttqW1Li3kCoNjqzKGJ3DB+X578Sfs9alql7Lf8AwkQ65prhmewaaH+1tOlRistrdWu8Sl4nUjcqFWGGHWvr39ifxWLfR43yGD6BoKMMnjEM1fKv7SPgvw94q+PfjG+0+6m0+e2ezfzLV1ULNJbo78MCM5wxI5yTX1P0d/ELHZpnWNyWNZynTTlaUdEvdSWlt+a6e6t1PkPEnLsLg8FTxeJho3a636nhN14B8U2OrxaDqOlXVnqE7BFguIWhkJJx91wOPUnpXQ2viDVdJmbS/h/rF3o3h7RHaXVtY065NnNqV5FkbIZx/wAu9uTiIOBFNL94jKE89p3ib436vqtx8Pk+IWo6j4YjjZb0SF5PLQggxo0jSFCVJ5jKkdsEiu7+E3iKwg+OHw68KNoUNz4fuL+GO2ExzBLKk6RG4CIw3mHePLLDYzANghQK/qnNqeIdCeIxsVaG0Vqm+7/Rdz8qy/FUJYmOFwE3eWspPRpb2Xm+vkbvx609pYfBmt+IoVtvGuqaUZtcjESwO7+c4tbieFSRFcTW+15U6g9eSc/OEtoxbt+Vev8AxAuL7V/HPiDUdUne4upb643yOSzHbIwA/AAAegAA4rijaZGcZzX1mTYJ0sNCm3fT89fuWy8j57NMwVTETmlbU4qW1I4xVKWy9RXaSWQzis+a15x6V6UqLOSGJXc//9H87reH5cjqK6G1gHUDJqpZxk4Ujk17T8P2m0GGPV9Gs4L/AMU6xqVloXh+O6USW8GoXzMTdyoQQwt0UlQwK7yGIO3B/qbOs0hgcNLET6fqfh2X4KWLrqjHqSaD8GPirrdimqaP4P1a8s5QGSWKymZHU91ITDfhmtrw34T1zw/420iz13T7nTrpLuBjFcQvFIAJB/C4B/SvvmH9l34IaVeaJb/Gfx3rPiHxn4kkaO2ur7WZrWS6uUUNItpFGy4VcjCZYgEDPSvlj9qu5+I/wd8T6H+z74J8Z6h4k0Xx+bQac+pzC61HS5p7l7aSCG6GH2OoCkcfI+3HUt+b0PEV4mNSm4qzT7rT8b/gfYVeCY05Qmpapnx/rPg+DxT4g8fMw/eR6vd7Gx6zS8fQ1zvwy+KniHwTY6v4Duokv9LuiYXinZjGnqQq4y42/K2cqRwQSTX7nx/sFfs3XMNzp8Fpf/2hLFnzX1O4ZkeQMqSsu8A/MCeRg4Ir88f2Cvgz4F+Nnjv4i+HPjJpkuonwxHYpBGl1cWnlSM8ySg/Z3jz/AKsDnPOT1JrbC8e4JYWNWnGSdNKL296/zMsVwZVqYica0lJTfMlr7rR8++PPgbbf8ILpnxl+DOpXV7d6a6yXMchVniljwxICjqD1HQjBwORXKT/tOWGv6SttrVsdM1BbC8tZRsYxvJM0JGwj7ufLOQR7Z9f0m8B/sZ/DG1/bB8cfDDxpo02peCjoMOt6HG17dxMizXCRMplilR38pxJHh2YkAMeTUfwc/Ye+FXxC+PvxNufEFjL/AMIP4H1g6TpumpPKDNN5Uc0iy3BYz+XGsiYAcFmb7wAIb8z4zy/Is4rrFVoNThs1a7v03/M+w4djj8BSdFTUoyfXpY+T/hL+2BZ/Dfwx9g8O2L6pqraXp9tGrq8cEUttG6sZGZuQCcgIBuPAPPFE3nisaLqPjHxXr00GraxM9xPGFjdTNPyEwV3bgOuGAUcAYAr9EbX4A/sVftBeA/EGpfs/XcXh7UtElltE1GCe4SGO6jXdH50N2zJJC3B3hQxGSrZFeb/sc/su/s//ABD/AGbYvid8YdIln1OzuNV+3Xv2+7jCw2EzqWKwyhDtRCSQuT15r0eAXkHDUa+JwOHl7as/fbtzOy0+WmyPJ4pyjHZvOEK1VKnDVJK6Pk/wBbXDaHbadNKYdG1GcxyXbfJJMc7jbyYG0uWbCzIVLKxQ/NtA9Ts4oof2lPg1FbqIo49QVFVRgKourUAAdhX1Zqf7JPwL+JPwi1Lxz+yn4luWkS3uVtFS6a8sLqSJSWt5EuAZEZiAM5G0kEqwrx79jH9m74W/Fz9mGb4peMYL658S2s2qIlzHfzxjNqP3bbVfbnIyT371+k5j4kYLE4F4dQa5ny+a9df1Picu8N6+HzD657RWSbt0d9Dj/EPw78Z6x4t8Qro+hX96Yb64D+Rayy7CZGI3bVOMg55rmtQ+GvjzSrSS81Lw5qNrBCpZ5JbSZFUDqSWQAAetZv7Kkvib9qv48W/gnxl4g1ZvDnhXQ2M/2W9khczKwVDuBOWIkRSTniMCv0J+KnwU0T9nzw3p/wAXfAfiTXrtNB1awGoW97qBu7eSxmuBbzoUKjnc4zzwM8dxpR8S5xrrCNLmva1tOy1v19CMR4awdN1+d23/AKX/AAT8zntVI+bvWbcWwYnHT6V7T8S/Csfhjx7r+h26gQWl5MIcdDCWLREexQg15xPajafSv2vDVI1aUakdmk/vPxOtOVKrKnLdNr7j/9L4etoCSOK7GK/vfD+k2ni3T57e2u/B+rWOtWhu5VhguLi23g2rOxGDNGWxjuo6Dmufs4unvXZ6Z4g0TwhqvhPxp4o046v4f8NawbnVLYQrPi3uLaSBZzEwwwhkZWPccEV/R3iPT/4S5WjfVfmfivBVW+YRTlbR/kfoL4W+Mn7Lf7ZFnofh/XXNv4ltfMmsbS4klsNStJ3QeabS5hZN+QgJEbkMFBdeMD55079jlfhZ+2x8N5bHVLnXPDOoLea3FJesHuoH0pf9XKwwH2zSQEOAuQ2MZGT9Aap8e/2IvEGv+Hvi1rGuadd6/wCF7YwaZOv2lZ7eFi7eWLZdqEgu20uhKknaRXiqf8FDvgpe/Gu98baxHfRaHoWkHSNIMcCyTTvd3AnvZmUuojB8mBVUnJC5OOQP5xp08TGM1Ti1FrZ/oftcp0nJOTTaZ+jOlN4+j/aY1G9fTZE8FT+E7OBb3ehjfU7a+nk2bN28Hybg87cfL16V80fsveET4G/bK/aR0pU8uK5uNM1CJQMKI9TM94oX2Hm49sY7V8bQ/wDBS/xNa/HiXVGlm1D4VCaby7CKzt1vzCYGER3kg7hNtYgyfdyMmu8sP+Cifwe0f4x+IfijY+EtfdPEOj6Xp8sflW6ubjT5bpjIT5xG0xTRqO/yH2rCVCrCMqbtqls+zKVaDal2ufrN4A1/wr8Rb+fx1p8YGqeH7nWfDcxB+ZDaXwimR+/L2ySJnor/AO1Xm/7NlwG8U/GuJCCy+PL3cB15sbLH6V+R37P37e2mfCPx98VNV1nw/qupeGvHOv3eu6fbwKgmtZLqaR3EgdguWjaMNtY4KcZBzVX4b/8ABQK6+Gfx68f+M4PDN9qPgnx9epfvaEbLu0mVNm9CN0ZYqMMpOGAX5hjmXg5Q5rSWlrarUFiYytc+j/2Gf2f/ANj749/CKC28Q+G5NX8Y6Kq/29m81S1RZbiWb7PgRzxwsfKjGfLHGOea+p/2KtH8M237JWq+GNXb7H4eS98S2lwd5HlWX2qeNzvbJG2PPzHJ4ya+UdW/4KcfCLwVoGpt8EfhbdWet6ozTv5tnb2Ns9yw/wBdP9lLPM2eudpbpvFeNfBL9u7wb4A/Z31b4T+LPD2r3Wu6umstJc28UIthLqjSsMB5FfCmTn5fXGa6a3taiu5byvq07bmVOcIuyXTsfqBf3nws/Yf/AGVdT8Q/CixutU0Pm7s3WQ3XnXeogJBPLKcKsJPlgsBjGAAWPPlv/BOB1P7FE8XQG51ofnXxL8B/27vhdo/7NT/s/fHrRtX1aH7Pc6Ys1lFDIDYSD91zLKhWSLOEIHG1SORWr+yd+3D8CvgR8DZ/hJ4sfVJL77VqMkc0NrGYmiuWPlFt0wKsRyQAcdMmtPZv2agtZKd2+67iVVczfSx6v/wSB8I7dI+IvxLuI8PqN7b6bExHJWBTLJj2JkXP09q+0fBGkeOPir+zv8TPCfj3RLzSdV1jUfEwsoL2F4n8q5uZriwZA4GVTegUj+7X5xfsofts/Ar9n/8AZr/4QRbu5fxrHHqN6E+yM1tLfy72t42kBHy8IhPA68969S/ZZ/4KeWniS+8QWH7Teo6d4ZazaNLGW1tLgLI4ZllVwnnEEYBycDmt6uGxLrvEcuvNddyI1aXs/Z36GN44uE8U6J4N+IEZ3nxJoVnJM/8AeurRTaTZ990OT9a8tmtAQ2K9K0rWfDPiv4e67B4Qvo9R0jwr4t1KDT5ogQraXqn+k2xwwBGDGwOQME4xXIS252nPJr+v+Dq/tcvh5XXyT0/Cx/HnGtD6vmdWPR6/fv8Ajc//0/kK3i3KMDk811OnebA/mQHa2COg5B65B4P0Nc9abCvBxXT2DLxjk/0r+15YeFSLhNXTP5RniJ03zwdmjgvEnwy067ka/wBG8LaLdzMM7JVmgyfUiOURtnvwtc34b+GOheNL7XPCPjyG40XVtJtYb20j06K3Fl5DlVZNzRO6lXbj94Q3Ppz9HWezOWNeb+O9N8caPqd/rfhXXnsdP1fyDNEmmJeyK0MYjwX2swTOWUEAAse5JP4X4v8Ah/XxGAUMkhyVG/iV9F9z/L7j9Q8OON4rFNZnNOKWie7f4H69eCPDnhm18I6NF/ZVqdlnbjJgj3HEY5Py9a8yN54rh1bxMlvocNxLDqFla2FtNpQWzjtbi5ghNytygBm2xSSSyqCduzkoOD+K/wATfib+0R4RvrfTrrx7rLWjwRXFrJDcTWgeF1HGyMqVKkEbDyMdBmovA/jL9oLxVD9uTx3r4gLYVm1O6wQOuP3n+ea/gfhz6IuaSr1E8XGcpu9mpWVpXa1+52s/Pv8Av2beJWCo0lWnBxivNdUfuNa6nrdr4st9FuvDEMmnXeoXcZu2siyJDClp5QUxRYRZDLO4klJUeUULZZccX4f8afEWPwj4cm134eRvrN1fW9nfq1oRshaGNmuD5SEKJGZiTt2wkGNxuBNfm1pen/HDULZ7pfiDroWMlM/2hc4LD72P3nIHQn1yO1eJ+Ofi18avCWrSaFbePtZmuIfvkahcEKfT7/Ufz+hr7LGfQ8x2EoKVerSe3Sd21fz6319EfPZb4uYHG1nSoKV1vtpsfvLo6axdeEfE95eeHrE67YXOpx2EP2Ly0lSEsbM5cASCRdhLo205IyGDAcDb6l4gsNJ0/Uj4cOvZ0jVp3WfRPsk0t9by2xto3iWPchMbThMqvmbRhS2M/iL4W+O3xt1TU00i9+IOtwyzHEbf2hcAE+n36+ofAlz8WPEWuW2jaz8VNf04X58qGYXs7KJ2/wBWjAyDh/ug/wB4qO/HJk/0Pc0qQnXhiqbi5NtWkrXVrd0le6s9Ot91tm3ivgcNUVKrCSdtNvvP0i8Oa7rmrfEPStPv/AcFv4e1a0VnaXTHjNq6SajmRpHiCqXSG0BikKv++VlGN1fRtx8OvhxrFpcWd94b02QXMLxMxs4C4DqR8pKHBGePSvxZ+NXhj9q/4UaNJ4q074ja3qui27ATSpeTh4VbozruOADkE9MFe5OOH+Cvjn9rDx5c6hf6d8RNXs7DRbV768uZ3a6WGJf9WvlvkPJI2AqdTz6GvGzr6JmffXYVsLi403FJJR57Np6P1ei87XOzAeJWW1cM6nK3HW7dtD6g+I37JPg/4Y2v9gfCr+0NS1JLKW+EuqJZSRQDdtQo4toyWMnBJYqCVHUnHlulfAeDVtl5448M+H5rlgPNn2XX2iQju/kXEUZP0r6Y+Eniz4hajBe6p8UvGM/iS0FpcQWdpJokVg7S3MTR7mlDqRGp2vgI25kXBGM1qmPC561/oN4QcA4jDZNSwufU1PEQXvTf2nrqtIv8PLofyn4neIrWPf8AZNa1N9unl1RjabZadoHhO18EeF9IsdC0i3kM7w2MTp585G3zZnleWSRwvygs5wOBgVlT2xC/LzXUSL8oFZ00ZOSRiv3TA4Glh6apUYqMV0R+HYzNq2IqurXk5SfVn//U+ILbV0XktxW5ba+sZ614pHqTKMZ57VYGqHON1f2HHGtH85TypM+g7fxMmchutdNY+KwHG56+Y49ZK/xYrRt/ELK+WbBrrWY2XMzz6mQqTsj2X44afpHi7wPpAv8ACanPelLB/wCLyUG66ds/8slGMn+/j0NXfA/hlPsEGj6QnkxQqF3bc7QPvMQeMj0/vcGvKvHnihY/iMLK8Ig0j7PBb6LcMf8AR5LNcEsScAO0jGWXPJPydCK+ufCtnZaFokKI67Sgd5CwIIxnJb9Se/Jr5rg5Uqzq4pWTm22u3l/n5hx469CFHB6tRVl5+f6LyMH4ieKdK+GPgiS6gUC4CiCziPJaQjAJz1x1JPU8E5NfmvNBNf3Et9fOZLi4YvIzHJJJyeT1/rX038RtD+IHxWQ/EHTNLnm8KWkk9vYlPvutuQJp1j+8y72AZgDg/KelfOzwyxgk/Ov970+o/r/KuDM83o4ys4waajofacKcPyy/CrnXvz1f+Rw+q2kkEq3NudskZDKR2Ir69+Gfi6HxhoMck+PtcGI51HB3Y4bjpnHUdwcV80z2M1/thhQ/OQoOMliegUdTn/8AVmu30rwd49+Edzb+LtcsJbTTLh0iuYpOJlSX7sjx9UBI4zg5GMAV4mX5pDAYxKT9yejX6np8RZK8dhHy/HDVf5fM/aT4a+KrLx54Kk03xCgvXKfY71GA/eiQbVYg4H7wcdAN+QBjmqnhTwDoHw/+FOoeHvBUZHk6q02rO3Ms0NxltOkB6+SI8pg9JVbPJ5+Tvhh8QbTwzqUd/duJdIvo/Luhk4aBx94EY5XqCPpnmvof4f8AxSj8T/FePQfCMSa/odtDcReJNTDhbJNOn3MSJAMNKZAk0YXkTeYF3Icr9Lm6WGr08QtVFppd+lvXXTzsfkWVYOtXoYjCNtRknd7JW1u/Lo/In44pGweetU3nUyuIyWTJ2nGCR2NOWXPBr9c9mfhjepK/TBqnIFK+4q4xDKeevSqrrkEGnFCuf//V/N//AIR6eQYRDmmHwrfnlFP5V7Xb28KjhRxWxFbROMha/tiOVxkfyxLiGpHY+bp9Bv7VS8zBQPXrWBPPJGxHcd6+tG8PafdjEiA561lXPwo0XUCdmY2buKxr5E3/AA2dGG4tpR/io+Z4vHFlbae/h7xXp41nRZCW8otslgc/8tIJOqtnqOh5HGSa7j4ff8IrrFzH4d0X4r/8I74evcpeWusQTLLBA33xH5SvHI5GQApGTwSAc16bJ+zdY6l9y/2E+qZ/wrW0f9lPwjDPv1q8+1AfwIm0fmc18RiuCMZLE+1oy5b72dr/AJ/kfSLxFyxUeSqnK22l7f16nhn7QvxouL/4j6XF8J7qfRvDngaBNP0HyHaN0hjHzzMRgmSdss5PJBAbOK0fD/xY+HXxWki0z4wW/wDwi+uyEKPEOm24aCQn+K9sk2gn1khweg2dTXvkv7N3gGeMpDHJDjpgjp+Iqhb/ALL3g2ObznnlkUfwkKP1FY1PDfFe154TS9Ht/X4ip+LeW+z5Zxlf03OF1v42fDT4SRSaL+z3ph1fWwCkvizV4VaUHoTYWjApAvo7hnIOCOAa8K8D+Obybxffjx9dz6pp3ipGt9SkmdpZWDfdly2TvjbkHrjIHWvsyT9nTwY0XlxRMp9e9ctefsw2UkmbCbI9GFddTw4q8tm07766/ec9LxcwEu8fkcXoPw++GlpJaaX44+Jkmt2EbbYtN0O3kaV485XzJplSKM+oO5h2HFfeGkatpdn4ZtvCfgfSovD3hyEh1tICWeaTH+tuJT80snHVuBwAOK8N8HfAbSdCCyajslkU5BVcV77ZWFtZxrDCuFUYFfccO8K0cJarW9+otm9benT52Pyzjfjx45fV8N7tPqlon+pYhjyBk4HqKs7TnHWpFRQNwNAI256V9U53Py23UacrwKjfnnPJ604tgcDjFRvkChMEj//W+U4VAGR361q2+QDn8KxoZARjoTW1bvg4x1H+eK/vOCP4zrLQ3LdcLz3710VowHSuZt27k59q2YX28k11wijxq6Z19vcsMBTWvDOGzniuNhuFyBmtqCYD5ietX7PU8itE6iEjGPWrqMCCMdaw4plcZHIq/HLuHPStOU8qpSZsRMCBnGBVxWHQfhWQjgc561YjnGDgiho5nTNlHULzzmpVYf0rLjcdSasrKueeDUNGLpl4YA+tOOM+tVPNA4z1pwboc8VDYKkyQnk+3pUbEgHnOfakLEHJ7npTGk6dqlzNY0T/2Q==" alt="" />
+      <p class="n">Sangria Cricket Club</p>
+      <div class="b"><i></i></div>
+    </div>
+    <script>
+      // Safety net: if the bundle never boots, don't strand anyone on a splash.
+      setTimeout(function(){var e=document.getElementById('scc-splash');
+        if(e)e.classList.add('gone');}, 8000);
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
