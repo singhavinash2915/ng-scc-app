@@ -18,6 +18,7 @@ import { buildLadder } from '../lib/challengeLadder';
 import { buildMatcher } from '../lib/challenges';
 import { CLUB_FACTS } from '../lib/clubFacts';
 import { quickAnswer } from '../lib/quickAnswers';
+import { selectBlocks } from '../lib/chatRouting';
 import { useMe } from '../context/MemberContext';
 
 // ─── Ask the club a question ──────────────────────────────────────────────────
@@ -369,6 +370,17 @@ export function useClubChat() {
       totalFixtures: seasonLeague.totalFixtures,
     };
 
+    // Only the blocks this question plausibly needs. A slim roster and the
+    // club facts always travel — nearly every question names somebody, and the
+    // facts are what stop the model inventing definitions.
+    const want = selectBlocks(question);
+    const slimRoster = members.map(m => ({
+      name: m.name, status: m.status,
+      side: m.jersey_team === 'brahmos' ? 'SCC Brahmos'
+          : m.jersey_team === 'agni' ? 'SCC Agni' : null,
+      jersey_number: m.jersey_number,
+    }));
+
     const answer = await generateInsight('club_chat', {
       question,
       // What the club IS — definitions the database can't hold.
@@ -378,32 +390,32 @@ export function useClubChat() {
       // politely decline money/fund/balance questions.
       financeAccess,
       clubSummary,
-      allMembers: allMemberProfiles,
+      allMembers: want.has('members') ? allMemberProfiles : slimRoster,
       // One list, sent once. `chMatches` used to be this same array under a
       // second name — 12k tokens of literal duplication on every question.
-      allMatches: allMatchesData,
+      allMatches: want.has('matches') ? allMatchesData : undefined,
       momLeaderboard,
-      recentTransactions: financeAccess ? recentTxns : [],
-      tournaments: tournamentsData,
+      recentTransactions: financeAccess && want.has('finance') ? recentTxns : [],
+      tournaments: want.has('tournaments') ? tournamentsData : undefined,
       // ── NEW: detailed scorecard data (synced from CricHeroes per match) ──
       // Use these to answer questions about specific matches, individual
       // batting/bowling performances, season records, and player bests.
-      matchHighlights: recentMatchHighlights,  // [{date, scores, best_batter, best_bowler, ...}]
-      seasonRecords,                            // highest individual, best bowling, highest team total, lowest all-out
-      playerCareerBests: topCareerStats,        // [{name, highest_score, best_bowling, total_runs, total_wickets}]
+      matchHighlights: want.has('highlights') ? recentMatchHighlights : undefined,  // [{date, scores, best_batter, best_bowler, ...}]
+      seasonRecords: want.has('careerBests') ? seasonRecords : undefined,                            // highest individual, best bowling, highest team total, lowest all-out
+      playerCareerBests: want.has('careerBests') ? topCareerStats : undefined,        // [{name, highest_score, best_bowling, total_runs, total_wickets}]
       // ── Season 2026-27 additions ──
-      mahaSangram,                              // internal competition table + fixtures
-      challenges: challengeRows,                // every challenge, who's in it, who won
-      challengeLadder,                          // season-long wins/streaks
-      mahaSquads,                               // both squads, captains, auction prices
-      awayDetail,                               // admin only: who's away and why
-      playingCalendar,                          // booked slots + who's free
-      leagueTable,                              // this season's league record
-      feedback: extras.feedback,                // the public feedback wall
-      opponentBookings: extras.opponentBookings, // admin only: who booked us
-      joinRequests: extras.joinRequests,        // admin only: who wants to join
-      groundFund: extras.groundFund,            // admin only: ground contributions
-      bookingTotals: extras.bookingTotals,      // pre-computed: do not re-add
+      mahaSangram: want.has('squads') ? mahaSangram : undefined,                              // internal competition table + fixtures
+      challenges: want.has('challenges') ? challengeRows : undefined,                // every challenge, who's in it, who won
+      challengeLadder: want.has('challenges') ? challengeLadder : undefined,                          // season-long wins/streaks
+      mahaSquads: want.has('squads') ? mahaSquads : undefined,                               // both squads, captains, auction prices
+      awayDetail: want.has('away') ? awayDetail : undefined,                               // admin only: who's away and why
+      playingCalendar: want.has('calendar') ? playingCalendar : undefined,                          // booked slots + who's free
+      leagueTable: want.has('league') ? leagueTable : undefined,                              // this season's league record
+      feedback: want.has('feedback') ? extras.feedback : undefined,                // the public feedback wall
+      opponentBookings: want.has('bookings') ? extras.opponentBookings : undefined, // admin only: who booked us
+      joinRequests: want.has('requests') ? extras.joinRequests : undefined,        // admin only: who wants to join
+      groundFund: want.has('finance') ? extras.groundFund : undefined,            // admin only: ground contributions
+      bookingTotals: want.has('bookings') ? extras.bookingTotals : undefined,      // pre-computed: do not re-add
     });
     return answer || 'Sorry, I could not generate a response.';
   }, [members, matches, transactions, tournaments, stats, careerStats, leaderboard,

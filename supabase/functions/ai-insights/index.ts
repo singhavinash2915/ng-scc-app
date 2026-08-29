@@ -316,6 +316,7 @@ Compare: (1) Overall who has better numbers, (2) Batting comparison, (3) Fieldin
 ${clubFacts}
 
 IMPORTANT RULES:
+- You are given only the data sections relevant to this question. If answering needs something that is not present below, say plainly that you don't have it to hand and suggest they ask more specifically (e.g. name the player, the match or the month) — do NOT guess, and do not claim the club has no such data
 - Match member names approximately/fuzzily (e.g. "Aditya Jaiswal" matches "Aaditya Jaiswal", "Shubham" could be any of the Shubhams — list all matches)
 - If a stat field is null/zero for a member, it means their CricHeroes stats haven't been imported yet — say "stats not yet available"
 ${financeRule}
@@ -339,74 +340,35 @@ ${financeRule}
 - opponentBookings, joinRequests and groundFund are ADMIN-ONLY and arrive as null for everyone else. If null, say that detail is visible to club admins; never guess at it. Contact names and phone numbers are deliberately not included even for admins — point them at the Bookings page for those
 - The club knowledge above explains what these competitions ARE. Use it for "what is X" questions and never guess at a definition it doesn't cover
 
-CLUB SUMMARY & FINANCIALS:
-${JSON.stringify(data.clubSummary)}
-
-ALL MEMBERS (${data.allMembers?.length} players).
-Each player has TWO sets of numbers and they are NOT interchangeable:
-  \u2022 career_* fields  = ALL-TIME, every season summed. Use these for "all time", "career", "ever", "in total".
-  \u2022 batting_*/bowling_* fields = THIS SEASON ONLY. Use these for "this season", "this year", "currently".
-Example: a player can have bowling_wickets 93 (this season) and career_wickets 93, while another has
-bowling_wickets 76 but career_wickets 133 \u2014 the second is the all-time leader. Always compare the
-SAME field across players, and say which basis you are quoting:
-${JSON.stringify(data.allMembers)}
-
-ALL MATCHES — SCC INTERNAL RECORDS (${data.allMatches?.length} total):
-${JSON.stringify(data.allMatches)}
-
-PER-MATCH HIGHLIGHTS — best batter & best bowler from CricHeroes scorecards for the most recent ${data.matchHighlights?.length ?? 0} matches:
-${JSON.stringify(data.matchHighlights)}
-
-SEASON RECORDS (highest individual score, best bowling, highest team total, lowest all-out):
-${JSON.stringify(data.seasonRecords)}
-
-PER-PLAYER BESTS FROM SCORECARDS \u2014 every match on record, all seasons (${data.playerCareerBests?.length ?? 0} players):
-${JSON.stringify(data.playerCareerBests)}
-
-MOM LEADERBOARD:
-${JSON.stringify(data.momLeaderboard)}
-
-RECENT TRANSACTIONS (last 50):
-${JSON.stringify(data.recentTransactions)}
-
-TOURNAMENTS:
-${JSON.stringify(data.tournaments)}
-
-SCC MAHASANGRAM — the internal Brahmos vs Agni competition:
-${JSON.stringify(data.mahaSangram)}
-
-CHALLENGES — member-vs-member contests (${data.challenges?.length ?? 0}):
-${JSON.stringify(data.challenges)}
-
-CHALLENGE SEASON LADDER (wins, played, streaks):
-${JSON.stringify(data.challengeLadder)}
-
-MAHASANGRAM SQUADS — captains and auctioned players (price in ₹ lakh):
-${JSON.stringify(data.mahaSquads)}
-
-PLAYING CALENDAR — booked ground slots, with who's free on each:
-${JSON.stringify(data.playingCalendar)}
-
-WHO IS AWAY (visible=false means the asker is not an admin; visible=true with empty entries means nobody has blocked dates):
-${JSON.stringify(data.awayDetail)}
-
-SEASON LEAGUE RECORD:
-${JSON.stringify(data.leagueTable)}
-
-FEEDBACK WALL (what members said, and any admin reply):
-${JSON.stringify(data.feedback)}
-
-OPPONENT BOOKINGS — teams who booked a slot against SCC (admin only; null = not an admin):
-${JSON.stringify(data.opponentBookings)}
-
-BOOKING TOTALS — already added up; quote these rather than summing the list yourself:
-${JSON.stringify(data.bookingTotals)}
-
-JOIN REQUESTS (admin only; null = not an admin):
-${JSON.stringify(data.joinRequests)}
-
-GROUND FUND CONTRIBUTIONS (admin only; null = not an admin):
-${JSON.stringify(data.groundFund)}`;
+${[
+  ['CLUB SUMMARY & FINANCIALS', data.clubSummary],
+  [`ALL MEMBERS (${data.allMembers?.length ?? 0})`, data.allMembers],
+  [`ALL MATCHES — every fixture on record (${data.allMatches?.length ?? 0})`, data.allMatches],
+  [`PER-MATCH HIGHLIGHTS — best batter & bowler, ${data.matchHighlights?.length ?? 0} most recent matches`, data.matchHighlights],
+  ['SEASON RECORDS', data.seasonRecords],
+  ['PLAYER CAREER BESTS (SCC members only)', data.playerCareerBests],
+  ['MOM LEADERBOARD', data.momLeaderboard],
+  ['RECENT TRANSACTIONS (last 50)', data.recentTransactions],
+  ['TOURNAMENTS', data.tournaments],
+  ['SCC MAHASANGRAM — the internal Brahmos vs Agni competition', data.mahaSangram],
+  ['CHALLENGES — member-vs-member contests', data.challenges],
+  ['CHALLENGE SEASON LADDER', data.challengeLadder],
+  ['MAHASANGRAM SQUADS — captains and auctioned players (₹ lakh)', data.mahaSquads],
+  ['PLAYING CALENDAR — booked ground slots, with who is free on each', data.playingCalendar],
+  ['WHO IS AWAY (visible=false means the asker is not an admin)', data.awayDetail],
+  ['SEASON LEAGUE RECORD', data.leagueTable],
+  ['FEEDBACK WALL', data.feedback],
+  ['OPPONENT BOOKINGS (admin only)', data.opponentBookings],
+  ['BOOKING TOTALS — already added up; quote these, do not re-add', data.bookingTotals],
+  ['JOIN REQUESTS (admin only)', data.joinRequests],
+  ['GROUND FUND CONTRIBUTIONS (admin only)', data.groundFund],
+]
+  // Sections the client did not send are OMITTED, not printed as "undefined".
+  // The client routes each question to the data it needs, so an absent section
+  // means "not relevant to this question" — see the note below about saying so.
+  .filter(([, v]) => v !== undefined && v !== null)
+  .map(([label, v]) => `${label}:\n${JSON.stringify(v)}`)
+  .join('\n\n')}`;
         break;
       }
 
