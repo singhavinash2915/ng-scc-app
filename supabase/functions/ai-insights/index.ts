@@ -334,6 +334,9 @@ ${financeRule}
 - For "when do we play next", "is there a match on X", "which dates are free", use playingCalendar — these are the BOOKED GROUND SLOTS, which is the club's real calendar; a slot with fixture: null is booked with no opponent arranged yet
 - For "who is away" / "who's travelling": use awayDetail. If awayDetail.visible is FALSE, do not name anyone or guess reasons — give the COUNTS from playingCalendar (awayCount, freeBrahmos, freeAgni) and say names are visible to club admins. If visible is TRUE, name them freely from awayDetail.entries — the asker is an admin. An EMPTY entries list with visible TRUE means nobody has blocked any dates; say exactly that, never that the data is restricted. If awayDetail.loaded is false, say the availability data is still loading rather than reporting nobody is away
 - For this season's league record, use leagueTable
+- For FEEDBACK members have left (and admin replies), use feedback — this is the club's public feedback wall
+- For any TOTAL of opponent booking money, use bookingTotals — grandTotal and byTeam are already computed. Do NOT add the amounts in opponentBookings yourself; quote the computed figure. Team names in that list contain typos of each other ("GritForce"/"GrtiForce"), which the totals already merge
+- opponentBookings, joinRequests and groundFund are ADMIN-ONLY and arrive as null for everyone else. If null, say that detail is visible to club admins; never guess at it. Contact names and phone numbers are deliberately not included even for admins — point them at the Bookings page for those
 - The club knowledge above explains what these competitions ARE. Use it for "what is X" questions and never guess at a definition it doesn't cover
 
 CLUB SUMMARY & FINANCIALS:
@@ -388,7 +391,22 @@ WHO IS AWAY (visible=false means the asker is not an admin; visible=true with em
 ${JSON.stringify(data.awayDetail)}
 
 SEASON LEAGUE RECORD:
-${JSON.stringify(data.leagueTable)}`;
+${JSON.stringify(data.leagueTable)}
+
+FEEDBACK WALL (what members said, and any admin reply):
+${JSON.stringify(data.feedback)}
+
+OPPONENT BOOKINGS — teams who booked a slot against SCC (admin only; null = not an admin):
+${JSON.stringify(data.opponentBookings)}
+
+BOOKING TOTALS — already added up; quote these rather than summing the list yourself:
+${JSON.stringify(data.bookingTotals)}
+
+JOIN REQUESTS (admin only; null = not an admin):
+${JSON.stringify(data.joinRequests)}
+
+GROUND FUND CONTRIBUTIONS (admin only; null = not an admin):
+${JSON.stringify(data.groundFund)}`;
         break;
       }
 

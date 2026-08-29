@@ -9,6 +9,7 @@ import { RichText } from './RichText';
 // actually opened the chat.
 
 const STARTERS = [
+  'Who is the captain of Brahmos?',
   'Who is the captain of Agni?',
   "Who's away in November?",
   'Who has the most wickets this season?',

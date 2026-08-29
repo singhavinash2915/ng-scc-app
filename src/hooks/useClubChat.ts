@@ -12,6 +12,7 @@ import { useSquads } from './useSquads';
 import { useUnavailability } from './useUnavailability';
 import { useGroundDates } from './useGroundDates';
 import { useSeasonLeague } from './useSeasonLeague';
+import { useClubExtras } from './useClubExtras';
 import { useAuth } from '../context/AuthContext';
 import { buildLadder } from '../lib/challengeLadder';
 import { buildMatcher } from '../lib/challenges';
@@ -67,6 +68,12 @@ export function useClubChat() {
   const groundDates = useGroundDates();
   const seasonLeague = useSeasonLeague();
   const { isAdmin } = useAuth();
+  const nameOf = useCallback(
+    (id: string) => members.find(m => m.id === id)?.name ?? 'Unknown', [members]);
+  const slotDateOf = useCallback((slotId: string | null) =>
+    (slotId ? groundDates.bookings.find(b => b.id === slotId)?.date ?? null : null),
+    [groundDates.bookings]);
+  const extras = useClubExtras(isAdmin, nameOf, slotDateOf);
 
   const [asksToday, setAsksToday] = useState(readAsksToday);
   const left = Math.max(0, DAILY_LIMIT - asksToday);
@@ -361,11 +368,16 @@ export function useClubChat() {
       awayDetail,                               // admin only: who's away and why
       playingCalendar,                          // booked slots + who's free
       leagueTable,                              // this season's league record
+      feedback: extras.feedback,                // the public feedback wall
+      opponentBookings: extras.opponentBookings, // admin only: who booked us
+      joinRequests: extras.joinRequests,        // admin only: who wants to join
+      groundFund: extras.groundFund,            // admin only: ground contributions
+      bookingTotals: extras.bookingTotals,      // pre-computed: do not re-add
     });
     return answer || 'Sorry, I could not generate a response.';
   }, [members, matches, transactions, tournaments, stats, careerStats, leaderboard,
       matchHighlights, seasonRecords, playerCareerBests, maha, challenges, squads,
-      unavail, groundDates, seasonLeague, isAdmin, generateInsight, left]);
+      unavail, groundDates, seasonLeague, isAdmin, generateInsight, left, extras]);
 
   return { ask, left, limit: DAILY_LIMIT };
 }
