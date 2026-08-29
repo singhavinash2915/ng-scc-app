@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Send, X, Sparkles } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import { useClubChat, type ChatMessage } from '../../hooks/useClubChat';
 import { RichText } from './RichText';
 
@@ -41,9 +41,8 @@ export function ChatPanel({ onClose }: Props) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-white/10">
-        <div className="w-8 h-8 r-control bg-emerald-500 flex items-center justify-center shrink-0">
-          <Sparkles className="w-4 h-4 text-white" />
-        </div>
+        <img src="/ai-bot.png" alt=""
+          className="w-9 h-9 rounded-full object-cover shrink-0 bg-[#0b1020]" />
         <div className="flex-1 min-w-0">
           <p className="font-black t-body text-slate-900 dark:text-white leading-tight">Ask SCC</p>
           <p className="t-micro text-slate-400">

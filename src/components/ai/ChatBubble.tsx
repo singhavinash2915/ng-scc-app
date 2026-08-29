@@ -1,6 +1,5 @@
 import { Suspense, lazy, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
 
 // ChatPanel pulls most of the club's data through useClubChat. Lazy, so a page
 // that nobody opens the chat on never loads it — and, more importantly, never
@@ -37,10 +36,12 @@ export function ChatBubble() {
           onClick={() => { setOpen(true); setEverOpened(true); }}
           aria-label="Ask SCC"
           // Above the mobile nav (fixed bottom-0, z-50) so it never covers it.
+          // The badge is dark and already circular, so it needs no green disc
+          // behind it — a coloured ring would fight the gold it already has.
           className="fixed right-4 bottom-20 lg:bottom-6 z-[55] w-14 h-14 rounded-full
-                     bg-emerald-500 text-white shadow-xl flex items-center justify-center
-                     active:scale-95 transition-transform">
-          <Sparkles className="w-6 h-6" />
+                     overflow-hidden shadow-xl ring-2 ring-white/80 dark:ring-white/25
+                     active:scale-95 transition-transform bg-[#0b1020]">
+          <img src="/ai-bot.png" alt="" className="w-full h-full object-cover" />
         </button>
       )}
 
