@@ -1,20 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Send, X } from 'lucide-react';
+import { Send, X, Zap } from 'lucide-react';
 import { useClubChat, type ChatMessage } from '../../hooks/useClubChat';
 import { RichText } from './RichText';
+import { INSTANT_QUESTIONS } from '../../lib/quickAnswers';
 
 // ─── The chat itself ──────────────────────────────────────────────────────────
 // Lives behind a lazy boundary. Mounting this mounts useClubChat, which pulls
 // most of the club's data — so it must never be rendered until somebody has
 // actually opened the chat.
 
-const STARTERS = [
-  'Who is the captain of Brahmos?',
-  'Who is the captain of Agni?',
-  "Who's away in November?",
-  'Who has the most wickets this season?',
-  'When do we play next?',
-];
+// The starters are deliberately the questions answered from the club's own
+// data, with no model call: instant, free, and impossible to be subtly wrong.
 
 interface Props { onClose: () => void }
 
@@ -61,8 +57,12 @@ export function ChatPanel({ onClose }: Props) {
             <p className="t-meta text-slate-500 dark:text-white/50">
               Anything about the club — squads, stats, who's away, what's booked.
             </p>
+            <p className="t-micro text-slate-400 inline-flex items-center gap-1">
+              <Zap className="w-3 h-3 text-amber-500" /> These answer instantly,
+              and don't use your daily questions.
+            </p>
             <div className="flex flex-wrap gap-1.5">
-              {STARTERS.map(q => (
+              {INSTANT_QUESTIONS.map(q => (
                 <button key={q} onClick={() => void send(q)}
                   className="t-micro font-bold px-2.5 py-1.5 rounded-full border
                              border-slate-200 dark:border-white/15 text-slate-600 dark:text-white/70">

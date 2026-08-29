@@ -17,6 +17,8 @@ import { useAuth } from '../context/AuthContext';
 import { buildLadder } from '../lib/challengeLadder';
 import { buildMatcher } from '../lib/challenges';
 import { CLUB_FACTS } from '../lib/clubFacts';
+import { quickAnswer } from '../lib/quickAnswers';
+import { useMe } from '../context/MemberContext';
 
 // ─── Ask the club a question ──────────────────────────────────────────────────
 // Everything the chat needs, in one place, so the floating bubble and the
@@ -68,6 +70,7 @@ export function useClubChat() {
   const groundDates = useGroundDates();
   const seasonLeague = useSeasonLeague();
   const { isAdmin } = useAuth();
+  const { me } = useMe();
   const nameOf = useCallback(
     (id: string) => members.find(m => m.id === id)?.name ?? 'Unknown', [members]);
   const slotDateOf = useCallback((slotId: string | null) =>
@@ -80,7 +83,35 @@ export function useClubChat() {
 
   const leaderboard = useMemo(() => getLeaderboard(), [getLeaderboard]);
 
+  /** Answer locally when we can be certain. Free, instant, and — being read
+   *  from the data rather than generated — incapable of being subtly wrong
+   *  about a number. Anything it isn't sure of returns null and goes to the
+   *  model. This also runs BEFORE the daily cap, because a question that
+   *  costs nothing should not use up an allowance meant to limit spending. */
+  const tryQuick = useCallback((question: string): string | null => quickAnswer(question, {
+    members, matches,
+    squads: squads.map(sq => ({
+      name: sq.name, captain: sq.captain,
+      players: sq.players.map(p => ({ name: p.name, isCaptain: p.isCaptain })),
+    })),
+    awayOn: unavail.awayOn,
+    awayRows: unavail.rows,
+    upcomingSlots: groundDates.upcoming.map(b => ({
+      date: b.date, time_slot: b.time_slot, venue: b.venue,
+    })),
+    seasonStats: stats.map(x => ({
+      member_id: x.member_id, batting_runs: x.batting_runs, bowling_wickets: x.bowling_wickets,
+    })),
+    careerStats: careerStats.map(x => ({
+      member_id: x.member_id, batting_runs: x.batting_runs, bowling_wickets: x.bowling_wickets,
+    })),
+    me, isAdmin,
+  }), [members, matches, squads, unavail, groundDates.upcoming, stats, careerStats, me, isAdmin]);
+
   const ask = useCallback(async (question: string): Promise<string> => {
+    const quick = tryQuick(question);
+    if (quick) return quick;
+
     if (left <= 0) {
       return `You've used today's ${DAILY_LIMIT} questions. The chat costs the club a little each time, so it resets tomorrow.`;
     }
@@ -377,7 +408,7 @@ export function useClubChat() {
     return answer || 'Sorry, I could not generate a response.';
   }, [members, matches, transactions, tournaments, stats, careerStats, leaderboard,
       matchHighlights, seasonRecords, playerCareerBests, maha, challenges, squads,
-      unavail, groundDates, seasonLeague, isAdmin, generateInsight, left, extras]);
+      unavail, groundDates, seasonLeague, isAdmin, generateInsight, left, extras, tryQuick]);
 
-  return { ask, left, limit: DAILY_LIMIT };
+  return { ask, tryQuick, left, limit: DAILY_LIMIT };
 }
