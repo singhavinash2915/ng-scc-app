@@ -14,7 +14,8 @@ import type { Member } from '../types';
 export interface SquadPlayer {
   member_id: string;
   name: string;
-  price: number;          // ₹ lakh, as bid
+  /** ₹ lakh, as bid. null for a retained captain, who was never bid for. */
+  price: number | null;
   isCaptain: boolean;
 }
 
@@ -63,12 +64,15 @@ export function useSquads(members: Member[], season = '2026-27') {
       // A captain who was retained rather than bid for has no pick row, so add
       // them explicitly — otherwise the squad reads as one player short and the
       // captain is missing from the very list they lead.
+      //
+      // price is null, not 0: a retained captain was never bid for, and zero
+      // reads as "went for nothing". The AI chat said exactly that out loud.
       if (captainId && !players.some(x => x.member_id === captainId)) {
-        players.unshift({ member_id: captainId, name: nameOf(captainId), price: 0, isCaptain: true });
+        players.unshift({ member_id: captainId, name: nameOf(captainId), price: null, isCaptain: true });
       }
       return {
         key, name: label, captain: captainId ? nameOf(captainId) : null,
-        players: players.sort((a, b) => Number(b.isCaptain) - Number(a.isCaptain) || b.price - a.price),
+        players: players.sort((a, b) => Number(b.isCaptain) - Number(a.isCaptain) || (b.price ?? 0) - (a.price ?? 0)),
         spent: mine.reduce((s, p) => s + (p.price || 0), 0),
         purse: auction.purse_lakh,
       };

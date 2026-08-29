@@ -7,6 +7,7 @@ import { ContactBar } from './ContactBar';
 import { InstallPrompt } from '../InstallPrompt';
 import { OfflineIndicator } from '../OfflineIndicator';
 import { WhatsNewModal } from '../WhatsNewModal';
+import { ChatBubble } from '../ai/ChatBubble';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -30,6 +31,7 @@ export function Layout({ children }: LayoutProps) {
         </main>
       </div>
       <MobileNav />
+      <ChatBubble />
       {/* InstallPrompt is for PWA — hide inside the native app */}
       {!isNative && <InstallPrompt />}
       {/* What's New — auto-pops once per release version */}

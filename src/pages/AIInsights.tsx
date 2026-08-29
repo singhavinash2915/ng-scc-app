@@ -1,22 +1,22 @@
 import { useState } from 'react';
-import { Sparkles, Brain, Users, TrendingUp, MessageSquare, Target, Zap, ChevronRight, RefreshCw, Bot, Send } from 'lucide-react';
+import { Sparkles, Brain, Users, TrendingUp, MessageSquare, Target, Zap, ChevronRight, RefreshCw } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
-import { useTransactions } from '../hooks/useTransactions';
-import { useTournaments } from '../hooks/useTournaments';
+
+
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useAIInsight } from '../hooks/useAIInsight';
-import { useScorecardHighlights } from '../hooks/useScorecardHighlights';
-import { useMahaSangram } from '../hooks/useMahaSangram';
-import { useChallenges } from '../hooks/useChallenges';
-import { useSquads } from '../hooks/useSquads';
-import { useUnavailability } from '../hooks/useUnavailability';
-import { useGroundDates } from '../hooks/useGroundDates';
-import { useSeasonLeague } from '../hooks/useSeasonLeague';
-import { buildLadder } from '../lib/challengeLadder';
-import { buildMatcher } from '../lib/challenges';
-import { CLUB_FACTS } from '../lib/clubFacts';
-import { useAuth } from '../context/AuthContext';
+
+
+
+
+
+
+
+
+
+import { ChatPanel } from '../components/ai/ChatPanel';
+
 import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 import { PLAYING_LABEL } from '../config/season2';
 
@@ -79,47 +79,41 @@ type Tab = 'overview' | 'squad' | 'identity' | 'chat';
 export function AIInsights() {
   const { members } = useMembers();
   const { matches } = useMatches();
-  const { transactions } = useTransactions();
-  const { tournaments } = useTournaments();
+
+
   const { stats, getLeaderboard } = useCricketStats();
   // Career totals as well as this season's. With only the season row loaded the
   // model answered "who has the most wickets all-time" from 2025-26 figures and
   // called them all-time — a confident wrong answer, which is the worst kind.
-  const { stats: careerStats } = useCricketStats('all');
+
   const { generateInsight, error: aiError } = useAIInsight();
-  // null = the club's entire history. Members ask about seasons that ended
-  // years ago; restricting this to the current one guaranteed a wrong answer.
-  const { matchHighlights, seasonRecords, playerCareerBests } = useScorecardHighlights(null);
-  const { isAdmin } = useAuth();
+
   // Scorecards are omitted: standings and the series score come from each
   // fixture's winning_team, and the MVP race is the only thing that needs
   // ball-by-ball. Pulling every scorecard to answer "who's winning
   // MahaSangram" would be a large fetch on a page that may never be asked.
-  const maha = useMahaSangram(matches, members, null);
-  const challenges = useChallenges();
+
+
   // The auctioned squads (and their captains), who's away, the booked calendar
   // and the league table. All of it is on a page in the app and none of it was
   // reaching the chat.
-  const { squads } = useSquads(members);
-  const unavail = useUnavailability();
-  const groundDates = useGroundDates();
-  const seasonLeague = useSeasonLeague();
+
+
+
+
 
   // Club finances (wallet balances, deposits, expenses, transactions) are
   // member-only — same gate as the Finance & Members pages. Outside/public
   // users must NOT be able to pull fund details out of the AI chat, so we
   // strip all financial data from the payload before it ever leaves the
   // browser (see handleChat). The AI literally never receives it.
-  const financeAccess = isAdmin || localStorage.getItem('scc-member-access') === 'true';
+
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [selectedMember, setSelectedMember] = useState<string>('');
   const [selectedMatch, setSelectedMatch] = useState<string>('');
   const [insights, setInsights] = useState<Record<string, string | null>>({});
   const [loadingInsight, setLoadingInsight] = useState<Record<string, boolean>>({});
-  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'ai'; text: string }>>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
 
   const upcomingMatches = matches.filter(m => m.result === 'upcoming');
   const recentMatches = matches.filter(m => m.result !== 'upcoming').slice(0, 10);
@@ -328,299 +322,6 @@ export function AIInsights() {
     }, forceRefresh);
   };
 
-  const handleChat = async () => {
-    if (!chatInput.trim()) return;
-    const userMsg = chatInput.trim();
-    setChatInput('');
-    setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-    setChatLoading(true);
-
-    const topRunScorer = [...stats].sort((a, b) => b.batting_runs - a.batting_runs)[0];
-    const topWicketTaker = [...stats].filter(s => s.bowling_wickets > 0).sort((a, b) => b.bowling_wickets - a.bowling_wickets)[0];
-    const mvpPlayer = leaderboard[0];
-    const allMatchesCount = matches.length;
-    // External matches only for overall club stats
-    const completedMatches = matches.filter(m => m.match_type !== 'internal' && ['won','lost','draw'].includes(m.result));
-    const wons = completedMatches.filter(m => m.result === 'won').length;
-
-    // ── 1. Members — full profile with balance + cricket stats ──────────────
-    // Financial fields (wallet_balance, deposits, fees) are only included for
-    // members/admins — for public users they're omitted entirely.
-    const allMemberProfiles = members.map(m => {
-      const s = stats.find(st => st.member_id === m.id);
-      // Per-member transaction summary (member-only)
-      const memberTxns = transactions.filter(t => t.member_id === m.id);
-      const totalDeposited = memberTxns.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
-      const totalFeesPaid  = memberTxns.filter(t => t.type === 'match_fee').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      const c = careerStats.find(st => st.member_id === m.id);
-      const jt = (m as { jersey_team?: string | null }).jersey_team ?? null;
-      return {
-        name: m.name,
-        status: m.status,
-        matches_played: m.matches_played,
-        // Which MahaSangram side they were auctioned to, and the number printed
-        // on their shirt. Members ask "who's on Agni" constantly and the model
-        // had no way to answer it.
-        mahasangram_side: jt ? (jt === 'brahmos' ? 'SCC Brahmos' : 'SCC Agni') : null,
-        // Career = every season summed. The fields below without this prefix
-        // are the CURRENT season only.
-        career_runs: c?.batting_runs ?? null,
-        career_wickets: c?.bowling_wickets ?? null,
-        career_matches: c?.batting_innings ?? null,
-        career_highest_score: c?.batting_highest_score ?? null,
-        career_best_bowling: c?.bowling_best_figures ?? null,
-        jersey_number: (m as { jersey_number?: number | null }).jersey_number ?? null,
-        ...(financeAccess ? {
-          wallet_balance: m.balance,
-          total_deposited: totalDeposited,
-          total_fees_paid: totalFeesPaid,
-        } : {}),
-        // CricHeroes stats (null = not imported yet)
-        batting_runs: s?.batting_runs ?? null,
-        batting_innings: s?.batting_innings ?? null,
-        batting_average: s?.batting_average ?? null,
-        batting_strike_rate: s?.batting_strike_rate ?? null,
-        batting_highest_score: s?.batting_highest_score ?? null,
-        batting_fifties: s?.batting_fifties ?? null,
-        batting_hundreds: s?.batting_hundreds ?? null,
-        batting_ducks: s?.batting_ducks ?? null,
-        bowling_wickets: s?.bowling_wickets ?? null,
-        bowling_overs: s?.bowling_overs ?? null,
-        bowling_economy: s?.bowling_economy ?? null,
-        bowling_average: s?.bowling_average ?? null,
-        bowling_best_figures: s?.bowling_best_figures ?? null,
-        bowling_five_wickets: s?.bowling_five_wickets ?? null,
-        fielding_catches: s?.fielding_catches ?? null,
-        fielding_stumpings: s?.fielding_stumpings ?? null,
-        fielding_run_outs: s?.fielding_run_outs ?? null,
-      };
-    });
-
-    // ── 2. All Matches ───────────────────────────────────────────────────────
-    const allMatchesData = matches.map(m => ({
-      date: m.date,
-      opponent: m.opponent,
-      result: m.result,
-      venue: m.venue,
-      our_score: m.our_score,
-      opponent_score: m.opponent_score,
-      match_fee: m.match_fee,
-      match_type: m.match_type,
-      man_of_match: m.man_of_match?.name ?? null,
-      players_count: m.players?.length ?? 0,
-    }));
-
-    // ── 3. Transactions — recent 50 + club financial totals ──────────────────
-    const recentTxns = [...transactions]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 50)
-      .map(t => ({
-        date: t.date,
-        type: t.type,
-        amount: t.amount,
-        member: t.member?.name ?? null,
-        description: t.description,
-      }));
-
-    const totalDepositsEver  = transactions.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0);
-    const totalExpensesEver  = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0);
-    const totalMatchFeesEver = transactions.filter(t => t.type === 'match_fee').reduce((s, t) => s + Math.abs(t.amount), 0);
-    const totalFunds         = members.reduce((s, m) => s + m.balance, 0);
-
-    // ── 4. Tournaments ───────────────────────────────────────────────────────
-    const tournamentsData = tournaments.map(t => ({
-      name: t.name,
-      status: t.status,
-      result: t.result,
-      our_position: t.our_position,
-      format: t.format,
-      start_date: t.start_date,
-      end_date: t.end_date,
-      venue: t.venue,
-      prize_money: t.prize_money,
-      entry_fee: t.entry_fee,
-    }));
-
-    // ── MOM leaderboard — who has won Man of the Match most this season ──────
-    const momTally: Record<string, number> = {};
-    matches.forEach(m => {
-      const momName = m.man_of_match?.name;
-      if (momName && m.result && m.result !== 'upcoming' && m.result !== 'cancelled') {
-        momTally[momName] = (momTally[momName] || 0) + 1;
-      }
-    });
-    const momLeaderboard = Object.entries(momTally)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, awards: count }));
-    const topMOM = momLeaderboard[0];
-
-    // ── 5. Club summary ──────────────────────────────────────────────────────
-    const clubSummary = {
-      totalMembers: members.length,
-      activeMembers: members.filter(m => m.status === 'active').length,
-      totalMatchesRecorded: allMatchesCount,
-      externalMatchesCompleted: completedMatches.length,
-      wins: wons,
-      losses: completedMatches.filter(m => m.result === 'lost').length,
-      draws: completedMatches.filter(m => m.result === 'draw').length,
-      winRate: completedMatches.length > 0 ? `${Math.round(wons / completedMatches.length * 100)}%` : 'N/A',
-      // Financial totals are member-only — omitted for public users
-      ...(financeAccess ? {
-        clubFunds: `₹${totalFunds.toLocaleString('en-IN')}`,
-        totalDepositsEver: `₹${totalDepositsEver.toLocaleString('en-IN')}`,
-        totalExpensesEver: `₹${totalExpensesEver.toLocaleString('en-IN')}`,
-        totalMatchFeesCollected: `₹${totalMatchFeesEver.toLocaleString('en-IN')}`,
-      } : {}),
-      topRunScorer: topRunScorer ? `${topRunScorer.member?.name} — ${topRunScorer.batting_runs} runs (avg ${topRunScorer.batting_average})` : 'N/A',
-      topWicketTaker: topWicketTaker ? `${topWicketTaker.member?.name} — ${topWicketTaker.bowling_wickets} wkts (eco ${topWicketTaker.bowling_economy})` : 'N/A',
-      mvp: mvpPlayer ? `${mvpPlayer.member?.name} (${mvpPlayer.batting_runs}R · ${mvpPlayer.bowling_wickets}W)` : 'N/A',
-      totalMOMAwardsThisSeason: momLeaderboard.reduce((s, x) => s + x.awards, 0),
-      topMOMWinner: topMOM ? `${topMOM.name} — ${topMOM.awards} MOM award${topMOM.awards > 1 ? 's' : ''}` : 'N/A',
-      tournamentsPlayed: tournamentsData.length,
-    };
-
-    // Compact scorecard summaries (only most recent 50 matches to keep prompt size sane)
-    // A window again. Per-match highlights are asked about for RECENT games —
-    // "what did he score last week" — while anything older is already covered
-    // by seasonRecords and the career bests below, at a fraction of the size.
-    const recentMatchHighlights = matchHighlights.slice(0, 40);
-    // Top 30 players by season runs — covers all active SCC members
-    // Scorecards name everyone who batted, so this was carrying career bests
-    // for 681 players — 647 of them opposition. That was 37k tokens a question,
-    // 41% of the whole payload, to answer questions nobody asks. Keep our own.
-    const matchToMember = buildMatcher(members);
-    const topCareerStats = playerCareerBests.filter(p => matchToMember(p.name));
-
-    // ── MahaSangram — the internal competition, as a table ──────────────────
-    const nameOf = (id: string) => members.find(x => x.id === id)?.name ?? 'Unknown';
-    const SIDE = (t: string | null) =>
-      t === 'brahmos' ? 'SCC Brahmos' : t === 'agni' ? 'SCC Agni' : null;
-    const mahaSangram = {
-      whatItIs: 'SCC\u2019s internal competition: SCC Brahmos vs SCC Agni, squads filled by auction.',
-      played: maha.played,
-      upcoming: maha.upcoming,
-      seriesScore: maha.seriesScore,
-      leader: SIDE(maha.leader),
-      standings: maha.standings.map(st => ({
-        side: SIDE(st.side), played: st.played, won: st.won, lost: st.lost,
-        noResult: st.noResult, points: st.points,
-      })),
-      fixtures: maha.fixtures.map(f => ({
-        date: f.date, result: f.result, winner: SIDE(f.winning_team),
-      })),
-    };
-
-    // ── Challenges — the most-used feature in the app ────────────────────────
-    // Members ask "who has challenged me" and "who's winning" more than they
-    // ask anything else, and the chat could not answer either.
-    const challengeRows = challenges.rows.map(c => ({
-      title: c.title,
-      status: c.status,
-      metric: c.metric,
-      target: c.target,
-      stake: c.stake,
-      pinnedToMatch: c.match_id
-        ? matches.find(x => x.id === c.match_id)?.date ?? 'a fixture'
-        : 'any match',
-      players: (c.players ?? []).map(pl => ({
-        name: nameOf(pl.member_id), accepted: pl.accepted,
-      })),
-      winner: c.winner_id ? nameOf(c.winner_id) : null,
-    }));
-    const challengeLadder = buildLadder(challenges.rows).map(r => ({
-      name: nameOf(r.memberId), won: r.won, played: r.played,
-      currentStreak: r.streak, bestStreak: r.bestStreak,
-    }));
-
-    // ── MahaSangram squads, with captains ───────────────────────────────────
-    const mahaSquads = squads.map(sq => ({
-      team: sq.name,
-      captain: sq.captain,
-      purse_lakh: sq.purse,
-      spent_lakh: sq.spent,
-      players: sq.players.map(pl => ({
-        name: pl.name, price_lakh: pl.price, isCaptain: pl.isCaptain,
-      })),
-    }));
-
-    // ── Who is away, and the club's real playing calendar ───────────────────
-    // Names and reasons are ADMIN-ONLY, matching the availability page itself:
-    // a member there sees a count, never who or why. Everyone gets the counts,
-    // because "how many are around on the 7th" is a fair question for anyone.
-    // An explicit shape, not a bare list. Sent as `null` for a non-admin and
-    // `[]` for "nobody is away", the model cannot tell the two apart — and it
-    // guessed wrong, telling an admin their own data was admin-only. `visible`
-    // separates permission from emptiness; `loaded` separates both from a fetch
-    // that simply hadn't returned when the question was asked.
-    const awayDetail = {
-      visible: isAdmin,
-      loaded: !unavail.loading,
-      entries: isAdmin ? unavail.rows.map(r => ({
-        name: members.find(m => m.id === r.member_id)?.name ?? 'Unknown',
-        from: r.from_date, to: r.to_date, reason: r.reason,
-      })) : [],
-    };
-
-    const playingCalendar = groundDates.upcoming.slice(0, 60).map(b => {
-      const away = unavail.awayOn(b.date);
-      const free = members.filter(m => m.status === 'active' && !away.has(m.id));
-      const fx = matches.find(m => m.result === 'upcoming' && m.date === b.date);
-      return {
-        date: b.date,
-        time: b.time_slot,
-        venue: b.venue,
-        fixture: fx?.opponent ?? null,
-        awayCount: away.size,
-        freeBrahmos: free.filter(m => m.jersey_team === 'brahmos').length,
-        freeAgni: free.filter(m => m.jersey_team === 'agni').length,
-      };
-    });
-
-    const leagueTable = {
-      name: seasonLeague.name,
-      window: seasonLeague.window,
-      played: seasonLeague.played.length,
-      upcoming: seasonLeague.upcoming.length,
-      won: seasonLeague.won, lost: seasonLeague.lost, draw: seasonLeague.draw,
-      winPct: seasonLeague.winPct, points: seasonLeague.points,
-      totalFixtures: seasonLeague.totalFixtures,
-    };
-
-    const result = await generateInsight('club_chat', {
-      question: userMsg,
-      // What the club IS — definitions the database can't hold.
-      clubFacts: CLUB_FACTS,
-      // Signals to the edge function whether the asker may see club finances.
-      // When false, no financial data is included and the AI is instructed to
-      // politely decline money/fund/balance questions.
-      financeAccess,
-      clubSummary,
-      allMembers: allMemberProfiles,
-      // One list, sent once. `chMatches` used to be this same array under a
-      // second name — 12k tokens of literal duplication on every question.
-      allMatches: allMatchesData,
-      momLeaderboard,
-      recentTransactions: financeAccess ? recentTxns : [],
-      tournaments: tournamentsData,
-      // ── NEW: detailed scorecard data (synced from CricHeroes per match) ──
-      // Use these to answer questions about specific matches, individual
-      // batting/bowling performances, season records, and player bests.
-      matchHighlights: recentMatchHighlights,  // [{date, scores, best_batter, best_bowler, ...}]
-      seasonRecords,                            // highest individual, best bowling, highest team total, lowest all-out
-      playerCareerBests: topCareerStats,        // [{name, highest_score, best_bowling, total_runs, total_wickets}]
-      // ── Season 2026-27 additions ──
-      mahaSangram,                              // internal competition table + fixtures
-      challenges: challengeRows,                // every challenge, who's in it, who won
-      challengeLadder,                          // season-long wins/streaks
-      mahaSquads,                               // both squads, captains, auction prices
-      awayDetail,                               // admin only: who's away and why
-      playingCalendar,                          // booked slots + who's free
-      leagueTable,                              // this season's league record
-    });
-
-    setChatMessages(prev => [...prev, { role: 'ai', text: result || 'Sorry, I could not generate a response.' }]);
-    setChatLoading(false);
-  };
 
   const tabs: Array<{ id: Tab; label: string; icon: typeof Sparkles }> = [
     { id: 'overview', label: 'Overview', icon: Sparkles },
@@ -1035,80 +736,13 @@ export function AIInsights() {
         </div>
       )}
 
-      {/* AI Chat Tab */}
+      {/* AI Chat Tab — the same component as the floating bubble, so there is
+          one chat implementation rather than two that quietly drift apart. */}
       {activeTab === 'chat' && (
-        <Card className="p-5">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-            <Bot className="w-4 h-4 text-primary-500" />
-            SCC AI Assistant
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Ask anything about SCC — members, matches, stats, performance</p>
-
-          {/* Chat Messages */}
-          <div className="bg-gray-50 dark:bg-gray-700/50 r-card p-4 min-h-48 max-h-96 overflow-y-auto mb-4 space-y-3">
-            {chatMessages.length === 0 && (
-              <div className="text-center py-6">
-                <Bot className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                <p className="text-gray-400 text-sm">Ask me anything about SCC!</p>
-                <div className="mt-3 flex flex-wrap gap-2 justify-center">
-                  {[
-                    'Who is our top scorer?',
-                    'How many matches have we won this season?',
-                    'Who should open batting?',
-                    'What is our win rate?',
-                  ].map(q => (
-                    <button
-                      key={q}
-                      onClick={() => { setChatInput(q); }}
-                      className="text-xs bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-full px-3 py-1 text-gray-600 dark:text-gray-300 hover:border-primary-400 hover:text-primary-600 transition-colors"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {chatMessages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-2.5 r-card text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-primary-500 text-white rounded-tr-sm'
-                    : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-tl-sm'
-                }`}>
-                  {msg.role === 'ai' && <span className="text-xs text-gray-400 dark:text-gray-500 block mb-1">SCC AI</span>}
-                  {msg.text}
-                </div>
-              </div>
-            ))}
-            {chatLoading && (
-              <div className="flex justify-start">
-                <Card className="rounded-tl-sm px-4 py-2.5">
-                  <div className="flex gap-1 items-center">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </Card>
-              </div>
-            )}
-          </div>
-
-          {/* Chat Input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleChat()}
-              placeholder="Ask about SCC..."
-              className="flex-1 r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              disabled={chatLoading}
-            />
-            <Button onClick={handleChat} disabled={chatLoading || !chatInput.trim()} className="px-4">
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-        </Card>
+        <div className="r-card border border-slate-200 dark:border-white/10 overflow-hidden
+                        bg-white dark:bg-slate-900" style={{ height: '70vh' }}>
+          <ChatPanel onClose={() => setActiveTab('overview')} />
+        </div>
       )}
     </div>
   );
