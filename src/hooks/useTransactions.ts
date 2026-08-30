@@ -62,18 +62,32 @@ export function useTransactions() {
     }
   };
 
-  const addExpense = async (amount: number, description: string, date?: string) => {
+  const addExpense = async (
+    amount: number, description: string, date?: string,
+    /** Category and how it's consumed. Omitted on older callers, and on
+     *  installs where the splitting migration hasn't run — see the retry. */
+    meta?: { category?: string | null; expense_kind?: string | null },
+  ) => {
     try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert([{
-          type: 'expense',
-          amount: -Math.abs(amount),
-          description,
-          date: date || new Date().toISOString().split('T')[0],
-        }])
-        .select()
-        .single();
+      const row: Record<string, unknown> = {
+        type: 'expense',
+        amount: -Math.abs(amount),
+        description,
+        date: date || new Date().toISOString().split('T')[0],
+      };
+      if (meta?.category) row.category = meta.category;
+      if (meta?.expense_kind) row.expense_kind = meta.expense_kind;
+
+      let { data, error } = await supabase.from('transactions').insert([row]).select().single();
+
+      // The splitting migration adds `category` and `expense_kind`. Without it
+      // Postgres rejects the whole insert (42703) and the expense would simply
+      // fail to save — losing the record entirely over a feature the admin may
+      // not have switched on yet. Retry without them.
+      if (error && (error as { code?: string }).code === '42703') {
+        delete row.category; delete row.expense_kind;
+        ({ data, error } = await supabase.from('transactions').insert([row]).select().single());
+      }
 
       if (error) throw error;
       // Insert in correct position based on date

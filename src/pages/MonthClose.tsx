@@ -5,6 +5,8 @@ import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import { useMembers } from '../hooks/useMembers';
 import { useMonthClose } from '../hooks/useMonthClose';
+import { EXPENSE_CATEGORIES, categoryOf } from '../lib/expenseCategories';
+import { supabase } from '../lib/supabase';
 
 // ─── Month close ──────────────────────────────────────────────────────────────
 // One screen an admin can hand to a core member: what the club spent this month
@@ -32,6 +34,7 @@ export default function MonthClose() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [tagging, setTagging] = useState(false);
 
   const byId = useMemo(() => new Map(members.map(m => [m.id, m])), [members]);
 
@@ -124,6 +127,52 @@ export default function MonthClose() {
         </div>
       )}
 
+      {/* ── Untagged expenses ───────────────────────────────────────────
+          An expense with no category never reaches the pot. Before this the
+          admin had no way to know that — the month just looked empty. */}
+      {M.untagged.length > 0 && (
+        <Card className="p-4 border-amber-200 dark:border-amber-400/25">
+          <p className="t-micro font-black uppercase tracking-[1.5px] text-amber-700
+                        dark:text-amber-300 inline-flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" /> {M.untagged.length} expense
+            {M.untagged.length === 1 ? '' : 's'} not categorised
+          </p>
+          <p className="t-meta text-slate-500 dark:text-white/50 mt-1">
+            These are in {label(period)} but won't be split until you say what they were for.
+          </p>
+          <div className="mt-3 space-y-3">
+            {M.untagged.map(u => (
+              <div key={u.id} className="r-control border border-slate-200 dark:border-white/10 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-bold t-body text-slate-900 dark:text-white truncate">
+                    {u.description || 'Expense'}
+                  </p>
+                  <p className="t-num text-sm shrink-0">{inr(u.amount)}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 mt-2">
+                  {EXPENSE_CATEGORIES.map(c => (
+                    <button key={c.key} disabled={tagging}
+                      onClick={async () => {
+                        setTagging(true);
+                        await supabase.from('transactions')
+                          .update({ category: c.key, expense_kind: c.kind })
+                          .eq('id', u.id);
+                        await M.refetch();
+                        setTagging(false);
+                      }}
+                      className="text-left px-2.5 py-1.5 r-control border border-slate-200
+                                 dark:border-white/10 t-micro font-bold
+                                 text-slate-700 dark:text-white/80 disabled:opacity-40">
+                      {c.emoji} {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* ── What's in the pot ── */}
       <Card className="p-4">
         <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400">
@@ -144,6 +193,7 @@ export default function MonthClose() {
                     {l.expense.description || l.expense.category || 'Expense'}
                   </p>
                   <p className="t-micro text-slate-400">
+                    {categoryOf(l.expense.category)?.label ?? 'Other'} ·{' '}
                     {l.expense.kind === 'season_item'
                       ? `season item · ${inr(l.expense.amount)} spread over the season`
                       : `used this month · ${inr(l.expense.amount)}`}

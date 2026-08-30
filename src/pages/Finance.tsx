@@ -36,6 +36,7 @@ import { Input, TextArea, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { useTransactions } from '../hooks/useTransactions';
+import { EXPENSE_CATEGORIES, categoryOf } from '../lib/expenseCategories';
 import { useMembers } from '../hooks/useMembers';
 import { useAuth } from '../context/AuthContext';
 import { usePaymentOrders } from '../hooks/usePaymentOrders';
@@ -97,6 +98,8 @@ export function Finance() {
     amount: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
+    category: '',
+    expense_kind: '',
   });
 
   const [depositData, setDepositData] = useState({
@@ -258,9 +261,13 @@ export function Finance() {
 
     setIsSubmitting(true);
     try {
-      await addExpense(amount, expenseData.description || 'Ad-hoc expense', expenseData.date);
+      await addExpense(amount, expenseData.description || 'Ad-hoc expense', expenseData.date, {
+        category: expenseData.category || null,
+        expense_kind: expenseData.expense_kind || null,
+      });
       setShowExpenseModal(false);
-      setExpenseData({ amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+      setExpenseData({ amount: '', description: '', date: new Date().toISOString().split('T')[0],
+                       category: '', expense_kind: '' });
     } catch (error) {
       console.error('Failed to add expense:', error);
     } finally {
@@ -1163,6 +1170,74 @@ export function Finance() {
             rows={3}
             required
           />
+
+          {/* ── What kind of cost is this ────────────────────────────────
+              This is what decides whether members ever see it. Picking a
+              category sets a sensible default for how it's used up, which is
+              the bit nobody should have to reason about while entering a
+              receipt. */}
+          <div>
+            <label className="block t-meta font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              What was it for? *
+            </label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {EXPENSE_CATEGORIES.map(c => (
+                <button key={c.key} type="button"
+                  onClick={() => setExpenseData({
+                    ...expenseData, category: c.key,
+                    expense_kind: c.kind ?? '',
+                  })}
+                  className={`text-left px-3 py-2 r-control border transition-colors ${
+                    expenseData.category === c.key
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-gray-200 dark:border-gray-700'}`}>
+                  <span className="t-body font-bold text-gray-900 dark:text-white">
+                    {c.emoji} {c.label}
+                  </span>
+                  <span className="block t-micro text-gray-500 dark:text-gray-400">{c.hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {expenseData.category && (() => {
+            const cat = categoryOf(expenseData.category);
+            if (!cat) return null;
+            if (cat.kind === null) {
+              return (
+                <p className="t-meta text-gray-500 dark:text-gray-400">
+                  Not split across members — ground costs are already covered by match fees.
+                </p>
+              );
+            }
+            return (
+              <div>
+                <label className="block t-meta font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  How is it used up?
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {([['consumable', 'Used up this month', 'Charged to this month\u2019s players'],
+                     ['season_item', 'Lasts the season', 'Spread over the months left']] as const)
+                    .map(([k, title, sub]) => (
+                    <button key={k} type="button"
+                      onClick={() => setExpenseData({ ...expenseData, expense_kind: k })}
+                      className={`text-left px-3 py-2 r-control border transition-colors ${
+                        expenseData.expense_kind === k
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                          : 'border-gray-200 dark:border-gray-700'}`}>
+                      <span className="t-body font-bold text-gray-900 dark:text-white">{title}</span>
+                      <span className="block t-micro text-gray-500 dark:text-gray-400">{sub}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="t-micro text-gray-400 mt-1.5">
+                  Members are charged their share at month close, in proportion to
+                  the matches they played.
+                </p>
+              </div>
+            );
+          })()}
+
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="secondary" onClick={() => setShowExpenseModal(false)} className="flex-1">
               Cancel

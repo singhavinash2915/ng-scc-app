@@ -20,6 +20,7 @@ export function useMonthClose(period: string) {
   const [expenses, setExpenses] = useState<SplittableExpense[]>([]);
   const [appearances, setAppearances] = useState<Record<string, number>>({});
   const [closed, setClosed] = useState<ClosedMonth[]>([]);
+  const [untagged, setUntagged] = useState<Array<{ id: string; amount: number; date: string; description: string | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [needsMigration, setNeedsMigration] = useState(false);
 
@@ -35,6 +36,18 @@ export function useMonthClose(period: string) {
       .order('date', { ascending: false })
       .limit(500);
     if (exErr && isMissing(exErr)) { setNeedsMigration(true); setLoading(false); return; }
+
+    // Expenses in this month that nobody has categorised. Without surfacing
+    // these the month simply looks empty and the admin has no way to find out
+    // why — which is exactly how a "no splittable costs" screen lies.
+    const first0 = `${period}-01`;
+    const last0 = new Date(Number(period.slice(0, 4)), Number(period.slice(5, 7)), 0)
+      .toLocaleDateString('en-CA');
+    setUntagged((ex ?? [])
+      .filter(r => !r.expense_kind && !r.category)
+      .filter(r => { const d = String(r.date).slice(0, 10); return d >= first0 && d <= last0; })
+      .map(r => ({ id: r.id, amount: Math.abs(Number(r.amount) || 0),
+                   date: String(r.date).slice(0, 10), description: r.description })));
 
     setExpenses((ex ?? [])
       // Only expenses an admin has marked for splitting. Ground payments are
@@ -98,6 +111,6 @@ export function useMonthClose(period: string) {
     return { ok: true as const };
   }, [period, fetchAll]);
 
-  return { plan, expenses, appearances, closed, isClosed, loading, needsMigration,
+  return { plan, expenses, untagged, appearances, closed, isClosed, loading, needsMigration,
            post, undo, refetch: fetchAll, periodOf };
 }
