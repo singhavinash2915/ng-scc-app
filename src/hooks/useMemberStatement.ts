@@ -20,7 +20,7 @@ export interface StatementLine {
   date: string;
   label: string;
   amount: number;          // positive = in, negative = out
-  kind: 'deposit' | 'match_fee' | 'season_fund' | 'refund' | 'expense' | 'prepaid' | 'adjustment';
+  kind: 'deposit' | 'match_fee' | 'season_fund' | 'refund' | 'expense' | 'prepaid' | 'adjustment' | 'transfer';
 }
 
 export interface MemberStatement {
@@ -32,6 +32,9 @@ export interface MemberStatement {
   matchFees: number;
   /** The pre-app carry-in, if they have one. Negative reduced their wallet. */
   adjustment: number;
+  /** Ground-fund money moved into the wallet. Already counted as fund paid, so
+   *  it is NOT new money into the club — only a move between two pots. */
+  fundTransferred: number;
   balance: number;
   seasonFundPaid: number;
   seasonFundTarget: number;
@@ -47,7 +50,7 @@ export interface MemberStatement {
 
 const EMPTY: MemberStatement = {
   walletIn: 0, walletOut: 0, matchFees: 0, adjustment: 0, balance: 0, seasonFundPaid: 0, seasonFundTarget: 0,
-  prepaidForClub: 0, totalPutIn: 0, balanceFromLedger: 0, drift: 0,
+  fundTransferred: 0, prepaidForClub: 0, totalPutIn: 0, balanceFromLedger: 0, drift: 0,
   lines: [], loading: true,
 };
 
@@ -66,7 +69,7 @@ export function useMemberStatement(memberId: string | null, season?: { start: st
         .select('date, type, amount, description')
         .eq('member_id', memberId).order('date', { ascending: false });
 
-      let walletIn = 0, walletOut = 0, matchFees = 0, adjustment = 0;
+      let walletIn = 0, walletOut = 0, matchFees = 0, adjustment = 0, fundTransferred = 0;
       for (const t of (txns ?? []) as Array<{ date: string; type: string; amount: number; description: string | null }>) {
         const day = String(t.date).slice(0, 10);
         if (season && (day < season.start || day > season.end)) continue;
@@ -89,6 +92,20 @@ export function useMemberStatement(memberId: string | null, season?: { start: st
           if (reducesWallet) walletOut += amt; else walletIn += amt;
           lines.push({ date: day, label: 'Opening adjustment — carried in from before the app',
                        amount: signed, kind: 'adjustment' });
+          continue;
+        }
+
+        // Ground-fund money moved into the wallet. It really does raise the
+        // wallet, so it stays in walletIn — but it is not NEW money into the
+        // club, it is the same rupees moving between two pots. Counted as both
+        // a fund payment and a deposit it inflated "total put in" by ₹257,000
+        // across 27 members, and showed as two +₹5,000 lines on the same day.
+        const isTransfer = (t.description || '').startsWith('Ground fund transferred to wallet');
+        if (isTransfer) {
+          fundTransferred += amt;
+          walletIn += amt;
+          lines.push({ date: day, label: 'Moved from your ground fund', amount: amt,
+                       kind: 'transfer' });
           continue;
         }
 
@@ -157,7 +174,11 @@ export function useMemberStatement(memberId: string | null, season?: { start: st
         seasonFundPaid, seasonFundTarget, prepaidForClub,
         // What an audit asks for: every rupee this member handed the club,
         // whichever pot it went into.
-        totalPutIn: walletIn + seasonFundPaid + prepaidForClub,
+        fundTransferred,
+        // Transfers subtracted: the ground fund payment already counted those
+        // rupees once. Adding them again would tell an audit the member put in
+        // money they never did.
+        totalPutIn: walletIn - fundTransferred + seasonFundPaid + prepaidForClub,
         lines, loading: false,
       });
     })();

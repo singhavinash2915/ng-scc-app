@@ -22,6 +22,9 @@ const KIND_LABEL: Record<string, { text: string; tone: string }> = {
   // Its own label on purpose. Shown as "Match fee" it read as money paid to
   // play, which for some members overstated that by nearly ₹5,000.
   adjustment:  { text: 'Opening',     tone: 'text-violet-600 dark:text-violet-400' },
+  // Not "Wallet". It is the same money as the ground-fund line above it, and
+  // showing both in deposit green read as two separate payments.
+  transfer:    { text: 'Moved',       tone: 'text-blue-600 dark:text-blue-400' },
 };
 
 export function MemberStatement({ memberId, name }: { memberId: string; name: string }) {
@@ -73,7 +76,9 @@ export function MemberStatement({ memberId, name }: { memberId: string; name: st
           {rupees(s.balance)}
         </p>
         <p className="t-meta text-slate-500 dark:text-white/55">
-          {rupees(s.walletIn)} paid in · {rupees(s.matchFees)} in match fees
+          {rupees(s.walletIn - s.fundTransferred)} paid in
+          {s.fundTransferred > 0 && <> · {rupees(s.fundTransferred)} moved from ground fund</>}
+          {' '}· {rupees(s.matchFees)} in match fees
           {s.adjustment !== 0 && (
             <> · {rupees(Math.abs(s.adjustment))} opening adjustment</>
           )}
