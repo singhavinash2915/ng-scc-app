@@ -20,12 +20,18 @@ export interface StatementLine {
   date: string;
   label: string;
   amount: number;          // positive = in, negative = out
-  kind: 'deposit' | 'match_fee' | 'season_fund' | 'refund' | 'expense' | 'prepaid';
+  kind: 'deposit' | 'match_fee' | 'season_fund' | 'refund' | 'expense' | 'prepaid' | 'adjustment';
 }
 
 export interface MemberStatement {
   walletIn: number;
   walletOut: number;
+  /** Real match fees only — the carry-in adjustment is not one, however it is
+   *  typed in the ledger. Quoting it as a fee overstates what a member has
+   *  actually paid to play. */
+  matchFees: number;
+  /** The pre-app carry-in, if they have one. Negative reduced their wallet. */
+  adjustment: number;
   balance: number;
   seasonFundPaid: number;
   seasonFundTarget: number;
@@ -40,7 +46,7 @@ export interface MemberStatement {
 }
 
 const EMPTY: MemberStatement = {
-  walletIn: 0, walletOut: 0, balance: 0, seasonFundPaid: 0, seasonFundTarget: 0,
+  walletIn: 0, walletOut: 0, matchFees: 0, adjustment: 0, balance: 0, seasonFundPaid: 0, seasonFundTarget: 0,
   prepaidForClub: 0, totalPutIn: 0, balanceFromLedger: 0, drift: 0,
   lines: [], loading: true,
 };
@@ -60,17 +66,39 @@ export function useMemberStatement(memberId: string | null, season?: { start: st
         .select('date, type, amount, description')
         .eq('member_id', memberId).order('date', { ascending: false });
 
-      let walletIn = 0, walletOut = 0;
+      let walletIn = 0, walletOut = 0, matchFees = 0, adjustment = 0;
       for (const t of (txns ?? []) as Array<{ date: string; type: string; amount: number; description: string | null }>) {
         const day = String(t.date).slice(0, 10);
         if (season && (day < season.start || day > season.end)) continue;
         const amt = Math.abs(Number(t.amount));
+
+        // The carry-in from before the club moved to the app. It is stored as a
+        // deposit or a match fee depending on which way it had to go, but it is
+        // neither — calling it a match fee told members they had paid ~5,000
+        // more to play than they actually had.
+        const isCarryIn = (t.description || '').startsWith('Opening balance');
+        if (isCarryIn) {
+          // Direction comes from the TYPE, not the amount's sign. On 19 of these
+          // rows the sign is wrong — that is what the sign-fix migration
+          // corrects — while the type was right all along. Reading the sign
+          // would make this screen change the day the migration runs, and show
+          // a carry-in that REDUCED a wallet as money paid in until then.
+          const reducesWallet = t.type === 'match_fee' || t.type === 'expense';
+          const signed = reducesWallet ? -amt : amt;
+          adjustment += signed;
+          if (reducesWallet) walletOut += amt; else walletIn += amt;
+          lines.push({ date: day, label: 'Opening adjustment — carried in from before the app',
+                       amount: signed, kind: 'adjustment' });
+          continue;
+        }
+
         if (t.type === 'deposit' || t.type === 'refund') {
           walletIn += amt;
           lines.push({ date: day, label: t.description || 'Deposit', amount: amt,
                        kind: t.type as 'deposit' | 'refund' });
         } else if (t.type === 'match_fee' || t.type === 'expense') {
           walletOut += amt;
+          if (t.type === 'match_fee') matchFees += amt;
           lines.push({ date: day, label: t.description || 'Match fee', amount: -amt,
                        kind: t.type as 'match_fee' | 'expense' });
         }
@@ -123,6 +151,7 @@ export function useMemberStatement(memberId: string | null, season?: { start: st
       setSt({
         walletIn, walletOut,
         balance: stored,
+        matchFees, adjustment,
         balanceFromLedger,
         drift: stored - balanceFromLedger,
         seasonFundPaid, seasonFundTarget, prepaidForClub,

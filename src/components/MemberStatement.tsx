@@ -19,6 +19,9 @@ const KIND_LABEL: Record<string, { text: string; tone: string }> = {
   expense:     { text: 'Expense',     tone: 'text-slate-500 dark:text-white/50' },
   season_fund: { text: 'Ground fund', tone: 'text-blue-600 dark:text-blue-400' },
   prepaid:     { text: 'Paid ground', tone: 'text-amber-600 dark:text-amber-400' },
+  // Its own label on purpose. Shown as "Match fee" it read as money paid to
+  // play, which for some members overstated that by nearly ₹5,000.
+  adjustment:  { text: 'Opening',     tone: 'text-violet-600 dark:text-violet-400' },
 };
 
 export function MemberStatement({ memberId, name }: { memberId: string; name: string }) {
@@ -70,8 +73,19 @@ export function MemberStatement({ memberId, name }: { memberId: string; name: st
           {rupees(s.balance)}
         </p>
         <p className="t-meta text-slate-500 dark:text-white/55">
-          {rupees(s.walletIn)} paid in · {rupees(s.walletOut)} in match fees
+          {rupees(s.walletIn)} paid in · {rupees(s.matchFees)} in match fees
+          {s.adjustment !== 0 && (
+            <> · {rupees(Math.abs(s.adjustment))} opening adjustment</>
+          )}
         </p>
+        {/* The carry-in is not a match fee and not a deposit. Members with one
+            were being told they had paid it to play. */}
+        {s.adjustment !== 0 && (
+          <p className="t-micro text-slate-400 mt-1 leading-snug">
+            The opening adjustment is your position carried in from before the club
+            moved to the app — not money you paid to play.
+          </p>
+        )}
         {/* Says plainly why the balance can look small next to a big total. */}
         <p className="t-micro text-slate-400 mt-2 leading-snug">
           Ground fund money is kept separate and doesn't appear here — it pays for
