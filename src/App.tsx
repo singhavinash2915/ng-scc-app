@@ -12,6 +12,7 @@ import { FEATURES } from './config/features';
 import { MatchPoll } from './pages/MatchPoll';
 
 // Book-match: lazy-loaded but the route only registers in DEV (local testing only)
+const MonthClose = lazy(() => import('./pages/MonthClose'));
 const SquadConfirm = lazy(() => import('./pages/SquadConfirm'));
 const Availability = lazy(() => import('./pages/Availability'));
 const BookMatch = lazy(() => import('./pages/BookMatch').then(m => ({ default: m.BookMatch })));
@@ -143,6 +144,7 @@ const AppRoutes = () => (
         <Route path="/auction" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><AuctionCentre /></Suspense> : <Navigate to="/" replace />} />
         <Route path="/pressure"      element={<Navigate to="/honours?tab=pressure" replace />} />
         <Route path="/finance"       element={<Suspense fallback={<PageLoader />}><Finance /></Suspense>} />
+        <Route path="/month-close" element={<Suspense fallback={<PageLoader />}><MonthClose /></Suspense>} />
         <Route path="/fee-tracking"  element={<Suspense fallback={<PageLoader />}><FeeTracking /></Suspense>} />
         <Route path="/match-day-tools" element={<Suspense fallback={<PageLoader />}><MatchDayTools /></Suspense>} />
         <Route path="/ground-booking" element={<Suspense fallback={<PageLoader />}><SeasonFund /></Suspense>} />

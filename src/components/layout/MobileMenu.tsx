@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePendingChallengeCount } from '../../hooks/usePendingChallengeCount';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Gavel, Swords, CalendarOff} from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, Wallet, Info, Receipt, Megaphone, Landmark, Brain, ListOrdered, Award, FileText, Sparkles, Trophy, BookOpen, ExternalLink, Gavel, Swords, CalendarOff, CalendarCheck} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -98,6 +98,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               { title: 'Money', items: [
                 { to: '/finance', icon: Wallet, label: 'Finance' },
                 { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
+                { to: '/month-close', icon: CalendarCheck, label: 'Month Close' },
                 { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
               ]},
               { title: 'About', items: [

@@ -25,7 +25,7 @@ import {
   ExternalLink,
   // Rocket,  — re-add with the Season Kickoff nav item
   Gavel,
-  Swords, CalendarOff} from 'lucide-react';
+  Swords, CalendarOff, CalendarCheck} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRequests } from '../../hooks/useRequests';
 import { CURRENT_VERSION, STORAGE_KEY } from '../../data/releases';
@@ -75,6 +75,7 @@ const navGroups: Array<{ title: string; items: Array<{ to: string; icon: typeof 
     items: [
       { to: '/finance', icon: Wallet, label: 'Finance' },
       { to: '/fee-tracking', icon: Receipt, label: 'Fee Tracking' },
+      { to: '/month-close', icon: CalendarCheck, label: 'Month Close' },
       { to: '/ground-booking', icon: Landmark, label: 'Ground Booking' },
     ],
   },
