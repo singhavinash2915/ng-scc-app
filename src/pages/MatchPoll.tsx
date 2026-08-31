@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { prettyTime } from '../lib/matchTime';
 import {
   Calendar,
   MapPin,
@@ -219,7 +220,10 @@ export function MatchPoll() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="w-4 h-4 text-primary-200" />
-              <span>{formattedDate}</span>
+              {/* The time matters most here: this page is what a WhatsApp tap
+                  lands on, and for an away ground it is the only place the
+                  club records when to turn up. */}
+              <span>{formattedDate}{prettyTime(match.start_time) ? ` · ${prettyTime(match.start_time)}` : ''}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="w-4 h-4 text-primary-200" />

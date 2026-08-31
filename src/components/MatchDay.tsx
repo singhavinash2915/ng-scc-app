@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { GoLiveControl } from './GoLiveControl';
 import type { Match, Member } from '../types';
 import type { GroundDate } from '../hooks/useGroundDates';
+import { matchTimeLabel } from '../lib/matchTime';
 
 // ─── Match day ────────────────────────────────────────────────────────────────
 // Usage said two things at once: the home screen and the challenges board are
@@ -100,9 +101,10 @@ export function MatchDay({ match, slot, members, compact = false }: Props) {
         </p>
         {/* The slot time is the single most useful line on a match morning and
             it lives only on the booking. */}
-        {slot?.time_slot && (
-          <p className="t-meta font-bold text-white/80 mt-0.5">{slot.time_slot}</p>
-        )}
+        {(() => {
+          const when = matchTimeLabel(match, slot?.time_slot);
+          return when ? <p className="t-meta font-bold text-white/80 mt-0.5">{when}</p> : null;
+        })()}
 
         {venue && (
           <div className="flex items-center gap-2 mt-2.5">

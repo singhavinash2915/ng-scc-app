@@ -14,6 +14,7 @@ import { useMatches } from '../hooks/useMatches';
 import { useMatchPolls } from '../hooks/useMatchPolls';
 import { useUnavailability } from '../hooks/useUnavailability';
 import { APP_URL } from '../data/appMeta';
+import { prettyTime } from '../lib/matchTime';
 import type { Match, Member, MatchPoll } from '../types';
 
 interface Props {
@@ -187,7 +188,10 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
     // announcement; a squad list with a confirm link is a question that
     // answers itself back into the app.
     const link = `${APP_URL}/squad/${match.id}`;
-    const msg = `🏏 *SCC Squad* 🏏\n\n📅 ${dateStr}\n📍 ${match.venue}${match.opponent ? `\nvs ${match.opponent}` : ''}\n\n*Playing 12:*\n${xi}\n\nTap to confirm you're playing 👇\n${link}\n\n- Sangria Cricket Club`;
+    // The time matters most for away grounds, which is exactly where the app
+    // used to hold none — it lived only on the home ground's booking.
+    const timeStr = prettyTime((match as { start_time?: string | null }).start_time);
+    const msg = `🏏 *SCC Squad* 🏏\n\n📅 ${dateStr}${timeStr ? ` · ${timeStr}` : ''}\n📍 ${match.venue}${match.opponent ? `\nvs ${match.opponent}` : ''}\n\n*Playing 12:*\n${xi}\n\nTap to confirm you're playing 👇\n${link}\n\n- Sangria Cricket Club`;
     if (navigator.share) {
       navigator.share({ text: msg }).catch(() => navigator.clipboard.writeText(msg));
     } else {

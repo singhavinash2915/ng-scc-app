@@ -8,6 +8,7 @@ import { useGroundDates } from '../hooks/useGroundDates';
 import { useMe } from '../context/MemberContext';
 import { SignInCard } from '../components/SignInCard';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
+import { matchTimeLabel } from '../lib/matchTime';
 
 // ─── Squad confirmation ───────────────────────────────────────────────────────
 // The screen a WhatsApp tap lands on, and the reason the loop closes.
@@ -99,7 +100,7 @@ export default function SquadConfirm() {
             <div className="mt-3 space-y-1.5">
               <p className="t-body text-white/80 inline-flex items-center gap-2">
                 <Calendar className="w-4 h-4 shrink-0" />
-                {dateLabel}{slot?.time_slot ? ` · ${slot.time_slot}` : ''}
+                {dateLabel}{matchTimeLabel(match, slot?.time_slot) ? ` · ${matchTimeLabel(match, slot?.time_slot)}` : ''}
               </p>
               {(slot?.venue || match.venue) && (
                 <p className="t-body text-white/80 inline-flex items-center gap-2">

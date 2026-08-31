@@ -67,6 +67,8 @@ export const INTERNAL_RIVALRIES = {
 export interface Match {
   id: string;
   date: string;
+  /** Wall-clock start, 24h 'HH:MM'. Null falls back to the ground booking. */
+  start_time?: string | null;
   venue: string;
   opponent: string | null;
   result: 'won' | 'lost' | 'draw' | 'upcoming' | 'cancelled';

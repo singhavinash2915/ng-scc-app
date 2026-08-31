@@ -286,6 +286,7 @@ export function Matches() {
     bazigars_captain_id: '' as string,
     // CricHeroes
     ch_match_id: '' as string,
+    start_time: '',
   });
 
   // For internal matches - track which team each player is on
@@ -444,6 +445,7 @@ export function Matches() {
       await addMatch(
         {
           date: formData.date,
+          start_time: formData.start_time || null,
           venue: formData.venue,
           opponent: opponentName,
           result: isCurrentOrPastDate ? formData.result : 'upcoming',
@@ -489,6 +491,7 @@ export function Matches() {
         selectedMatch.id,
         {
           date: formData.date,
+          start_time: formData.start_time || null,
           venue: formData.venue,
           opponent: formData.opponent || null,
           match_fee: formData.match_fee,
@@ -558,6 +561,7 @@ export function Matches() {
   const resetForm = () => {
     setFormData({
       date: new Date().toISOString().split('T')[0],
+      start_time: '',
       venue: '',
       opponent: '',
       match_fee: 200,
@@ -659,6 +663,7 @@ export function Matches() {
     setSelectedMatch(match);
     setFormData({
       date: match.date,
+      start_time: match.start_time ?? '',
       venue: match.venue,
       opponent: match.opponent || '',
       match_fee: match.match_fee,
@@ -1382,6 +1387,15 @@ export function Matches() {
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               required
             />
+            {/* Kickoff. Optional at Four Star, where it is always 7am and comes
+                from the ground booking — but the only source of truth for a
+                match at somebody else's ground. */}
+            <Input
+              label="Start time"
+              type="time"
+              value={formData.start_time}
+              onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+            />
             {formData.match_type === 'external' ? (
               <Input
                 label="Opponent"
@@ -1969,6 +1983,15 @@ export function Matches() {
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               required
+            />
+            {/* Kickoff. Optional at Four Star, where it is always 7am and comes
+                from the ground booking — but the only source of truth for a
+                match at somebody else's ground. */}
+            <Input
+              label="Start time"
+              type="time"
+              value={formData.start_time}
+              onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
             />
             <Input
               label="Opponent"
