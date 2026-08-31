@@ -1,3 +1,4 @@
+import { CURRENT_SEASON_WINDOW } from '../config/season';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card } from '../components/ui/Card';
 import { toPng } from 'html-to-image';
@@ -371,7 +372,7 @@ export function BookMatch() {
       setLoadingTrust(true);
       try {
         // Current-season external match results (same window the Dashboard uses)
-        const SEASON_START = '2025-10-01';
+        const SEASON_START = CURRENT_SEASON_WINDOW.start;
         const SEASON_END   = '2026-09-30';
         const { data: matches } = await supabase
           .from('matches')

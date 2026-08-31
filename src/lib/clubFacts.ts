@@ -25,10 +25,11 @@ export const CLUB_FACTS = `
 - Website/app: sangriacricket.club. Instagram: @sangriacricket_official.
 
 ## The season
-- A season runs OCTOBER to SEPTEMBER. The current one is 2026-27.
+- A season runs 1 SEPTEMBER to 31 AUGUST. Season 2026-27 opens on 8 September 2026
+  with SCC Brahmos vs SCC Agni at Four Star.
 - The season's league competition is the "Sangria Cricket Club League 2026-27",
   played across a Sep 2026 – Jun 2027 window.
-- "This season" always means the current Oct–Sep window, not a calendar year.
+- "This season" always means the current Sep–Aug window, not a calendar year.
   Career/all-time figures cover every season on record.
 
 ## SCC MAHASANGRAM — the internal competition (NEW for 2026-27)

@@ -1,3 +1,4 @@
+import { seasonWindow } from '../config/season';
 import { useMemo } from 'react';
 import type { Match, Member } from '../types';
 import type { MatchScorecard, BatterRow, BowlerRow } from './useMatchScorecard';
@@ -274,9 +275,11 @@ export type RankingMode = 'all' | '2025-26' | '2024-25' | '2023-24';
 
 interface SeasonWindow { start: string; end: string }
 const SEASON_WINDOWS: Record<Exclude<RankingMode, 'all'>, SeasonWindow> = {
-  '2025-26': { start: '2025-10-01', end: '2026-09-30' },
-  '2024-25': { start: '2024-10-01', end: '2025-09-30' },
-  '2023-24': { start: '2023-10-01', end: '2024-09-30' },
+  // Derived from the club's season definition rather than written out, so
+  // these cannot drift from it the way the old hard-coded October dates did.
+  '2025-26': seasonWindow('2025-26'),
+  '2024-25': seasonWindow('2024-25'),
+  '2023-24': seasonWindow('2023-24'),
 };
 
 // ─── Main hook ─────────────────────────────────────────────────────────────

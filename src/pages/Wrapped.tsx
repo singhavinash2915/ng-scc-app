@@ -1,3 +1,5 @@
+import { seasonWindow, PREVIOUS_SEASON } from '../config/season';
+const SEASON_PREV_WINDOW = seasonWindow(PREVIOUS_SEASON);
 import { useMemo, useState } from 'react';
 import { Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Header } from '../components/layout/Header';
@@ -36,8 +38,10 @@ export function Wrapped() {
     const s = statsFor(me.id);
     const tier = tierFor(s, all);
 
-    // Season window matches the rest of the app: Oct → Sep.
-    const season = matches.filter(m => m.date >= '2025-10-01' && m.date <= '2026-09-30');
+    // Season window comes from the club's single definition (Sep → Aug), so a
+    // September fixture is wrapped into the season it actually belongs to.
+    const season = matches.filter(m =>
+      m.date >= SEASON_PREV_WINDOW.start && m.date <= SEASON_PREV_WINDOW.end);
     const mine = season.filter(m => m.players?.some(p => p.member_id === me.id));
     const won = mine.filter(m => m.result === 'won').length;
     const moms = season.filter(m => m.man_of_match_id === me.id).length;

@@ -1,3 +1,4 @@
+import { CURRENT_SEASON_WINDOW } from '../config/season';
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
@@ -158,7 +159,7 @@ export function Dashboard() {
   const stats = useMemo(() => {
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
     // Current season: Oct 2025 → Sep 2026
-    const seasonStart = '2025-10-01';
+    const seasonStart = CURRENT_SEASON_WINDOW.start;
     const seasonEnd   = '2026-09-30';
     // Overall SCC stats — external matches only.
     // Internal matches (Dhurandars vs Bazigars) are SCC vs SCC, so they don't

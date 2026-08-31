@@ -1,3 +1,4 @@
+import { CURRENT_SEASON_WINDOW } from '../config/season';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import type { BatterRow, BowlerRow, InningsSummary, MatchScorecard } from './useMatchScorecard';
@@ -58,7 +59,7 @@ function bestOfBowling(rows: BowlerRow[] | null): BowlerRow | null {
   })[0] || null;
 }
 
-export function useScorecardHighlights(seasonStart: string | null = '2025-10-01') {
+export function useScorecardHighlights(seasonStart: string | null = CURRENT_SEASON_WINDOW.start) {
   const [cards, setCards] = useState<CardRow[]>([]);
   const [loading, setLoading] = useState(true);
 

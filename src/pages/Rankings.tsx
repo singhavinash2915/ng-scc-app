@@ -287,7 +287,7 @@ function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
 
         <Section icon="🌐" title="Overall vs Season views">
           <Bullet><strong>Overall (All-Time)</strong>: includes every external match SCC has ever played, with recent matches weighted more heavily (time decay).</Bullet>
-          <Bullet><strong>Season 2025–26 / 2024–25 / 2023–24</strong>: only includes matches in that season's window (Oct → Sep). Time decay is OFF so every match counts equally — a fair summary of who actually performed that season.</Bullet>
+          <Bullet><strong>Season 2025–26 / 2024–25 / 2023–24</strong>: only includes matches in that season's window (Sep → Aug). Time decay is OFF so every match counts equally — a fair summary of who actually performed that season.</Bullet>
         </Section>
 
         <Section icon="🏏" title="Batting Points (per innings)">

@@ -12,6 +12,8 @@
 //                charged to that month's players. Somebody who stops playing in
 //                January pays for the months they played and nothing after.
 
+import { SEASON_START_MONTH } from '../config/season';
+
 export type ExpenseKind = 'consumable' | 'season_item';
 
 export interface SplittableExpense {
@@ -25,11 +27,13 @@ export interface SplittableExpense {
   description: string | null;
 }
 
-/** A season runs 1 Oct to 30 Sep. '2026-11' is in season 2026-27. */
+/** Season months, from the club's single definition. '2026-11' -> Sep 26–Aug 27. */
 export function seasonOf(period: string): { start: string; end: string } {
   const [y, m] = period.split('-').map(Number);
-  const startYear = m >= 10 ? y : y - 1;
-  return { start: `${startYear}-10`, end: `${startYear + 1}-09` };
+  const startYear = m >= SEASON_START_MONTH ? y : y - 1;
+  const mm = String(SEASON_START_MONTH).padStart(2, '0');
+  const endMonth = String(SEASON_START_MONTH - 1 || 12).padStart(2, '0');
+  return { start: `${startYear}-${mm}`, end: `${startYear + 1}-${endMonth}` };
 }
 
 /** Inclusive count of months from a to b, both 'YYYY-MM'. */
