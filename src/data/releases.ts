@@ -20,6 +20,25 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.30',
+    date: '30 August 2026',
+    title: 'Season 2026-27 starts 8 September \u{1F3CF}',
+    subtitle: 'Brahmos v Agni to open it \u00b7 tell us when you\u2019re away \u00b7 ask the app anything',
+    notes: [
+      { emoji: '\u{1F51C}', title: 'The season opens on 8 September', tag: 'new',
+        desc: 'SCC Brahmos vs SCC Agni at Four Star, then Master Blasters at A2Z Lavale on the 13th. Everything in the app \u2014 stats, records, the leaderboard \u2014 now counts from 1 September, so the opener is match one of the new season.' },
+      { emoji: '\u{1F5D3}\uFE0F', title: 'Tell us the dates you\u2019re away', tag: 'new',
+        desc: 'Diwali, hometown, a wedding \u2014 block the dates on the Availability page and you won\u2019t be picked for a match you\u2019re travelling on. 22 members have already done it.' },
+      { emoji: '\u2705', title: 'Confirm your place in one tap', tag: 'new',
+        desc: 'When the squad is announced you\u2019ll get a link in the group. One screen, two buttons \u2014 in or out \u2014 and the captain sees it straight away.' },
+      { emoji: '\u{1F916}', title: 'Ask SCC anything', tag: 'new',
+        desc: 'Tap the bot in the corner of any page. Who captains Agni, when we play next, who has the most wickets, what your balance is \u2014 it knows the whole club.' },
+      { emoji: '\u{1F4B8}', title: 'Club costs are now shared properly', tag: 'improved',
+        desc: 'Balls, bats and match-day bits used to come out of one person\u2019s pocket. From this season they\u2019re split across whoever played that month, and you can see your share on your own statement.' },
+    ],
+  },
+
+  {
     version: '2026.08.22.2',
     date: '22 August 2026',
     title: 'Getting ready for the new season \u26a1',
