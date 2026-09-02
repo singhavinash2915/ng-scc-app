@@ -434,8 +434,13 @@ export function LiveScoring() {
           <LiveViewer view={feed.view} format={format} name={name} />
         )}
 
-        {/* ── THE PAD ──────────────────────────────────────────────────── */}
-        {iAmScoring && (
+        {/* ── THE PAD ────────────────────────────────────────────────────
+            Only once an innings actually exists. The pad used to render
+            alongside the toss sheet, so a scorer tapping it while deciding who
+            bats first silently recorded balls into an innings nobody had
+            started — found by doing exactly that during the trial, which put
+            ten phantom deliveries into the opener. */}
+        {iAmScoring && !M.notStarted && M.current && (
           <div className="space-y-2.5">
             {/* who's in — only needed at the start of an innings or after a wicket */}
             {(!striker || !nonStriker || !bowler) && (
