@@ -42,6 +42,13 @@ export interface LiveScoreData {
   lastUpdated: Date;
 }
 
+// CricHeroes sends overs already decorated — "(16.0 Ov)" — and our fallback
+// appended " Ov" as well, so every consumer that wrapped it as "({overs} Ov)"
+// printed "16.0 Ov Ov" on screen. Normalise to the bare figure here and let the
+// UI do the labelling, which is the only place that knows the surrounding text.
+const bareOvers = (raw: string | undefined | null) =>
+  (raw ?? '').replace(/[()]/g, '').replace(/\s*ov\b\.?/i, '').trim();
+
 const POLL_INTERVAL = 15000; // 15 seconds
 const FN_BASE = `${supabaseUrl}/functions/v1/cricheroes`;
 
@@ -105,7 +112,7 @@ function parseFromMini(mini: MiniData): Omit<LiveScoreData, 'lastUpdated'> | nul
   const battingTeam = battingTeamObj?.name || '';
   const bowlingTeam = bowlingTeamObj?.name || '';
   const score       = battingInn?.summary?.score || battingTeamObj?.summary || `${battingInn?.total_run ?? 0}/${battingInn?.total_wicket ?? 0}`;
-  const overs       = (battingInn?.summary?.over || `${battingInn?.overs_played || '0'} Ov`).replace(/[()]/g, '').trim();
+  const overs       = bareOvers(battingInn?.summary?.over) || `${battingInn?.overs_played || '0'}`;
   const runRate     = battingInn?.summary?.rr || '';
 
   // Required run rate (second innings only)
@@ -253,7 +260,7 @@ export function parseLiveFromPageProps(pp: Record<string, unknown>): Omit<LiveSc
       const bowlingTeam = prevInn?.teamName ?? '';
       const summary     = currentInn.inning?.summary;
       const score       = summary?.score ?? `${currentInn.inning?.total_run ?? ''}/${currentInn.inning?.total_wicket ?? ''}`;
-      const overs       = (summary?.over ?? '').replace(/[()]/g, '').trim();
+      const overs       = bareOvers(summary?.over);
       const runRate     = summary?.rr ?? '';
       const battingFirst = scorecard.length === 1;
 

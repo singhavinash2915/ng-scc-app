@@ -37,6 +37,12 @@ export function LiveScorecard({
   const isOver = !!data?.result;                   // completed
   const isPreMatch = !data && (error || loading);  // not started yet
 
+  // An internal fixture already names both sides in `opponent` — "SCC Brahmos
+  // vs SCC Agni" — so the usual "SCC vs {opponent}" prefix produced
+  // "SCC vs SCC Brahmos vs SCC Agni". When the string is already a full
+  // fixture, show it as one.
+  const isFullFixture = /\svs\.?\s/i.test(matchOpponent ?? '');
+
   const fmtMatchDate = matchDate
     ? new Date(matchDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
     : null;
@@ -105,7 +111,9 @@ export function LiveScorecard({
               Today's Match
             </p>
             <p className="text-xl font-black text-slate-900 dark:text-white mb-1">
-              SCC vs <span className="text-emerald-600 dark:text-emerald-400">{matchOpponent || 'TBD'}</span>
+              {isFullFixture
+                ? <span className="text-emerald-600 dark:text-emerald-400">{matchOpponent}</span>
+                : <>SCC vs <span className="text-emerald-600 dark:text-emerald-400">{matchOpponent || 'TBD'}</span></>}
             </p>
             <div className="flex items-center gap-3 t-meta text-slate-400 dark:text-gray-500 flex-wrap mb-3">
               {matchVenue && <span>📍 {matchVenue}</span>}
