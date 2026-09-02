@@ -88,10 +88,26 @@ export function useAppLiveMatch() {
     setLoading(false);
   }, []);
 
+  // Realtime on the innings row, poll as a backstop. The banner's whole job is
+  // to be right at two exact moments — the toss, and the result going up — and
+  // a 30-second poll can be half an over late to both. Subscribing to
+  // scc_innings makes it appear on the toss and clear on the result.
+  //
+  // The poll stays because a socket can drop silently (backgrounded phone,
+  // ground wifi) and a live banner that cannot switch itself off is worse than
+  // one that is slow. Needs scc_innings in the supabase_realtime publication —
+  // see supabase/migrations/add_scoring_realtime.sql. Without it the
+  // subscription is simply inert and the poll carries it.
   useEffect(() => {
     void check();
+    const channel = supabase
+      .channel('app_live_innings')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'scc_innings' },
+        () => { void check(); })
+      .subscribe();
     const id = window.setInterval(() => void check(), POLL_MS);
-    return () => window.clearInterval(id);
+    return () => { supabase.removeChannel(channel); window.clearInterval(id); };
   }, [check]);
 
   return { live, loading, refresh: check };

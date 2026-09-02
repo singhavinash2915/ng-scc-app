@@ -379,8 +379,21 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* ── LIVE SCORECARD — CricHeroes-scored matches ─────────────────── */}
-      {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result) && (
+      {/* ── LIVE SCORECARD — CricHeroes-scored matches ───────────────────
+          Stands down when we're scoring this same fixture ourselves. Most
+          matches carry a ch_match_id whether or not anyone opens CricHeroes on
+          the day, so without this the Dashboard showed the same match twice —
+          our ball-by-ball banner above a CricHeroes panel stuck on the
+          pre-match card, because nobody was scoring it there.
+
+          Matched on match id, not merely "is anything live": if we're scoring
+          one fixture in the app while a different one runs on CricHeroes, those
+          are two real matches and both belong on the page.
+
+          Held back until appLive has actually loaded, otherwise the panel
+          renders on the first frame and vanishes a moment later. */}
+      {liveMatchToday?.ch_match_id && !['won', 'lost', 'draw'].includes(liveMatchToday.result)
+        && !appLive.loading && appLive.live?.matchId !== liveMatchToday.id && (
         <div className="px-4 lg:px-8 pt-4">
           <LiveScorecardWidget match={liveMatchToday} />
         </div>
