@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { internalSides } from '../utils/internalTeams';
 
 // ─── Is a match being scored in the app right now? ────────────────────────────
 // The Dashboard's existing live block keys off ch_match_id, so it only ever
@@ -45,6 +46,22 @@ export function useAppLiveMatch() {
     }
     const row = innings[0];
 
+    // batting_team is stored as the SIDE KEY — 'home' / 'away' — and the name
+    // lives on the fixture. Reading the column straight out put the literal
+    // word "home" on the Dashboard, so the banner announced "home 0/0 v away"
+    // to everyone opening the app. Resolve it the way the scoring page does.
+    const { data: match } = await supabase
+      .from('matches')
+      .select('opponent, match_type')
+      .eq('id', row.match_id)
+      .maybeSingle();
+
+    const s2 = internalSides(match ?? null);
+    const nameOf = (key: string) =>
+      match?.match_type === 'internal'
+        ? (key === 'home' ? s2.home : s2.away)
+        : (key === 'home' ? 'Sangria CC' : match?.opponent || 'Opponent');
+
     // Only the totals — one row per ball would be a needless page of egress on
     // every Dashboard load, and the score is all this banner shows.
     const { data: balls } = await supabase
@@ -63,8 +80,8 @@ export function useAppLiveMatch() {
     setLive({
       matchId: row.match_id,
       innings: row.innings as 1 | 2,
-      battingTeam: row.batting_team,
-      bowlingTeam: row.bowling_team,
+      battingTeam: nameOf(row.batting_team),
+      bowlingTeam: nameOf(row.bowling_team),
       target: row.target,
       runs, wickets, legalBalls,
     });
