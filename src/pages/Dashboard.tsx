@@ -16,6 +16,7 @@ import { PremiumHero } from '../components/PremiumHero';
 
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { MatchDay } from '../components/MatchDay';
+import { SeasonOpenerBanner } from '../components/SeasonOpenerBanner';
 import { useGroundDates } from '../hooks/useGroundDates';
 import { useAuth } from '../context/AuthContext';
 import { AwayClashes } from '../components/AwayClashes';
@@ -389,6 +390,10 @@ export function Dashboard() {
           </Link>
         </div>
       )}
+
+      {/* ── SEASON OPENER — a billboard for the first ball of the year.
+             Removes itself once the match is played. ── */}
+      <SeasonOpenerBanner matches={matches} />
 
       {/* ── MATCH DAY — the takeover. On the one day all 46 open the app,
              the match owns the first screen instead of a line of text
