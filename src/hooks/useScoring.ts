@@ -48,6 +48,8 @@ export function useScoring(
   const [lockFresh, setLockFresh] = useState(false);
   const [pending, setPending] = useState(0);
   const lastSeq = useRef(-1);
+  /** Which innings `lastSeq` belongs to. See fetchBalls. */
+  const cursorInnings = useRef<number | null>(null);
 
   // ── Offline queue ──────────────────────────────────────────────────────
   const readQueue = useCallback((): Ball[] => {
@@ -77,6 +79,22 @@ export function useScoring(
   // ── Load / poll ────────────────────────────────────────────────────────
   const fetchBalls = useCallback(async (delta = true) => {
     if (!matchId) { setLoading(false); return; }
+
+    // The delta cursor belongs to ONE innings. This hook is mounted before the
+    // innings rows have loaded, so it starts on innings 1, reads that innings to
+    // the end, and leaves lastSeq at its final ball. When it then switched to
+    // innings 2 the cursor came along, and the chase was polled as
+    // "seq > 12" — so the first 13 deliveries of the second innings would never
+    // have loaded. The pad showed the first innings' score under an INNINGS 2
+    // heading and declared it already complete, which puts the result screen up
+    // with the wrong side's total. Tie the cursor to its innings and start clean
+    // whenever that changes, rather than relying on a reset effect landing first.
+    if (cursorInnings.current !== innings) {
+      cursorInnings.current = innings;
+      lastSeq.current = -1;
+      delta = false;
+    }
+
     let q = supabase.from('scc_ball_by_ball')
       .select('*').eq('match_id', matchId).eq('innings', innings).order('seq');
     // Only what we don't already have — keeps a live poll tiny.
@@ -116,13 +134,27 @@ export function useScoring(
     if (!matchId) return;
     const { data, error } = await supabase
       .from('scc_scoring_lock').select('*').eq('match_id', matchId).maybeSingle();
-    if (error || !data) { setLockHolder(null); setLockFresh(false); return; }
+    // A read that FAILED is not evidence that nobody is scoring. This used to
+    // clear the holder on any error, and since the lock was read exactly once
+    // per mount and never again, a single dropped request left the scorer
+    // looking at "Start scoring this match" in the middle of their own match —
+    // and because the heartbeat only runs while you hold the lock, theirs then
+    // went stale and another admin could take it. Keep the last known answer
+    // and let the poll below try again.
+    if (error) return;
+    if (!data) { setLockHolder(null); setLockFresh(false); return; }
     const age = Date.now() - new Date(data.heartbeat_at).getTime();
     setLockHolder(data.scorer_id);
     setLockFresh(age < LOCK_STALE_MS);
   }, [matchId]);
 
-  useEffect(() => { void readLock(); }, [readLock]);
+  // Re-read on the same cadence as the balls. One read on mount was enough only
+  // as long as nothing ever went wrong on that one read.
+  useEffect(() => {
+    void readLock();
+    const id = window.setInterval(() => { void readLock(); }, POLL_MS);
+    return () => window.clearInterval(id);
+  }, [readLock]);
 
   const claimLock = useCallback(async (scorerId: string) => {
     if (!matchId) return 'No match';

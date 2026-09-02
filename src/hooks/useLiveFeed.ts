@@ -34,9 +34,12 @@ export function useLiveFeed(
 
   const view = useMemo<LiveView | null>(() => {
     if (appHasBalls && M.current) {
+      // batting_team is the side KEY — 'home' / 'away' — not a name. Printing
+      // the column put "LIVE · HOME … v away" on the viewer. `sides` is passed
+      // in for exactly this and was going unused.
       return {
-        battingTeam: M.current.batting_team,
-        bowlingTeam: M.current.bowling_team,
+        battingTeam: M.current.batting_team === 'home' ? sides.home : sides.away,
+        bowlingTeam: M.current.bowling_team === 'home' ? sides.home : sides.away,
         runs: S.state.runs,
         wickets: S.state.wickets,
         legalBalls: legalCount(S.balls),

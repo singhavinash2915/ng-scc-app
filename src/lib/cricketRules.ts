@@ -169,6 +169,16 @@ export function nextStrikers(last: Ball | null): { strikerId: string | null; non
   const overEnded = isLegalDelivery(last) && (last.ball_no + 1) % 6 === 0;
   if (overEnded) [striker, nonStriker] = [nonStriker, striker];
 
+  // Someone dismissed on that ball is not at the crease any more. Without this
+  // the dismissed batter was still reported as a current batter, and the scoring
+  // page pre-fills its striker dropdown from here — so re-opening or re-claiming
+  // a match mid-innings put a player who was already out back on strike, ready
+  // to be credited with the next runs. Blank means "ask who came in".
+  if (last.dismissed_id) {
+    if (striker === last.dismissed_id) striker = null;
+    if (nonStriker === last.dismissed_id) nonStriker = null;
+  }
+
   return { strikerId: striker, nonStrikerId: nonStriker };
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { useParams } from 'react-router-dom';
 import { Undo2, Radio, WifiOff, Lock, Users, Wrench, ClipboardList, Repeat } from 'lucide-react';
@@ -50,7 +50,7 @@ export function LiveScoring() {
   const { matchId } = useParams<{ matchId: string }>();
   const { isAdmin } = useAuth();
   const { members } = useMembers();
-  const { matches } = useMatches();
+  const { matches, fetchMatches } = useMatches();
   const myId = typeof window !== 'undefined'
     ? localStorage.getItem('scc-my-profile-id') : null;
 
@@ -107,11 +107,35 @@ export function LiveScoring() {
   const someoneElse = S.lockFresh && S.lockHolder && S.lockHolder !== myId;
 
   // Hold the lock open while this page is in front of the scorer.
+  //
+  // Depends on `heartbeat` and the interval constant, NOT on the whole `S`
+  // object. S is a fresh object literal on every render, so listing it here
+  // tore down and rebuilt this interval on every render — and the scoring page
+  // re-renders far more often than every 20 seconds, so the timer never
+  // survived long enough to fire once. The lock was written at claim time and
+  // never refreshed again, which made the scorer's own lock read as stale after
+  // 90 seconds: another admin could take the match off them mid-over, and two
+  // people could end up entering balls into the same innings.
+  //
+  // It went unnoticed because the lock was also only ever read once, on mount,
+  // so the staleness was invisible to the person actually scoring.
+  //
+  // Gated on HOLDING the lock, not on iAmScoring. iAmScoring also requires the
+  // lock to be fresh, which made this self-defeating: any moment where freshness
+  // briefly read false — a dropped poll, the switch between innings — stopped
+  // the heartbeat, and with nothing writing it the lock then aged past stale for
+  // real and never recovered. The scorer was locked out of their own match by
+  // the very timer meant to keep them in it. Whether the lock is stale decides
+  // if someone else may TAKE it; it should never decide whether its own holder
+  // keeps it alive.
+  const { heartbeat: sendHeartbeat, HEARTBEAT_MS, lockHolder } = S;
+  const iHoldTheLock = !!myId && lockHolder === myId;
   useEffect(() => {
-    if (!iAmScoring || !myId) return;
-    const id = window.setInterval(() => S.heartbeat(myId), S.HEARTBEAT_MS);
+    if (!iHoldTheLock || !myId) return;
+    sendHeartbeat(myId);   // don't leave the first gap unwritten
+    const id = window.setInterval(() => sendHeartbeat(myId), HEARTBEAT_MS);
     return () => window.clearInterval(id);
-  }, [iAmScoring, myId, S]);
+  }, [iHoldTheLock, myId, sendHeartbeat, HEARTBEAT_MS]);
 
   // Who's in — seeded by the scorer, then the rules engine keeps track.
   const [striker, setStriker] = useState<string | null>(null);
@@ -131,6 +155,20 @@ export function LiveScoring() {
     if (S.state.strikerId) setStriker(S.state.strikerId);
     if (S.state.nonStrikerId) setNonStriker(S.state.nonStrikerId);
   }, [S.state.strikerId, S.state.nonStrikerId]);
+
+  // Wipe the crease when the innings changes. This page mounts before the
+  // innings rows arrive, so it spends its first moments on innings 1 and seeds
+  // the batters from it. Once innings 2 loaded, the score cleared but those
+  // names stayed in local state — so the chase opened with the side that had
+  // just BATTED pre-selected to bat again, one tap away from recording Brahmos
+  // players as Agni's openers.
+  const prevShown = useRef<1 | 2 | null>(null);
+  useEffect(() => {
+    if (prevShown.current !== null && prevShown.current !== shown) {
+      setStriker(null); setNonStriker(null); setBowler(null);
+    }
+    prevShown.current = shown;
+  }, [shown]);
 
   const name = (id: string | null) =>
     members.find(m => m.id === id)?.name ?? '—';
@@ -188,7 +226,11 @@ export function LiveScoring() {
       .update({ overs_per_innings: n }).eq('id', matchId);
     if (error) return alert(error.message);
     setTool(null);
-    window.location.reload();
+    // Refetch rather than reload. A full reload threw away the scorer's striker,
+    // non-striker and bowler — so a rain adjustment mid-over made them re-enter
+    // all three — and it dropped them out of their own match entirely. `format`
+    // is derived from the match record, so refreshing it is all that's needed.
+    await fetchMatches();
   };
 
   /** Everyone who has already batted or is at the crease. */
