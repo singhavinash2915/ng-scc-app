@@ -1,3 +1,4 @@
+import { CURRENT_SEASON, seasonLabel } from '../config/season';
 import { useMemo, useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
@@ -219,7 +220,7 @@ export function Predictions() {
 
   return (
     <div>
-      <Header title="Predictions Game" subtitle="Pre-match predictions · Season 2025–26" />
+      <Header title="Predictions Game" subtitle={`Pre-match predictions · Season ${seasonLabel(CURRENT_SEASON)}`} />
 
       <div className="p-4 lg:p-8 space-y-6 max-w-5xl mx-auto">
 
@@ -534,6 +535,19 @@ export function Predictions() {
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           🎰 {predictions.length} predicted · ✓ {correctWinner} got the winner right
+                          {/* Backing yourself is the boldest call anyone makes
+                              here, and 17 of 133 predictions already did it with
+                              nothing on screen to show for it. On the summary
+                              row, where every member sees it — not three clicks
+                              into an admin panel. */}
+                          {(() => {
+                            const selfPicks = predictions.filter(p =>
+                              p.top_scorer_id === p.member_id
+                              || p.mom_id === p.member_id
+                              || p.top_wicket_taker_id === p.member_id);
+                            if (!selfPicks.length) return null;
+                            return <> · 🏅 {selfPicks.length} backed themselves</>;
+                          })()}
                         </p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -642,15 +656,15 @@ export function Predictions() {
                                 <div className="grid grid-cols-2 gap-1.5 t-meta">
                                   {isInternal ? (
                                     <>
-                                      <PickRow label="Winner" value={teamPickLabel(outcome.winner)} />
+                                      <PickRow label="Winner" value={teamPickLabel(outcome.winner, match)} />
                                       <PickRow label="MOM" value={nameOf(outcome.mom_id)} />
                                       <PickRow label="🔴 Top Run" value={nameOf(outcome.int_dhur_top_scorer_id)} />
                                       <PickRow label="🔵 Top Run" value={nameOf(outcome.int_baz_top_scorer_id)} />
                                       <PickRow label="🔴 Top Wkt" value={nameOf(outcome.int_dhur_top_wicket_id)} />
                                       <PickRow label="🔵 Top Wkt" value={nameOf(outcome.int_baz_top_wicket_id)} />
-                                      <PickRow label="Most 6s" value={teamPickLabel(outcome.internal_most_sixes)} />
+                                      <PickRow label="Most 6s" value={teamPickLabel(outcome.internal_most_sixes, match)} />
                                       <PickRow label="Margin" value={marginPickLabel(outcome.internal_margin)} />
-                                      <PickRow label="Top Knock" value={teamPickLabel(outcome.internal_highest_team)} />
+                                      <PickRow label="Top Knock" value={teamPickLabel(outcome.internal_highest_team, match)} />
                                       <PickRow label="Any 30+" value={ynLabel(outcome.internal_milestone)} />
                                       <PickRow label="Duck?" value={ynLabel(outcome.internal_duck)} />
                                     </>
@@ -659,7 +673,8 @@ export function Predictions() {
                                       <PickRow label="Winner" value={
                                         outcome.winner === 'scc' ? 'SCC'
                                         : outcome.winner === 'opponent' ? (match.opponent || 'Opponent')
-                                        : 'No Result'
+                                        : outcome.winner === 'draw' ? 'No Result'
+                                        : teamPickLabel(outcome.winner, match)
                                       } />
                                       <PickRow label="MOM" value={nameOf(outcome.mom_id)} />
                                       <PickRow label="Top Scorer" value={nameOf(outcome.top_scorer_id)} />
@@ -678,9 +693,7 @@ export function Predictions() {
                                   p.winner === 'scc' ? 'SCC'
                                   : p.winner === 'opponent' ? (match.opponent || 'Opponent')
                                   : p.winner === 'draw' ? 'No Result'
-                                  : p.winner === 'dhurandars' ? '🔴 Dhurandars'
-                                  : p.winner === 'bazigars' ? '🔵 Bazigars'
-                                  : '—';
+                                  : teamPickLabel(p.winner, match);
                                 const topScorer = p.top_scorer_id ? memberById[p.top_scorer_id]?.name : null;
                                 const topWkt = p.top_wicket_taker_id ? memberById[p.top_wicket_taker_id]?.name : null;
                                 const mom = p.mom_id ? memberById[p.mom_id]?.name : null;
@@ -697,6 +710,28 @@ export function Predictions() {
                                         )}
                                         <span className="text-sm font-bold text-gray-900 dark:text-white">{predictor.name}</span>
                                       </Link>
+                                      {/* Backing yourself is the boldest call on
+                                          the card, and it was invisible. Gold
+                                          when it came off, quiet when it did not
+                                          — the badge should carry the swagger
+                                          only if it was earned. */}
+                                      {(() => {
+                                        const backedSelf = p.top_scorer_id === p.member_id
+                                          || p.mom_id === p.member_id
+                                          || p.top_wicket_taker_id === p.member_id;
+                                        if (!backedSelf) return null;
+                                        const cameOff = (p.top_scorer_id === p.member_id && outcome?.top_scorer_id === p.member_id)
+                                          || (p.mom_id === p.member_id && outcome?.mom_id === p.member_id)
+                                          || (p.top_wicket_taker_id === p.member_id && outcome?.top_wicket_taker_id === p.member_id);
+                                        return (
+                                          <span className={`t-micro font-black px-2 py-0.5 rounded-full whitespace-nowrap ${
+                                            cameOff
+                                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-400/20 dark:text-amber-200'
+                                              : 'bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400'}`}>
+                                            {cameOff ? '🏅 backed themselves — and delivered' : 'backed themselves'}
+                                          </span>
+                                        );
+                                      })()}
                                       {p.points_earned !== null ? (
                                         <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-full ${
                                           p.points_earned > 0
@@ -718,9 +753,9 @@ export function Predictions() {
                                           <PickRow label="🔵 Top Run" value={nameOf(p.int_baz_top_scorer_id)} />
                                           <PickRow label="🔴 Top Wkt" value={nameOf(p.int_dhur_top_wicket_id)} />
                                           <PickRow label="🔵 Top Wkt" value={nameOf(p.int_baz_top_wicket_id)} />
-                                          <PickRow label="Most 6s" value={teamPickLabel(p.internal_most_sixes)} />
+                                          <PickRow label="Most 6s" value={teamPickLabel(p.internal_most_sixes, match)} />
                                           <PickRow label="Margin" value={marginPickLabel(p.internal_margin)} />
-                                          <PickRow label="Top Knock" value={teamPickLabel(p.internal_highest_team)} />
+                                          <PickRow label="Top Knock" value={teamPickLabel(p.internal_highest_team, match)} />
                                           <PickRow label="Any 30+" value={ynLabel(p.internal_milestone)} />
                                           <PickRow label="Duck?" value={ynLabel(p.internal_duck)} />
                                         </>
@@ -764,11 +799,28 @@ export function Predictions() {
 }
 
 // ── Internal-match label helpers (shared by picks + actual-result display) ──
-const teamPickLabel = (t: string | null | undefined): string =>
-  t === 'dhurandars' ? '🔴 Dhurandars'
-  : t === 'bazigars' ? '🔵 Bazigars'
-  : t === 'tie' ? '🤝 Tie'
-  : '—';
+//
+// The side names come from the FIXTURE, not from this file. Naming them here is
+// how a Brahmos v Agni result ended up labelled with the retired Dhurandars and
+// Bazigars — and how the next internal competition would have been too.
+//
+// Old predictions still hold the literal 'dhurandars'/'bazigars', so those are
+// kept as a fallback: a result from the old rivalry must still read correctly.
+const teamPickLabel = (t: string | null | undefined, match?: Match | null): string => {
+  if (!t) return '—';
+  if (t === 'tie') return '🤝 Tie';
+  const sides = match ? internalSides(match) : null;
+  const keys = /brahmos|agni/i.test(match?.opponent ?? '')
+    ? ['brahmos', 'agni'] : ['dhurandars', 'bazigars'];
+  if (sides && t === keys[0]) return `🔴 ${sides.home}`;
+  if (sides && t === keys[1]) return `🔵 ${sides.away}`;
+  // Fallback for a prediction whose side is not one of this fixture's two.
+  return t === 'dhurandars' ? '🔴 Dhurandars'
+    : t === 'bazigars' ? '🔵 Bazigars'
+    : t === 'brahmos' ? '🔴 Brahmos'
+    : t === 'agni' ? '🔵 Agni'
+    : '—';
+};
 const marginPickLabel = (m: string | null | undefined): string =>
   m === 'thriller' ? '😮 Thriller'
   : m === 'comfortable' ? '👍 Comfy'

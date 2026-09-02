@@ -164,12 +164,17 @@ export function PredictMatchModal({ isOpen, onClose, match }: Props) {
     return base;
   }, [members, match.players, isInternal]);
 
+  // Backing yourself is allowed, and it is the most interesting call anybody
+  // makes here — so it is marked rather than left to be spotted. You also sort
+  // to the top, because scrolling past 40 names to find yourself is the kind of
+  // friction that stops people doing it at all.
   const memberOptions = useMemo(() => [
     { value: '', label: '— Skip / not sure —' },
     ...eligibleMembers
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(m => ({ value: m.id, label: m.name })),
-  ], [eligibleMembers]);
+      .sort((a, b) => (b.id === memberId ? 1 : 0) - (a.id === memberId ? 1 : 0)
+                   || a.name.localeCompare(b.name))
+      .map(m => ({ value: m.id, label: m.id === memberId ? `${m.name} (you)` : m.name })),
+  ], [eligibleMembers, memberId]);
 
   // Per-team options for internal matches. If the squad has been assigned
   // (match.players with a `team` field), filter to that team. Otherwise the
