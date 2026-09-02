@@ -174,6 +174,8 @@ export function useChallenges() {
         bowling_balls: Math.floor(s.bowling_overs) * 6
           + Math.round((s.bowling_overs % 1) * 10),
         fielding_catches: s.fielding_catches ?? 0,
+        fielding_run_outs: s.fielding_run_outs ?? 0,
+        fielding_stumpings: s.fielding_stumpings ?? 0,
       }));
     return standingFromScorecards(c.metric, rowsForChallenge);
   }, [stats, balls, matchRows, nameMatcher, matches]);

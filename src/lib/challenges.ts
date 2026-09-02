@@ -18,6 +18,7 @@ import type { Ball } from './cricketRules';
 
 export type Metric =
   | 'runs' | 'wickets' | 'fours' | 'sixes' | 'fifties' | 'catches'
+  | 'run_outs' | 'stumpings' | 'dismissals'
   | 'strike_rate' | 'economy'
   | 'death_economy' | 'dot_percent' | 'chase_strike_rate' | 'partnership';
 
@@ -39,7 +40,10 @@ export const METRICS: MetricDef[] = [
   { key: 'fours',   label: 'Most fours',   hint: 'Boundaries off the bat' },
   { key: 'sixes',   label: 'Most sixes',   hint: 'The one everybody wants' },
   { key: 'fifties', label: 'Most fifties', hint: 'Scores of 50 or more' },
-  { key: 'catches', label: 'Most catches', hint: 'Fielding, which usually goes unnoticed' },
+  { key: 'catches',    label: 'Most catches',    hint: 'Fielding, which usually goes unnoticed' },
+  { key: 'run_outs',   label: 'Most run-outs',   hint: 'Direct hits and assists — the fielder credited' },
+  { key: 'stumpings',  label: 'Most stumpings',  hint: 'Keepers only, realistically' },
+  { key: 'dismissals', label: 'Most dismissals', hint: 'Catches, run-outs and stumpings together — the all-round fielding one' },
   { key: 'strike_rate', label: 'Best strike rate', hint: 'Minimum 30 balls, so one big over can’t win it' },
   { key: 'economy', label: 'Best economy', hint: 'Minimum 4 overs', lowerWins: true },
 
@@ -55,7 +59,7 @@ export type Category = 'batting' | 'bowling' | 'fielding';
 export const CATEGORY: Record<Category, { label: string; emoji: string; metrics: Metric[] }> = {
   batting:  { label: 'Batting',  emoji: '🏏', metrics: ['runs', 'fours', 'sixes', 'fifties', 'strike_rate', 'chase_strike_rate', 'partnership'] },
   bowling:  { label: 'Bowling',  emoji: '⚡', metrics: ['wickets', 'economy', 'death_economy', 'dot_percent'] },
-  fielding: { label: 'Fielding', emoji: '🧤', metrics: ['catches'] },
+  fielding: { label: 'Fielding', emoji: '🧤', metrics: ['catches', 'run_outs', 'stumpings', 'dismissals'] },
 };
 
 export const metricDef = (m: Metric) => METRICS.find(x => x.key === m) ?? METRICS[0];
@@ -80,6 +84,8 @@ export interface ScorecardRow {
   bowling_runs_conceded?: number;
   bowling_balls?: number;
   fielding_catches?: number;
+  fielding_run_outs?: number;
+  fielding_stumpings?: number;
 }
 
 /** Scorecard-family metrics — work for every match, synced or app-scored. */
@@ -107,7 +113,19 @@ export function standingFromScorecards(
       case 'fours':   value = sum(r => r.batting_fours ?? 0); detail = n(value, 'four', 'fours'); break;
       case 'sixes':   value = sum(r => r.batting_sixes ?? 0); detail = n(value, 'six', 'sixes'); break;
       case 'fifties': value = sum(r => r.batting_fifties ?? 0); detail = n(value, 'fifty', 'fifties'); break;
-      case 'catches': value = sum(r => r.fielding_catches ?? 0); detail = n(value, 'catch', 'catches'); break;
+      case 'catches':   value = sum(r => r.fielding_catches ?? 0);   detail = n(value, 'catch', 'catches'); break;
+      case 'run_outs':  value = sum(r => r.fielding_run_outs ?? 0);  detail = n(value, 'run-out', 'run-outs'); break;
+      case 'stumpings': value = sum(r => r.fielding_stumpings ?? 0); detail = n(value, 'stumping', 'stumpings'); break;
+      // The composite one. Fielding is more than catching, and a keeper and a
+      // gully specialist can finally be compared on the same number.
+      case 'dismissals': {
+        const c = sum(r => r.fielding_catches ?? 0);
+        const ro = sum(r => r.fielding_run_outs ?? 0);
+        const st = sum(r => r.fielding_stumpings ?? 0);
+        value = c + ro + st;
+        detail = `${value} (${c}c ${ro}ro ${st}st)`;
+        break;
+      }
       case 'strike_rate': {
         const runs = sum(r => r.batting_runs), balls = sum(r => r.batting_balls ?? 0);
         // A strike rate off a handful of balls is noise, not form.

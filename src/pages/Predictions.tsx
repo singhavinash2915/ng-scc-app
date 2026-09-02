@@ -525,7 +525,12 @@ export function Predictions() {
                           {fmtDate(match.date)} · {match.result.toUpperCase()}
                         </p>
                         <h4 className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">
-                          {match.match_type === 'internal' ? '🔴 Dhurandars vs Bazigars 🔵' : `vs ${match.opponent || 'TBD'}`}
+                          {/* internalSides reads the names from the fixture, so a
+                              MahaSangram result stops being labelled with the
+                              retired Dhurandars/Bazigars teams. */}
+                          {match.match_type === 'internal'
+                            ? `🔴 ${internalSides(match).label} 🔵`
+                            : `vs ${match.opponent || 'TBD'}`}
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           🎰 {predictions.length} predicted · ✓ {correctWinner} got the winner right
