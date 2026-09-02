@@ -1,3 +1,4 @@
+import { CURRENT_SEASON } from '../config/season';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { MemberCricketStats } from '../types';
@@ -15,7 +16,7 @@ function ballsToOvers(balls: number): number {
   return parseFloat(`${Math.floor(balls / 6)}.${balls % 6}`);
 }
 
-export function useCricketStats(season: string = '2025-26') {
+export function useCricketStats(season: string = CURRENT_SEASON) {
   const [stats, setStats] = useState<MemberCricketStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

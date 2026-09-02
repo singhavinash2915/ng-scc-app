@@ -1,3 +1,4 @@
+import { seasonOptions } from '../config/season';
 import { useState, useMemo } from 'react';
 import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
@@ -13,11 +14,13 @@ import { useSccRankings, RANKING_CONSTANTS, type RankedPlayer, type RankingMode 
 
 type Tab = 'batting' | 'bowling' | 'allrounder';
 
+// All-time first, then every season newest-first from the club's definition —
+// so a new season appears on 1 September without editing this list.
 const MODE_LABELS: { id: RankingMode; label: string }[] = [
-  { id: 'all',     label: 'Overall (All-Time)' },
-  { id: '2025-26', label: 'Season 2025–26' },
-  { id: '2024-25', label: 'Season 2024–25' },
-  { id: '2023-24', label: 'Season 2023–24' },
+  { id: 'all', label: 'Overall (All-Time)' },
+  ...seasonOptions()
+    .filter(o => o.value !== 'all')
+    .map(o => ({ id: o.value as RankingMode, label: o.label })),
 ];
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode; color: string }[] = [

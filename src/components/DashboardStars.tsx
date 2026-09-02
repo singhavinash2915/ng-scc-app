@@ -1,3 +1,4 @@
+import { CURRENT_SEASON } from '../config/season';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ChevronRight, Crown, TrendingUp, Zap, Shield } from 'lucide-react';
@@ -9,7 +10,7 @@ interface DashboardStarsProps {
 }
 
 export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
-  const { stats: cricketStats } = useCricketStats('2025-26');
+  const { stats: cricketStats } = useCricketStats(CURRENT_SEASON);
 
   const { mvp, topBatsman, topBowler, bestFielder, bestKeeper } = useMemo(() => {
     if (!cricketStats.length) {

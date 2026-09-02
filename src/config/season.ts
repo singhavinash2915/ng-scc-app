@@ -50,3 +50,19 @@ export const inCurrentSeason = (isoDate: string) =>
 
 /** '2026-27' -> '2026–27' for display. */
 export const seasonLabel = (key: string) => key.replace('-', '–');
+
+/** Seasons to offer in a picker, newest first, plus an all-time option.
+ *  Derived so a new season appears on 1 September without anyone editing a
+ *  list — which is exactly how the Leaderboard came to be missing 2026-27. */
+export function seasonOptions(oldest = '2023-24'): Array<{ value: string; label: string }> {
+  const out: Array<{ value: string; label: string }> = [];
+  let y = Number(CURRENT_SEASON.slice(0, 4));
+  const stop = Number(oldest.slice(0, 4));
+  while (y >= stop) {
+    const key = `${y}-${String((y + 1) % 100).padStart(2, '0')}`;
+    out.push({ value: key, label: `Season ${seasonLabel(key)}` });
+    y -= 1;
+  }
+  out.push({ value: 'all', label: 'Overall (All Seasons)' });
+  return out;
+}

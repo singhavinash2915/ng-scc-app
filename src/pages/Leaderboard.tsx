@@ -1,3 +1,4 @@
+import { seasonOptions, CURRENT_SEASON, PREVIOUS_SEASON, seasonLabel } from '../config/season';
 import { useState, useMemo, useEffect } from 'react';
 import {
   Trophy,
@@ -165,17 +166,17 @@ function StatCell({ value, highlight, isTop }: { value: string | number; highlig
   return <span className={highlight ? 'font-semibold text-gray-900 dark:text-white' : ''}>{text}</span>;
 }
 
-const SEASONS = [
-  { value: '2025-26', label: 'Season 2025–26' },
-  { value: '2024-25', label: 'Season 2024–25' },
-  { value: '2023-24', label: 'Season 2023–24' },
-  { value: 'all',     label: 'Overall (All Seasons)' },
-] as const;
+// Derived, not written out. The hand-kept list is how this page came to be
+// missing 2026-27 on the day the season turned over.
+const SEASONS = seasonOptions();
 // Note: 'all' aggregates every named-year row (2025-26, 2024-25, etc.)
 // Never shows 'all-time' rows (which would double-count current season stats).
 
 export function Leaderboard() {
-  const [season, setSeason] = useState<string>('all');
+  // Defaults to the season we are actually in. When it has no data yet — the
+  // first days of a new season — the empty state says so and offers a way back,
+  // rather than the leaderboard looking broken.
+  const [season, setSeason] = useState<string>(CURRENT_SEASON);
   const { stats, loading, error, fetchStats } = useCricketStats(season);
   const { counts: momCounts } = useMOMCounts();
   const { formByMember } = useFormGuide();
@@ -494,8 +495,33 @@ export function Leaderboard() {
           ) : stats.length === 0 ? (
             <div className="p-10 text-center">
               <Target className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500 font-medium">No stats yet for this season</p>
-              <p className="text-sm text-gray-400 mt-1">Run the CricHeroes sync script to populate data</p>
+              {season === CURRENT_SEASON ? (
+                <>
+                  <p className="text-gray-700 dark:text-gray-200 font-bold">
+                    Season {seasonLabel(CURRENT_SEASON)} hasn’t started yet
+                  </p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    The first ball is on 8 September. Numbers appear here as matches are played.
+                  </p>
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <button onClick={() => setSeason(PREVIOUS_SEASON)}
+                      className="px-3 py-2 r-control border border-gray-200 dark:border-gray-700
+                                 text-sm font-bold text-gray-700 dark:text-gray-200">
+                      Last season
+                    </button>
+                    <button onClick={() => setSeason('all')}
+                      className="px-3 py-2 r-control border border-gray-200 dark:border-gray-700
+                                 text-sm font-bold text-gray-700 dark:text-gray-200">
+                      All seasons
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-500 font-medium">No stats yet for this season</p>
+                  <p className="text-sm text-gray-400 mt-1">Run the CricHeroes sync script to populate data</p>
+                </>
+              )}
             </div>
           ) : tab === 'overall' ? (
             <OverallTable players={overallSorted} momCounts={momCounts} formByMember={formByMember} prevRanks={prevRanks} />

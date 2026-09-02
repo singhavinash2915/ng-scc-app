@@ -1,3 +1,4 @@
+import { CURRENT_SEASON } from '../config/season';
 import { useMemo, useState, useEffect } from 'react';
 import { MemberStatement } from '../components/MemberStatement';
 import { useAuth } from '../context/AuthContext';
@@ -140,7 +141,7 @@ export function MemberProfile() {
   const canSeeMoney = isAdmin || (typeof window !== 'undefined'
     && localStorage.getItem('scc-me') === id);
   const { matches } = useMatches();
-  const { stats } = useCricketStats('2025-26');
+  const { stats } = useCricketStats(CURRENT_SEASON);
   const { counts: momCounts } = useMOMCounts();
   const { formByMember } = useFormGuide();
   const { photos } = useMatchPhotos();

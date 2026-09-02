@@ -1,8 +1,9 @@
+import { CURRENT_SEASON } from '../config/season';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { CustomAward } from '../types';
 
-export function useCustomAwards(season = '2025-26') {
+export function useCustomAwards(season = CURRENT_SEASON) {
   const [awards, setAwards] = useState<CustomAward[]>([]);
   const [loading, setLoading] = useState(true);
 

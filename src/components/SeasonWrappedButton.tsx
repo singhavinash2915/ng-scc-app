@@ -1,3 +1,4 @@
+import { PREVIOUS_SEASON } from '../config/season';
 import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { SeasonWrappedStory } from './SeasonWrappedStory';
@@ -10,7 +11,7 @@ interface Props {
   label?: string;
 }
 
-export function SeasonWrappedButton({ memberId, season = '2025-26', variant = 'pill', label }: Props) {
+export function SeasonWrappedButton({ memberId, season = PREVIOUS_SEASON, variant = 'pill', label }: Props) {
   const [open, setOpen] = useState(false);
 
   return (

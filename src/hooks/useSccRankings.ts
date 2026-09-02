@@ -271,12 +271,13 @@ export function buildOppositionMultiplier(matches: Match[]): (opponent: string |
 // "2025-26" / "2024-25" / "2023-24" = only matches within that season's
 //   window (Oct→Sep), with time-decay re-baselined so the most recent match in
 //   the season is treated as "this week" (decay = 1.0).
-export type RankingMode = 'all' | '2025-26' | '2024-25' | '2023-24';
+export type RankingMode = 'all' | '2026-27' | '2025-26' | '2024-25' | '2023-24';
 
 interface SeasonWindow { start: string; end: string }
 const SEASON_WINDOWS: Record<Exclude<RankingMode, 'all'>, SeasonWindow> = {
   // Derived from the club's season definition rather than written out, so
   // these cannot drift from it the way the old hard-coded October dates did.
+  '2026-27': seasonWindow('2026-27'),
   '2025-26': seasonWindow('2025-26'),
   '2024-25': seasonWindow('2024-25'),
   '2023-24': seasonWindow('2023-24'),

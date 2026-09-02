@@ -1,8 +1,9 @@
+import { CURRENT_SEASON } from '../config/season';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { SeasonAwardCategory, SeasonAwardVote } from '../types';
 
-export function useSeasonAwards(season: string = '2025-26') {
+export function useSeasonAwards(season: string = CURRENT_SEASON) {
   const [categories, setCategories] = useState<SeasonAwardCategory[]>([]);
   const [votes, setVotes] = useState<SeasonAwardVote[]>([]);
   const [loading, setLoading] = useState(true);

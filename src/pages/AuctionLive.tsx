@@ -1,3 +1,4 @@
+import { CURRENT_SEASON } from '../config/season';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Gavel, Crown, Undo2, Check, X, Radio, Wallet, Users, Lock } from 'lucide-react';
@@ -78,7 +79,7 @@ export function AuctionLive() {
   const { members } = useMembers();
   const { matches } = useMatches();
   const { scorecards } = useAllScorecards();
-  const { stats } = useCricketStats('2025-26');
+  const { stats } = useCricketStats(CURRENT_SEASON);
   const league = useSCCLeague(SEASON_NEW);
 
 

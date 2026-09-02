@@ -1,3 +1,4 @@
+import { CURRENT_SEASON } from '../config/season';
 import { useMemo, useState } from 'react';
 import { Card } from '../components/ui/Card';
 import {
@@ -94,7 +95,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
         member_id: awardForm.member_id,
         award_name: awardForm.award_name.trim(),
         description: awardForm.description.trim() || null,
-        season: '2025-26',
+        season: CURRENT_SEASON,
         icon: awardForm.icon || null,
         awarded_at: new Date().toISOString().split('T')[0],
       });

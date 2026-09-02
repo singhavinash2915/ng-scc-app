@@ -1,3 +1,4 @@
+import { PREVIOUS_SEASON } from '../config/season';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSeasonWrapped } from '../hooks/useSeasonWrapped';
@@ -22,7 +23,7 @@ const Sub = ({ children }: { children: React.ReactNode }) => (
   <p className="text-white/80 text-base font-medium mt-3 leading-snug max-w-xs mx-auto">{children}</p>
 );
 
-export function SeasonWrappedStory({ memberId, season = '2025-26', onClose }: Props) {
+export function SeasonWrappedStory({ memberId, season = PREVIOUS_SEASON, onClose }: Props) {
   const data = useSeasonWrapped(memberId, season);
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);

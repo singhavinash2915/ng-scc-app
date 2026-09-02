@@ -1,3 +1,4 @@
+import { seasonOptions, CURRENT_SEASON } from '../config/season';
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -88,9 +89,13 @@ export function Settings() {
   const { progress: syncProgress, sync: syncStats, reset: resetSync } = useStatSync();
   const { state: teamSyncState, fetchTeamMatches, applyLinks, createMissingMatches, reset: resetTeamSync } = useCHTeamSync();
   const [chTeamId, setChTeamId] = useState(() => localStorage.getItem('scc-ch-team-id') ?? '');
-  const [syncMode, setSyncMode] = useState<'2025-26' | '2024-25' | '2023-24'>('2025-26');
+  // Seasons come from the club's definition, so the CricHeroes sync can reach a
+  // new season the day it starts. Hard-coded, this list would have made 2026-27
+  // stats impossible to sync at all.
+  const SYNC_SEASONS = seasonOptions().filter(o => o.value !== 'all').map(o => o.value);
+  const [syncMode, setSyncMode] = useState<string>(CURRENT_SEASON);
   const [nameMap, setNameMap] = useState<Record<string, string>>(() => loadNameMap());
-  const [deleteTarget, setDeleteTarget] = useState<'all' | '2025-26' | '2024-25' | '2023-24'>('all');
+  const [deleteTarget, setDeleteTarget] = useState<string>('all');
   const [deleting, setDeleting] = useState(false);
   const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
 
@@ -316,7 +321,7 @@ export function Settings() {
     await updateTestimonial(id, { active: !active });
   };
 
-  const [statsSeason, setStatsSeason] = useState('2025-26');
+  const [statsSeason, setStatsSeason] = useState(CURRENT_SEASON);
   const { stats: cricketStats, upsertStats, deleteStats } = useCricketStats(statsSeason);
   const [editingStatsId, setEditingStatsId] = useState<string | null>(null);
   const [statsForm, setStatsForm] = useState<Partial<MemberCricketStats>>({});
@@ -1746,7 +1751,7 @@ export function Settings() {
                     onChange={e => setStatsSeason(e.target.value)}
                     className="text-xs r-control border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1"
                   >
-                    {['2025-26', '2024-25', '2023-24'].map(s => (
+                    {SYNC_SEASONS.map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
@@ -1911,7 +1916,7 @@ export function Settings() {
                   return (
                     <div className="space-y-2">
                       <div className="flex gap-1.5 flex-wrap">
-                        {(['2025-26', '2024-25', '2023-24'] as const).map(key => (
+                        {SYNC_SEASONS.map(key => (
                           <button
                             key={key}
                             onClick={() => { setSyncMode(key); resetSync(); setDeleteMsg(null); }}

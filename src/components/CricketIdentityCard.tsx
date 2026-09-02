@@ -1,3 +1,4 @@
+import { CURRENT_SEASON, seasonLabel } from '../config/season';
 import { useRef } from 'react';
 import { Card } from './ui/Card';
 import { Share2, Star, Zap, Target } from 'lucide-react';
@@ -91,7 +92,7 @@ export function CricketIdentityCard({ member, stats, dnaInsight, loading = false
           <div className="text-right">
             <Card className="bg-white/20 backdrop-blur-sm px-3 py-2 text-center border-white/20">
               <p className="text-xs text-white/60 uppercase tracking-wide">Season</p>
-              <p className="font-bold text-sm">2025-26</p>
+              <p className="font-bold text-sm">{seasonLabel(CURRENT_SEASON)}</p>
             </Card>
           </div>
         </div>

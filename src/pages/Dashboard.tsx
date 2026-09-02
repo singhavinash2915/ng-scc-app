@@ -1,4 +1,4 @@
-import { CURRENT_SEASON_WINDOW } from '../config/season';
+import { CURRENT_SEASON_WINDOW, CURRENT_SEASON } from '../config/season';
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
@@ -135,7 +135,7 @@ export function Dashboard() {
   }, [matches, league.upcoming, ground.byDate]);
   const { counts: momCounts } = useMOMCounts();
   const monthSummary = useMonthSummary();
-  const { stats: cricketStats } = useCricketStats('2025-26');
+  const { stats: cricketStats } = useCricketStats(CURRENT_SEASON);
   const { playerOfMonth, playerOfWeek } = usePlayerOfPeriod(matches, members, cricketStats);
 
   // Live match alert — match scheduled today (in any state: upcoming or completed-today)

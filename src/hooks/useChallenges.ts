@@ -1,3 +1,4 @@
+import { CURRENT_SEASON } from '../config/season';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useMe } from '../context/MemberContext';
@@ -41,7 +42,7 @@ const isMissing = (e: { code?: string } | null) =>
 
 export function useChallenges() {
   const { me } = useMe();
-  const { stats } = useCricketStats('2025-26');
+  const { stats } = useCricketStats(CURRENT_SEASON);
   const { members } = useMembers();
   const { matches } = useMatches();
   const { scorecards } = useAllScorecards();
