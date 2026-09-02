@@ -177,9 +177,14 @@ export function Dashboard() {
     const upcomingCount = seasonMatches.filter(m => m.result === 'upcoming').length;
     // Every completed external match ever — the all-time card needs a genuinely
     // all-time number, not this season's.
-    const allTimeCompleted = matches.filter(m =>
-      m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result)).length;
-    return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, matchesAllTime: allTimeCompleted, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount };
+    const allTime = matches.filter(m =>
+      m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result));
+    const allTimeCompleted = allTime.length;
+    const allTimeWon = allTime.filter(m => m.result === 'won').length;
+    const allTimeLost = allTime.filter(m => m.result === 'lost').length;
+    const allTimeWinRate = (allTimeWon + allTimeLost) > 0
+      ? Math.round((allTimeWon / (allTimeWon + allTimeLost)) * 100) : 0;
+    return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, matchesAllTime: allTimeCompleted, wonAllTime: allTimeWon, winRateAllTime: allTimeWinRate, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount };
   }, [members, matches, getPendingCount, activeCount]);
 
   const allLowBalanceMembers = useMemo(() => members.filter(m => isActive(m.id) && m.balance < 1000), [members, isActive]);
@@ -467,6 +472,8 @@ export function Dashboard() {
           lost={stats.lost}
           matchesPlayed={stats.matchesPlayed}
           matchesAllTime={stats.matchesAllTime}
+          wonAllTime={stats.wonAllTime}
+          winRateAllTime={stats.winRateAllTime}
           upcomingCount={stats.upcomingCount}
           nextOpponent={nextUpcomingMatch?.opponent ?? null}
           nextDate={nextUpcomingMatch?.date ?? null}

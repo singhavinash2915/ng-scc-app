@@ -6,6 +6,8 @@ import { ArrowRight, Target } from 'lucide-react';
 interface Props {
   /** Every completed external match the club has played, ever. */
   matchesAllTime?: number;
+  wonAllTime?: number;
+  winRateAllTime?: number;
   /** True when the personal block above has already greeted this member. */
   greeted?: boolean;
   firstName: string | null;
@@ -41,7 +43,7 @@ function greeting() {
  * next milestone), and a bento stat grid. Carries the member-attracting data
  * the old hero had, in the new design.
  */
-export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate, won, lost, matchesPlayed, upcomingCount, nextOpponent, nextDate, activeMembers, totalMembers, streak, lastFive, myRuns, myWkts, myMoms, milestone, matchesAllTime }: Props) {
+export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate, won, lost, matchesPlayed, upcomingCount, nextOpponent, nextDate, activeMembers, totalMembers, streak, lastFive, myRuns, myWkts, myMoms, milestone, matchesAllTime, wonAllTime, winRateAllTime }: Props) {
   const circ = 2 * Math.PI * 50;
   const offset = circ - (winRate / 100) * circ;
   const nextDateShort = nextDate ? new Date(nextDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : null;
@@ -134,19 +136,25 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
       {/* ── Bento stats ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          // The real all-time figure, not the season count wearing an
-          // "all-time" label — which read "0 Matches all-time" for a club with
-          // 215 of them.
-          { v: matchesAllTime ?? matchesPlayed, l: 'Matches', tag: 'all-time', accent: false },
-          { v: won, l: 'Won', tag: streak && streak.result === 'won' && streak.count >= 2 ? `🔥 ${streak.count} win streak` : 'this season', accent: true },
-          { v: `${winRate}%`, l: 'Win %', tag: `${won}W · ${lost}L`, accent: false },
+          // Each tile leads with THIS SEASON and carries the all-time figure
+          // beneath it. Mixing the two across tiles — one all-time, the next
+          // seasonal — is how "0 Matches all-time" happened. Showing both, in
+          // the same order every time, means neither number can be misread and
+          // a season of zeroes still sits next to the club's real history.
+          { v: matchesPlayed, l: 'Matches', tag: 'this season',
+            all: matchesAllTime != null ? `${matchesAllTime} all-time` : null, accent: false },
+          { v: won, l: 'Won',
+            tag: streak && streak.result === 'won' && streak.count >= 2 ? `🔥 ${streak.count} win streak` : 'this season',
+            all: wonAllTime != null ? `${wonAllTime} all-time` : null, accent: true },
+          { v: `${winRate}%`, l: 'Win %', tag: `${won}W · ${lost}L`,
+            all: winRateAllTime != null ? `${winRateAllTime}% all-time` : null, accent: false },
           nextOpponent
             ? { v: <span className="text-[20px] lg:text-[22px]">
                     {/* Internal fixtures already read "A vs B" — prefixing
                         another "vs" gives "vs A vs B". */}
                     {/\bvs\b/i.test(nextOpponent ?? '') ? nextOpponent : `vs ${nextOpponent}`}
-                  </span>, l: 'Next match', tag: nextDateShort ? `🗓️ ${nextDateShort}` : 'upcoming', accent: true }
-            : { v: upcomingCount, l: 'Upcoming', tag: `${activeMembers}/${totalMembers} active`, accent: false },
+                  </span>, l: 'Next match', tag: nextDateShort ? `🗓️ ${nextDateShort}` : 'upcoming', all: null, accent: true }
+            : { v: upcomingCount, l: 'Upcoming', tag: `${activeMembers}/${totalMembers} active`, all: null, accent: false },
         ].map((s, i) => (
           <div key={i} className="rounded-[18px] p-4
             bg-white border border-slate-200/80 shadow-[0_18px_44px_-26px_rgba(20,33,61,0.22)]
@@ -154,6 +162,9 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
             <div className={`t-num text-[28px] lg:text-[30px] leading-none${s.accent ? 'accent-grad' : 'text-slate-900 dark:text-white'}`}>{s.v}</div>
             <div className="text-slate-500 dark:text-gray-400 text-[12.5px] font-semibold mt-1">{s.l}</div>
             <span className="inline-block mt-2.5 t-meta font-bold px-2.5 py-1 rounded-full accent-soft text-accent">{s.tag}</span>
+            {s.all && (
+              <div className="t-micro text-slate-400 dark:text-gray-500 font-semibold mt-1.5">{s.all}</div>
+            )}
           </div>
         ))}
       </div>
