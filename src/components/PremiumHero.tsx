@@ -1,8 +1,11 @@
+import { CURRENT_SEASON, seasonLabel } from '../config/season';
 import { Link } from 'react-router-dom';
 import { Card } from './ui/Card';
 import { ArrowRight, Target } from 'lucide-react';
 
 interface Props {
+  /** Every completed external match the club has played, ever. */
+  matchesAllTime?: number;
   /** True when the personal block above has already greeted this member. */
   greeted?: boolean;
   firstName: string | null;
@@ -38,7 +41,7 @@ function greeting() {
  * next milestone), and a bento stat grid. Carries the member-attracting data
  * the old hero had, in the new design.
  */
-export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate, won, lost, matchesPlayed, upcomingCount, nextOpponent, nextDate, activeMembers, totalMembers, streak, lastFive, myRuns, myWkts, myMoms, milestone }: Props) {
+export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate, won, lost, matchesPlayed, upcomingCount, nextOpponent, nextDate, activeMembers, totalMembers, streak, lastFive, myRuns, myWkts, myMoms, milestone, matchesAllTime }: Props) {
   const circ = 2 * Math.PI * 50;
   const offset = circ - (winRate / 100) * circ;
   const nextDateShort = nextDate ? new Date(nextDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : null;
@@ -54,7 +57,7 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
           <div className="min-w-0 flex-1">
             <span className="inline-flex items-center gap-1.5 t-meta sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full accent-soft text-accent">
               <span className="w-2 h-2 rounded-full" style={{ background: 'var(--a1)' }} />
-              Season 2025–26 · live
+              Season {seasonLabel(CURRENT_SEASON)}{matchesPlayed > 0 ? ' · live' : ' · starts soon'}
             </span>
             {/* Signed in, "Your season" has already said hello by name at the
                 top of the page — greeting twice reads like a bug. The hero
@@ -84,8 +87,10 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
         </div>
 
         <p className="relative text-slate-500 dark:text-gray-400 t-body sm:text-[15px] mt-3 max-w-md">
-          Your club at a glance — {activeMembers} active members
-          {streak && streak.count >= 2 ? `, a ${streak.count}-match ${streak.result === 'won' ? 'win' : 'losing'} streak` : ''}.
+          {matchesPlayed === 0
+            ? <>A fresh season — {activeMembers} active members, nothing played yet. The numbers fill in from the first ball.</>
+            : <>Your club at a glance — {activeMembers} active members
+                {streak && streak.count >= 2 ? `, a ${streak.count}-match ${streak.result === 'won' ? 'win' : 'losing'} streak` : ''}.</>}
         </p>
         <div className="relative flex items-center gap-2 mt-4 flex-wrap">
           <Link to="/matches" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold bg-accent-grad shadow-accent">
@@ -129,7 +134,10 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
       {/* ── Bento stats ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { v: matchesPlayed, l: 'Matches', tag: 'all-time', accent: false },
+          // The real all-time figure, not the season count wearing an
+          // "all-time" label — which read "0 Matches all-time" for a club with
+          // 215 of them.
+          { v: matchesAllTime ?? matchesPlayed, l: 'Matches', tag: 'all-time', accent: false },
           { v: won, l: 'Won', tag: streak && streak.result === 'won' && streak.count >= 2 ? `🔥 ${streak.count} win streak` : 'this season', accent: true },
           { v: `${winRate}%`, l: 'Win %', tag: `${won}W · ${lost}L`, accent: false },
           nextOpponent

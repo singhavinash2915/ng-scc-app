@@ -159,9 +159,12 @@ export function Dashboard() {
 
   const stats = useMemo(() => {
     const totalFunds = members.reduce((sum, m) => sum + m.balance, 0);
-    // Current season: Oct 2025 → Sep 2026
+    // Both ends from the club's definition. The end was left hard-coded to
+    // 2026-09-30 when the start moved here, which made "this season" mean the
+    // month of September and nothing else — every figure would have reset to
+    // zero again on 1 October.
     const seasonStart = CURRENT_SEASON_WINDOW.start;
-    const seasonEnd   = '2026-09-30';
+    const seasonEnd   = CURRENT_SEASON_WINDOW.end;
     // Overall SCC stats — external matches only.
     // Internal matches (Dhurandars vs Bazigars) are SCC vs SCC, so they don't
     // count as a "win/loss" against an external opponent. They're tracked in
@@ -172,7 +175,11 @@ export function Dashboard() {
     const lost = completed.filter(m => m.result === 'lost').length;
     const winRate = (won + lost) > 0 ? (won / (won + lost)) * 100 : 0;
     const upcomingCount = seasonMatches.filter(m => m.result === 'upcoming').length;
-    return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount };
+    // Every completed external match ever — the all-time card needs a genuinely
+    // all-time number, not this season's.
+    const allTimeCompleted = matches.filter(m =>
+      m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result)).length;
+    return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, matchesAllTime: allTimeCompleted, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount };
   }, [members, matches, getPendingCount, activeCount]);
 
   const allLowBalanceMembers = useMemo(() => members.filter(m => isActive(m.id) && m.balance < 1000), [members, isActive]);
@@ -191,8 +198,15 @@ export function Dashboard() {
     return upcoming[0] ?? null;
   }, [matches]);
 
+  // Scoped to the season the card is labelled with. Read from every match ever,
+  // this produced "0W-0L" and "a 3-match win streak" in the same panel — a
+  // streak carried in from a season that had already finished.
   const lastFiveResults = useMemo(() =>
-    matches.filter(m => m.match_type !== 'internal' && ['won', 'lost', 'draw'].includes(m.result)).slice(0, 5),
+    matches
+      .filter(m => m.match_type !== 'internal'
+        && ['won', 'lost', 'draw'].includes(m.result)
+        && m.date >= CURRENT_SEASON_WINDOW.start && m.date <= CURRENT_SEASON_WINDOW.end)
+      .slice(0, 5),
   [matches]);
 
   const streak = useMemo(() => {
@@ -452,6 +466,7 @@ export function Dashboard() {
           won={stats.won}
           lost={stats.lost}
           matchesPlayed={stats.matchesPlayed}
+          matchesAllTime={stats.matchesAllTime}
           upcomingCount={stats.upcomingCount}
           nextOpponent={nextUpcomingMatch?.opponent ?? null}
           nextDate={nextUpcomingMatch?.date ?? null}
