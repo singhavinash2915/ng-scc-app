@@ -245,19 +245,49 @@ export function deriveOutcome(
   };
 }
 
+// ─── What a correct call is worth ─────────────────────────────────────────────
+// Points track DIFFICULTY, which the original table did not. Naming the Man of
+// the Match — one player out of twenty-two — paid 5, the same as guessing
+// whether anyone would score a fifty, which is a coin toss. Picking a
+// three-wicket haul (yes or no) paid 10, double the fifty question of identical
+// shape.
+//
+// The scale, roughly:
+//   2-3   a two-way call: yes/no, or which of two known sides
+//   5-6   a small set: a score bracket, a margin band
+//   8     one player from a single XI
+//   12    one player from the whole match
+//
+// The internal winner drops hardest, from 5 to 2. Brahmos or Agni is a coin
+// flip between two sides everybody knows, and it was paying the same as calling
+// the result against an unfamiliar opponent.
+//
+// Timed deliberately: season 2026-27 has no predictions yet, so last season
+// keeps the scale it was played on and the new one starts clean.
 export const PREDICTION_POINTS = {
-  winner: 5,
-  top_scorer: 10,
-  top_wicket_taker: 10,
-  mom: 5,
-  score_range: 10,
-  fifty_scored: 5,
-  three_wicket_haul: 10,
-  internal_most_sixes: 10,
-  internal_margin: 10,
-  internal_milestone: 5,
-  internal_highest_team: 5,
-  internal_duck: 5,
-  int_team_top_scorer: 5,
-  int_team_top_wicket: 5,
+  // External match
+  winner: 5,               // two ways, but a genuinely unknown opponent
+  top_scorer: 12,          // one from ~22
+  top_wicket_taker: 12,    // one from ~22
+  mom: 12,                 // one from ~22 — was 5, the worst-priced call here
+  score_range: 5,          // a handful of brackets — was 10
+  fifty_scored: 3,         // yes/no
+  three_wicket_haul: 3,    // yes/no — was 10, for the same shape of question
+
+  // Internal match
+  internal_most_sixes: 3,    // one of two sides — was 10
+  internal_margin: 5,        // a few bands — was 10
+  internal_milestone: 3,     // yes/no
+  internal_highest_team: 3,  // one of two sides
+  internal_duck: 3,          // yes/no
+  int_team_top_scorer: 8,    // one from a single XI — was 5
+  int_team_top_wicket: 8,    // one from a single XI — was 5
 };
+
+/** The most a single match can be worth, so the page never quotes a stale
+ *  number. External and internal are close on purpose — neither should be the
+ *  obviously better match to predict. */
+export const MAX_POINTS_EXTERNAL =
+  PREDICTION_POINTS.winner + PREDICTION_POINTS.top_scorer + PREDICTION_POINTS.top_wicket_taker
+  + PREDICTION_POINTS.mom + PREDICTION_POINTS.score_range + PREDICTION_POINTS.fifty_scored
+  + PREDICTION_POINTS.three_wicket_haul;

@@ -1,4 +1,4 @@
-import { CURRENT_SEASON, seasonLabel } from '../config/season';
+import { CURRENT_SEASON, seasonLabel, inCurrentSeason } from '../config/season';
 import { useMemo, useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
@@ -13,7 +13,7 @@ import { useMembers } from '../hooks/useMembers';
 import { useAuth } from '../context/AuthContext';
 import { usePredictionLeaderboard, usePredictions } from '../hooks/usePredictions';
 import { supabase } from '../lib/supabase';
-import { deriveOutcome, PREDICTION_POINTS } from '../lib/predictionScorer';
+import { deriveOutcome, PREDICTION_POINTS, MAX_POINTS_EXTERNAL } from '../lib/predictionScorer';
 import { PredictMatchModal } from '../components/PredictMatchModal';
 import type { Match } from '../types';
 import type { MatchScorecard } from '../hooks/useMatchScorecard';
@@ -90,7 +90,16 @@ export function Predictions() {
       const unscored = allPredictions.filter(p => {
         if (!settledMatches.some(m => m.id === p.match_id)) return false;
         if (p.points_earned === null) return true;
+
         // Was the scorecard fetched AFTER we scored? → rescore.
+        //
+        // But only within the current season. Re-syncing an old match would
+        // otherwise rescore it on today's points table and silently rewrite a
+        // leaderboard that was settled months ago — the scale changed for
+        // 2026-27, and a finished season should keep the one it was played on.
+        const m = settledMatches.find(x => x.id === p.match_id);
+        if (m && !inCurrentSeason(String(m.date).slice(0, 10))) return false;
+
         const cf = cardFetchedAt[p.match_id];
         return !!(cf && p.scored_at && new Date(cf).getTime() > new Date(p.scored_at).getTime());
       });
@@ -237,7 +246,7 @@ export function Predictions() {
               <h2 className="text-2xl lg:text-3xl font-black text-white">Predict & Win</h2>
               <p className="text-purple-200/70 text-sm mt-1">
                 Before each match: who wins? top scorer? top wicket-taker? MOM?
-                Plus bonus questions! Earn up to <span className="font-bold text-amber-300">+55 points</span> per match.
+                Plus bonus questions! Earn up to <span className="font-bold text-amber-300">+{MAX_POINTS_EXTERNAL} points</span> per match.
               </p>
             </div>
           </div>
