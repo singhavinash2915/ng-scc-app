@@ -100,6 +100,14 @@ interface Acc {
   runOuts:        number;
 }
 
+/** over.ball notation → balls. 2.5 means two overs and five balls, not two and
+ *  a half, so the fraction is tenths of an over rather than a real fraction. */
+function ballsFromOvers(o: number): number {
+  if (!Number.isFinite(o) || o <= 0) return 0;
+  const whole = Math.floor(o);
+  return whole * 6 + Math.round((o - whole) * 10);
+}
+
 function emptyAcc(): Acc {
   return {
     matchSet: new Set(),
@@ -404,7 +412,21 @@ export function useStatSync() {
 
               const runs  = Number(b.runs  ?? 0);
               const balls = Number(b.balls ?? 0);
-              const notOut = !b.how_to_out || b.how_to_out === '';
+              // CricHeroes does not leave how_to_out empty for a batter who
+              // wasn't dismissed — it writes the words "not out". Testing for
+              // emptiness therefore counted EVERY innings as a dismissal, which
+              // is why batting averages came out as runs per innings: the more
+              // often someone finished not out, the further below their real
+              // average they were shown.
+              //
+              // Retired hurt is not a dismissal either. Retired OUT is one, so
+              // that is matched exactly rather than by prefix.
+              const outText = String(b.how_to_out ?? '').trim().toLowerCase();
+              const notOut = outText === ''
+                || outText === 'not out'
+                || outText === 'notout'
+                || outText === 'retired hurt'
+                || outText === 'retired not out';
 
               s.runs  += runs;
               s.balls += balls;
@@ -443,7 +465,16 @@ export function useStatSync() {
               const ov   = Number(b.overs   ?? 0);
               const bl   = Number(b.balls   ?? 0);
 
-              s.totalBalls   += ov * 6 + bl;
+              // CricHeroes reports a spell three different ways in this data:
+              //   overs=3,   balls=0   → three complete overs
+              //   overs=3,   balls=18  → `balls` is the TOTAL, not a remainder
+              //   overs=2.5, balls=17  → overs is over.ball notation (2 ov 5 balls)
+              // Adding overs*6 to balls double-counted the second form and
+              // mangled the third — 2.5 overs became 15 balls plus 17. That
+              // inflated every affected bowler's workload, which pushed their
+              // economy down and their strike rate up, and it left totalBalls
+              // fractional, which an integer column rejects outright.
+              s.totalBalls   += bl > 0 ? bl : ballsFromOvers(ov);
               s.wickets      += wkts;
               s.runsConceded += runs;
               if (wkts >= 5) s.fiveWickets++;
@@ -513,7 +544,7 @@ export function useStatSync() {
           // overs.balls notation, which cannot be added up.
           batting_balls:         s.balls,
           batting_dismissals:    s.dismissals,
-          bowling_balls:         s.totalBalls,
+          bowling_balls:         Math.round(s.totalBalls),
           bowling_matches:       s.matchSet.size,
           bowling_innings:       s.bowlInnings,
           bowling_overs:         oversNum,

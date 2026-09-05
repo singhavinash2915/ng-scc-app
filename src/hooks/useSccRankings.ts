@@ -386,16 +386,32 @@ export function useSccRankings(
         matchPlayerPoints[mid][key] += pts;
       };
 
-      // SCC batting innings (whichever inning belongs to SCC)
-      const sccBatting = sc.innings1_team_id === SCC_TEAM_ID ? sc.innings1_batting
-                       : sc.innings2_team_id === SCC_TEAM_ID ? sc.innings2_batting : null;
-      // SCC bowled in the OPPONENT'S batting innings
-      const sccBowling = sc.innings1_team_id === SCC_TEAM_ID ? sc.innings2_bowling
-                       : sc.innings2_team_id === SCC_TEAM_ID ? sc.innings1_bowling : null;
+      // Which innings belong to us.
+      //
+      // For an external match, exactly one does, and SCC bowled in the other.
+      // For an internal match BOTH do — Brahmos and Agni each carry their own
+      // CricHeroes team id, and neither is SCC_TEAM_ID, so this used to find no
+      // SCC innings at all and score the match as though nobody had played in
+      // it. That is why MahaSangram had no Player of the Tournament: every
+      // internal scorecard was silently contributing nothing.
+      const bothOurs = isInternal;
+      const sccBatting = bothOurs
+        ? [...(sc.innings1_batting ?? []), ...(sc.innings2_batting ?? [])]
+        : sc.innings1_team_id === SCC_TEAM_ID ? sc.innings1_batting
+        : sc.innings2_team_id === SCC_TEAM_ID ? sc.innings2_batting : null;
+      // SCC bowled in the OPPONENT'S batting innings — in an internal match we
+      // bowled in both.
+      const sccBowling = bothOurs
+        ? [...(sc.innings1_bowling ?? []), ...(sc.innings2_bowling ?? [])]
+        : sc.innings1_team_id === SCC_TEAM_ID ? sc.innings2_bowling
+        : sc.innings2_team_id === SCC_TEAM_ID ? sc.innings1_bowling : null;
 
-      // Fielding dismissals — parse from OPPONENT's batting innings how_to_out strings
-      const oppBatting = sc.innings1_team_id === SCC_TEAM_ID ? sc.innings2_batting
-                       : sc.innings2_team_id === SCC_TEAM_ID ? sc.innings1_batting : null;
+      // Fielding dismissals — parsed from the batting innings we fielded during,
+      // which internally is both.
+      const oppBatting = bothOurs
+        ? [...(sc.innings1_batting ?? []), ...(sc.innings2_batting ?? [])]
+        : sc.innings1_team_id === SCC_TEAM_ID ? sc.innings2_batting
+        : sc.innings2_team_id === SCC_TEAM_ID ? sc.innings1_batting : null;
 
       if (sccBatting) {
         for (const b of sccBatting) {
