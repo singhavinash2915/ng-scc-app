@@ -8,7 +8,8 @@ import { useAllScorecards } from '../hooks/useAllScorecards';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { useSccRankings, type RankingMode } from '../hooks/useSccRankings';
 import { seasonOptions, CURRENT_SEASON, seasonWindow } from '../config/season';
-import { JERSEY } from '../lib/playerCard';
+import { JERSEY, type JerseyTeam } from '../lib/playerCard';
+import { internalSides } from '../utils/internalTeams';
 import type { MemberCricketStats, Match } from '../types';
 
 // ─── MahaSangram honours ──────────────────────────────────────────────────────
@@ -22,9 +23,11 @@ import type { MemberCricketStats, Match } from '../types';
 
 const SEASONS = seasonOptions();
 
-/** Brahmos and Agni replaced Dhurandars and Bazigars; both are internal. */
-const HOME_SIDES = new Set(['brahmos', 'dhurandars']);
-const AWAY_SIDES = new Set(['agni', 'bazigars']);
+// The sides are read from the fixture, never hardcoded. Brahmos and Agni are a
+// NEW competition, not renamed Dhurandars and Bazigars — treating them as the
+// same two teams put the old rivalry's 5–4 on the board under the new names, in
+// a season where nothing has been played yet. Each internal competition keeps
+// its own record.
 
 type Cap = {
   key: string;
@@ -66,18 +69,47 @@ const CAPS: Cap[] = [
   },
 ];
 
-/** Rivalry record across every internal match in the window. */
-function rivalryOf(matches: Match[], within: (m: Match) => boolean) {
-  return matches.reduce((r, m) => {
-    if (m.match_type !== 'internal') return r;
-    if (!['won', 'lost', 'draw'].includes(m.result)) return r;
-    if (!within(m)) return r;
-    r.played += 1;
-    if (m.winning_team && HOME_SIDES.has(m.winning_team)) r.home += 1;
-    else if (m.winning_team && AWAY_SIDES.has(m.winning_team)) r.away += 1;
-    else r.undecided += 1;
-    return r;
-  }, { played: 0, home: 0, away: 0, undecided: 0 });
+interface Rivalry {
+  /** "Brahmos vs Agni" — identifies which competition this is. */
+  label: string;
+  home: string;
+  away: string;
+  homeWins: number;
+  awayWins: number;
+  played: number;
+  undecided: number;
+}
+
+/** winning_team holds the side key — 'brahmos', 'dhurandars' — and the fixture
+ *  names the sides. Comparing the two is what tells us which end won, and it
+ *  works for any competition without knowing its teams in advance. */
+const wonBy = (m: Match, side: string) =>
+  !!m.winning_team && m.winning_team.toLowerCase() === side.toLowerCase();
+
+/** Every internal competition inside `matches`, keyed by its pairing.
+ *  Upcoming fixtures count towards naming the rivalry but not its score, so a
+ *  season that has been scheduled and not yet played shows the right two teams
+ *  on nil–nil rather than borrowing the previous era's record. */
+function rivalriesIn(matches: Match[]): Map<string, Rivalry> {
+  const out = new Map<string, Rivalry>();
+  for (const m of matches) {
+    if (m.match_type !== 'internal') continue;
+    if (m.result === 'cancelled') continue;
+    const sides = internalSides(m);
+    if (!sides.home || !sides.away) continue;
+    const r = out.get(sides.label) ?? {
+      label: sides.label, home: sides.home, away: sides.away,
+      homeWins: 0, awayWins: 0, played: 0, undecided: 0,
+    };
+    if (['won', 'lost', 'draw'].includes(m.result)) {
+      r.played += 1;
+      if (wonBy(m, sides.home)) r.homeWins += 1;
+      else if (wonBy(m, sides.away)) r.awayWins += 1;
+      else r.undecided += 1;
+    }
+    out.set(sides.label, r);
+  }
+  return out;
 }
 
 export function MahaSangram({ embedded = false }: { embedded?: boolean } = {}) {
@@ -93,8 +125,31 @@ export function MahaSangram({ embedded = false }: { embedded?: boolean } = {}) {
     [window],
   );
 
-  const seasonRivalry = useMemo(() => rivalryOf(matches, inSeason), [matches, inSeason]);
-  const allTimeRivalry = useMemo(() => rivalryOf(matches, () => true), [matches]);
+  // Whichever internal competition this season actually ran. Picked by how many
+  // fixtures it has rather than assumed, so a season that changes format shows
+  // the teams that played it.
+  const seasonRivalry = useMemo(() => {
+    const inWindow = matches.filter(inSeason);
+    const found = [...rivalriesIn(inWindow).values()];
+    if (found.length) {
+      return found.sort((a, b) => b.played - a.played || b.label.localeCompare(a.label))[0];
+    }
+    return null;
+  }, [matches, inSeason]);
+
+  // All-time for THIS pairing only. Adding Dhurandars' wins to Brahmos' would
+  // be adding up two different competitions.
+  const allTimeRivalry = useMemo(
+    () => (seasonRivalry ? rivalriesIn(matches).get(seasonRivalry.label) ?? null : null),
+    [matches, seasonRivalry],
+  );
+
+  // Team colours exist for the current sides; an older rivalry falls back to the
+  // club's own palette rather than borrowing Brahmos and Agni's kits.
+  const kitOf = (side: string): { bg: string; ink: string } => {
+    const key = side.toLowerCase() as JerseyTeam;
+    return JERSEY[key] ?? { bg: 'linear-gradient(150deg,#0f2027 0%,#203a43 55%,#0b141a 100%)', ink: '#e2e8f0' };
+  };
 
   // Player of the Tournament uses the same rating engine as the club rankings,
   // scoped to internal matches — so it weighs a bowling spell against an innings
@@ -121,32 +176,48 @@ export function MahaSangram({ embedded = false }: { embedded?: boolean } = {}) {
       {!embedded && <Header title="MahaSangram" subtitle="Brahmos vs Agni — the internal honours" />}
 
       <div className="px-4 lg:px-8 pt-4 space-y-4">
-        {/* ── Rivalry scoreboard ───────────────────────────────────────── */}
+        {/* ── Rivalry scoreboard ───────────────────────────────────────
+            Named from the fixtures, so each internal competition keeps its own
+            record and its own two teams. */}
         <div className="relative overflow-hidden r-card shadow-lg">
-          <div className="absolute inset-0" style={{ background: JERSEY.agni.bg }} />
           <div className="absolute inset-0"
-            style={{ background: JERSEY.brahmos.bg, clipPath: 'polygon(0 0, 58% 0, 42% 100%, 0 100%)' }} />
+            style={{ background: kitOf(seasonRivalry?.away ?? 'agni').bg }} />
+          <div className="absolute inset-0"
+            style={{ background: kitOf(seasonRivalry?.home ?? 'brahmos').bg,
+                     clipPath: 'polygon(0 0, 58% 0, 42% 100%, 0 100%)' }} />
           <div className="relative px-5 py-5 text-white">
             <p className="t-micro font-black uppercase tracking-[3px] text-white/60 text-center">
-              SCC MahaSangram · {SEASONS.find(s => s.value === season)?.label ?? season}
+              {seasonRivalry?.label ?? 'Internal'} · {SEASONS.find(s => s.value === season)?.label ?? season}
             </p>
-            <div className="flex items-center justify-center gap-6 mt-3">
-              <div className="text-right flex-1">
-                <p className="font-black text-lg leading-tight" style={{ color: JERSEY.brahmos.ink }}>Brahmos</p>
-                <p className="text-4xl font-black tabular-nums">{seasonRivalry.home}</p>
-              </div>
-              <span className="text-white/40 font-black">–</span>
-              <div className="text-left flex-1">
-                <p className="font-black text-lg leading-tight" style={{ color: JERSEY.agni.ink }}>Agni</p>
-                <p className="text-4xl font-black tabular-nums">{seasonRivalry.away}</p>
-              </div>
-            </div>
-            <p className="t-meta text-white/60 text-center mt-2">
-              {seasonRivalry.played} played this season
-              {allTimeRivalry.played > seasonRivalry.played &&
-                ` · ${allTimeRivalry.home}–${allTimeRivalry.away} all-time`}
-              {seasonRivalry.undecided > 0 && ` · ${seasonRivalry.undecided} with no side recorded`}
-            </p>
+            {seasonRivalry ? (
+              <>
+                <div className="flex items-center justify-center gap-6 mt-3">
+                  <div className="text-right flex-1">
+                    <p className="font-black text-lg leading-tight"
+                       style={{ color: kitOf(seasonRivalry.home).ink }}>{seasonRivalry.home}</p>
+                    <p className="text-4xl font-black tabular-nums">{seasonRivalry.homeWins}</p>
+                  </div>
+                  <span className="text-white/40 font-black">–</span>
+                  <div className="text-left flex-1">
+                    <p className="font-black text-lg leading-tight"
+                       style={{ color: kitOf(seasonRivalry.away).ink }}>{seasonRivalry.away}</p>
+                    <p className="text-4xl font-black tabular-nums">{seasonRivalry.awayWins}</p>
+                  </div>
+                </div>
+                <p className="t-meta text-white/60 text-center mt-2">
+                  {seasonRivalry.played === 0
+                    ? 'Not played yet this season'
+                    : `${seasonRivalry.played} played this season`}
+                  {allTimeRivalry && allTimeRivalry.played > seasonRivalry.played &&
+                    ` · ${allTimeRivalry.homeWins}–${allTimeRivalry.awayWins} all-time`}
+                  {seasonRivalry.undecided > 0 && ` · ${seasonRivalry.undecided} with no side recorded`}
+                </p>
+              </>
+            ) : (
+              <p className="t-body text-white/70 text-center mt-3">
+                No internal fixtures this season.
+              </p>
+            )}
           </div>
         </div>
 

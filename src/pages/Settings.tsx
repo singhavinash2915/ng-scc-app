@@ -1,4 +1,4 @@
-import { seasonOptions, CURRENT_SEASON } from '../config/season';
+import { seasonOptions, seasonWindow, seasonLabel, CURRENT_SEASON } from '../config/season';
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -1908,11 +1908,13 @@ export function Settings() {
 
                 {/* Season selector — sync one season at a time */}
                 {(() => {
-                  const SEASON_DATES: Record<string, { start: string; end: string }> = {
-                    '2025-26': { start: '2025-09-01', end: '2026-08-31' },
-                    '2024-25': { start: '2024-09-01', end: '2025-08-31' },
-                    '2023-24': { start: '2023-09-01', end: '2024-08-31' },
-                  };
+                  // Derived from the season config, not listed here. The
+                  // season buttons come from seasonOptions(), so a hardcoded
+                  // list falls behind the moment a season is added — and it
+                  // had: 2026-27 was missing, which is the season the picker
+                  // defaults to.
+                  const SEASON_DATES: Record<string, { start: string; end: string }> =
+                    Object.fromEntries(SYNC_SEASONS.map(k => [k, seasonWindow(k)]));
                   return (
                     <div className="space-y-2">
                       <div className="flex gap-1.5 flex-wrap">
@@ -2065,12 +2067,15 @@ export function Settings() {
                 <Button
                   onClick={() => {
                     setDeleteMsg(null);
-                    const SEASON_DATES_SYNC: Record<string, { start: string; end: string }> = {
-                      '2025-26': { start: '2025-09-01', end: '2026-08-31' },
-                      '2024-25': { start: '2024-09-01', end: '2025-08-31' },
-                      '2023-24': { start: '2023-09-01', end: '2024-08-31' },
-                    };
-                    syncStats(matches, members, SEASON_DATES_SYNC[syncMode], syncMode, nameMap);
+                    // Same list as the buttons, from the same source. When the
+                    // window came from a hardcoded map that had no 2026-27 in
+                    // it, this passed `undefined` — and an undefined window
+                    // means NO date filter, so pressing Sync on the current
+                    // season would have aggregated every match the club has
+                    // ever played and written the lot into the 2026-27 row.
+                    const window = seasonWindow(syncMode);
+                    if (!window) { setDeleteMsg(`No date range for ${syncMode}.`); return; }
+                    syncStats(matches, members, window, syncMode, nameMap);
                   }}
                   disabled={syncProgress.status === 'running'}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
@@ -2091,10 +2096,13 @@ export function Settings() {
                       onChange={e => setDeleteTarget(e.target.value as typeof deleteTarget)}
                       className="flex-1 text-xs r-control border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1.5"
                     >
+                      {/* From the season config, like the sync buttons above.
+                          Hardcoded here too, this list had gone stale and could
+                          not clear the current season's stats at all. */}
                       <option value="all">All seasons</option>
-                      <option value="2025-26">Season 2025–26 only</option>
-                      <option value="2024-25">Season 2024–25 only</option>
-                      <option value="2023-24">Season 2023–24 only</option>
+                      {SYNC_SEASONS.map(k => (
+                        <option key={k} value={k}>{seasonLabel(k)} only</option>
+                      ))}
                     </select>
                     <Button
                       onClick={handleClearAllStats}
