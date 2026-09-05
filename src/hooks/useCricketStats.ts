@@ -16,7 +16,69 @@ function ballsToOvers(balls: number): number {
   return parseFloat(`${Math.floor(balls / 6)}.${balls % 6}`);
 }
 
-export function useCricketStats(season: string = CURRENT_SEASON) {
+
+/** Add two stats rows for the same member together.
+ *
+ *  Used for two different jobs: rolling several seasons into a career total,
+ *  and adding a member's external and MahaSangram rows into a Combined view.
+ *  Both are the same arithmetic, and it is arithmetic that has to be done on
+ *  raw counts — an average, a strike rate and an economy cannot be averaged
+ *  with each other, and bowling_overs is overs.balls notation, where 34.3 + 34.3
+ *  is not 68.6. Everything derived is recomputed from the summed counts.
+ */
+function mergeStatRows(existing: MemberCricketStats, row: MemberCricketStats, season: string): MemberCricketStats {
+  const sumRuns    = existing.batting_runs    + row.batting_runs;
+  const sumInnings = existing.batting_innings + row.batting_innings;
+  const sumWkts    = existing.bowling_wickets + row.bowling_wickets;
+  const totalBalls = oversToBalls(existing.bowling_overs || 0) + oversToBalls(row.bowling_overs || 0);
+  const sumRunsCon = existing.bowling_runs_conceded + row.bowling_runs_conceded;
+  const betterFigs = (() => {
+    const a = existing.bowling_best_figures, b = row.bowling_best_figures;
+    if (!a) return b || ''; if (!b) return a;
+    const pa = a.match(/(\d+)\/(\d+)/), pb = b.match(/(\d+)\/(\d+)/);
+    if (!pa) return b; if (!pb) return a;
+    if (parseInt(pb[1]) > parseInt(pa[1])) return b;
+    if (parseInt(pb[1]) === parseInt(pa[1]) && parseInt(pb[2]) < parseInt(pa[2])) return b;
+    return a;
+  })();
+  return {
+    ...existing,
+    batting_matches:       existing.batting_matches       + row.batting_matches,
+    batting_innings:       sumInnings,
+    batting_runs:          sumRuns,
+    batting_fours:         existing.batting_fours         + row.batting_fours,
+    batting_sixes:         existing.batting_sixes         + row.batting_sixes,
+    batting_fifties:       existing.batting_fifties       + row.batting_fifties,
+    batting_hundreds:      existing.batting_hundreds      + row.batting_hundreds,
+    batting_ducks:         existing.batting_ducks         + row.batting_ducks,
+    batting_highest_score: Math.max(existing.batting_highest_score || 0, row.batting_highest_score || 0),
+    batting_average:       sumInnings > 0 ? Math.round((sumRuns / sumInnings) * 100) / 100 : 0,
+    batting_strike_rate:   sumRuns > 0
+      ? Math.round(((existing.batting_strike_rate * existing.batting_runs) + (row.batting_strike_rate * row.batting_runs)) / sumRuns * 100) / 100
+      : 0,
+    bowling_innings:       existing.bowling_innings       + row.bowling_innings,
+    bowling_overs:         ballsToOvers(totalBalls),
+    bowling_runs_conceded: sumRunsCon,
+    bowling_wickets:       sumWkts,
+    bowling_five_wickets:  existing.bowling_five_wickets  + row.bowling_five_wickets,
+    bowling_best_figures:  betterFigs,
+    bowling_economy:       totalBalls > 0 ? Math.round((sumRunsCon / (totalBalls / 6)) * 100) / 100 : 0,
+    bowling_average:       sumWkts > 0 ? Math.round((sumRunsCon / sumWkts) * 100) / 100 : 0,
+    bowling_strike_rate:   sumWkts > 0 ? Math.round((totalBalls / sumWkts) * 100) / 100 : 0,
+    fielding_catches:      existing.fielding_catches      + row.fielding_catches,
+    fielding_stumpings:    existing.fielding_stumpings    + row.fielding_stumpings,
+    fielding_run_outs:     existing.fielding_run_outs     + row.fielding_run_outs,
+    batting_balls:         (existing.batting_balls ?? 0)      + (row.batting_balls ?? 0),
+    batting_dismissals:    (existing.batting_dismissals ?? 0) + (row.batting_dismissals ?? 0),
+    bowling_balls:         (existing.bowling_balls ?? 0)      + (row.bowling_balls ?? 0),
+    season,
+  };
+}
+
+/** Which cricket a stats view is counting. */
+export type StatScope = 'external' | 'internal' | 'combined';
+
+export function useCricketStats(season: string = CURRENT_SEASON, scope: StatScope = 'external') {
   const [stats, setStats] = useState<MemberCricketStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,10 +92,15 @@ export function useCricketStats(season: string = CURRENT_SEASON) {
       // dismissal-text parse used for season rows badly overcounts catches
       // (it can't reliably attribute a catch to the right fielder), so we
       // overwrite every row's fielding with these career-accurate numbers.
-      const { data: ftRows } = await supabase
+      // The authoritative fielding numbers come from CricHeroes' TEAM fielding
+      // leaderboard, which only covers matches against other clubs — there is no
+      // such board for MahaSangram. So this override applies to the external
+      // view only; an internal or combined view keeps what the sync parsed.
+      const { data: ftRows } = scope === 'external' ? await supabase
         .from('member_cricket_stats')
         .select('*')
-        .eq('season', 'all-time');
+        .eq('season', 'all-time')
+        .eq('scope', 'external') : { data: [] as MemberCricketStats[] };
       const fieldMap = new Map((ftRows || []).map(r => [r.member_id, r as MemberCricketStats]));
       const applyField = (arr: MemberCricketStats[]) => arr.map(s => {
         const f = fieldMap.get(s.member_id);
@@ -53,6 +120,7 @@ export function useCricketStats(season: string = CURRENT_SEASON) {
         const { data, error } = await supabase
           .from('member_cricket_stats')
           .select('*, member:members(id, name, avatar_url, matches_played)')
+          .in('scope', scope === 'combined' ? ['external', 'internal'] : [scope])
           .order('batting_runs', { ascending: false });
         if (error) throw error;
 
@@ -64,49 +132,7 @@ export function useCricketStats(season: string = CURRENT_SEASON) {
             byMember[row.member_id] = { ...row, season: 'all' };
             continue;
           }
-          const sumRuns    = existing.batting_runs    + row.batting_runs;
-          const sumInnings = existing.batting_innings + row.batting_innings;
-          const sumWkts    = existing.bowling_wickets + row.bowling_wickets;
-          const totalBalls = oversToBalls(existing.bowling_overs || 0) + oversToBalls(row.bowling_overs || 0);
-          const sumRunsCon = existing.bowling_runs_conceded + row.bowling_runs_conceded;
-          const betterFigs = (() => {
-            const a = existing.bowling_best_figures, b = row.bowling_best_figures;
-            if (!a) return b || ''; if (!b) return a;
-            const pa = a.match(/(\d+)\/(\d+)/), pb = b.match(/(\d+)\/(\d+)/);
-            if (!pa) return b; if (!pb) return a;
-            if (parseInt(pb[1]) > parseInt(pa[1])) return b;
-            if (parseInt(pb[1]) === parseInt(pa[1]) && parseInt(pb[2]) < parseInt(pa[2])) return b;
-            return a;
-          })();
-          byMember[row.member_id] = {
-            ...existing,
-            batting_matches:       existing.batting_matches       + row.batting_matches,
-            batting_innings:       sumInnings,
-            batting_runs:          sumRuns,
-            batting_fours:         existing.batting_fours         + row.batting_fours,
-            batting_sixes:         existing.batting_sixes         + row.batting_sixes,
-            batting_fifties:       existing.batting_fifties       + row.batting_fifties,
-            batting_hundreds:      existing.batting_hundreds      + row.batting_hundreds,
-            batting_ducks:         existing.batting_ducks         + row.batting_ducks,
-            batting_highest_score: Math.max(existing.batting_highest_score || 0, row.batting_highest_score || 0),
-            batting_average:       sumInnings > 0 ? Math.round((sumRuns / sumInnings) * 100) / 100 : 0,
-            batting_strike_rate:   sumRuns > 0
-              ? Math.round(((existing.batting_strike_rate * existing.batting_runs) + (row.batting_strike_rate * row.batting_runs)) / sumRuns * 100) / 100
-              : 0,
-            bowling_innings:       existing.bowling_innings       + row.bowling_innings,
-            bowling_overs:         ballsToOvers(totalBalls),
-            bowling_runs_conceded: sumRunsCon,
-            bowling_wickets:       sumWkts,
-            bowling_five_wickets:  existing.bowling_five_wickets  + row.bowling_five_wickets,
-            bowling_best_figures:  betterFigs,
-            bowling_economy:       totalBalls > 0 ? Math.round((sumRunsCon / (totalBalls / 6)) * 100) / 100 : 0,
-            bowling_average:       sumWkts > 0 ? Math.round((sumRunsCon / sumWkts) * 100) / 100 : 0,
-            bowling_strike_rate:   sumWkts > 0 ? Math.round((totalBalls / sumWkts) * 100) / 100 : 0,
-            fielding_catches:      existing.fielding_catches      + row.fielding_catches,
-            fielding_stumpings:    existing.fielding_stumpings    + row.fielding_stumpings,
-            fielding_run_outs:     existing.fielding_run_outs     + row.fielding_run_outs,
-            season:                'all',
-          };
+          return mergeStatRows(existing, row, 'all');
         }
         setStats(applyField(Object.values(byMember).sort((a, b) => b.batting_runs - a.batting_runs)));
       } else {
@@ -115,16 +141,30 @@ export function useCricketStats(season: string = CURRENT_SEASON) {
           .from('member_cricket_stats')
           .select('*, member:members(id, name, avatar_url, matches_played)')
           .eq('season', season)
+          .in('scope', scope === 'combined' ? ['external', 'internal'] : [scope])
           .order('batting_runs', { ascending: false });
         if (error) throw error;
-        setStats(applyField(data || []));
+
+        // A member now has up to one row per scope. Left as-is they would appear
+        // on the leaderboard twice — once for each — so Combined adds them.
+        const rows = (data || []) as MemberCricketStats[];
+        if (scope === 'combined') {
+          const byMember: Record<string, MemberCricketStats> = {};
+          for (const row of rows) {
+            const existing = byMember[row.member_id];
+            byMember[row.member_id] = existing ? mergeStatRows(existing, row, season) : { ...row };
+          }
+          setStats(applyField(Object.values(byMember).sort((a, b) => b.batting_runs - a.batting_runs)));
+        } else {
+          setStats(applyField(rows));
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch stats');
     } finally {
       setLoading(false);
     }
-  }, [season]);
+  }, [season, scope]);
 
   useEffect(() => {
     fetchStats();
@@ -135,8 +175,8 @@ export function useCricketStats(season: string = CURRENT_SEASON) {
       const { data, error } = await supabase
         .from('member_cricket_stats')
         .upsert(
-          { ...statsData, member_id: memberId, season, updated_at: new Date().toISOString(), last_synced_at: new Date().toISOString() },
-          { onConflict: 'member_id,season' }
+          { ...statsData, member_id: memberId, season, scope: scope === 'combined' ? 'external' : scope, updated_at: new Date().toISOString(), last_synced_at: new Date().toISOString() },
+          { onConflict: 'member_id,season,scope' }
         )
         .select('*, member:members(id, name, avatar_url, matches_played)')
         .single();

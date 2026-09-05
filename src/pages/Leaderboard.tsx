@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card, CardContent } from '../components/ui/Card';
-import { useCricketStats } from '../hooks/useCricketStats';
+import { useCricketStats, type StatScope } from '../hooks/useCricketStats';
 import { useMOMCounts } from '../hooks/useMOMCounts';
 import { useFormGuide, type FormResult } from '../hooks/useFormGuide';
 import { usePlayerBallStats } from '../hooks/usePlayerBallStats';
@@ -177,7 +177,10 @@ export function Leaderboard() {
   // first days of a new season — the empty state says so and offers a way back,
   // rather than the leaderboard looking broken.
   const [season, setSeason] = useState<string>(CURRENT_SEASON);
-  const { stats, loading, error, fetchStats } = useCricketStats(season);
+  // External by default: it is the club's record against other clubs, and the
+  // one that stays comparable with every season before MahaSangram existed.
+  const [scope, setScope] = useState<StatScope>('external');
+  const { stats, loading, error, fetchStats } = useCricketStats(season, scope);
   const { counts: momCounts } = useMOMCounts();
   const { formByMember } = useFormGuide();
   const { byMember: ballStats } = usePlayerBallStats(season);
@@ -344,10 +347,31 @@ export function Leaderboard() {
             <h2 className="text-xl font-bold">
               {SEASONS.find(s => s.value === season)?.label ?? season}
             </h2>
-            <p className="text-primary-200 text-xs">{stats.length} players · Synced from CricHeroes</p>
+            <p className="text-primary-200 text-xs">
+              {stats.length} players · {scope === 'external' ? 'vs other clubs'
+                : scope === 'internal' ? 'MahaSangram' : 'all cricket'} · Synced from CricHeroes
+            </p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
+          {/* ── Scope ────────────────────────────────────────────────────
+              Roughly a third of this season is Brahmos vs Agni. Those runs are
+              real and belong to the player who made them, but they were made
+              against our own bowling, so they are counted beside the external
+              record rather than inside it. */}
+          <div className="flex r-control bg-white/15 border border-white/20 p-0.5 gap-0.5">
+            {([
+              { k: 'external', label: 'External' },
+              { k: 'internal', label: 'MahaSangram' },
+              { k: 'combined', label: 'Combined' },
+            ] as { k: StatScope; label: string }[]).map(o => (
+              <button key={o.k} onClick={() => setScope(o.k)}
+                className={`px-2.5 py-1.5 t-meta font-bold rounded-md transition-colors ${
+                  scope === o.k ? 'bg-white text-primary-800' : 'text-primary-100 hover:text-white'}`}>
+                {o.label}
+              </button>
+            ))}
+          </div>
           {/* Season selector */}
           <select
             value={season}

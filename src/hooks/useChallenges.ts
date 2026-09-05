@@ -42,7 +42,12 @@ const isMissing = (e: { code?: string } | null) =>
 
 export function useChallenges() {
   const { me } = useMe();
-  const { stats } = useCricketStats(CURRENT_SEASON);
+  // Combined: a challenge is a personal goal about the cricket you actually
+  // played, and this season roughly a third of it is MahaSangram. Counting only
+  // external matches would stall everyone's progress through those weeks. This
+  // is the one place internal runs sit in the same pot as external ones — the
+  // club's record and the all-time books stay external-only.
+  const { stats } = useCricketStats(CURRENT_SEASON, 'combined');
   const { members } = useMembers();
   const { matches } = useMatches();
   const { scorecards } = useAllScorecards();

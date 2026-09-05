@@ -26,6 +26,11 @@ const STUMPING_POINTS   = 15;
 const RUN_OUT_POINTS    = 12;
 const MOM_BONUS         = 50;
 
+// An internal match has no external opposition to rate — the other side is us.
+// Anything other than neutral would either flatter or punish MahaSangram runs
+// against the same players' external ones.
+const INTERNAL_OPP_MULT = 1.00;
+
 const OPP_STRONG_MULT   = 1.25;
 const OPP_AVERAGE_MULT  = 1.00;
 const OPP_WEAK_MULT     = 0.80;
@@ -284,11 +289,15 @@ const SEASON_WINDOWS: Record<Exclude<RankingMode, 'all'>, SeasonWindow> = {
 };
 
 // ─── Main hook ─────────────────────────────────────────────────────────────
+/** Which cricket counts. External is the club's official record. */
+export type RankingScope = 'external' | 'internal' | 'combined';
+
 export function useSccRankings(
   matches: Match[],
   members: Member[],
   scorecards: MatchScorecard[] | null,
   mode: RankingMode = 'all',
+  scope: RankingScope = 'external',
 ): SccRankings {
   return useMemo(() => {
     if (!scorecards || scorecards.length === 0 || members.length === 0) {
@@ -329,7 +338,9 @@ export function useSccRankings(
     for (const sc of scorecards) {
       const match = matchById[sc.match_id];
       if (!match) continue;
-      if (match.match_type === 'internal') continue;
+      const isInternal = match.match_type === 'internal';
+      if (scope === 'external' && isInternal) continue;
+      if (scope === 'internal' && !isInternal) continue;
       if (!['won', 'lost', 'draw'].includes(match.result)) continue;
 
       // Season filter — skip matches outside the chosen window
@@ -340,9 +351,33 @@ export function useSccRankings(
       const decay = window
         ? 1.0
         : timeDecay(Math.floor(Math.max(0, (baselineDate - new Date(match.date).getTime()) / 86400000)));
-      const opponentMultiplier = oppMult(match.opponent);
-      const resultMult = match.result === 'won' ? WIN_MULT : match.result === 'lost' ? LOSS_MULT : DRAW_MULT;
-      const matchMult = decay * opponentMultiplier * resultMult;
+      const opponentMultiplier = isInternal ? INTERNAL_OPP_MULT : oppMult(match.opponent);
+
+      // Whether a player was on the winning side.
+      //
+      // For an external match that is simply the match result. For an internal
+      // one it is NOT: `result` describes the fixture, and in Brahmos vs Agni
+      // both sides are SCC, so a match-level result hands everyone the same
+      // multiplier — the beaten side gets rewarded exactly like the winners.
+      // The answer is per player: compare the winning side against the side
+      // that player was picked for. A player with no side recorded (older
+      // internal fixtures never stored one) is treated as a draw rather than
+      // guessed either way.
+      const sideOf: Record<string, string | null> = {};
+      if (isInternal) {
+        for (const mp of match.players ?? []) sideOf[mp.member_id] = mp.team;
+      }
+      const resultMultFor = (memberId: string): number => {
+        if (!isInternal) {
+          return match.result === 'won' ? WIN_MULT
+               : match.result === 'lost' ? LOSS_MULT : DRAW_MULT;
+        }
+        const side = sideOf[memberId];
+        if (!match.winning_team || !side) return DRAW_MULT;
+        return side === match.winning_team ? WIN_MULT : LOSS_MULT;
+      };
+
+      const baseMult = decay * opponentMultiplier;
 
       // Per-player tally for THIS match (so we know who participated → bestMatch & matchesCounted)
       const matchPlayerPoints: Record<string, { bat: number; bowl: number; field: number; mom: number }> = {};
@@ -414,6 +449,7 @@ export function useSccRankings(
       // Roll up into per-player accumulators with the match multiplier applied
       for (const [mid, p] of Object.entries(matchPlayerPoints)) {
         const a = ensureAcc(mid);
+        const matchMult = baseMult * resultMultFor(mid);
         const matchPoints = (p.bat + p.bowl + p.field + p.mom) * matchMult;
         a.battingTotal  += p.bat   * matchMult;
         a.bowlingTotal  += p.bowl  * matchMult;
@@ -476,7 +512,7 @@ export function useSccRankings(
     );
 
     return { batters, bowlers, allRounders };
-  }, [matches, members, scorecards, mode]);
+  }, [matches, members, scorecards, mode, scope]);
 }
 
 // Export the constants so the "How it's calculated" UI can show real numbers

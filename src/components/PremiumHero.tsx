@@ -8,6 +8,9 @@ interface Props {
   matchesAllTime?: number;
   wonAllTime?: number;
   winRateAllTime?: number;
+  /** Internal (MahaSangram) matches played this season. Counted in Matches,
+   *  never in the W/L record — a club cannot beat itself. */
+  internalPlayed?: number;
   /** True when the personal block above has already greeted this member. */
   greeted?: boolean;
   firstName: string | null;
@@ -43,7 +46,7 @@ function greeting() {
  * next milestone), and a bento stat grid. Carries the member-attracting data
  * the old hero had, in the new design.
  */
-export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate, won, lost, matchesPlayed, upcomingCount, nextOpponent, nextDate, activeMembers, totalMembers, streak, lastFive, myRuns, myWkts, myMoms, milestone, matchesAllTime, wonAllTime, winRateAllTime }: Props) {
+export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate, won, lost, matchesPlayed, upcomingCount, nextOpponent, nextDate, activeMembers, totalMembers, streak, lastFive, myRuns, myWkts, myMoms, milestone, matchesAllTime, wonAllTime, winRateAllTime, internalPlayed = 0 }: Props) {
   const circ = 2 * Math.PI * 50;
   const offset = circ - (winRate / 100) * circ;
   const nextDateShort = nextDate ? new Date(nextDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : null;
@@ -141,12 +144,22 @@ export function PremiumHero({ greeted, firstName, profileId, avatarUrl, winRate,
           // seasonal — is how "0 Matches all-time" happened. Showing both, in
           // the same order every time, means neither number can be misread and
           // a season of zeroes still sits next to the club's real history.
-          { v: matchesPlayed, l: 'Matches', tag: 'this season',
+          // Matches is EVERY game this season, internal included — that is what
+          // the club actually played, and reporting only the external ones made
+          // a season that is a third MahaSangram look a third shorter than it
+          // was. The tag carries the split so the total is never mistaken for
+          // the number the W/L record below is drawn from.
+          { v: matchesPlayed + internalPlayed, l: 'Matches',
+            tag: internalPlayed > 0 ? `${matchesPlayed} external · ${internalPlayed} internal` : 'this season',
             all: matchesAllTime != null ? `${matchesAllTime} all-time` : null, accent: false },
           { v: won, l: 'Won',
             tag: streak && streak.result === 'won' && streak.count >= 2 ? `🔥 ${streak.count} win streak` : 'this season',
             all: wonAllTime != null ? `${wonAllTime} all-time` : null, accent: true },
-          { v: `${winRate}%`, l: 'Win %', tag: `${won}W · ${lost}L`,
+          // Named explicitly once internal matches exist: an unlabelled win rate
+          // sitting under a total that includes them reads as a percentage of
+          // that total, and would be wrong by the size of MahaSangram.
+          { v: `${winRate}%`, l: 'Win %',
+            tag: internalPlayed > 0 ? `${won}W · ${lost}L vs other clubs` : `${won}W · ${lost}L`,
             all: winRateAllTime != null ? `${winRateAllTime}% all-time` : null, accent: false },
           nextOpponent
             ? { v: <span className="text-[20px] lg:text-[22px]">

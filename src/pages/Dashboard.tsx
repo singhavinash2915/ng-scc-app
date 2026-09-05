@@ -175,6 +175,20 @@ export function Dashboard() {
     const lost = completed.filter(m => m.result === 'lost').length;
     const winRate = (won + lost) > 0 ? (won / (won + lost)) * 100 : 0;
     const upcomingCount = seasonMatches.filter(m => m.result === 'upcoming').length;
+
+    // The internal half of the season, counted separately on purpose. A club
+    // cannot beat itself, so these never touch the win rate — but they are a
+    // third of the cricket played this year, and leaving them out of "Matches"
+    // meant the dashboard quietly under-reported the season by that much.
+    const internalSeason = matches.filter(m =>
+      m.date >= seasonStart && m.date <= seasonEnd
+      && m.match_type === 'internal' && ['won', 'lost', 'draw'].includes(m.result));
+    const internalPlayed = internalSeason.length;
+    const rivalry = internalSeason.reduce((r, m) => {
+      if (m.winning_team === 'brahmos' || m.winning_team === 'dhurandars') r.home += 1;
+      else if (m.winning_team === 'agni' || m.winning_team === 'bazigars') r.away += 1;
+      return r;
+    }, { home: 0, away: 0 });
     // Every completed external match ever — the all-time card needs a genuinely
     // all-time number, not this season's.
     const allTime = matches.filter(m =>
@@ -184,7 +198,8 @@ export function Dashboard() {
     const allTimeLost = allTime.filter(m => m.result === 'lost').length;
     const allTimeWinRate = (allTimeWon + allTimeLost) > 0
       ? Math.round((allTimeWon / (allTimeWon + allTimeLost)) * 100) : 0;
-    return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, matchesAllTime: allTimeCompleted, wonAllTime: allTimeWon, winRateAllTime: allTimeWinRate, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount };
+    return { totalMembers: members.length, activeMembers: activeCount, totalFunds, matchesPlayed: completed.length, matchesAllTime: allTimeCompleted, wonAllTime: allTimeWon, winRateAllTime: allTimeWinRate, won, lost, winRate, pendingRequests: getPendingCount(), upcomingCount,
+      internalPlayed, rivalry, totalPlayed: completed.length + internalPlayed };
   }, [members, matches, getPendingCount, activeCount]);
 
   const allLowBalanceMembers = useMemo(() => members.filter(m => isActive(m.id) && m.balance < 1000), [members, isActive]);
@@ -480,6 +495,7 @@ export function Dashboard() {
           firstName={myMember?.name.split(' ')[0] ?? null}
           profileId={myMember?.id ?? null}
           avatarUrl={myMember?.avatar_url ?? null}
+          internalPlayed={stats.internalPlayed}
           winRate={Math.round(stats.winRate)}
           won={stats.won}
           lost={stats.lost}
@@ -622,13 +638,30 @@ export function Dashboard() {
                 )}
               </>
             ) : (
-              <div className="flex items-center gap-8 flex-wrap relative">
-                {[{ v: stats.matchesPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-emerald-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
+              <div className="relative space-y-2">
+              <div className="flex items-center gap-8 flex-wrap">
+                {[{ v: stats.totalPlayed, l: 'Matches', c: 'text-white' }, { v: stats.won, l: 'Won', c: 'text-emerald-400' }, { v: stats.lost, l: 'Lost', c: 'text-red-400' }, { v: `${Math.round(stats.winRate)}%`, l: 'Win Rate', c: 'text-amber-400' }].map(({ v, l, c }) => (
                   <div key={l} className="text-center">
                     <div className={`text-4xl font-black tabular-nums ${c}`}>{v}</div>
                     <div className="text-slate-400 dark:text-gray-500 text-xs mt-0.5 uppercase tracking-wider">{l}</div>
                   </div>
                 ))}
+              </div>
+
+              {/* What those four numbers are actually counting. Matches is every
+                  game this season; the record beside it is only the games with
+                  an opponent, because a club cannot beat itself. Without this
+                  line the win rate reads as a percentage of the total, and with
+                  a third of the season internal that would be wrong by a third. */}
+              <p className="t-meta text-slate-400 dark:text-gray-500">
+                {stats.matchesPlayed} vs other clubs
+                {stats.internalPlayed > 0 && <>
+                  {' · '}{stats.internalPlayed} MahaSangram
+                  {(stats.rivalry.home + stats.rivalry.away) > 0 &&
+                    ` (Brahmos ${stats.rivalry.home}–${stats.rivalry.away} Agni)`}
+                </>}
+                {' · '}W/L counts external only
+              </p>
               </div>
             )}
           </div>

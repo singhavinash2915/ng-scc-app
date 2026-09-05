@@ -326,6 +326,17 @@ export interface MemberCricketStats {
   fielding_caught_behind?: number;   // wicket-keeper catches (behind the stumps)
   fielding_stumpings: number;
   fielding_run_outs: number;
+  // Which cricket this row counts. One row per member, per season, per scope —
+  // 'external' is the club's record against other clubs, 'internal' is
+  // MahaSangram. Older rows predate the split and are all external.
+  scope?: 'external' | 'internal';
+  // Raw counts, kept so a combined view can be computed rather than estimated:
+  // an average needs times-out, a strike rate needs balls faced, an economy
+  // needs balls bowled. bowling_overs is overs.balls notation and cannot be
+  // summed.
+  batting_balls?: number;
+  batting_dismissals?: number;
+  bowling_balls?: number;
   // Meta
   cricheroes_profile_url: string | null;
   last_synced_at: string;

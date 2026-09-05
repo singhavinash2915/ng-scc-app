@@ -119,6 +119,7 @@ function parseFielding(
   matchId: string,
   acc: Record<string, Acc>,
   resolve: (name: string) => Member | null,
+  K: (memberId: string) => string,
 ) {
   if (!howOut) return;
   // Strip leading/trailing whitespace; keep original casing for name resolution
@@ -129,7 +130,7 @@ function parseFielding(
     // Caught and bowled — the bowler gets the catch
     const bowlerName = d.replace(/^c\s*&\s*b\s+/i, '').trim();
     const m = resolve(bowlerName);
-    if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].catches++; acc[m.id].matchSet.add(matchId); }
+    if (m) { const k = K(m.id); if (!acc[k]) acc[k] = emptyAcc(); acc[k].catches++; acc[k].matchSet.add(matchId); }
 
   } else if (dl.startsWith('c ')) {
     // Caught: "c FielderName b BowlerName". A leading † marks a wicket-keeper
@@ -142,9 +143,10 @@ function parseFielding(
     fielderName = fielderName.replace(/†/g, '').trim();
     const m = resolve(fielderName);
     if (m) {
-      if (!acc[m.id]) acc[m.id] = emptyAcc();
-      if (isKeeperCatch) acc[m.id].caughtBehind++; else acc[m.id].catches++;
-      acc[m.id].matchSet.add(matchId);
+      const k = K(m.id);
+      if (!acc[k]) acc[k] = emptyAcc();
+      if (isKeeperCatch) acc[k].caughtBehind++; else acc[k].catches++;
+      acc[k].matchSet.add(matchId);
     }
 
   } else if (dl.startsWith('st ')) {
@@ -153,7 +155,7 @@ function parseFielding(
     const bIdx = inner.search(/\s+b\s+/i);
     const keeperName = bIdx >= 0 ? inner.slice(0, bIdx).trim() : inner.trim();
     const m = resolve(keeperName);
-    if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].stumpings++; acc[m.id].matchSet.add(matchId); }
+    if (m) { const k = K(m.id); if (!acc[k]) acc[k] = emptyAcc(); acc[k].stumpings++; acc[k].matchSet.add(matchId); }
 
   } else if (dl.includes('run out')) {
     // Run out: "run out (FielderName)" or "run out FielderName"
@@ -162,7 +164,7 @@ function parseFielding(
     if (roMatch) {
       const fielderName = roMatch[1].trim();
       const m = resolve(fielderName);
-      if (m) { if (!acc[m.id]) acc[m.id] = emptyAcc(); acc[m.id].runOuts++; acc[m.id].matchSet.add(matchId); }
+      if (m) { const k = K(m.id); if (!acc[k]) acc[k] = emptyAcc(); acc[k].runOuts++; acc[k].matchSet.add(matchId); }
     }
   }
 }
@@ -264,13 +266,20 @@ export function useStatSync() {
     seasonLabel:  string,                                  // e.g. '2025-26' or 'all-time'
     nameMap:      Record<string, string> = loadNameMap(),  // chName → memberId
   ) => {
-    // Filter to matches that have a CricHeroes ID and are completed.
-    // Internal (Dhurandhars vs Baazigars) matches are deliberately EXCLUDED so
-    // the club's El Clasico games never pollute season/external player stats —
-    // they're tracked separately via the Internal Rivalry views.
+    // Matches with a CricHeroes ID that are finished — internal ones INCLUDED.
+    // They used to be dropped here so they could never pollute the club's
+    // external record, and the aggregation below has always known how to read
+    // them (in an internal match both innings are SCC, and the code says so),
+    // but that handling was unreachable behind this filter. With a third of this
+    // season being MahaSangram, excluding them meant a third of everyone's
+    // cricket simply did not exist in the app.
+    //
+    // They are no longer dropped — they are TAGGED. Each match is aggregated
+    // under its own scope and stored as a separate row, so external and
+    // internal can be shown apart, or added together, and neither is silently
+    // folded into the other.
     const eligible = matches.filter(m =>
       m.ch_match_id &&
-      m.match_type !== 'internal' &&
       ['won', 'lost', 'draw'].includes(m.result) &&
       (!seasonFilter || (m.date >= seasonFilter.start && m.date <= seasonFilter.end))
     );
@@ -333,8 +342,15 @@ export function useStatSync() {
       { teamName: r.innings2_team_name, batting: r.innings2_batting ?? [], bowling: r.innings2_bowling ?? [] },
     ].filter(inn => inn.teamName);
 
+    // One accumulator bucket per (member, scope). The separator can't appear in
+    // a UUID, so splitting it back apart at the end is unambiguous.
+    const SEP = '::';
+
     for (let i = 0; i < eligible.length; i++) {
       const match = eligible[i];
+      const scope: 'external' | 'internal' =
+        match.match_type === 'internal' ? 'internal' : 'external';
+      const K = (memberId: string) => `${memberId}${SEP}${scope}`;
       setProgress(p => ({ ...p, done: i, message: `Processing ${i + 1} / ${eligible.length} matches…` }));
 
       try {
@@ -380,8 +396,9 @@ export function useStatSync() {
               // Unmatched here means an SCC player whose name differs → worth warning
               if (!member) { if (b.name) unmatchedSet.add(String(b.name)); continue; }
 
-              if (!acc[member.id]) acc[member.id] = emptyAcc();
-              const s = acc[member.id];
+              const k = K(member.id);
+              if (!acc[k]) acc[k] = emptyAcc();
+              const s = acc[k];
               s.matchSet.add(match.id);
               s.battingInnings++;
 
@@ -415,8 +432,9 @@ export function useStatSync() {
               const member = resolveRow(String(b.name ?? ''), b.player_id != null ? Number(b.player_id) : null);
               if (!member) continue;   // opponent bowler — skip silently
 
-              if (!acc[member.id]) acc[member.id] = emptyAcc();
-              const s = acc[member.id];
+              const k = K(member.id);
+              if (!acc[k]) acc[k] = emptyAcc();
+              const s = acc[k];
               s.matchSet.add(match.id);
               s.bowlInnings++;
 
@@ -441,7 +459,7 @@ export function useStatSync() {
           if (!isSCCBatting || isInternal) {
             for (const b of batting) {
               if (!b.how_to_out || b.how_to_out === '') continue;
-              parseFielding(String(b.how_to_out), match.id, acc, resolveName);
+              parseFielding(String(b.how_to_out), match.id, acc, resolveName, K);
             }
           }
         }
@@ -459,7 +477,8 @@ export function useStatSync() {
 
     // ── Compute derived stats + upsert ────────────────────────────────────────
     let matchedMembers = 0;
-    for (const [memberId, s] of Object.entries(acc)) {
+    for (const [key, s] of Object.entries(acc)) {
+      const [memberId, rowScope] = key.split('::') as [string, 'external' | 'internal'];
       const fullOvers     = Math.floor(s.totalBalls / 6);
       const remainBalls   = s.totalBalls % 6;
       const oversNum      = fullOvers + remainBalls / 10;
@@ -475,6 +494,7 @@ export function useStatSync() {
         const { error } = await supabase.from('member_cricket_stats').upsert({
           member_id:             memberId,
           season:                seasonLabel,
+          scope:                 rowScope,
           batting_matches:       s.matchSet.size,
           batting_innings:       s.battingInnings,
           batting_runs:          s.runs,
@@ -487,6 +507,13 @@ export function useStatSync() {
           batting_fours:         s.fours,
           batting_sixes:         s.sixes,
           batting_run_outs:      s.battingRunOuts,
+          // Raw counts, stored so a Combined view can be COMPUTED rather than
+          // approximated. An average needs times-out, a strike rate needs balls
+          // faced, an economy needs balls bowled — and bowling_overs is
+          // overs.balls notation, which cannot be added up.
+          batting_balls:         s.balls,
+          batting_dismissals:    s.dismissals,
+          bowling_balls:         s.totalBalls,
           bowling_matches:       s.matchSet.size,
           bowling_innings:       s.bowlInnings,
           bowling_overs:         oversNum,
@@ -503,7 +530,7 @@ export function useStatSync() {
           fielding_run_outs:     s.runOuts,
           updated_at:            new Date().toISOString(),
           last_synced_at:        new Date().toISOString(),
-        }, { onConflict: 'member_id,season' });
+        }, { onConflict: 'member_id,season,scope' });
 
         if (error) throw error;
         matchedMembers++;
