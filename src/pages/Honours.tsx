@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Trophy, Flame, Award } from 'lucide-react';
+import { Trophy, Flame, Award, Swords } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Rankings } from './Rankings';
 import { PressureIndex } from './PressureIndex';
 import { Records } from './Records';
+import { MahaSangram } from './MahaSangram';
 
-type Tab = 'rankings' | 'pressure' | 'records';
+type Tab = 'rankings' | 'pressure' | 'records' | 'mahasangram';
 
 const TABS: { id: Tab; label: string; short: string; icon: typeof Trophy }[] = [
   { id: 'rankings', label: 'SCC Rankings', short: 'Rankings', icon: Trophy },
   { id: 'pressure', label: 'Pressure Index', short: 'Pressure', icon: Flame },
   { id: 'records',  label: 'Hall of Fame',  short: 'Records',  icon: Award },
+  // Its own board rather than a line on someone else's: MahaSangram is about a
+  // third of the season now, and its figures are deliberately kept out of the
+  // club's record and the all-time books.
+  { id: 'mahasangram', label: 'MahaSangram', short: 'Internal', icon: Swords },
 ];
 
 /**
@@ -33,7 +38,7 @@ export function Honours() {
 
   return (
     <div>
-      <Header title="Honours" subtitle="Rankings · Pressure Index · Hall of Fame" />
+      <Header title="Honours" subtitle="Rankings · Pressure Index · Hall of Fame · MahaSangram" />
 
       {/* Tab switcher */}
       <div className="px-4 lg:px-8 pt-4">
@@ -60,6 +65,7 @@ export function Honours() {
       {tab === 'rankings' && <Rankings embedded />}
       {tab === 'pressure' && <PressureIndex embedded />}
       {tab === 'records'  && <Records embedded />}
+      {tab === 'mahasangram' && <MahaSangram embedded />}
     </div>
   );
 }

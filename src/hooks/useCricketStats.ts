@@ -26,8 +26,34 @@ function ballsToOvers(balls: number): number {
  *  with each other, and bowling_overs is overs.balls notation, where 34.3 + 34.3
  *  is not 68.6. Everything derived is recomputed from the summed counts.
  */
+/** Times out, for a row that may predate the column.
+ *
+ *  batting_dismissals is only populated by syncs that ran after the scope
+ *  migration, so older rows carry 0 — and 0 would make a merged average fall
+ *  back to "runs", which is not an average at all. Every row does carry the
+ *  average the sync computed for it, and that average WAS runs/dismissals, so
+ *  the count can be recovered from it exactly: runs / average. Anything with no
+ *  average has no completed dismissal to contribute either.
+ */
+function outsOf(r: MemberCricketStats): number {
+  if (r.batting_dismissals && r.batting_dismissals > 0) return r.batting_dismissals;
+  if (r.batting_average > 0 && r.batting_runs > 0) return Math.round(r.batting_runs / r.batting_average);
+  return 0;
+}
+
+/** Balls faced, recovered the same way when the column predates the migration. */
+function ballsFacedOf(r: MemberCricketStats): number {
+  if (r.batting_balls && r.batting_balls > 0) return r.batting_balls;
+  if (r.batting_strike_rate > 0 && r.batting_runs > 0) {
+    return Math.round((r.batting_runs / r.batting_strike_rate) * 100);
+  }
+  return 0;
+}
+
 function mergeStatRows(existing: MemberCricketStats, row: MemberCricketStats, season: string): MemberCricketStats {
   const sumRuns    = existing.batting_runs    + row.batting_runs;
+  const sumOuts    = outsOf(existing)      + outsOf(row);
+  const sumFaced   = ballsFacedOf(existing) + ballsFacedOf(row);
   const sumInnings = existing.batting_innings + row.batting_innings;
   const sumWkts    = existing.bowling_wickets + row.bowling_wickets;
   const totalBalls = oversToBalls(existing.bowling_overs || 0) + oversToBalls(row.bowling_overs || 0);
@@ -52,10 +78,15 @@ function mergeStatRows(existing: MemberCricketStats, row: MemberCricketStats, se
     batting_hundreds:      existing.batting_hundreds      + row.batting_hundreds,
     batting_ducks:         existing.batting_ducks         + row.batting_ducks,
     batting_highest_score: Math.max(existing.batting_highest_score || 0, row.batting_highest_score || 0),
-    batting_average:       sumInnings > 0 ? Math.round((sumRuns / sumInnings) * 100) / 100 : 0,
-    batting_strike_rate:   sumRuns > 0
-      ? Math.round(((existing.batting_strike_rate * existing.batting_runs) + (row.batting_strike_rate * row.batting_runs)) / sumRuns * 100) / 100
-      : 0,
+    // A batting average is runs per DISMISSAL, not per innings. Dividing by
+    // innings counted every not-out as a completed one, so every career and
+    // combined average in the app read low — the more often someone finished
+    // not out, the further out their number was.
+    batting_average:       sumOuts > 0 ? Math.round((sumRuns / sumOuts) * 100) / 100 : sumRuns,
+    // Strike rate is runs per 100 balls, so it combines on balls faced. Weighting
+    // the two rates by runs — as this did — flatters the higher-scoring row and
+    // is only ever accidentally right.
+    batting_strike_rate:   sumFaced > 0 ? Math.round((sumRuns / sumFaced) * 10000) / 100 : 0,
     bowling_innings:       existing.bowling_innings       + row.bowling_innings,
     bowling_overs:         ballsToOvers(totalBalls),
     bowling_runs_conceded: sumRunsCon,
@@ -68,8 +99,10 @@ function mergeStatRows(existing: MemberCricketStats, row: MemberCricketStats, se
     fielding_catches:      existing.fielding_catches      + row.fielding_catches,
     fielding_stumpings:    existing.fielding_stumpings    + row.fielding_stumpings,
     fielding_run_outs:     existing.fielding_run_outs     + row.fielding_run_outs,
-    batting_balls:         (existing.batting_balls ?? 0)      + (row.batting_balls ?? 0),
-    batting_dismissals:    (existing.batting_dismissals ?? 0) + (row.batting_dismissals ?? 0),
+    // Carry the recovered counts, not the raw columns, so a merge of merges
+    // stays consistent instead of collapsing back to 0 on legacy rows.
+    batting_balls:         sumFaced,
+    batting_dismissals:    sumOuts,
     bowling_balls:         (existing.bowling_balls ?? 0)      + (row.bowling_balls ?? 0),
     season,
   };
