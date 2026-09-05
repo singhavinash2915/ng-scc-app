@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { JERSEY } from '../lib/playerCard';
 import { prettyTime } from '../lib/matchTime';
+import { seasonLabel, seasonWindow, CURRENT_SEASON } from '../config/season';
 import type { Match } from '../types';
 
 // ─── Season opener ────────────────────────────────────────────────────────────
@@ -26,6 +27,18 @@ export function SeasonOpenerBanner({ matches }: Props) {
         && /brahmos/i.test(m.opponent ?? '') && /agni/i.test(m.opponent ?? ''))
       .sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
   }, [matches]);
+
+  // Is this actually the season's first ball? It stops being true the moment
+  // the fixture moves — a postponed or rained-off opener means some other match
+  // now starts the season, and the banner simply slides to the next internal
+  // fixture without noticing. Calling a match three weeks in "first ball" is the
+  // kind of thing everyone spots immediately.
+  const isSeasonFirst = useMemo(() => {
+    if (!opener) return false;
+    const { start } = seasonWindow(CURRENT_SEASON);
+    return !matches.some(m =>
+      m.date >= start && m.date < opener.date && m.result !== 'cancelled');
+  }, [matches, opener]);
 
   const [left, setLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   useEffect(() => {
@@ -69,7 +82,9 @@ export function SeasonOpenerBanner({ matches }: Props) {
       <div className="relative px-5 py-6 text-white">
         <p className="t-micro font-black uppercase tracking-[3px] text-center"
           style={{ color: '#f0b429' }}>
-          Season 2026-27 · first ball
+          {isSeasonFirst
+            ? `${seasonLabel(CURRENT_SEASON)} · first ball`
+            : 'SCC MahaSangram · next clash'}
         </p>
 
         <div className="flex items-center justify-center gap-3 sm:gap-5 mt-4">
