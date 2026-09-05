@@ -166,6 +166,8 @@ export function LiveScoring() {
   useEffect(() => {
     if (prevShown.current !== null && prevShown.current !== shown) {
       setStriker(null); setNonStriker(null); setBowler(null);
+      // Any pending prompt belongs to the innings that just ended.
+      setNeedBowler(false); setNewBatterFor(null); setPickedBatter(null); setWicketSheet(null);
     }
     prevShown.current = shown;
   }, [shown]);
@@ -187,9 +189,17 @@ export function LiveScoring() {
     if (input.wicketType && input.wicketType !== 'retired') {
       setNewBatterFor(input.dismissedId === nonStriker ? 'nonStriker' : 'striker');
       setPickedBatter(null);
-    } else if (S.ctx.ballNo + 1 >= 6 && !input.extraType) {
+    } else if (S.ctx.ballNo + 1 >= 6 && !input.extraType
+               && S.ctx.overNo + 1 < format.oversPerInnings) {
       // Sixth legal ball: the over is done, so a new bowler is needed. Wides
       // and no-balls don't end an over, hence the extras guard.
+      //
+      // Only when there IS a next over. The last ball of the final over ends
+      // the innings, and asking who bowls next put a full-screen "Who's
+      // bowling?" list over the innings break — and, because nothing cleared it,
+      // over the second innings and the result screen behind it. The scorer had
+      // to name a bowler for an over that would never be bowled before they
+      // could publish the result.
       setNeedBowler(true);
     }
   };
