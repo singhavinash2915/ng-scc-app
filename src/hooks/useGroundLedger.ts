@@ -38,6 +38,26 @@ export interface MemberAdvance {
   outstanding: number;
 }
 
+export interface AdvanceRepayment {
+  id: string;
+  advance_id: string;
+  date: string;
+  amount: number;
+  funded_by: 'opponent' | 'member_fund' | 'club_wallet';
+  notes: string | null;
+}
+
+/** Money collected minus money already committed, per pot. Money spent on the
+ *  ground cannot also repay a member, so a debt is only clearable to the extent
+ *  something is actually free. */
+export interface PotAvailability {
+  pot: 'opponent' | 'member_fund';
+  collected: number;
+  spent_on_ground: number;
+  spent_on_repayments: number;
+  available: number;
+}
+
 export interface GroundLedger {
   payments: GroundPayment[];
   advances: MemberAdvance[];
@@ -49,6 +69,10 @@ export interface GroundLedger {
   fundedBy: Record<string, number>;
   /** A payment whose sources don't add up is a split someone didn't finish. */
   unallocated: Array<{ id: string; date: string; amount: number; shortfall: number }>;
+  repayments: AdvanceRepayment[];
+  availability: PotAvailability[];
+  /** Total free across every pot — what could be repaid today. */
+  availableToRepay: number;
   loading: boolean;
   missing: boolean;
   refresh: () => Promise<void>;
@@ -62,11 +86,14 @@ const isMissing = (e: { code?: string } | null) =>
 export function useGroundLedger(): GroundLedger {
   const [payments, setPayments] = useState<GroundPayment[]>([]);
   const [advances, setAdvances] = useState<MemberAdvance[]>([]);
+  const [repayments, setRepayments] = useState<AdvanceRepayment[]>([]);
+  const [availability, setAvailability] = useState<PotAvailability[]>([]);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [{ data: pays, error: pErr }, { data: srcs }, { data: advs }] = await Promise.all([
+    const [{ data: pays, error: pErr }, { data: srcs }, { data: advs },
+           { data: reps }, { data: avail }] = await Promise.all([
       supabase.from('ground_payments')
         .select('id, date, amount, paid_to, method, reference, notes')
         .order('date', { ascending: true }),
@@ -75,6 +102,10 @@ export function useGroundLedger(): GroundLedger {
       supabase.from('member_advances')
         .select('id, member_id, date, amount, purpose, settled_amount, notes')
         .order('date', { ascending: true }),
+      supabase.from('member_advance_repayments')
+        .select('id, advance_id, date, amount, funded_by, notes')
+        .order('date', { ascending: false }),
+      supabase.from('v_scc_funds_available').select('*'),
     ]);
 
     if (isMissing(pErr)) { setMissing(true); setLoading(false); return; }
@@ -96,6 +127,14 @@ export function useGroundLedger(): GroundLedger {
       amount: Number(a.amount),
       settled_amount: Number(a.settled_amount),
       outstanding: Number(a.amount) - Number(a.settled_amount),
+    })));
+    setRepayments(((reps ?? []) as AdvanceRepayment[]).map(r => ({ ...r, amount: Number(r.amount) })));
+    setAvailability(((avail ?? []) as PotAvailability[]).map(a => ({
+      ...a,
+      collected: Number(a.collected),
+      spent_on_ground: Number(a.spent_on_ground),
+      spent_on_repayments: Number(a.spent_on_repayments),
+      available: Number(a.available),
     })));
     setLoading(false);
   }, []);
@@ -126,7 +165,9 @@ export function useGroundLedger(): GroundLedger {
     .filter(p => Math.abs(p.shortfall) > 0.005);
 
   return {
-    payments, advances, totalPaid, owedByMember,
+    payments, advances, repayments, availability,
+    availableToRepay: availability.reduce((s, a) => s + Math.max(0, a.available), 0),
+    totalPaid, owedByMember,
     totalOwedToMembers: owedByMember.reduce((s, x) => s + x.outstanding, 0),
     fundedBy, unallocated, loading, missing, refresh,
   };

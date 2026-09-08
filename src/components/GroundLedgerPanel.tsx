@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { Card } from './ui/Card';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import { Landmark, HandCoins, AlertTriangle } from 'lucide-react';
 import { useGroundLedger } from '../hooks/useGroundLedger';
 import type { Member } from '../types';
@@ -31,6 +34,29 @@ interface Props {
 
 export function GroundLedgerPanel({ members, contracted }: Props) {
   const L = useGroundLedger();
+  const { isAdmin } = useAuth();
+  const [repayFor, setRepayFor] = useState<string | null>(null);
+  const [amount, setAmount] = useState('');
+  const [pot, setPot] = useState<'opponent' | 'member_fund' | 'club_wallet'>('opponent');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const record = async (advanceId: string, max: number) => {
+    const n = Number(amount);
+    if (!Number.isFinite(n) || n <= 0) return setErr('Enter an amount.');
+    if (n > max) return setErr(`That's more than the ₹${max.toLocaleString('en-IN')} outstanding.`);
+    setSaving(true); setErr(null);
+    const { error } = await supabase.from('member_advance_repayments').insert({
+      advance_id: advanceId,
+      date: new Date().toLocaleDateString('en-CA'),
+      amount: n,
+      funded_by: pot,
+    });
+    setSaving(false);
+    if (error) return setErr(error.message);
+    setRepayFor(null); setAmount('');
+    await L.refresh();
+  };
   const nameOf = (id: string) => members.find(m => m.id === id)?.name ?? 'Member';
 
   if (L.missing) {
@@ -163,9 +189,83 @@ export function GroundLedgerPanel({ members, contracted }: Props) {
               </p>
             ))}
           </div>
-          <p className="t-meta text-amber-700/70 dark:text-amber-300/60 mt-2">
-            Repaid from opponent collections first, member collections second.
-          </p>
+          {/* What could actually be repaid today. A debt shown with no sense of
+              whether the money exists to clear it is half the picture — and
+              right now every rupee collected is already in the ground. */}
+          <div className="mt-3 pt-2 border-t border-amber-300/40">
+            <div className="flex items-center justify-between">
+              <span className="t-meta text-amber-700/80 dark:text-amber-300/70">Free to repay today</span>
+              <span className="font-black tabular-nums text-amber-800 dark:text-amber-200">
+                {rupees(L.availableToRepay)}
+              </span>
+            </div>
+            {L.availability.map(a => (
+              <p key={a.pot} className="t-micro text-amber-700/60 dark:text-amber-300/50">
+                {a.pot === 'opponent' ? 'Opponent bookings' : 'Member contributions'}:
+                {' '}{rupees(a.collected)} in, {rupees(a.spent_on_ground + a.spent_on_repayments)} committed
+              </p>
+            ))}
+            <p className="t-meta text-amber-700/70 dark:text-amber-300/60 mt-1">
+              Repaid from opponent collections first, member collections second.
+            </p>
+          </div>
+
+          {/* Recording a repayment writes a row rather than editing a number.
+              The last ₹28,000 was marked repaid by a note when it never had
+              been; an event with a date and a pot cannot be lost that way. */}
+          {isAdmin && (
+            <div className="mt-3 pt-2 border-t border-amber-300/40 space-y-2">
+              {L.advances.filter(a => a.outstanding > 0).map(a => (
+                <div key={a.id}>
+                  {repayFor === a.id ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="number" inputMode="numeric" value={amount} placeholder="Amount"
+                          onChange={e => setAmount(e.target.value)}
+                          className="flex-1 r-control px-2 py-1.5 text-sm border border-amber-300
+                                     bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                        <select value={pot} onChange={e => setPot(e.target.value as typeof pot)}
+                          className="r-control px-2 py-1.5 text-sm border border-amber-300
+                                     bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                          <option value="opponent">Opponent</option>
+                          <option value="member_fund">Member fund</option>
+                          <option value="club_wallet">Club wallet</option>
+                        </select>
+                      </div>
+                      {err && <p className="t-micro text-rose-600">{err}</p>}
+                      <div className="flex gap-2">
+                        <button disabled={saving} onClick={() => record(a.id, a.outstanding)}
+                          className="flex-1 r-control py-1.5 text-sm font-black bg-amber-500 text-white">
+                          {saving ? 'Saving…' : 'Record repayment'}
+                        </button>
+                        <button onClick={() => { setRepayFor(null); setErr(null); }}
+                          className="r-control px-3 py-1.5 text-sm font-bold text-slate-500">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => { setRepayFor(a.id); setAmount(String(a.outstanding)); setErr(null); }}
+                      className="w-full r-control py-1.5 text-sm font-bold border border-amber-400
+                                 text-amber-700 dark:text-amber-300">
+                      Repay {rupees(a.outstanding)} · {a.purpose.slice(0, 28)}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {L.repayments.length > 0 && (
+            <div className="mt-3 pt-2 border-t border-amber-300/40">
+              <p className="t-micro font-black uppercase tracking-widest text-amber-700/70 mb-1">Repaid so far</p>
+              {L.repayments.map(r => (
+                <p key={r.id} className="t-micro text-amber-700/80 dark:text-amber-300/70">
+                  {new Date(r.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                  {' · '}{rupees(r.amount)} from {SOURCE_LABEL[r.funded_by] ?? r.funded_by}
+                </p>
+              ))}
+            </div>
+          )}
         </Card>
       )}
     </div>
