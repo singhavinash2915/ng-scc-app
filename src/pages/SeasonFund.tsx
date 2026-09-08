@@ -4,6 +4,7 @@ import { PrepaidAdvance, type PrepaidGroup } from '../components/PrepaidAdvance'
 import { useOpponentIncome } from '../hooks/useOpponentIncome';
 import { ClubMoneyCard } from '../components/ClubMoneyCard';
 import { GroundLedgerPanel } from '../components/GroundLedgerPanel';
+import { useGroundLedger } from '../hooks/useGroundLedger';
 import {
   Landmark,
   Plus,
@@ -272,6 +273,10 @@ export function SeasonFund() {
   }
 
   // ─── Season Finance overview stats ────────────────────────────────────────
+  // The payment ledger is the only record of money actually reaching the owner.
+  const groundLedger = useGroundLedger();
+  const ledgerPaid = groundLedger.totalPaid;
+
   const overviewStats = useMemo(() => {
     if (!selectedSeason) return null;
 
@@ -306,11 +311,20 @@ export function SeasonFund() {
     // there would overstate what the club has settled by exactly the amount it
     // still owes that member.
     const prepaid           = bookings.filter(b => (b as { prepaid_by?: string | null }).prepaid_by);
-    const paidToGround      = bookings
-      .filter(b => b.payment_status === 'paid' && !(b as { prepaid_by?: string | null }).prepaid_by)
+    // What the OWNER is owed, and what he has had.
+    //
+    // The contract is the slots the club buys from him — not the seven bought
+    // from CricBot XI, which went to another team out of a member's pocket, so
+    // they belong in neither total.
+    const ownerContract     = bookings
+      .filter(b => !(b as { prepaid_by?: string | null }).prepaid_by)
       .reduce((s, b) => s + Number(b.cost), 0);
-    const pendingToGround   = totalGroundCost - paidToGround
-      - prepaid.reduce((s, b) => s + Number(b.cost), 0);
+    // Paid comes from the payment ledger, never from the slot flags. Money moves
+    // in lump sums across many slots at once — ₹1,50,000 in one transfer — and
+    // the flags only ever get flipped by hand afterwards, so they lag behind
+    // reality and disagree with every other figure on the page.
+    const paidToGround      = ledgerPaid;
+    const pendingToGround   = Math.max(0, ownerContract - paidToGround);
 
     // ── What the club owes its own members ─────────────────────────────────
     // Grouped by who paid and who they paid for, so two different advances
@@ -344,7 +358,24 @@ export function SeasonFund() {
 
     // Session stats
     const totalSessions     = bookings.length;
-    const paidSessions      = bookings.filter(b => b.payment_status === 'paid').length;
+    const ownerSessions     = bookings.filter(b => !(b as { prepaid_by?: string | null }).prepaid_by).length;
+    // Slots are settled oldest first, since a payment clears the earliest
+    // outstanding dates rather than picking slots out of the middle. Derived
+    // from the ledger so it can never drift from what was actually paid — which
+    // is exactly what went wrong when this was a hand-set flag.
+    const settledSessions   = (() => {
+      let left = ledgerPaid, n = 0;
+      const ownerSlots = bookings
+        .filter(b => !(b as { prepaid_by?: string | null }).prepaid_by)
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date));
+      for (const b of ownerSlots) {
+        if (left < Number(b.cost)) break;
+        left -= Number(b.cost); n += 1;
+      }
+      return n;
+    })();
+    const paidSessions      = settledSessions;
     const matchesVsOpponent = bookings.filter(b => Number(b.opponent_collection) > 0).length;
     const avgCost           = totalSessions > 0 ? totalGroundCost / totalSessions : 0;
     const avgNetCost        = totalSessions > 0 ? (totalGroundCost - opponentIncome) / totalSessions : 0;
@@ -366,12 +397,13 @@ export function SeasonFund() {
     return {
       prepaidGroups, opponentPromised,
       memberIncome, opponentIncome, sponsorIncome, totalIncome,
-      totalGroundCost, paidToGround, pendingToGround, netBalance,
+      totalGroundCost, ownerContract, ownerSessions,
+      paidToGround, pendingToGround, netBalance,
       totalSessions, paidSessions, matchesVsOpponent, avgCost, avgNetCost,
       memberTarget, membersPaidCount, totalMembersCount, memberOutstanding,
       perMemberCost, memberPct, opponentPct, sponsorPct,
     };
-  }, [selectedSeason, opponentByDate, matches, payments]);
+  }, [selectedSeason, opponentByDate, matches, payments, ledgerPaid]);
 
   // ---- Handlers ----
   const handleCreateSeason = async () => {
@@ -1298,14 +1330,18 @@ export function SeasonFund() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-gray-400">Paid to owner</p>
-                      <p className="text-sm font-bold text-orange-500">{formatCurrency(overviewStats.paidToGround)} / {formatCurrency(overviewStats.totalGroundCost)}</p>
+                      <p className="text-sm font-bold text-orange-500">{formatCurrency(overviewStats.paidToGround)} / {formatCurrency(overviewStats.ownerContract)}</p>
                     </div>
                   </div>
 
                   {/* Overall paid progress */}
-                  <div className="mb-1">{renderProgressBar(overviewStats.paidToGround, overviewStats.totalGroundCost, 'bg-orange-500')}</div>
+                  <div className="mb-1">{renderProgressBar(overviewStats.paidToGround, overviewStats.ownerContract, 'bg-orange-500')}</div>
                   <div className="flex justify-between text-xs text-gray-400 mb-5">
-                    <span>{overviewStats.paidSessions}/{overviewStats.totalSessions} sessions paid</span>
+                    {/* Sessions covered by the money actually paid, oldest first —
+                        not a count of hand-set flags. The denominator is the
+                        owner's slots; the seven bought from CricBot are somebody
+                        else's sale and appear on their own card. */}
+                    <span>{overviewStats.paidSessions}/{overviewStats.ownerSessions} sessions covered</span>
                     {overviewStats.pendingToGround > 0 && (
                       <span className="text-amber-500">{formatCurrency(overviewStats.pendingToGround)} pending</span>
                     )}
@@ -1314,9 +1350,23 @@ export function SeasonFund() {
                   {/* Month-wise breakdown */}
                   <div className="space-y-2.5">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Monthly Breakdown</p>
-                    {bookingsByMonth.map(group => {
-                      const allPaid = group.paidCount === group.bookings.length;
-                      const nonePaid = group.paidCount === 0;
+                    {(() => {
+                      // Walk the months oldest-first, spending the ledger total as
+                      // we go. A payment clears the earliest outstanding dates, so
+                      // this says which months the owner has actually been paid
+                      // for — and it cannot drift from the ledger, which is what
+                      // went wrong when each slot carried its own hand-set flag.
+                      let remaining = overviewStats.paidToGround;
+                      return bookingsByMonth.map(group => {
+                      const ownerCost = group.bookings
+                        .filter(b => !(b as { prepaid_by?: string | null }).prepaid_by)
+                        .reduce((s, b) => s + Number(b.cost), 0);
+                      const covered = Math.max(0, Math.min(ownerCost, remaining));
+                      remaining -= covered;
+                      const allPaid = ownerCost > 0 && covered >= ownerCost;
+                      const nonePaid = covered <= 0;
+                      const paidCount = group.bookings.length > 0
+                        ? Math.round((covered / (ownerCost || 1)) * group.bookings.length) : 0;
                       const netCost = group.totalCost - group.totalOpponent;
                       return (
                         <div key={group.key} className="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-gray-700/50 last:border-0">
@@ -1332,10 +1382,10 @@ export function SeasonFund() {
                               ) : nonePaid ? (
                                 <span className="text-xs text-gray-400">Not yet paid</span>
                               ) : (
-                                <span className="text-xs text-amber-500">{group.paidCount}/{group.bookings.length} paid</span>
+                                <span className="text-xs text-amber-500">{paidCount}/{group.bookings.length} paid</span>
                               )}
                             </div>
-                            {renderProgressBar(group.paidCount, group.bookings.length, allPaid ? 'bg-green-500' : 'bg-orange-400')}
+                            {renderProgressBar(covered, ownerCost || 1, allPaid ? 'bg-green-500' : 'bg-orange-400')}
                           </div>
                           <div className="text-right flex-shrink-0">
                             <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(group.totalCost)}</p>
@@ -1345,7 +1395,8 @@ export function SeasonFund() {
                           </div>
                         </div>
                       );
-                    })}
+                    });
+                    })()}
                   </div>
                 </CardContent>
               </Card>
@@ -1428,7 +1479,12 @@ export function SeasonFund() {
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { label: 'Total Sessions', value: overviewStats.totalSessions, sub: `${selectedSeason?.name}`, color: 'text-gray-900 dark:text-white' },
-                      { label: 'Ground Paid', value: `${overviewStats.paidSessions}/${overviewStats.totalSessions}`, sub: `${overviewStats.totalSessions - overviewStats.paidSessions} pending`, color: overviewStats.paidSessions === overviewStats.totalSessions ? 'text-green-600' : 'text-amber-600' },
+                      // Both halves must count the same thing. The numerator is
+                      // owner slots covered by money actually paid; the
+                      // denominator was every slot including the seven bought
+                      // from CricBot, which the owner was never going to be paid
+                      // for — so it read 66/98 and overstated what is left.
+                      { label: 'Ground Paid', value: `${overviewStats.paidSessions}/${overviewStats.ownerSessions}`, sub: `${overviewStats.ownerSessions - overviewStats.paidSessions} pending`, color: overviewStats.paidSessions === overviewStats.ownerSessions ? 'text-green-600' : 'text-amber-600' },
                       { label: 'Opponent Matches', value: overviewStats.matchesVsOpponent, sub: `${formatCurrency(overviewStats.opponentIncome)} saved`, color: 'text-blue-600' },
                       { label: 'Members Paid', value: overviewStats.membersPaidCount, sub: 'at least 1 payment', color: 'text-primary-600' },
                     ].map(item => (
