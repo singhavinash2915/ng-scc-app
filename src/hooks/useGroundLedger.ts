@@ -73,6 +73,11 @@ export interface GroundLedger {
   availability: PotAvailability[];
   /** Total free across every pot — what could be repaid today. */
   availableToRepay: number;
+  /** The owner's contract: his slots only, so slots bought from another club
+   *  never appear as money he is owed. */
+  contracted: number;
+  /** Contract less what has actually been paid. */
+  outstandingToOwner: number;
   loading: boolean;
   missing: boolean;
   refresh: () => Promise<void>;
@@ -88,12 +93,13 @@ export function useGroundLedger(): GroundLedger {
   const [advances, setAdvances] = useState<MemberAdvance[]>([]);
   const [repayments, setRepayments] = useState<AdvanceRepayment[]>([]);
   const [availability, setAvailability] = useState<PotAvailability[]>([]);
+  const [contracted, setContracted] = useState(0);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
 
   const refresh = useCallback(async () => {
     const [{ data: pays, error: pErr }, { data: srcs }, { data: advs },
-           { data: reps }, { data: avail }] = await Promise.all([
+           { data: reps }, { data: avail }, { data: slots }] = await Promise.all([
       supabase.from('ground_payments')
         .select('id, date, amount, paid_to, method, reference, notes')
         .order('date', { ascending: true }),
@@ -106,6 +112,7 @@ export function useGroundLedger(): GroundLedger {
         .select('id, advance_id, date, amount, funded_by, notes')
         .order('date', { ascending: false }),
       supabase.from('v_scc_funds_available').select('*'),
+      supabase.from('ground_bookings').select('cost, prepaid_by, status'),
     ]);
 
     if (isMissing(pErr)) { setMissing(true); setLoading(false); return; }
@@ -136,6 +143,9 @@ export function useGroundLedger(): GroundLedger {
       spent_on_repayments: Number(a.spent_on_repayments),
       available: Number(a.available),
     })));
+    setContracted(((slots ?? []) as Array<{ cost: number; prepaid_by: string | null; status: string }>)
+      .filter(b => !b.prepaid_by && b.status !== 'cancelled')
+      .reduce((sum, b) => sum + Number(b.cost), 0));
     setLoading(false);
   }, []);
 
@@ -169,6 +179,8 @@ export function useGroundLedger(): GroundLedger {
     availableToRepay: availability.reduce((s, a) => s + Math.max(0, a.available), 0),
     totalPaid, owedByMember,
     totalOwedToMembers: owedByMember.reduce((s, x) => s + x.outstanding, 0),
+    contracted,
+    outstandingToOwner: Math.max(0, contracted - totalPaid),
     fundedBy, unallocated, loading, missing, refresh,
   };
 }

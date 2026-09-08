@@ -8,6 +8,7 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useMembers } from '../hooks/useMembers';
 import { useMatches } from '../hooks/useMatches';
 import { useAuth } from '../context/AuthContext';
+import { useGroundLedger } from '../hooks/useGroundLedger';
 
 export function AnnualReport() {
   const { byDate: opponentByDate } = useOpponentIncome();
@@ -69,6 +70,11 @@ export function AnnualReport() {
     }];
   }, [seasons, transactions, matches]);
 
+  // Money paid to the ground owner lives in its own ledger, never in
+  // transactions. Left out, a year in which ₹4,07,000 crossed to Four Star
+  // reported the club's biggest outgoing as if it had not happened.
+  const groundLedger = useGroundLedger();
+
   const [periodKey, setPeriodKey] = useState<string>('');
   const period = periods.find(p => p.key === periodKey) ?? periods[0];
 
@@ -102,6 +108,13 @@ export function AnnualReport() {
     // play. Netting it against booking income is the only way "what we made
     // from opponents" means anything — otherwise the page shows ₹56,000 coming
     // in and quietly omits ₹28,000 going the other way.
+    // Paid to the ground OWNER in this period, from the payment ledger.
+    // Distinct from paidToOpponents below, which is money that went to another
+    // club for slots they held.
+    const groundPaid = groundLedger.payments
+      .filter(p => p.date >= start && p.date <= end)
+      .reduce((sum, p) => sum + p.amount, 0);
+
     const paidToOpponents = (seasons.flatMap(s => s.bookings ?? []))
       .filter(b => b.date >= start && b.date <= end
         && (b as { prepaid_by?: string | null }).prepaid_by)
@@ -137,17 +150,19 @@ export function AnnualReport() {
     const drawn = completed.filter(m => m.result === 'draw').length;
 
     return {
-      deposits, expenses, matchFees, bookingIncome, bookingDue, paidToOpponents,
+      deposits, expenses, matchFees, bookingIncome, bookingDue, paidToOpponents, groundPaid,
       // Net flow is real money in minus real money out. Booking income is as
       // real as a deposit — it just came from another club rather than a member.
-      net: deposits + bookingIncome - expenses,
+      // Ground payments are spending like any other. Omitting them made the
+      // headline read positive in a year the club spent more than it took.
+      net: deposits + bookingIncome - expenses - groundPaid,
       yearTxns: yearTxns.length,
       topContributors,
       topCategories,
       matchesPlayed: completed.length,
       won, lost, drawn,
     };
-  }, [period, transactions, matches, members]);
+  }, [period, transactions, matches, members, seasons, opponentByDate, groundLedger.payments]);
 
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
@@ -242,6 +257,28 @@ export function AnnualReport() {
             difference, on one card — so nobody has to hold two numbers from
             two pages in their head to work out what playing other clubs
             actually earned. */}
+        {/* ── Paid to the ground owner ────────────────────────────────
+            The single biggest thing the club spends money on, and it never
+            appears in the transactions ledger — it has its own. A report that
+            leaves it out shows a year's finances with its largest outgoing
+            missing. */}
+        {data.groundPaid > 0 && (
+          <div className="mt-3 r-card p-5"
+               style={{ background: 'linear-gradient(135deg, #7c2d12 0%, #0a1019 100%)' }}>
+            <div className="flex items-center gap-1.5 text-orange-300/80 mb-2">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span className="t-micro font-bold uppercase tracking-[1.5px]">
+                Paid to the ground owner
+              </span>
+            </div>
+            <p className="text-2xl font-black tabular-nums text-orange-200">{fmt(data.groundPaid)}</p>
+            <p className="t-meta text-white/55 mt-1">
+              Rent for the season's slots. Counted in the net figure above, and
+              tracked in full on the Season Fund page.
+            </p>
+          </div>
+        )}
+
         {(data.bookingIncome > 0 || data.paidToOpponents > 0) && (
           <div className="mt-3 r-card p-5"
                style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0a1019 100%)' }}>

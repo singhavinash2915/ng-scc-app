@@ -11,6 +11,7 @@ import { useChallenges } from './useChallenges';
 import { useSquads } from './useSquads';
 import { useUnavailability } from './useUnavailability';
 import { useGroundDates } from './useGroundDates';
+import { useGroundLedger } from './useGroundLedger';
 import { useSeasonLeague } from './useSeasonLeague';
 import { useClubExtras } from './useClubExtras';
 import { useAuth } from '../context/AuthContext';
@@ -69,6 +70,13 @@ export function useClubChat() {
   const { squads } = useSquads(members);
   const unavail = useUnavailability();
   const groundDates = useGroundDates();
+  // The ground payment ledger. Without it the AI's whole picture of club money
+  // is the wallet ledger, which does not contain the largest thing the club
+  // spends on — so "how much have we paid the ground owner" was unanswerable,
+  // and "what did we spend this season" answered with a figure that left out
+  // ₹4,07,000.
+  const groundLedger = useGroundLedger();
+
   const seasonLeague = useSeasonLeague();
   const { isAdmin } = useAuth();
   const { me } = useMe();
@@ -415,12 +423,28 @@ export function useClubChat() {
       opponentBookings: want.has('bookings') ? extras.opponentBookings : undefined, // admin only: who booked us
       joinRequests: want.has('requests') ? extras.joinRequests : undefined,        // admin only: who wants to join
       groundFund: want.has('finance') ? extras.groundFund : undefined,            // admin only: ground contributions
+      // Money actually paid to the ground owner, and money the club owes its
+      // own members for fronting it. Neither is in the transactions table, so
+      // totalExpensesEver above does NOT include any of it — say so, rather
+      // than letting the model add them together.
+      groundLedger: financeAccess && want.has('finance') ? {
+        paidToOwner: `₹${groundLedger.totalPaid.toLocaleString('en-IN')}`,
+        stillOwedToOwner: `₹${groundLedger.outstandingToOwner.toLocaleString('en-IN')}`,
+        fundedBy: Object.fromEntries(Object.entries(groundLedger.fundedBy)
+          .map(([k, v]) => [k, `₹${v.toLocaleString('en-IN')}`])),
+        owedBackToMembers: groundLedger.owedByMember.map(o => ({
+          member: nameOf(o.member_id),
+          amount: `₹${o.outstanding.toLocaleString('en-IN')}`,
+        })),
+        note: 'Separate from totalExpensesEver, which only covers the member wallet ledger. Do not add them together.',
+      } : undefined,
       bookingTotals: want.has('bookings') ? extras.bookingTotals : undefined,      // pre-computed: do not re-add
     });
     return answer || 'Sorry, I could not generate a response.';
   }, [members, matches, transactions, tournaments, stats, careerStats, leaderboard,
       matchHighlights, seasonRecords, playerCareerBests, maha, challenges, squads,
-      unavail, groundDates, seasonLeague, isAdmin, generateInsight, left, extras, tryQuick]);
+      unavail, groundDates, groundLedger, seasonLeague, isAdmin,
+      generateInsight, left, extras, tryQuick]);
 
   return { ask, tryQuick, left, limit: DAILY_LIMIT };
 }
