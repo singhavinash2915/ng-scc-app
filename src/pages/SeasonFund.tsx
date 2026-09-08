@@ -870,24 +870,13 @@ export function SeasonFund() {
 
           {/* ═════ PROGRESS BARS ══════════════════════════════════════════════ */}
           <div className="grid grid-cols-1 gap-3">
-            {stats && stats.bookingCount > 0 && (
-              <div className="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 r-card p-4 animate-fade-in" style={{ animationDelay: '380ms' }}>
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-orange-500" />
-                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Ground Owner Paid</p>
-                  </div>
-                  <p className="text-xs font-bold text-orange-600 dark:text-orange-400">{stats.paidBookingCount}/{stats.bookingCount}</p>
-                </div>
-                <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-orange-500 to-amber-400 h-2.5 rounded-full transition-all duration-700 shadow-sm"
-                    style={{ width: `${stats.totalSpent > 0 ? Math.min((stats.groundOwnerPaid / stats.totalSpent) * 100, 100) : 0}%` }}
-                  />
-                </div>
-                <p className="t-meta text-gray-500 mt-1.5">{formatCurrency(stats.groundOwnerPaid)} of {formatCurrency(stats.totalSpent)}</p>
-              </div>
-            )}
+            {/* The "Ground Owner Paid" bar that used to sit here counted booking
+                rows flagged paid. Payments are not made slot by slot — ₹150,000
+                went in one transfer covering many at once — so those flags read
+                ₹2,57,000 while the money that actually left was ₹4,07,000: two
+                answers to one question, on one screen, ₹150,000 apart. The
+                payment ledger below answers it once, from what was actually
+                paid, and shows the split and the dates besides. */}
 
             {/* ── Bought outside the season contract ──────────────────────
                 Kept apart from the Four Star figure deliberately. September is

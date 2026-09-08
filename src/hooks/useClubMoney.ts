@@ -63,14 +63,26 @@ export function useClubMoney(): ClubMoney {
       const sessions = (gb.data ?? []) as Array<{
         cost: number; payment_status: string; prepaid_by: string | null }>;
 
-      // Paid to the ground owner — club money only. Slots a member covered
-      // personally are money the club never spent and still owes.
-      const paidToOwner = sessions
-        .filter(s => !s.prepaid_by && s.payment_status === 'paid')
+      // Paid to the ground owner, from the payment ledger.
+      //
+      // This used to count booking rows whose payment_status said 'paid'. Those
+      // flags are a slot-by-slot schedule, and payments are not made slot by
+      // slot: ₹150,000 went across in one transfer covering many of them at
+      // once, and nobody flipped 27 flags afterwards. The flags therefore still
+      // read ₹257,000 while the money that actually left reads ₹407,000 — two
+      // answers to one question, ₹150,000 apart, on the same screen.
+      //
+      // The ledger is what money did; the flags are what was planned. Read the
+      // ledger, and derive what's still owed from the contract rather than from
+      // the unflipped remainder.
+      const { data: payRows } = await supabase.from('ground_payments').select('amount');
+      const paidToOwner = ((payRows ?? []) as Array<{ amount: number }>)
+        .reduce((s, x) => s + Number(x.amount), 0);
+
+      const contracted = sessions
+        .filter(s => !s.prepaid_by)
         .reduce((s, x) => s + Number(x.cost), 0);
-      const owedToOwner = sessions
-        .filter(s => !s.prepaid_by && s.payment_status !== 'paid')
-        .reduce((s, x) => s + Number(x.cost), 0);
+      const owedToOwner = Math.max(0, contracted - paidToOwner);
       // What the club owes members now comes from member_advances, which is the
       // one place that answers it. ground_bookings.prepaid_by still marks which
       // slots club cash did not pay for — a different question, and the reason
