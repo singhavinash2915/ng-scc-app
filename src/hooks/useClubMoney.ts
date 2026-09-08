@@ -28,7 +28,7 @@ export interface ClubMoney {
   cashOut: number;          // everything it has paid out
   cashInHand: number;
   owedToOwner: number;      // ground sessions still to pay for
-  owedToMembers: number;    // slots a member paid for personally
+  owedToMembers: number;    // unsettled member advances
   loading: boolean;
 }
 
@@ -71,9 +71,19 @@ export function useClubMoney(): ClubMoney {
       const owedToOwner = sessions
         .filter(s => !s.prepaid_by && s.payment_status !== 'paid')
         .reduce((s, x) => s + Number(x.cost), 0);
-      const owedToMembers = sessions
-        .filter(s => s.prepaid_by)
-        .reduce((s, x) => s + Number(x.cost), 0);
+      // What the club owes members now comes from member_advances, which is the
+      // one place that answers it. ground_bookings.prepaid_by still marks which
+      // slots club cash did not pay for — a different question, and the reason
+      // those slots stay out of the owner totals above — but counting the debt
+      // from both would have the same rupees owed twice the moment a member
+      // fronts something that isn't a whole slot. Avinash's ₹49,000 towards the
+      // ₹150,000 Four Star payment is exactly that: a share of a lump sum, which
+      // prepaid_by cannot express at all.
+      const { data: advRows } = await supabase
+        .from('member_advances')
+        .select('amount, settled_amount');
+      const owedToMembers = ((advRows ?? []) as Array<{ amount: number; settled_amount: number }>)
+        .reduce((s, x) => s + (Number(x.amount) - Number(x.settled_amount)), 0);
 
       // Only verified booking money is cash. A confirmed booking is a promise.
       const bookingCash = ((bk.data ?? []) as Array<{

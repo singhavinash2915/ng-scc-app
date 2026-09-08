@@ -3,6 +3,7 @@ import { useMatches } from '../hooks/useMatches';
 import { PrepaidAdvance, type PrepaidGroup } from '../components/PrepaidAdvance';
 import { useOpponentIncome } from '../hooks/useOpponentIncome';
 import { ClubMoneyCard } from '../components/ClubMoneyCard';
+import { GroundLedgerPanel } from '../components/GroundLedgerPanel';
 import {
   Landmark,
   Plus,
@@ -887,6 +888,12 @@ export function SeasonFund() {
                 <p className="t-meta text-gray-500 mt-1.5">{formatCurrency(stats.groundOwnerPaid)} of {formatCurrency(stats.totalSpent)}</p>
               </div>
             )}
+
+            {/* ── The payment ledger ──────────────────────────────────────
+                The bar above tracks SLOTS marked paid. This tracks the money
+                itself: what actually reached the owner, when, and which pot it
+                came out of — which the slot flags cannot say. */}
+            <GroundLedgerPanel members={members} contracted={stats?.totalSpent} />
 
             {/* ── Slots bought from another team ──────────────────────────
                 Kept out of the Four Star figure above on purpose. Different
