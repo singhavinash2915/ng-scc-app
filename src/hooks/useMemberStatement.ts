@@ -38,7 +38,8 @@ export interface MemberStatement {
   balance: number;
   seasonFundPaid: number;
   seasonFundTarget: number;
-  prepaidForClub: number;   // slots they paid for personally — the club owes them
+  prepaidForClub: number;   // money they fronted for the club, ever
+  stillOwed: number;        // of that, what hasn't been repaid yet
   totalPutIn: number;       // the number an audit asks for
   /** What the wallet WOULD be if only the recorded transactions existed. */
   balanceFromLedger: number;
@@ -50,7 +51,7 @@ export interface MemberStatement {
 
 const EMPTY: MemberStatement = {
   walletIn: 0, walletOut: 0, matchFees: 0, adjustment: 0, balance: 0, seasonFundPaid: 0, seasonFundTarget: 0,
-  fundTransferred: 0, prepaidForClub: 0, totalPutIn: 0, balanceFromLedger: 0, drift: 0,
+  fundTransferred: 0, prepaidForClub: 0, stillOwed: 0, totalPutIn: 0, balanceFromLedger: 0, drift: 0,
   lines: [], loading: true,
 };
 
@@ -141,16 +142,28 @@ export function useMemberStatement(memberId: string | null, season?: { start: st
       const seasonFundTarget = (tgt ?? []).reduce(
         (s: number, t: { target_amount: number }) => s + Number(t.target_amount), 0);
 
-      // ── Slots they paid for out of pocket ─────────────────────────────────
-      const { data: prep } = await supabase
-        .from('ground_bookings')
-        .select('date, cost, opponent_name').eq('prepaid_by', memberId);
+      // ── Money they fronted for the club ───────────────────────────────────
+      // From member_advances, which is the one place that answers what the club
+      // owes. It used to read ground_bookings.prepaid_by, which only knows about
+      // whole slots somebody covered — so it showed Avinash's ₹28,000 of CricBot
+      // slots and missed the ₹49,000 he put towards the Four Star payment, a
+      // share of a lump sum that prepaid_by cannot represent at all. He was
+      // shown as having fronted ₹28,000 when the club owed him ₹77,000.
+      //
+      // Deliberately NOT also summing prepaid_by: those same seven slots have a
+      // row here too, and adding both would credit him ₹1,05,000 for ₹77,000 of
+      // actual money.
+      const { data: advs } = await supabase
+        .from('member_advances')
+        .select('date, amount, purpose, settled_amount').eq('member_id', memberId);
       let prepaidForClub = 0;
-      for (const b of (prep ?? []) as Array<{ date: string; cost: number; opponent_name: string | null }>) {
-        prepaidForClub += Number(b.cost);
-        lines.push({ date: String(b.date).slice(0, 10),
-                     label: `Paid for ground — ${b.opponent_name ?? 'session'}`,
-                     amount: Number(b.cost), kind: 'prepaid' });
+      let stillOwed = 0;
+      for (const a of (advs ?? []) as Array<{ date: string; amount: number; purpose: string; settled_amount: number }>) {
+        prepaidForClub += Number(a.amount);
+        stillOwed += Number(a.amount) - Number(a.settled_amount);
+        lines.push({ date: String(a.date).slice(0, 10),
+                     label: `Paid for the club — ${a.purpose}`,
+                     amount: Number(a.amount), kind: 'prepaid' });
       }
 
       const { data: mem } = await supabase
@@ -171,7 +184,7 @@ export function useMemberStatement(memberId: string | null, season?: { start: st
         matchFees, adjustment,
         balanceFromLedger,
         drift: stored - balanceFromLedger,
-        seasonFundPaid, seasonFundTarget, prepaidForClub,
+        seasonFundPaid, seasonFundTarget, prepaidForClub, stillOwed,
         // What an audit asks for: every rupee this member handed the club,
         // whichever pot it went into.
         fundTransferred,

@@ -53,7 +53,7 @@ export function MemberStatement({ memberId, name }: { memberId: string; name: st
           {[
             { l: 'Wallet in', v: s.walletIn },
             { l: 'Ground fund', v: s.seasonFundPaid },
-            { l: 'Paid personally', v: s.prepaidForClub },
+            { l: 'Fronted', v: s.prepaidForClub },
           ].map(x => (
             <div key={x.l} className="text-center">
               <p className="t-num text-lg text-slate-900 dark:text-white leading-none">
@@ -66,6 +66,26 @@ export function MemberStatement({ memberId, name }: { memberId: string; name: st
           ))}
         </div>
       </Card>
+
+      {/* ── What the club still owes them ──────────────────────────────────
+          Separate from "has put in" on purpose. Money contributed is gone; money
+          fronted is a debt, and the person who is out of pocket should be able
+          to see it without asking the treasurer. */}
+      {s.stillOwed > 0 && (
+        <Card className="p-5 border-amber-300/60 bg-amber-50/60 dark:bg-amber-500/10">
+          <p className="t-micro font-black uppercase tracking-[1.5px] text-amber-700 dark:text-amber-400">
+            The club owes {first}
+          </p>
+          <p className="t-num text-3xl text-amber-700 dark:text-amber-300 mt-1">
+            {rupees(s.stillOwed)}
+          </p>
+          <p className="t-meta text-amber-700/80 dark:text-amber-300/70 mt-1">
+            {s.stillOwed < s.prepaidForClub
+              ? `${rupees(s.prepaidForClub - s.stillOwed)} of ${rupees(s.prepaidForClub)} repaid so far.`
+              : 'Repaid from opponent collections first, member collections second.'}
+          </p>
+        </Card>
+      )}
 
       {/* ── Wallet — the only pot match fees come out of ─────────────────── */}
       <Card className="p-5">
