@@ -58,6 +58,8 @@ export function GroundLedgerPanel({ members, contracted }: Props) {
     await L.refresh();
   };
   const nameOf = (id: string) => members.find(m => m.id === id)?.name ?? 'Member';
+  const potFree = (p: string) =>
+    p === 'club_wallet' ? Infinity : (L.availability.find(a => a.pot === p)?.available ?? 0);
 
   if (L.missing) {
     return (
@@ -192,6 +194,16 @@ export function GroundLedgerPanel({ members, contracted }: Props) {
           {/* What could actually be repaid today. A debt shown with no sense of
               whether the money exists to clear it is half the picture — and
               right now every rupee collected is already in the ground. */}
+          {/* Money freeing up should announce itself. Opponent payments land
+              weeks apart, and a debt nobody is reminded of is a debt that sits. */}
+          {L.availableToRepay > 0 && (
+            <div className="mt-3 r-control px-3 py-2 bg-emerald-500/15 border border-emerald-500/30">
+              <p className="t-body font-black text-emerald-800 dark:text-emerald-300">
+                {rupees(L.availableToRepay)} has freed up — {nameOf(L.owedByMember[0].member_id)} can be repaid
+              </p>
+            </div>
+          )}
+
           <div className="mt-3 pt-2 border-t border-amber-300/40">
             <div className="flex items-center justify-between">
               <span className="t-meta text-amber-700/80 dark:text-amber-300/70">Free to repay today</span>
@@ -234,6 +246,16 @@ export function GroundLedgerPanel({ members, contracted }: Props) {
                         </select>
                       </div>
                       {err && <p className="t-micro text-rose-600">{err}</p>}
+                      {/* A warning, not a block. Repaying out of the club wallet,
+                          or out of money that has arrived but isn't verified yet,
+                          is a legitimate thing to do — it just shouldn't happen
+                          without the person noticing. */}
+                      {!err && Number(amount) > potFree(pot) && (
+                        <p className="t-micro text-amber-700 dark:text-amber-400">
+                          Only {rupees(potFree(pot))} is free in {SOURCE_LABEL[pot]?.toLowerCase() ?? pot}.
+                          Recording more will show that pot overdrawn.
+                        </p>
+                      )}
                       <div className="flex gap-2">
                         <button disabled={saving} onClick={() => record(a.id, a.outstanding)}
                           className="flex-1 r-control py-1.5 text-sm font-black bg-amber-500 text-white">
@@ -244,7 +266,15 @@ export function GroundLedgerPanel({ members, contracted }: Props) {
                       </div>
                     </div>
                   ) : (
-                    <button onClick={() => { setRepayFor(a.id); setAmount(String(a.outstanding)); setErr(null); }}
+                    <button onClick={() => {
+                        // Pre-fill what can actually be paid today, not the whole
+                        // debt. Offering ₹28,000 when ₹3,000 is free invites a
+                        // repayment the club cannot make, and nothing downstream
+                        // would refuse it — available would simply go negative.
+                        setRepayFor(a.id);
+                        setAmount(String(Math.min(a.outstanding, Math.max(0, L.availableToRepay)) || a.outstanding));
+                        setErr(null);
+                      }}
                       className="w-full r-control py-1.5 text-sm font-bold border border-amber-400
                                  text-amber-700 dark:text-amber-300">
                       Repay {rupees(a.outstanding)} · {a.purpose.slice(0, 28)}

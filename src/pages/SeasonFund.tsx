@@ -889,6 +889,29 @@ export function SeasonFund() {
               </div>
             )}
 
+            {/* ── Bought outside the season contract ──────────────────────
+                Kept apart from the Four Star figure deliberately. September is
+                being played ad-hoc while the rain decides, and a replacement
+                slot is real spending but not part of the season agreement —
+                folding it in makes the contracted number unreadable. */}
+            {stats && stats.adhocCount > 0 && (
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 r-card p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                      Ad-hoc slots · outside the contract
+                    </p>
+                    <p className="t-meta text-gray-500 mt-0.5">
+                      {stats.adhocCount} session{stats.adhocCount === 1 ? '' : 's'} booked one at a time
+                    </p>
+                  </div>
+                  <p className="text-lg font-black tabular-nums text-slate-900 dark:text-white">
+                    {formatCurrency(stats.adhocCost)}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* ── The payment ledger ──────────────────────────────────────
                 The bar above tracks SLOTS marked paid. This tracks the money
                 itself: what actually reached the owner, when, and which pot it

@@ -266,9 +266,24 @@ export function useSeasonFund() {
     // contract.
     const extraSlots = allActive.filter(
       b => (b as { prepaid_by?: string | null }).prepaid_by);
-    const activeBookings = allActive.filter(
+    const clubSlots = allActive.filter(
       b => !(b as { prepaid_by?: string | null }).prepaid_by);
 
+    // ── Contracted, and everything bought outside the contract ───────────────
+    // The season figure is a specific thing: the deal with the Four Star owner
+    // for the Tue/Thu/Sat slots from October. A slot bought ad-hoc — September,
+    // say, while the monsoon decides whether the ground is playable — is real
+    // spending but it is not part of that agreement, and folding it in stops the
+    // one number anybody checks against the contract from meaning anything.
+    //
+    // Note this is a different question from prepaid_by, which asks who paid.
+    // An ad-hoc slot the club paid for is neither prepaid nor contracted.
+    const kindOf = (b: unknown) =>
+      (b as { booking_kind?: string | null }).booking_kind ?? 'season';
+    const adhocSlots     = clubSlots.filter(b => kindOf(b) === 'adhoc');
+    const activeBookings = clubSlots.filter(b => kindOf(b) !== 'adhoc');
+
+    const adhocCost = adhocSlots.reduce((sum, b) => sum + Number(b.cost), 0);
     const extraSlotsCost = extraSlots.reduce((sum, b) => sum + Number(b.cost), 0);
     const totalSpent = activeBookings.reduce((sum, b) => sum + Number(b.cost), 0);
     const totalOpponentCollection = activeBookings.reduce((sum, b) => {
@@ -290,6 +305,7 @@ export function useSeasonFund() {
       totalSpent,
       totalOpponentCollection,
       extraSlotsCost, extraSlotsCount: extraSlots.length,
+      adhocCost, adhocCount: adhocSlots.length,
       netCost,
       totalTarget,
       outstanding: totalTarget - totalCollected,
