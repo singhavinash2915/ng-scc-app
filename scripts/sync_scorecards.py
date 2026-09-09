@@ -186,7 +186,13 @@ def upsert_scorecard(match_id, ch_match_id, scorecard):
         'innings1_bowling': inn1['bowling'],
         'innings1_extras': inn1['extras'],
         'fetched_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        'raw': scorecard,
+        # No 'raw'. It stored the whole unparsed CricHeroes response — 14 KB a
+        # row, more than half the table — and nothing ever read it: not the app,
+        # not the edge functions, not any other script. It was costing every
+        # member half a megabyte on each cold app open, which is what pushed the
+        # Supabase org past its egress quota. The parsed columns above are the
+        # ones everything downstream actually uses; if the CricHeroes format
+        # ever changes, re-fetching is a better answer than hoarding.
     }
     if inn2:
         payload.update({
