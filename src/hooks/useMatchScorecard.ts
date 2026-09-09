@@ -83,7 +83,13 @@ export function useMatchScorecard(matchId: string | undefined) {
     (async () => {
       const { data, error } = await supabase
         .from('match_scorecards')
-        .select('*')
+        // Named columns, not '*'. The `raw` column is the unparsed CricHeroes
+        // response kept by the sync — 14 KB a row that nothing here reads.
+        .select(`id, match_id, ch_match_id, fetched_at,
+                 innings1_team_id, innings1_team_name, innings1_summary,
+                 innings1_batting, innings1_bowling, innings1_extras,
+                 innings2_team_id, innings2_team_name, innings2_summary,
+                 innings2_batting, innings2_bowling, innings2_extras`)
         .eq('match_id', matchId)
         .maybeSingle();
 
