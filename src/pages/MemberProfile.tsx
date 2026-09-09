@@ -130,7 +130,7 @@ type Tab = 'overview' | 'achievements' | 'photos' | 'memories' | 'matches' | 'mo
 export function MemberProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { members } = useMembers();
+  const { members, loading: membersLoading } = useMembers();
   const { isAdmin } = useAuth();
   /**
    * Who may see the money. Your own statement, or an admin's — a page showing
@@ -217,6 +217,26 @@ export function MemberProfile() {
     const lost = ext.filter(m => m.result === 'lost').length;
     return (won + lost) > 0 ? Math.round((won / (won + lost)) * 100) : 0;
   }, [matchesPlayed]);
+
+  // "Not found" is a claim about the whole squad, so it cannot be made until the
+  // squad has arrived. This used to render the moment `members` was empty —
+  // which it always is on the first frame — so every profile opened on
+  // "Player not found" and corrected itself once the fetch returned. Fast enough
+  // to look like a flicker on a laptop; on a phone at the ground it is seconds
+  // of a page that looks broken, and anyone who taps back in that window never
+  // sees the profile at all.
+  if (!member && (membersLoading || members.length === 0)) {
+    return (
+      <div>
+        <Header title="Profile" />
+        <div className="p-8 text-center">
+          <div className="w-12 h-12 rounded-full border-2 border-slate-200 dark:border-white/10
+                          border-t-primary-500 animate-spin mx-auto mb-3" />
+          <p className="text-gray-500">Loading profile…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!member) {
     return (
