@@ -276,6 +276,9 @@ export function Matches() {
     // Match type fields
     match_type: 'external' as MatchType,
     winning_team: '' as string,
+    // See resultData: an internal match is always stored as a draw, and this
+    // says whether it was played out or abandoned.
+    internal_outcome: 'completed' as 'completed' | 'no_result',
     // Polling fields
     polling_enabled: false,
     polling_deadline: '',
@@ -325,7 +328,18 @@ export function Matches() {
     opponent_score: '',
     man_of_match_id: '' as string,
     winning_team: '' as string,
+    // Internal matches are SCC against SCC, so `result` is always 'draw' for
+    // them — the club can't beat itself. Whether one was actually played to a
+    // finish is tracked here instead, and the side that won goes in
+    // winning_team. Storing 'won' put nine phantom wins in the club record.
+    internal_outcome: 'completed' as 'completed' | 'no_result',
   });
+
+  // An internal match never reads 'won', so gate its Man of the Match on the
+  // match having actually been played rather than on the club having won it.
+  const showMomPicker = selectedMatch?.match_type === 'internal'
+    ? resultData.result !== 'cancelled' && resultData.internal_outcome === 'completed'
+    : resultData.result === 'won';
 
   // Check if selected date is today or in the past
   const isCurrentOrPastDate = useMemo(() => {
@@ -435,10 +449,15 @@ export function Matches() {
       ? `${TEAM_NAMES.dhurandars} vs ${TEAM_NAMES.bazigars}`
       : formData.opponent || null;
 
-    // For internal matches with result, determine winning team
-    const winningTeam = formData.match_type === 'internal' && formData.result === 'won' && formData.winning_team
+    // For internal matches with result, determine winning team. The club's own
+    // result stays 'draw' — it played itself — and the winner lives here.
+    const internalPlayed = formData.match_type === 'internal'
+      && formData.result !== 'upcoming' && formData.result !== 'cancelled'
+      && formData.internal_outcome === 'completed';
+    const winningTeam = internalPlayed && formData.winning_team
       ? formData.winning_team as InternalTeam
       : null;
+    const formMom = formData.match_type === 'internal' ? internalPlayed : formData.result === 'won';
 
     setIsSubmitting(true);
     try {
@@ -457,7 +476,7 @@ export function Matches() {
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
           ch_match_id: formData.ch_match_id.trim() || null,
-          man_of_match_id: isCurrentOrPastDate && formData.result === 'won' && formData.man_of_match_id ? formData.man_of_match_id : null,
+          man_of_match_id: isCurrentOrPastDate && formMom && formData.man_of_match_id ? formData.man_of_match_id : null,
           match_type: formData.match_type,
           winning_team: winningTeam,
           polling_enabled: !isCurrentOrPastDate && formData.polling_enabled,
@@ -527,14 +546,16 @@ export function Matches() {
         result: resultData.result,
         our_score: resultData.our_score || null,
         opponent_score: resultData.opponent_score || null,
-        man_of_match_id: resultData.result === 'won' && resultData.man_of_match_id ? resultData.man_of_match_id : null,
-        winning_team: selectedMatch.match_type === 'internal' && resultData.result === 'won' && resultData.winning_team
+        man_of_match_id: showMomPicker && resultData.man_of_match_id ? resultData.man_of_match_id : null,
+        winning_team: selectedMatch.match_type === 'internal'
+          && resultData.internal_outcome === 'completed' && resultData.winning_team
           ? resultData.winning_team as InternalTeam
           : null,
       });
       setShowResultModal(false);
       setSelectedMatch(null);
-      setResultData({ result: 'won', our_score: '', opponent_score: '', man_of_match_id: '', winning_team: '' });
+      setResultData({ result: 'won', our_score: '', opponent_score: '', man_of_match_id: '',
+                      winning_team: '', internal_outcome: 'completed' });
     } catch (error) {
       console.error('Failed to update result:', error);
     } finally {
@@ -575,6 +596,7 @@ export function Matches() {
       man_of_match_id: '',
       match_type: 'external',
       winning_team: '',
+      internal_outcome: 'completed',
       polling_enabled: false,
       polling_deadline: '',
       captain_id: '',
@@ -677,6 +699,8 @@ export function Matches() {
       man_of_match_id: match.man_of_match_id || '',
       match_type: match.match_type || 'external',
       winning_team: match.winning_team || '',
+      internal_outcome: match.match_type === 'internal' && !match.winning_team
+        && match.result !== 'upcoming' ? 'no_result' : 'completed',
       polling_enabled: match.polling_enabled ?? false,
       polling_deadline: match.polling_deadline
         ? new Date(match.polling_deadline).toISOString().slice(0, 16)
@@ -704,12 +728,16 @@ export function Matches() {
 
   const openResultModal = (match: Match) => {
     setSelectedMatch(match);
+    const internal = match.match_type === 'internal';
     setResultData({
-      result: match.result === 'upcoming' ? 'won' : match.result,
+      result: match.result === 'upcoming' ? (internal ? 'draw' : 'won') : match.result,
       our_score: match.our_score || '',
       opponent_score: match.opponent_score || '',
       man_of_match_id: match.man_of_match_id || '',
       winning_team: match.winning_team || '',
+      // A played internal match has a winner recorded; one abandoned does not.
+      internal_outcome: internal && !match.winning_team && match.result !== 'upcoming'
+        ? 'no_result' : 'completed',
     });
     setShowResultModal(true);
     setMenuOpen(null);
@@ -1453,16 +1481,28 @@ export function Matches() {
                 <>
                   <Select
                     label="Result"
-                    value={formData.result}
-                    onChange={(e) => setFormData({ ...formData, result: e.target.value as Match['result'], winning_team: e.target.value === 'draw' ? '' : formData.winning_team })}
+                    value={formData.result === 'upcoming' || formData.result === 'cancelled'
+                      ? formData.result : formData.internal_outcome}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFormData({
+                        ...formData,
+                        // 'draw' whether played or abandoned: SCC vs SCC can't
+                        // move the club's win/loss record.
+                        result: (v === 'upcoming' || v === 'cancelled' ? v : 'draw') as Match['result'],
+                        internal_outcome: v === 'no_result' ? 'no_result' : 'completed',
+                        winning_team: v === 'completed' ? formData.winning_team : '',
+                      });
+                    }}
                     options={[
                       { value: 'upcoming', label: 'Not Yet Played / TBD' },
-                      { value: 'won', label: 'Completed' },
-                      { value: 'draw', label: 'No Result' },
+                      { value: 'completed', label: 'Completed' },
+                      { value: 'no_result', label: 'No Result' },
                       { value: 'cancelled', label: 'Cancelled' },
                     ]}
                   />
-                  {formData.result === 'won' && (
+                  {formData.result !== 'upcoming' && formData.result !== 'cancelled'
+                    && formData.internal_outcome === 'completed' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Winning Team *
@@ -1543,8 +1583,11 @@ export function Matches() {
                   )}
                 </>
               )}
-              {/* Man of the Match - Only show for Won matches */}
-              {formData.result === 'won' && (
+              {/* Man of the Match — a win, or a played internal match. */}
+              {(formData.match_type === 'internal'
+                  ? formData.result !== 'upcoming' && formData.result !== 'cancelled'
+                    && formData.internal_outcome === 'completed'
+                  : formData.result === 'won') && (
                 <Card className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800">
                   <div className="flex items-center gap-2 mb-3">
                     <Star className="w-5 h-5 text-amber-500" />
@@ -2297,15 +2340,25 @@ export function Matches() {
             <>
               <Select
                 label="Result *"
-                value={resultData.result}
-                onChange={(e) => setResultData({ ...resultData, result: e.target.value as Match['result'], winning_team: e.target.value === 'draw' ? '' : resultData.winning_team })}
+                value={resultData.result === 'cancelled' ? 'cancelled' : resultData.internal_outcome}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setResultData({
+                    ...resultData,
+                    // 'draw' for both played and abandoned: the club's win/loss
+                    // record must not move for a match it played against itself.
+                    result: v === 'cancelled' ? 'cancelled' : 'draw',
+                    internal_outcome: v === 'no_result' ? 'no_result' : 'completed',
+                    winning_team: v === 'completed' ? resultData.winning_team : '',
+                  });
+                }}
                 options={[
-                  { value: 'won', label: 'Completed' },
-                  { value: 'draw', label: 'No Result' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'no_result', label: 'No Result' },
                   { value: 'cancelled', label: 'Cancelled' },
                 ]}
               />
-              {resultData.result === 'won' && (
+              {resultData.result !== 'cancelled' && resultData.internal_outcome === 'completed' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Winning Team *
@@ -2375,8 +2428,8 @@ export function Matches() {
             </>
           )}
 
-          {/* Man of the Match - Only show for Won matches */}
-          {resultData.result === 'won' && (
+          {/* Man of the Match — for a win, or for a played internal match. */}
+          {showMomPicker && (
             <Card className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800">
               <div className="flex items-center gap-2 mb-3">
                 <Star className="w-5 h-5 text-amber-500" />

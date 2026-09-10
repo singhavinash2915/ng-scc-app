@@ -446,7 +446,10 @@ def reconcile_internal_matches():
         baz  = ta if a_side == 'bazigars' else tb if b_side == 'bazigars' else None
         winner = _internal_team_of(s.get('winning_team'))
         update = {
-            'result':         'won' if winner else 'draw',
+            # Always draw, never won: an internal match is SCC against SCC, so
+            # the club record must not move. winning_team below carries the side
+            # that actually won.
+            'result':         'draw',
             'winning_team':   winner,
             'our_score':      _strip_super_over((dhur or {}).get('summary')),
             'opponent_score': _strip_super_over((baz or {}).get('summary')),

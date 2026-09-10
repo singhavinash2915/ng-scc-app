@@ -146,9 +146,14 @@ def to_row(m):
     wt = winning_team(m)
     if status == "upcoming":
         result = "upcoming"
-    elif wt:
-        result = "won"            # internal: one team "won" (super-over counts)
     else:
+        # An internal match is SCC against SCC, so the club neither won nor lost
+        # it. Writing "won" here put nine free wins into the club's record: the
+        # app filters internal out of most figures, but the Matches page counts
+        # by result and so read 102 wins against a true 93.
+        #
+        # Who actually won is in winning_team, which is where the rivalry and
+        # MahaSangram views already read it from.
         result = "draw"
     row = {
         "date": date,
