@@ -3,6 +3,18 @@ import {
   type Ball, type MatchFormat,
 } from './cricketRules';
 import type { Member } from '../types';
+
+// ─── Guests ───────────────────────────────────────────────────────────────────
+// A guest bats and bowls like anyone else, so their deliveries belong in the
+// team totals — but never in a member's figures. Marking the row is what keeps
+// that true: player_id is CricHeroes' numeric id, 0 means "scored in the app",
+// and -1 means "a guest, do not attribute". The stat sync skips it outright
+// rather than trying to match the name, because name matching is a guess and a
+// guest called Rohit would otherwise land on a member called Rohit Sharma.
+export const GUEST_PLAYER_ID = -1;
+
+/** A player who is in the match but not in the club. */
+export interface GuestPlayer { id: string; name: string }
 import type {
   MatchScorecard, BatterRow, BowlerRow, InningsSummary, InningsExtras,
 } from '../hooks/useMatchScorecard';
@@ -45,14 +57,16 @@ function buildInnings(
   input: InningsInput,
   members: Member[],
   format: MatchFormat,
+  guests: GuestPlayer[] = [],
 ): {
   summary: InningsSummary;
   batting: BatterRow[];
   bowling: BowlerRow[];
   extras: InningsExtras;
 } {
+  const guestIds = new Set(guests.map(g => g.id));
   const nameOf = (id: string | null) =>
-    (id && members.find(m => m.id === id)?.name) || '';
+    (id && (members.find(m => m.id === id)?.name ?? guests.find(g => g.id === id)?.name)) || '';
 
   const st = inningsState(input.balls, format, input.target);
   const bat = battingCard(input.balls);
@@ -75,7 +89,7 @@ function buildInnings(
       // player_id is CricHeroes' numeric id; we have UUIDs, so 0 marks
       // "scored in the app" and name-matching does the rest, exactly as the
       // rest of the app already resolves players from scorecards.
-      player_id: 0,
+      player_id: guestIds.has(id) ? GUEST_PLAYER_ID : 0,
       name: nameOf(id),
       runs, balls,
       minutes: 0,
@@ -89,7 +103,7 @@ function buildInnings(
   const bowling: BowlerRow[] = [...bowl.entries()]
     .filter(([id]) => id && id !== 'null')
     .map(([id, l]) => ({
-      player_id: 0,
+      player_id: guestIds.has(id) ? GUEST_PLAYER_ID : 0,
       name: nameOf(id),
       overs: Number(formatOvers(l.legalBalls)),
       balls: l.legalBalls,
@@ -134,9 +148,10 @@ export function buildScorecard(
   second: InningsInput | null,
   members: Member[],
   format: MatchFormat,
+  guests: GuestPlayer[] = [],
 ): Partial<MatchScorecard> {
-  const i1 = buildInnings(first, members, format);
-  const i2 = second ? buildInnings(second, members, format) : null;
+  const i1 = buildInnings(first, members, format, guests);
+  const i2 = second ? buildInnings(second, members, format, guests) : null;
 
   return {
     match_id: matchId,
@@ -171,9 +186,10 @@ export function cricHeroesSheet(
   second: InningsInput | null,
   members: Member[],
   format: MatchFormat,
+  guests: GuestPlayer[] = [],
 ): string {
   const nameOf = (id: string | null) =>
-    (id && members.find(m => m.id === id)?.name) || '?';
+    (id && (members.find(m => m.id === id)?.name ?? guests.find(g => g.id === id)?.name)) || '?';
   const lines: string[] = [];
 
   const innings = [first, second].filter(Boolean) as InningsInput[];

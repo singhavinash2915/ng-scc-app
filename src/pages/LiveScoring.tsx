@@ -6,6 +6,7 @@ import { Header } from '../components/layout/Header';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useMembers } from '../hooks/useMembers';
+import { useGuests } from '../hooks/useGuests';
 import { useMatches } from '../hooks/useMatches';
 import { useScoring } from '../hooks/useScoring';
 import { useMatchInnings } from '../hooks/useMatchInnings';
@@ -169,12 +170,29 @@ export function LiveScoring() {
     prevShown.current = shown;
   }, [shown]);
 
+  // ── Who can be picked ───────────────────────────────────────────────────
+  // Members plus the guests named in THIS match. A guest is a friend filling in
+  // when the club is short — they aren't members on purpose, so no club figure
+  // can pick them up by forgetting to filter. But they bat and they bowl, and
+  // until now the pad could not record a ball they were part of: every player
+  // column was a foreign key to members, so the innings simply couldn't be
+  // scored with a fill-in at the crease. Which is the exact situation the pad
+  // exists for — CricHeroes down, away from home, a player short.
+  //
+  // They stay out of every stat by an explicit marker downstream, not by being
+  // unpickable here. See buildScorecard() and useStatSync().
+  const G = useGuests(matchId ?? null);
+  const squad = useMemo(() => {
+    const mem = members
+      .filter(m => m.status === 'active')
+      .map(m => ({ id: m.id, name: m.name, isGuest: false }));
+    const guests = G.appearances
+      .map(a => ({ id: a.guest_id, name: a.guest?.name ?? 'Guest', isGuest: true }));
+    return [...mem, ...guests].sort((a, b) => a.name.localeCompare(b.name));
+  }, [members, G.appearances]);
+
   const name = (id: string | null) =>
-    members.find(m => m.id === id)?.name ?? '—';
-  const squad = useMemo(
-    () => members.filter(m => m.status === 'active').sort((a, b) => a.name.localeCompare(b.name)),
-    [members],
-  );
+    squad.find(m => m.id === id)?.name ?? members.find(m => m.id === id)?.name ?? '—';
 
   const record = (input: Parameters<typeof S.scoreBall>[0]) => {
     void S.scoreBall(input, { strikerId: striker, nonStrikerId: nonStriker, bowlerId: bowler }, myId);
@@ -305,6 +323,16 @@ export function LiveScoring() {
         subtitle={match ? `${match.opponent ?? 'Match'} · ${format.oversPerInnings} overs` : 'Match'} />
 
       <div className="p-4 lg:p-8 max-w-3xl mx-auto space-y-4">
+
+        {/* A refused ball is not a slow one. Say so loudly: the alternative is
+            a scorer watching a "queued" counter climb while the innings is
+            being dropped delivery by delivery. */}
+        {S.rejected && (
+          <div className="r-card border-2 border-rose-500 bg-rose-50 dark:bg-rose-950/40 p-4">
+            <p className="font-black text-rose-700 dark:text-rose-300">Ball not saved</p>
+            <p className="t-body text-rose-700/90 dark:text-rose-200/80 mt-1">{S.rejected}</p>
+          </div>
+        )}
 
         {/* ── SCOREBOARD — the thing everyone looks at ─────────────────── */}
         <div className="relative overflow-hidden r-card text-white shadow-2xl"
@@ -505,7 +533,11 @@ export function LiveScoring() {
                   <select key={f.l} value={f.v ?? ''} onChange={e => f.set(e.target.value || null)}
                     className="w-full r-control border border-amber-200 bg-white px-3 py-2 text-sm">
                     <option value="">{f.l}…</option>
-                    {squad.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    {squad.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.isGuest ? `${m.name} (guest)` : m.name}
+                      </option>
+                    ))}
                   </select>
                 ))}
               </Card>
@@ -626,6 +658,10 @@ export function LiveScoring() {
                                  px-3.5 py-3 font-bold t-body text-slate-800 dark:text-white/85
                                  active:scale-[0.99] transition-transform">
                       {m.name}
+                      {m.isGuest && (
+                        <span className="ml-2 t-micro font-black uppercase tracking-wider
+                                         text-amber-600 dark:text-amber-400">guest</span>
+                      )}
                     </button>
                   ))}
                   {squad.filter(m => !usedBatters.has(m.id)).length === 0 && (
@@ -686,7 +722,13 @@ export function LiveScoring() {
                     <button key={m.id} onClick={() => { setBowler(m.id); setNeedBowler(false); }}
                       className="w-full flex items-center justify-between r-control border-2
                                  border-slate-200 dark:border-white/10 px-3.5 py-3 active:scale-[0.99] transition-transform">
-                      <span className="font-bold t-body text-slate-800 dark:text-white/85">{m.name}</span>
+                      <span className="font-bold t-body text-slate-800 dark:text-white/85">
+                        {m.name}
+                        {m.isGuest && (
+                          <span className="ml-2 t-micro font-black uppercase tracking-wider
+                                           text-amber-600 dark:text-amber-400">guest</span>
+                        )}
+                      </span>
                       {l && (
                         <span className="t-meta tabular-nums text-slate-400">
                           {l.overs}-{l.maidens}-{l.runs}-{l.wickets}

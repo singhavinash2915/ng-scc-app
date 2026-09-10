@@ -47,6 +47,8 @@ export function useScoring(
   const [lockHolder, setLockHolder] = useState<string | null>(null);
   const [lockFresh, setLockFresh] = useState(false);
   const [pending, setPending] = useState(0);
+  /** A ball the database refused outright — shown to the scorer, not queued. */
+  const [rejected, setRejected] = useState<string | null>(null);
   const lastSeq = useRef(-1);
   /** Which innings `lastSeq` belongs to. See fetchBalls. */
   const cursorInnings = useRef<number | null>(null);
@@ -64,6 +66,22 @@ export function useScoring(
     setPending(q.length);
   }, [matchId, innings]);
 
+  // ── Rejected, not offline ───────────────────────────────────────────────
+  // A ball that the database REFUSES is not a ball that will go through later,
+  // but both used to end up in the offline queue: the scorer saw the pending
+  // count climb and nothing else, while every delivery was being dropped. The
+  // case that made this real is a guest at the crease before
+  // add_guest_scoring.sql has been run — the foreign key rejects the row and
+  // the whole innings quietly fails to save.
+  //
+  // 23503 = foreign key violation, 23514 = check violation, 42501 = RLS.
+  const PERMANENT = new Set(['23503', '23514', '42501', '22P02']);
+  const describe = (code?: string) =>
+    code === '23503'
+      ? 'The database rejected that ball — most likely a guest is at the crease '
+        + 'and supabase/migrations/add_guest_scoring.sql has not been run yet.'
+      : `The database rejected that ball (${code ?? 'unknown'}). It has NOT been saved.`;
+
   /** Push anything queued while offline. Safe to call often. */
   const flush = useCallback(async () => {
     if (!matchId) return;
@@ -73,7 +91,8 @@ export function useScoring(
       q.map(b => ({ ...b, match_id: matchId, innings })),
       { onConflict: 'match_id,innings,seq' },
     );
-    if (!error) writeQueue([]);
+    if (!error) { writeQueue([]); setRejected(null); return; }
+    if (PERMANENT.has(String(error.code))) setRejected(describe(error.code));
   }, [matchId, innings, readQueue, writeQueue]);
 
   // ── Load / poll ────────────────────────────────────────────────────────
@@ -219,8 +238,11 @@ export function useScoring(
 
     const { error } = await supabase.from('scc_ball_by_ball')
       .insert({ ...ball, match_id: matchId, innings, created_by: scorerId });
-    // Offline or a blip: keep it locally and let flush() catch up.
-    if (error) writeQueue([...readQueue(), ball]);
+    if (!error) { setRejected(null); return; }
+    // Offline or a blip: keep it locally and let flush() catch up. A refusal is
+    // different — queueing it would hide a failure that never resolves.
+    if (PERMANENT.has(String(error.code))) setRejected(describe(error.code));
+    else writeQueue([...readQueue(), ball]);
   }, [matchId, innings, balls, ctx, readQueue, writeQueue]);
 
   /** Take back the last delivery. Recomputes everything — no running totals. */
@@ -294,7 +316,7 @@ export function useScoring(
     balls, state, ctx, freeHit, loading, tableMissing,
     lockHolder, lockFresh, claimLock, releaseLock, heartbeat,
     scoreBall, undoBall, correctBatter, reassignBowler,
-    pending, flush, refetch: fetchBalls,
+    pending, flush, refetch: fetchBalls, rejected,
     HEARTBEAT_MS,
   };
 }

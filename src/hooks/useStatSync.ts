@@ -9,6 +9,7 @@
 import { useState, useCallback } from 'react';
 import { supabase, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 import type { Match, Member } from '../types';
+import { GUEST_PLAYER_ID } from '../lib/buildScorecard';
 
 // ── CricHeroes player_id → SCC member UUID ────────────────────────────────────
 // CricHeroes scorecard rows carry an authoritative numeric player_id. Matching
@@ -302,11 +303,26 @@ export function useStatSync() {
     // Build a lookup from member id → Member for nameMap resolution
     const memberById = Object.fromEntries(members.map(m => [m.id, m]));
 
+    // ── Guests are not members, and must not be mistaken for one ────────────
+    // A guest fills in when the club is short. They appear on the CricHeroes
+    // scorecard by name like anyone else, and the fuzzy matcher below falls back
+    // to "one member has that first name" — so a guest called Rohit would have
+    // his 40 credited to a member called Rohit Sharma, silently, for good.
+    //
+    // So guest names are refused outright, before any matching runs. An
+    // app-built scorecard is even more explicit: it tags guest rows
+    // player_id = -1 (GUEST_PLAYER_ID) and those are skipped below.
+    const { data: guestRows } = await supabase.from('guests').select('name');
+    const guestNames = new Set((guestRows ?? []).map(g => norm(String(g.name ?? ''))));
+    const isGuestName = (n: string) => guestNames.has(norm(n));
+
     // Resolve a scorecard row to a member. Order of trust:
     //   1. CricHeroes player_id (authoritative — never collides)
     //   2. admin's manual nameMap override
     //   3. fuzzy name matching
     const resolveRow = (chName: string, playerId?: number | null): Member | null => {
+      if (playerId === GUEST_PLAYER_ID) return null;   // app-scored guest row
+      if (isGuestName(chName)) return null;            // guest on a CricHeroes card
       if (playerId != null) {
         const byId = CH_PLAYER_TO_MEMBER[playerId];
         if (byId && memberById[byId]) return memberById[byId];
@@ -402,7 +418,12 @@ export function useStatSync() {
               if (!Number(b.balls)) continue;       // never faced a ball → skip
               const member = resolveRow(String(b.name ?? ''), b.player_id != null ? Number(b.player_id) : null);
               // Unmatched here means an SCC player whose name differs → worth warning
-              if (!member) { if (b.name) unmatchedSet.add(String(b.name)); continue; }
+              // A guest is unmatched on purpose — don't report them as a name
+              // the admin needs to fix.
+              if (!member) {
+                if (b.name && !isGuestName(String(b.name))) unmatchedSet.add(String(b.name));
+                continue;
+              }
 
               const k = K(member.id);
               if (!acc[k]) acc[k] = emptyAcc();
