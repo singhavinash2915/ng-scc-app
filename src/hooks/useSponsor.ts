@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { withLiveImages } from '../lib/deadStorage';
 import type { Sponsor } from '../types';
 
 export function useSponsor() {
@@ -20,7 +21,11 @@ export function useSponsor() {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setSponsors(data || []);
+      // Logos, and the linked member's avatar, may still point at the old
+      // project's storage — blank those so the name shows instead of a break.
+      setSponsors((data || []).map(r => withLiveImages({
+        ...r, member: r.member ? withLiveImages(r.member as Record<string, unknown>) : r.member,
+      })));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch sponsors');
     } finally {

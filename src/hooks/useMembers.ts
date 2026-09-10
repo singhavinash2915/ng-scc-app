@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { withLiveImages } from '../lib/deadStorage';
 import type { Member } from '../types';
 
 export function useMembers() {
@@ -16,7 +17,9 @@ export function useMembers() {
         .order('name');
 
       if (error) throw error;
-      setMembers(data || []);
+      // Avatars still living in the old project cannot be loaded; blanking the
+      // URL lets the initials fallback show instead of a broken image.
+      setMembers((data || []).map(withLiveImages));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch members');
     } finally {

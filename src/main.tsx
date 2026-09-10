@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Capacitor } from '@capacitor/core';
 import './index.css';
 import App from './App.tsx';
+import { hideDeadImages } from './lib/deadStorage';
 
 async function init() {
   const isNative = Capacitor.isNativePlatform();
@@ -76,7 +77,9 @@ async function init() {
     });
   }
 
-  createRoot(document.getElementById('root')!).render(
+  hideDeadImages();
+
+createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
     </StrictMode>,
