@@ -21,6 +21,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { useMatches } from '../hooks/useMatches';
 import { useMembers } from '../hooks/useMembers';
+import { GuestPlayers } from '../components/GuestPlayers';
 import { useTransactions } from '../hooks/useTransactions';
 import { useFeeTracking } from '../hooks/useFeeTracking';
 import { useAuth } from '../context/AuthContext';
@@ -333,6 +334,15 @@ export function FeeTracking() {
                               })}
                             </div>
                           </div>
+
+                          {/* ── Guests ─────────────────────────────────────
+                              Their fee is cash on the day, so it needs a place
+                              to be marked collected — otherwise it is money
+                              that changed hands in the world and nowhere in the
+                              books. */}
+                          {status.match.match_type !== 'internal' && (
+                            <GuestPlayers match={status.match} members={members} showFees />
+                          )}
 
                           {/* Actions */}
                           {isAdmin && isUpcoming && (

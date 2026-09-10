@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card } from './ui/Card';
+import { GuestPlayers } from './GuestPlayers';
 import { useCardStats } from '../hooks/useCardStats';
 import { tierFor } from '../lib/playerCard';
 import {
@@ -435,6 +436,13 @@ export function SquadSelectorModal({ isOpen, onClose, match }: Props) {
             </div>
           </Card>
         </div>
+
+        {/* ── Guests ──────────────────────────────────────────────────
+            Only for external matches: MahaSangram is club-only by definition,
+            and a guest has no side in it. */}
+        {match.match_type !== 'internal' && (
+          <GuestPlayers match={match} members={members} />
+        )}
 
         {/* Action buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
