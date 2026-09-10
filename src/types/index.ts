@@ -85,6 +85,12 @@ export interface Match {
   polling_enabled: boolean;
   polling_deadline: string | null;
   ch_match_id?: string | null; // CricHeroes match ID for auto-sync
+  // Playing conditions, per fixture — home is 16 overs, 12 a side, 4 per
+  // bowler, but an away match is played to the host's rules. Read by the
+  // scoring pad, the over limit, the bowler cap and the win probability.
+  overs_per_innings?: number | null;
+  players_per_side?: number | null;
+  max_overs_per_bowler?: number | null;
   captain_id: string | null;
   vice_captain_id: string | null;
   dhurandars_captain_id?: string | null;

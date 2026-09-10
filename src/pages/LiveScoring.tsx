@@ -56,12 +56,9 @@ export function LiveScoring() {
 
   const match = matches.find(m => m.id === matchId);
   const format = useMemo(() => ({
-    oversPerInnings: (match as { overs_per_innings?: number } | undefined)?.overs_per_innings
-      ?? DEFAULT_FORMAT.oversPerInnings,
-    playersPerSide: (match as { players_per_side?: number } | undefined)?.players_per_side
-      ?? DEFAULT_FORMAT.playersPerSide,
-    maxOversPerBowler: (match as { max_overs_per_bowler?: number } | undefined)?.max_overs_per_bowler
-      ?? DEFAULT_FORMAT.maxOversPerBowler,
+    oversPerInnings: match?.overs_per_innings ?? DEFAULT_FORMAT.oversPerInnings,
+    playersPerSide: match?.players_per_side ?? DEFAULT_FORMAT.playersPerSide,
+    maxOversPerBowler: match?.max_overs_per_bowler ?? DEFAULT_FORMAT.maxOversPerBowler,
   }), [match]);
 
   const M = useMatchInnings(matchId ?? null);

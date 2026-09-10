@@ -274,6 +274,13 @@ export function Matches() {
     our_score: '',
     opponent_score: '',
     man_of_match_id: '' as string,
+    // Format. Lives on the fixture because it varies per match — 16 overs and
+    // 12 a side at Four Star, but an away game is played to the host's rules.
+    // The scoring pad, the over limit, the bowler cap and the win probability
+    // all read these, and until now nothing but a SQL statement could set them.
+    overs_per_innings: 16,
+    players_per_side: 12,
+    max_overs_per_bowler: 4,
     // Match type fields
     match_type: 'external' as MatchType,
     winning_team: '' as string,
@@ -377,7 +384,7 @@ export function Matches() {
       if (filter === 'completed' && !['won', 'lost', 'draw'].includes(match.result)) return false;
       if (filter === 'won'  && match.result !== 'won')  return false;
       if (filter === 'lost' && match.result !== 'lost') return false;
-      if (filter === 'draw' && match.result !== 'draw') return false;
+      if (filter === 'draw' && !isNoResult(match)) return false;
 
       // Filter by match type
       if (matchTypeFilter !== 'all' && match.match_type !== matchTypeFilter) return false;
@@ -477,6 +484,9 @@ export function Matches() {
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
           ch_match_id: formData.ch_match_id.trim() || null,
+          overs_per_innings: formData.overs_per_innings,
+          players_per_side: formData.players_per_side,
+          max_overs_per_bowler: formData.max_overs_per_bowler,
           man_of_match_id: isCurrentOrPastDate && formMom && formData.man_of_match_id ? formData.man_of_match_id : null,
           match_type: formData.match_type,
           winning_team: winningTeam,
@@ -520,6 +530,9 @@ export function Matches() {
           deduct_from_balance: formData.deduct_from_balance,
           notes: formData.notes || null,
           ch_match_id: formData.ch_match_id.trim() || null,
+          overs_per_innings: formData.overs_per_innings,
+          players_per_side: formData.players_per_side,
+          max_overs_per_bowler: formData.max_overs_per_bowler,
           captain_id: formData.captain_id || null,
           vice_captain_id: formData.vice_captain_id || null,
           dhurandars_captain_id: formData.match_type === 'internal' ? (formData.dhurandars_captain_id || null) : null,
@@ -595,6 +608,9 @@ export function Matches() {
       our_score: '',
       opponent_score: '',
       man_of_match_id: '',
+      overs_per_innings: 16,
+      players_per_side: 12,
+      max_overs_per_bowler: 4,
       match_type: 'external',
       winning_team: '',
       internal_outcome: 'completed',
@@ -698,6 +714,9 @@ export function Matches() {
       our_score: match.our_score || '',
       opponent_score: match.opponent_score || '',
       man_of_match_id: match.man_of_match_id || '',
+      overs_per_innings: match.overs_per_innings ?? 16,
+      players_per_side: match.players_per_side ?? 12,
+      max_overs_per_bowler: match.max_overs_per_bowler ?? 4,
       match_type: match.match_type || 'external',
       winning_team: match.winning_team || '',
       internal_outcome: match.match_type === 'internal' && !match.winning_team
@@ -802,14 +821,22 @@ export function Matches() {
     );
   };
 
-  const getResultBadge = (result: Match['result'], matchType?: MatchType) => {
+  // An internal match is stored as a draw — the club played itself — so "no
+  // result" has to mean a draw with nobody down as the winner. Without this the
+  // nine Brahmos v Agni matches, every one of them played to a finish, sat in
+  // the No Result bucket and wore a DRAW badge.
+  const isNoResult = (m: Match) => m.result === 'draw' && !m.winning_team;
+
+  const getResultBadge = (result: Match['result'], matchType?: MatchType, winningTeam?: string | null) => {
     switch (result) {
       case 'won':
         return <Badge variant="success">{matchType === 'internal' ? 'COMPLETED' : 'WON'}</Badge>;
       case 'lost':
         return <Badge variant="danger">LOST</Badge>;
       case 'draw':
-        return <Badge variant="warning">DRAW</Badge>;
+        return winningTeam
+          ? <Badge variant="success">COMPLETED</Badge>
+          : <Badge variant="warning">NO RESULT</Badge>;
       case 'cancelled':
         return <Badge variant="default">CANCELLED</Badge>;
       default:
@@ -868,6 +895,7 @@ export function Matches() {
                 const count = f.key === 'all' ? matches.length
                   : f.key === 'upcoming'  ? matches.filter(m => m.result === 'upcoming').length
                   : f.key === 'completed' ? matches.filter(m => ['won','lost','draw'].includes(m.result)).length
+                  : f.key === 'draw'      ? matches.filter(isNoResult).length
                   : matches.filter(m => m.result === f.key).length;
                 return (
                   <button
@@ -981,7 +1009,7 @@ export function Matches() {
                           vs {match.opponent || 'TBD'}
                         </h3>
                       )}
-                      {getResultBadge(match.result, match.match_type)}
+                      {getResultBadge(match.result, match.match_type, match.winning_team)}
                       {match.match_type === 'internal' ? (
                         <Badge variant="default" className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                           Internal
@@ -1447,6 +1475,35 @@ export function Matches() {
             onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
             required
           />
+          {/* ── Format ─────────────────────────────────────────────────
+              Set here and nowhere else: an away match is played to the host's
+              rules, and the scoring pad, the over limit, the per-bowler cap and
+              the live win probability all read these three off the fixture. */}
+          <div className="p-4 bg-slate-50 dark:bg-white/5 r-card">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Format
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <Input
+                label="Overs" type="number" min={1} max={50}
+                value={formData.overs_per_innings}
+                onChange={(e) => setFormData({ ...formData,
+                  overs_per_innings: parseInt(e.target.value) || 0 })} />
+              <Input
+                label="Players a side" type="number" min={2} max={16}
+                value={formData.players_per_side}
+                onChange={(e) => setFormData({ ...formData,
+                  players_per_side: parseInt(e.target.value) || 0 })} />
+              <Input
+                label="Max overs / bowler" type="number" min={1} max={20}
+                value={formData.max_overs_per_bowler}
+                onChange={(e) => setFormData({ ...formData,
+                  max_overs_per_bowler: parseInt(e.target.value) || 0 })} />
+            </div>
+            <p className="t-micro text-slate-400 mt-2">
+              Home is 16 overs, 12 a side, 4 per bowler. ICC rules otherwise.
+            </p>
+          </div>
           <div className="grid grid-cols-3 gap-4">
             <Input
               label="Match Fee (₹) *"
@@ -2051,6 +2108,35 @@ export function Matches() {
             onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
             required
           />
+          {/* ── Format ─────────────────────────────────────────────────
+              Set here and nowhere else: an away match is played to the host's
+              rules, and the scoring pad, the over limit, the per-bowler cap and
+              the live win probability all read these three off the fixture. */}
+          <div className="p-4 bg-slate-50 dark:bg-white/5 r-card">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Format
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <Input
+                label="Overs" type="number" min={1} max={50}
+                value={formData.overs_per_innings}
+                onChange={(e) => setFormData({ ...formData,
+                  overs_per_innings: parseInt(e.target.value) || 0 })} />
+              <Input
+                label="Players a side" type="number" min={2} max={16}
+                value={formData.players_per_side}
+                onChange={(e) => setFormData({ ...formData,
+                  players_per_side: parseInt(e.target.value) || 0 })} />
+              <Input
+                label="Max overs / bowler" type="number" min={1} max={20}
+                value={formData.max_overs_per_bowler}
+                onChange={(e) => setFormData({ ...formData,
+                  max_overs_per_bowler: parseInt(e.target.value) || 0 })} />
+            </div>
+            <p className="t-micro text-slate-400 mt-2">
+              Home is 16 overs, 12 a side, 4 per bowler. ICC rules otherwise.
+            </p>
+          </div>
           <div className="grid grid-cols-3 gap-4">
             <Input
               label="Match Fee (₹) *"
