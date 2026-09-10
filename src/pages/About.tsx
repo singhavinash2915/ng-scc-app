@@ -152,7 +152,7 @@ export function About() {
             {[
               { icon: '🏏', title: 'Match Tracking', text: 'Every match — external & internal — with squad polls, photos, and scorecards' },
               { icon: '👥', title: 'Member Management', text: 'Profiles, roles, jersey numbers, and contact info for every player' },
-              { icon: '💰', title: 'Transparent Finances', text: 'Member balances, match fees, expenses, and online payments via Razorpay' },
+              { icon: '💰', title: 'Transparent Finances', text: 'Member balances, match fees, ground costs and every rupee the club spends' },
               { icon: '🏆', title: 'Live Leaderboard', text: 'Batting, bowling, fielding stats — auto-synced from CricHeroes daily' },
               { icon: '👑', title: 'Hall of Fame', text: 'Club records, MOM tally, Player of the Month, and custom awards' },
               { icon: '🤖', title: 'AI Coach Chat', text: 'Ask the AI about player form, match analysis, or who to pick' },

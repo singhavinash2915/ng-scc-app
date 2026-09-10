@@ -29,6 +29,12 @@ export const FEATURES = {
   aiInsights: true,
 
   // ── Club ops ─────────────────────────────────────────────────────────────
+  /** Online card/UPI top-ups through Razorpay. OFF — nobody used it, and the
+   *  three edge functions behind it were deleted rather than carried to the new
+   *  Supabase project, so the page would only fail if it were reachable. Members
+   *  top up in person and an admin records the deposit. Turning this back on
+   *  means redeploying those functions and setting the three Razorpay secrets. */
+  onlinePayments: false,
   finance: true,
   feeTracking: true,
   groundBooking: true,

@@ -158,7 +158,7 @@ const AppRoutes = () => (
         <Route path="/predictions"   element={<Suspense fallback={<PageLoader />}><Predictions /></Suspense>} />
         <Route path="/profile/:id"   element={<Suspense fallback={<PageLoader />}><MemberProfile /></Suspense>} />
         <Route path="/annual-report" element={<Suspense fallback={<PageLoader />}><AnnualReport /></Suspense>} />
-        <Route path="/payment"       element={<Suspense fallback={<PageLoader />}><Payment /></Suspense>} />
+        <Route path="/payment"       element={FEATURES.onlinePayments ? <Suspense fallback={<PageLoader />}><Payment /></Suspense> : <Navigate to="/finance" replace />} />
         <Route path="/analytics"     element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
         <Route path="/bookings" element={<Suspense fallback={<PageLoader />}><Bookings /></Suspense>} />
         <Route path="/requests"      element={<Suspense fallback={<PageLoader />}><Requests /></Suspense>} />
