@@ -21,9 +21,7 @@ import json, random, sys, urllib.request
 from collections import Counter
 
 URL = "https://nptvrfqonfmafvbzjrih.supabase.co/rest/v1"
-KEY = ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1wYWF0eWRo"
-       "bGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4Mjc4ODM0N30."
-       "kHot4i6MNPjt2neNzJ_tMAplJi_9CiYNgFzAzmEgdeg")
+KEY = "sb_publishable_NC3gqU5FnEFEhSO9KWPKNg_WpLnfo9G"
 SEASON = "2026-27"
 
 PURSE      = 2500   # ₹ lakh

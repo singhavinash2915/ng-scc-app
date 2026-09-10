@@ -56,12 +56,22 @@ while IFS= read -r f; do
 done <<< "$FILES"
 
 echo "Done. Verifying nothing was missed:"
-LEFT=$(git ls-files | grep -vE '^(dist|android|ios)/' | xargs grep -l "$OLD_REF" 2>/dev/null || true)
+
+# Two checks, because the first one alone is not enough. Some files wrap the key
+# across several adjacent string literals for line length, so the whole key never
+# appears contiguously and a literal replace silently skips it — which is exactly
+# how sync_mahasangram.py kept the old key, kept working URLs, and failed with a
+# 401 that looked nothing like a migration problem. The signature below is a
+# fragment of the old key's payload, short enough to survive any line wrapping.
+OLD_KEY_FRAGMENT="kHot4i6MNPjt2neNzJ"
+LEFT=$(git ls-files | grep -vE '^(dist|android|ios)/' | xargs grep -l -e "$OLD_REF" -e "$OLD_KEY_FRAGMENT" 2>/dev/null || true)
 if [[ -n "$LEFT" ]]; then
-  echo "  ⚠ still referencing the old project:"; echo "$LEFT" | sed 's/^/    /'
+  echo "  ⚠ still referencing the old project or its key:"; echo "$LEFT" | sed 's/^/    /'
+  echo "  If a file is listed but a plain search for the key finds nothing, the"
+  echo "  key is probably split across adjacent string literals — join it first."
   exit 1
 fi
-echo "  ✓ no tracked file references the old project"
+echo "  ✓ no tracked file references the old project or its key"
 echo
 echo "Next: npm run build, then redeploy. The mobile builds under android/ and"
 echo "ios/ carry the old URL in their bundled assets until they are rebuilt."
