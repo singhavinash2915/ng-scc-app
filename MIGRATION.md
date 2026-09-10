@@ -31,7 +31,7 @@ still work. Establish that first — everything else depends on it.
 
 ```bash
 supabase login
-supabase link --project-ref zrrmpaatydhlkntfpcmw     # asks for the DB password
+supabase link --project-ref nptvrfqonfmafvbzjrih     # asks for the DB password
 supabase db dump -f /tmp/scc_schema.sql              # schema
 supabase db dump -f /tmp/scc_data.sql --data-only    # data
 ```

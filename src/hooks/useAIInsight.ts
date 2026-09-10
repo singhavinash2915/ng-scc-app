@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { AIInsightType } from '../types';
 
-const SUPABASE_URL = 'https://zrrmpaatydhlkntfpcmw.supabase.co';
+const SUPABASE_URL = 'https://nptvrfqonfmafvbzjrih.supabase.co';
 
 // Squad/prediction insights change when poll responses come in — short TTL
 // Other insights (DNA, match report) are stable — use full 24h TTL
@@ -38,7 +38,7 @@ export function useAIInsight() {
       }
 
       // Get anon key from supabase client
-      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1wYWF0eWRobGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4Mjc4ODM0N30.kHot4i6MNPjt2neNzJ_tMAplJi_9CiYNgFzAzmEgdeg';
+      const anonKey = 'sb_publishable_NC3gqU5FnEFEhSO9KWPKNg_WpLnfo9G';
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-insights`, {
         method: 'POST',

@@ -58,7 +58,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             // Supabase REST API — always fetch fresh, cache only as short offline fallback
-            urlPattern: /^https:\/\/zrrmpaatydhlkntfpcmw\.supabase\.co\/rest\/.*/i,
+            urlPattern: /^https:\/\/nptvrfqonfmafvbzjrih\.supabase\.co\/rest\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api-cache-v2',
@@ -71,7 +71,7 @@ export default defineConfig({
           },
           {
             // Cache Supabase Storage files (images - cache first)
-            urlPattern: /^https:\/\/zrrmpaatydhlkntfpcmw\.supabase\.co\/storage\/.*/i,
+            urlPattern: /^https:\/\/nptvrfqonfmafvbzjrih\.supabase\.co\/storage\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'supabase-storage-cache',

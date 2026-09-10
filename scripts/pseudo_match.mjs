@@ -15,8 +15,8 @@ import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1wYWF0eWRobGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4Mjc4ODM0N30.kHot4i6MNPjt2neNzJ_tMAplJi_9CiYNgFzAzmEgdeg';
-const BASE = 'https://zrrmpaatydhlkntfpcmw.supabase.co/rest/v1';
+const KEY = 'sb_publishable_NC3gqU5FnEFEhSO9KWPKNg_WpLnfo9G';
+const BASE = 'https://nptvrfqonfmafvbzjrih.supabase.co/rest/v1';
 const MATCH = '03a51fb6-f6ab-43a0-b7a9-366dc97aef01';   // 1 Oct Brahmos v Agni
 const KEEP = process.argv.includes('--keep');
 

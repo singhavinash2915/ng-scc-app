@@ -7,7 +7,7 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) when w
 **Sangria Cricket Club (SCC) Management App** - A full-featured React TypeScript web application for managing a cricket club's members, matches, finances, tournaments, squad polling, sponsorship, and more. Uses Supabase as the backend (PostgreSQL database + file storage).
 
 **Live URL:** Deployed on GitHub Pages (auto-deploy on push to `main`)
-**Supabase URL:** `https://zrrmpaatydhlkntfpcmw.supabase.co`
+**Supabase URL:** `https://nptvrfqonfmafvbzjrih.supabase.co`
 
 ## Commands
 

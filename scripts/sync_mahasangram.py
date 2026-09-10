@@ -43,7 +43,7 @@ BRAHMOS_ID = 14361049
 AGNI_ID = 14361070
 VENUE_FALLBACK = "Four Star Cricket Ground"
 
-SUPABASE_URL = "https://zrrmpaatydhlkntfpcmw.supabase.co"
+SUPABASE_URL = "https://nptvrfqonfmafvbzjrih.supabase.co"
 SUPABASE_KEY = (
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1w"
     "YWF0eWRobGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4"

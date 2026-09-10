@@ -13,8 +13,8 @@
 
 set -euo pipefail
 
-OLD_REF="zrrmpaatydhlkntfpcmw"
-OLD_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1wYWF0eWRobGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4Mjc4ODM0N30.kHot4i6MNPjt2neNzJ_tMAplJi_9CiYNgFzAzmEgdeg"
+OLD_REF="nptvrfqonfmafvbzjrih"
+OLD_KEY="sb_publishable_NC3gqU5FnEFEhSO9KWPKNg_WpLnfo9G"
 
 NEW_REF="${1:-}"
 NEW_KEY="${2:-}"

@@ -57,8 +57,8 @@ CH_TO_SB = {
     42750501:"13972b5b-0423-42e2-9490-1ae2f892218c",
 }
 
-SUPABASE_URL = "https://zrrmpaatydhlkntfpcmw.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpycm1wYWF0eWRobGtudGZwY213Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMTIzNDcsImV4cCI6MjA4Mjc4ODM0N30.kHot4i6MNPjt2neNzJ_tMAplJi_9CiYNgFzAzmEgdeg"
+SUPABASE_URL = "https://nptvrfqonfmafvbzjrih.supabase.co"
+SUPABASE_KEY = "sb_publishable_NC3gqU5FnEFEhSO9KWPKNg_WpLnfo9G"
 
 OPPONENT_LABEL = "Sangria Dhurandars vs Sangria Bazigars"
 
