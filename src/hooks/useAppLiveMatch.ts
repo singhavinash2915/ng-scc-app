@@ -21,6 +21,11 @@ export interface AppLiveMatch {
   runs: number;
   wickets: number;
   legalBalls: number;
+  /** The fixture's own format. The banner's chase line and win probability are
+   *  both computed against overs and wickets remaining, so a hard-coded 16/12
+   *  reads a 15-over away game wrong from the first ball of the chase. */
+  oversPerInnings: number;
+  playersPerSide: number;
 }
 
 const isMissing = (e: { code?: string } | null) =>
@@ -52,7 +57,7 @@ export function useAppLiveMatch() {
     // to everyone opening the app. Resolve it the way the scoring page does.
     const { data: match } = await supabase
       .from('matches')
-      .select('opponent, match_type')
+      .select('opponent, match_type, overs_per_innings, players_per_side')
       .eq('id', row.match_id)
       .maybeSingle();
 
@@ -84,6 +89,8 @@ export function useAppLiveMatch() {
       bowlingTeam: nameOf(row.bowling_team),
       target: row.target,
       runs, wickets, legalBalls,
+      oversPerInnings: match?.overs_per_innings ?? 16,
+      playersPerSide: match?.players_per_side ?? 12,
     });
     setLoading(false);
   }, []);

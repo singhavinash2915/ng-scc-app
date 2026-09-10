@@ -40,6 +40,7 @@ import { EXPENSE_CATEGORIES, categoryOf } from '../lib/expenseCategories';
 import { useMembers } from '../hooks/useMembers';
 import { useAuth } from '../context/AuthContext';
 import { usePaymentOrders } from '../hooks/usePaymentOrders';
+import { todayIso } from '../config/season';
 
 type TabType = 'transactions' | 'monthly' | 'reports' | 'payments';
 
@@ -97,7 +98,7 @@ export function Finance() {
   const [expenseData, setExpenseData] = useState({
     amount: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: todayIso(),
     category: '',
     expense_kind: '',
   });
@@ -106,7 +107,7 @@ export function Finance() {
     memberId: '',
     amount: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: todayIso(),
   });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -266,7 +267,7 @@ export function Finance() {
         expense_kind: expenseData.expense_kind || null,
       });
       setShowExpenseModal(false);
-      setExpenseData({ amount: '', description: '', date: new Date().toISOString().split('T')[0],
+      setExpenseData({ amount: '', description: '', date: todayIso(),
                        category: '', expense_kind: '' });
     } catch (error) {
       console.error('Failed to add expense:', error);
@@ -288,7 +289,7 @@ export function Finance() {
       // Refresh transactions to show the new deposit
       await fetchTransactions();
       setShowDepositModal(false);
-      setDepositData({ memberId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+      setDepositData({ memberId: '', amount: '', description: '', date: todayIso() });
     } catch (error) {
       console.error('Failed to add deposit:', error);
     } finally {

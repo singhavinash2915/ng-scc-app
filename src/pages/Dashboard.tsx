@@ -1,4 +1,4 @@
-import { CURRENT_SEASON_WINDOW, CURRENT_SEASON } from '../config/season';
+import { CURRENT_SEASON_WINDOW, CURRENT_SEASON, todayIso } from '../config/season';
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
@@ -140,7 +140,7 @@ export function Dashboard() {
 
   // Live match alert — match scheduled today (in any state: upcoming or completed-today)
   const liveMatchToday = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayIso();
     return matches.find(m => m.date === today);
   }, [matches]);
   // If a match was played in the last 7 days, show "of the Week"; else "of the Month"
@@ -361,7 +361,8 @@ export function Dashboard() {
                   {appLive.live.target
                     ? chaseLine({ target: appLive.live.target, runs: appLive.live.runs,
                         wickets: appLive.live.wickets, legalBalls: appLive.live.legalBalls,
-                        oversPerInnings: 16, playersPerSide: 12 })
+                        oversPerInnings: appLive.live.oversPerInnings,
+                        playersPerSide: appLive.live.playersPerSide })
                     : `v ${appLive.live.bowlingTeam} — tap for ball by ball`}
                 </p>
               </div>
@@ -375,7 +376,8 @@ export function Dashboard() {
               const pct = Math.round(winProbability({
                 target: appLive.live!.target!, runs: appLive.live!.runs,
                 wickets: appLive.live!.wickets, legalBalls: appLive.live!.legalBalls,
-                oversPerInnings: 16, playersPerSide: 12,
+                oversPerInnings: appLive.live!.oversPerInnings,
+                playersPerSide: appLive.live!.playersPerSide,
               }) * 100);
               return (
                 <div className="mt-3">

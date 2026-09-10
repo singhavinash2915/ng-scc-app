@@ -26,6 +26,7 @@ import { useTournaments } from '../hooks/useTournaments';
 import { useMatches } from '../hooks/useMatches';
 import { useAuth } from '../context/AuthContext';
 import type { Tournament, TournamentMatch } from '../types';
+import { todayIso } from '../config/season';
 
 export function Tournaments() {
   const { tournaments, loading, addTournament, updateTournament, deleteTournament, addMatchToTournament, removeMatchFromTournament, getTournamentStats } = useTournaments();
@@ -43,7 +44,7 @@ export function Tournaments() {
 
   const [formData, setFormData] = useState({
     name: '',
-    start_date: new Date().toISOString().split('T')[0],
+    start_date: todayIso(),
     end_date: '',
     venue: '',
     format: 'T20' as Tournament['format'],
@@ -180,7 +181,7 @@ export function Tournaments() {
   const resetForm = () => {
     setFormData({
       name: '',
-      start_date: new Date().toISOString().split('T')[0],
+      start_date: todayIso(),
       end_date: '',
       venue: '',
       format: 'T20',

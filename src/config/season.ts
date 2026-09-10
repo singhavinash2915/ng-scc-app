@@ -36,7 +36,16 @@ export function seasonWindow(key: string): { start: string; end: string } {
   };
 }
 
-const todayIso = () => new Date().toLocaleDateString('en-CA');
+/**
+ * Today, as the club experiences it.
+ *
+ * NOT `toISOString()`: that is UTC, so between midnight and 05:30 IST it
+ * returns yesterday. Matches start at 07:00 and the squad is up before 06:00,
+ * so on a match morning the UTC version had the Dashboard looking for
+ * "yesterday's" fixture — no match-day card, no live panel, no Go live button,
+ * and a fee collected at the ground dated to the day before.
+ */
+export const todayIso = () => new Date().toLocaleDateString('en-CA');
 
 /** The season we are in right now, e.g. '2026-27'. */
 export const CURRENT_SEASON = seasonKeyOf(todayIso());

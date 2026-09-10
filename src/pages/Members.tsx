@@ -20,6 +20,7 @@ import { useMemberActivity } from '../hooks/useMemberActivity';
 import { useSeasonFund } from '../hooks/useSeasonFund';
 import { useAuth } from '../context/AuthContext';
 import type { Member } from '../types';
+import { todayIso } from '../config/season';
 
 // Member access PIN — shared with Ground Booking page
 const MEMBER_PIN = 'scc';
@@ -189,7 +190,7 @@ export function Members() {
         birthday: formData.birthday || null,
         status: 'active', // Initial status - will be computed based on match participation
         balance: formData.balance,
-        join_date: new Date().toISOString().split('T')[0],
+        join_date: todayIso(),
         avatar_url: null,
         role: formData.role || null,
         batting_style: formData.batting_style || null,

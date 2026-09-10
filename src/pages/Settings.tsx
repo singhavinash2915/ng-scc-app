@@ -1,4 +1,4 @@
-import { seasonOptions, seasonWindow, seasonLabel, CURRENT_SEASON } from '../config/season';
+import { seasonOptions, seasonWindow, seasonLabel, CURRENT_SEASON, todayIso } from '../config/season';
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -579,7 +579,7 @@ export function Settings() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `scc-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `scc-data-${todayIso()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -655,7 +655,7 @@ export function Settings() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `scc-data-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `scc-data-${todayIso()}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

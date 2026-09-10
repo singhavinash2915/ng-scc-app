@@ -37,6 +37,7 @@ import { useSeasonFund } from '../hooks/useSeasonFund';
 import { useMembers } from '../hooks/useMembers';
 import { useAuth } from '../context/AuthContext';
 import type { Season, GroundBooking, FundPaymentMethod } from '../types';
+import { todayIso } from '../config/season';
 
 // Member access PIN
 const MEMBER_PIN = 'scc';
@@ -166,7 +167,7 @@ export function SeasonFund() {
   const [paymentForm, setPaymentForm] = useState({
     member_id: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: todayIso(),
     payment_method: 'cash' as FundPaymentMethod,
     description: '',
   });
@@ -534,7 +535,7 @@ export function SeasonFund() {
         description: paymentForm.description || undefined,
       });
       setShowPaymentModal(false);
-      setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' });
+      setPaymentForm({ member_id: '', amount: '', date: todayIso(), payment_method: 'cash', description: '' });
     } catch { /* ignore */ } finally {
       setIsSubmitting(false);
     }
@@ -1507,7 +1508,7 @@ export function SeasonFund() {
               {/* Admin Actions */}
               {isAdmin && (
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => { setPaymentForm({ member_id: '', amount: '', date: new Date().toISOString().split('T')[0], payment_method: 'cash', description: '' }); setShowPaymentModal(true); }}>
+                  <Button size="sm" onClick={() => { setPaymentForm({ member_id: '', amount: '', date: todayIso(), payment_method: 'cash', description: '' }); setShowPaymentModal(true); }}>
                     <Plus className="w-3.5 h-3.5 mr-1" /> Record Payment
                   </Button>
                 </div>

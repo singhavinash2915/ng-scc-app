@@ -10,6 +10,7 @@ import { LiveStreamPlayer } from '../components/LiveStreamPlayer';
 import { LiveAddons } from '../components/LiveAddons';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
 import { APP_URL, CLUB_NAME, GET_APP_CTA, INSTAGRAM } from '../data/appMeta';
+import { todayIso } from '../config/season';
 
 /**
  * Standalone, shareable public live-score page — /live/:chMatchId
@@ -47,6 +48,8 @@ export function LiveMatch() {
 
   const { data, loading, error, countdown, refetch } = useLiveScore(chMatchId);
   const isOver = !!data?.result;
+  // A link shared the night before shouldn't shout LIVE at whoever opens it.
+  const isFuture = !!match?.date && !data && match.date > todayIso();
 
   // Live YouTube stream — show it here when it's for THIS match (or when the
   // admin hasn't paired it with a specific CricHeroes id).
@@ -74,9 +77,11 @@ export function LiveMatch() {
               <h1 className="text-lg font-extrabold leading-tight">{CLUB_NAME}</h1>
               <p className="t-meta text-gray-400">Live Match Centre</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full t-meta font-bold bg-red-500/15 text-red-300 border border-red-500/30">
-              <Radio className={`w-3 h-3 ${isOver ? '' : 'animate-pulse'}`} />
-              {isOver ? 'FULL TIME' : 'LIVE'}
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full t-meta font-bold border ${
+              isFuture ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                       : 'bg-red-500/15 text-red-300 border-red-500/30'}`}>
+              <Radio className={`w-3 h-3 ${isOver || isFuture ? '' : 'animate-pulse'}`} />
+              {isOver ? 'FULL TIME' : isFuture ? 'UPCOMING' : 'LIVE'}
             </span>
           </Link>
 

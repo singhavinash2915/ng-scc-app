@@ -20,6 +20,7 @@ import { useSCCLeague, AUCTION_SETS, tierForRating, formatPrice, PURSE_LAKH,
   BID_STEPS, bidStepFor } from '../hooks/useSCCLeague';
 import { SEASON_NEW } from '../config/season2';
 import type { Member } from '../types';
+import { todayIso } from '../config/season';
 
 type Team = 'dhurandars' | 'bazigars';
 type Step = 'setup' | 'auction' | 'done';
@@ -115,7 +116,7 @@ export function Auction() {
 
   const [step, setStep] = useState<Step>('setup');
   const [config, setConfig] = useState<Config>({
-    matchDate: new Date().toISOString().split('T')[0],
+    matchDate: todayIso(),
     matchVenue: 'Four Star Cricket Ground',
     dhurName: DEFAULT_TEAM_NAMES.dhurandars,
     bazName: DEFAULT_TEAM_NAMES.bazigars,

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { withLiveImages } from '../lib/deadStorage';
 import type { Member } from '../types';
+import { todayIso } from '../config/season';
 
 export function useMembers() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -93,7 +94,7 @@ export function useMembers() {
         amount,
         member_id: memberId,
         description,
-        date: date || new Date().toISOString().split('T')[0],
+        date: date || todayIso(),
       }]);
 
       return newBalance;
@@ -143,7 +144,7 @@ export function useMembers() {
         amount: difference,
         member_id: memberId,
         description: reason || 'Balance correction',
-        date: new Date().toISOString().split('T')[0],
+        date: todayIso(),
       }]);
 
       return correctBalance;

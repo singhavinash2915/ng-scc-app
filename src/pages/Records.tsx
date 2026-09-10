@@ -1,4 +1,4 @@
-import { CURRENT_SEASON } from '../config/season';
+import { CURRENT_SEASON, todayIso } from '../config/season';
 import { useMemo, useState } from 'react';
 import { Card } from '../components/ui/Card';
 import {
@@ -97,7 +97,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
         description: awardForm.description.trim() || null,
         season: CURRENT_SEASON,
         icon: awardForm.icon || null,
-        awarded_at: new Date().toISOString().split('T')[0],
+        awarded_at: todayIso(),
       });
       setAwardForm({ member_id: '', award_name: '', description: '', icon: '🌟' });
       setShowAwardModal(false);

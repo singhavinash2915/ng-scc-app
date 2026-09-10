@@ -58,6 +58,7 @@ import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
 import { useReactions, type ReactionEmoji } from '../hooks/useReactions';
 import { useMatchComments } from '../hooks/useMatchComments';
 import type { Match, MatchType, InternalTeam } from '../types';
+import { todayIso } from '../config/season';
 
 // ── Emoji reaction bar — one instance per match card ─────────────────────────
 function MatchReactions({ matchId, myMemberId }: { matchId: string; myMemberId: string | null }) {
@@ -260,7 +261,7 @@ export function Matches() {
   const [confirmDeletePhoto, setConfirmDeletePhoto] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: todayIso(),
     venue: '',
     opponent: '',
     match_fee: 200,
@@ -581,7 +582,7 @@ export function Matches() {
 
   const resetForm = () => {
     setFormData({
-      date: new Date().toISOString().split('T')[0],
+      date: todayIso(),
       start_time: '',
       venue: '',
       opponent: '',

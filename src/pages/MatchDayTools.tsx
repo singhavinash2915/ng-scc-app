@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { SquadGraphicModal } from '../components/SquadGraphicModal';
 import { MatchDayMessageModal } from '../components/MatchDayMessageModal';
 import type { Match, MatchType, InternalTeam } from '../types';
+import { todayIso } from '../config/season';
 
 const TEAM_NAMES: Record<InternalTeam, string> = {
   dhurandars: 'Sangria Dhurandars',
@@ -36,7 +37,7 @@ export function MatchDayTools() {
 
   // Form state
   const [matchType, setMatchType] = useState<MatchType>('external');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(todayIso());
   const [venue, setVenue] = useState('');
   const [opponent, setOpponent] = useState('');
   const [matchFee, setMatchFee] = useState(200);

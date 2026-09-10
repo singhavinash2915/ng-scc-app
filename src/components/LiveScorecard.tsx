@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react';
 import { Card } from './ui/Card';
+import { todayIso } from '../config/season';
 import type { LiveScoreData } from '../hooks/useLiveScore';
 
 interface Props {
@@ -37,6 +38,12 @@ export function LiveScorecard({
   const isOver = !!data?.result;                   // completed
   const isPreMatch = !data && (error || loading);  // not started yet
 
+  // On the Dashboard this card only appears on the day, so "Today's Match" was
+  // always true. The shareable /live/:id page has no such gate: a link dropped
+  // in the group on Friday night opened on a card announcing LIVE — Today's
+  // Match — may be in progress, about a game two days away.
+  const isFuture = !!matchDate && matchDate > todayIso();
+
   // An internal fixture already names both sides in `opponent` — "SCC Brahmos
   // vs SCC Agni" — so the usual "SCC vs {opponent}" prefix produced
   // "SCC vs SCC Brahmos vs SCC Agni". When the string is already a full
@@ -64,8 +71,10 @@ export function LiveScorecard({
           </span>
         ) : (
           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 flex-shrink-0">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span className="t-micro font-black text-amber-600 dark:text-amber-400 tracking-widest uppercase">Match Day</span>
+            <span className={`w-2 h-2 rounded-full bg-amber-400 ${isFuture ? '' : 'animate-pulse'}`} />
+            <span className="t-micro font-black text-amber-600 dark:text-amber-400 tracking-widest uppercase">
+              {isFuture ? 'Upcoming' : 'Match Day'}
+            </span>
           </span>
         )}
 
@@ -79,7 +88,7 @@ export function LiveScorecard({
         {/* Right side: refresh countdown + CricHeroes link */}
         <div className="ml-auto flex items-center gap-2 flex-shrink-0">
           <span className="t-micro text-slate-400 dark:text-gray-600 tabular-nums">
-            {loading ? 'Checking…' : `↻ ${countdown}s`}
+            {isFuture ? '' : loading ? 'Checking…' : `↻ ${countdown}s`}
           </span>
           <button
             onClick={refetch}
@@ -108,7 +117,7 @@ export function LiveScorecard({
           <div className="py-2">
             {/* Opponent name + venue */}
             <p className="t-micro text-amber-600 dark:text-amber-400/70 font-bold uppercase tracking-widest mb-1">
-              Today's Match
+              {isFuture ? 'Next Match' : "Today's Match"}
             </p>
             <p className="text-xl font-black text-slate-900 dark:text-white mb-1">
               {isFullFixture
@@ -123,9 +132,11 @@ export function LiveScorecard({
             <Card className="flex items-center gap-2 px-3 py-2 bg-amber-500/8 border-amber-500/15">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
               <p className="t-meta text-amber-600 dark:text-amber-300/70">
-                {new Date().getHours() >= 6
-                  ? 'Match may be in progress · live score loading automatically…'
-                  : 'Waiting for match to start · auto-refreshing every 15s'}
+                {isFuture
+                  ? `Not started yet · the live score appears here on ${fmtMatchDate ?? 'match day'}`
+                  : new Date().getHours() >= 6
+                    ? 'Match may be in progress · live score loading automatically…'
+                    : 'Waiting for match to start · auto-refreshing every 15s'}
               </p>
             </Card>
             <a

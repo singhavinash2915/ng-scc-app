@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Transaction } from '../types';
+import { todayIso } from '../config/season';
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -73,7 +74,7 @@ export function useTransactions() {
         type: 'expense',
         amount: -Math.abs(amount),
         description,
-        date: date || new Date().toISOString().split('T')[0],
+        date: date || todayIso(),
       };
       if (meta?.category) row.category = meta.category;
       if (meta?.expense_kind) row.expense_kind = meta.expense_kind;
