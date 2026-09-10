@@ -7,4 +7,4 @@
 // It is deliberately not in this repo.
 
 export const VAPID_PUBLIC_KEY =
-  'BHfS3Av18EUv0HEIIZeV20aBpb0Cq8iI2NO8BDWoD1Mws4RYZc6PGBVYw9J0IJVoXMvFM_xb13p5naPU1-jwGlI';
+  'BAeI3GDna2Fiph6hYDUg3STzPU3ftR6_L93YyVEcMg-TonKJgyolHame48-Qv3RU2zEEc-2vRD6lQOtFnhkFXJg';
