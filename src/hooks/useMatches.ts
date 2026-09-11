@@ -191,6 +191,19 @@ export function useMatches() {
         .single();
       if (error) throw error;
 
+      // A guest's fee is captured when they're added to the squad. Squads get
+      // picked before anyone remembers the fee, so the guests went in at ₹0 and
+      // stayed there when the fee was set — the one person who pays cash on the
+      // day was the one the app said owed nothing. Carry a fee change through
+      // to any guest who hasn't paid yet; a paid one keeps what they paid.
+      if (updates.match_fee !== undefined && Number(updates.match_fee) !== Number(existingMatch.match_fee)) {
+        const { error: gErr } = await supabase.from('match_guests')
+          .update({ fee_amount: updates.match_fee })
+          .eq('match_id', id).eq('fee_paid', false);
+        // The guests migration may not exist in every environment.
+        if (gErr && gErr.code !== '42P01' && gErr.code !== 'PGRST205') console.error(gErr);
+      }
+
       // Effective state after this update
       const effResult = updates.result ?? existingMatch.result;
       const wasCompleted = existingMatch.result !== 'upcoming' && existingMatch.result !== 'cancelled';
