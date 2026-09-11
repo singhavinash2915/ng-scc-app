@@ -139,9 +139,18 @@ export function Dashboard() {
   const { playerOfMonth, playerOfWeek } = usePlayerOfPeriod(matches, members, cricketStats);
 
   // Live match alert — match scheduled today (in any state: upcoming or completed-today)
+  // Which of today's fixtures gets the live panel. It used to be the first row
+  // dated today, cancelled or not — so when a fixture is replaced (Vikings XI
+  // called off, Ocean Warriors booked in its place, both dated the same
+  // Saturday) the panel could land on the dead one and sit on "waiting for the
+  // match to start" all morning while the real game was being scored. Skip
+  // cancelled fixtures and ones with nothing to follow, and prefer a match still
+  // to be played over one already finished.
   const liveMatchToday = useMemo(() => {
     const today = todayIso();
-    return matches.find(m => m.date === today);
+    const todays = matches.filter(m =>
+      m.date === today && m.result !== 'cancelled' && !!m.ch_match_id);
+    return todays.find(m => m.result === 'upcoming') ?? todays[0];
   }, [matches]);
   // If a match was played in the last 7 days, show "of the Week"; else "of the Month"
   const featuredPlayer = playerOfWeek || playerOfMonth;
