@@ -111,13 +111,23 @@ export function AnnualReport() {
     // Paid to the ground OWNER in this period, from the payment ledger.
     // Distinct from paidToOpponents below, which is money that went to another
     // club for slots they held.
+    // Ad-hoc slots — September, bought outside the season contract — are paid
+    // straight to the owner when played, not through the payment ledger. They
+    // are ground cost like any other, and nothing to do with another club, so
+    // they join groundPaid rather than the CricBot figure below.
+    const isAdhoc = (b: unknown) =>
+      ((b as { booking_kind?: string | null }).booking_kind ?? 'season') === 'adhoc';
+    const periodSlots = seasons.flatMap(s => s.bookings ?? [])
+      .filter(b => b.date >= start && b.date <= end && b.status !== 'cancelled');
+    const adhocGround = periodSlots.filter(isAdhoc)
+      .reduce((sum, b) => sum + Number(b.cost), 0);
+
     const groundPaid = groundLedger.payments
       .filter(p => p.date >= start && p.date <= end)
-      .reduce((sum, p) => sum + p.amount, 0);
+      .reduce((sum, p) => sum + p.amount, 0) + adhocGround;
 
-    const paidToOpponents = (seasons.flatMap(s => s.bookings ?? []))
-      .filter(b => b.date >= start && b.date <= end
-        && (b as { prepaid_by?: string | null }).prepaid_by)
+    const paidToOpponents = periodSlots
+      .filter(b => (b as { prepaid_by?: string | null }).prepaid_by && !isAdhoc(b))
       .reduce((sum, b) => sum + Number(b.cost), 0);
 
     // Top 10 contributors (by deposit amount this year)

@@ -112,7 +112,7 @@ export function useGroundLedger(): GroundLedger {
         .select('id, advance_id, date, amount, funded_by, notes')
         .order('date', { ascending: false }),
       supabase.from('v_scc_funds_available').select('*'),
-      supabase.from('ground_bookings').select('cost, prepaid_by, status'),
+      supabase.from('ground_bookings').select('cost, prepaid_by, status, booking_kind'),
     ]);
 
     if (isMissing(pErr)) { setMissing(true); setLoading(false); return; }
@@ -143,8 +143,10 @@ export function useGroundLedger(): GroundLedger {
       spent_on_repayments: Number(a.spent_on_repayments),
       available: Number(a.available),
     })));
-    setContracted(((slots ?? []) as Array<{ cost: number; prepaid_by: string | null; status: string }>)
-      .filter(b => !b.prepaid_by && b.status !== 'cancelled')
+    // Season slots only — an ad-hoc slot is bought outside the contract.
+    setContracted(((slots ?? []) as Array<{
+        cost: number; prepaid_by: string | null; status: string; booking_kind?: string | null }>)
+      .filter(b => !b.prepaid_by && b.status !== 'cancelled' && (b.booking_kind ?? 'season') !== 'adhoc')
       .reduce((sum, b) => sum + Number(b.cost), 0));
     setLoading(false);
   }, []);

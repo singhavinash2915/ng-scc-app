@@ -318,7 +318,8 @@ export function SeasonFund() {
     // from CricBot XI, which went to another team out of a member's pocket, so
     // they belong in neither total.
     const ownerContract     = bookings
-      .filter(b => !(b as { prepaid_by?: string | null }).prepaid_by)
+      .filter(b => !(b as { prepaid_by?: string | null }).prepaid_by
+        && ((b as { booking_kind?: string | null }).booking_kind ?? 'season') !== 'adhoc')
       .reduce((s, b) => s + Number(b.cost), 0);
     // Paid comes from the payment ledger, never from the slot flags. Money moves
     // in lump sums across many slots at once — ₹1,50,000 in one transfer — and

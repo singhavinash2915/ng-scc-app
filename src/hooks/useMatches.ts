@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { settleAdhocSlot } from '../lib/adhocSlots';
 import type { Match, MatchPlayer, InternalTeam } from '../types';
 
 export function useMatches() {
@@ -171,6 +172,10 @@ export function useMatches() {
         .eq('match_id', matchId)
         .eq('member_id', player.member_id);
     }
+
+    // The fees are in, so the SCC side's share of an ad-hoc slot is paid —
+    // record it against whoever fronted the ground.
+    await settleAdhocSlot(match.date);
   };
 
   const updateMatch = async (

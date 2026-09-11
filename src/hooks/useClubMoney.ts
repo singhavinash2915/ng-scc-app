@@ -52,8 +52,8 @@ export function useClubMoney(): ClubMoney {
         supabase.from('members').select('balance'),
         seasonId
           ? supabase.from('ground_bookings')
-              .select('cost, payment_status, prepaid_by').eq('season_id', seasonId)
-          : supabase.from('ground_bookings').select('cost, payment_status, prepaid_by'),
+              .select('cost, payment_status, prepaid_by, booking_kind').eq('season_id', seasonId)
+          : supabase.from('ground_bookings').select('cost, payment_status, prepaid_by, booking_kind'),
         supabase.from('match_bookings').select('amount, payment_status, status'),
       ]);
 
@@ -61,7 +61,8 @@ export function useClubMoney(): ClubMoney {
         .reduce((s, x) => s + Number(x.balance), 0);
 
       const sessions = (gb.data ?? []) as Array<{
-        cost: number; payment_status: string; prepaid_by: string | null }>;
+        cost: number; payment_status: string; prepaid_by: string | null;
+        booking_kind?: string | null }>;
 
       // Paid to the ground owner, from the payment ledger.
       //
@@ -79,8 +80,11 @@ export function useClubMoney(): ClubMoney {
       const paidToOwner = ((payRows ?? []) as Array<{ amount: number }>)
         .reduce((s, x) => s + Number(x.amount), 0);
 
+      // The season contract is the season slots the club buys from the owner.
+      // Ad-hoc slots (September, while the monsoon decides) are bought outside
+      // it: counting them here would show the owner owed money he isn't.
       const contracted = sessions
-        .filter(s => !s.prepaid_by)
+        .filter(s => !s.prepaid_by && (s.booking_kind ?? 'season') !== 'adhoc')
         .reduce((s, x) => s + Number(x.cost), 0);
       const owedToOwner = Math.max(0, contracted - paidToOwner);
       // What the club owes members now comes from member_advances, which is the

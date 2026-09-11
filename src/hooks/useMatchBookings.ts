@@ -1,6 +1,23 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { settleAdhocSlot } from '../lib/adhocSlots';
 import type { MatchSlot, MatchBooking, MatchBookingStatus } from '../types';
+
+/**
+ * The fixture already on this date against this team, if there is one.
+ * CricHeroes creates most fixtures before anyone confirms a booking in the app,
+ * and confirming used to insert a second copy — two "Ocean Warriors" on the
+ * same Saturday, with the squad on one and the booking money on the other.
+ */
+async function existingFixture(date: string, team: string): Promise<string | null> {
+  const { data } = await supabase.from('matches')
+    .select('id, opponent')
+    .eq('date', date).eq('match_type', 'external').neq('result', 'cancelled');
+  const rows = (data ?? []) as Array<{ id: string; opponent: string | null }>;
+  const norm = (x: string | null) => (x ?? '').trim().toLowerCase();
+  return rows.find(r => norm(r.opponent) === norm(team))?.id
+      ?? (rows.length === 1 ? rows[0].id : null);
+}
 
 export function useMatchBookings() {
   const [slots, setSlots] = useState<MatchSlot[]>([]);
@@ -298,8 +315,13 @@ export function useMatchBookings() {
 
       let matchId: string | undefined;
 
-      // Optionally create the upcoming match right away
-      if (params.confirmNow) {
+      // Optionally create the upcoming match right away — unless CricHeroes
+      // has already put the fixture in, in which case link to that one.
+      const already = params.confirmNow ? await existingFixture(params.slotDate, params.teamName) : null;
+      if (already) {
+        matchId = already;
+        await supabase.from('match_bookings').update({ match_id: already }).eq('id', booking.id);
+      } else if (params.confirmNow) {
         const { data: match, error: matchErr } = await supabase
           .from('matches')
           .insert([{
@@ -327,6 +349,7 @@ export function useMatchBookings() {
           .eq('id', booking.id);
       }
 
+      await settleAdhocSlot(params.slotDate);
       await fetchBookings();
       return { success: true, bookingId: booking.id, matchId };
     } catch (err) {
@@ -381,6 +404,20 @@ export function useMatchBookings() {
       const slotDate = booking.slot?.date;
       if (!slotDate) return { success: false, error: 'Slot date not found' };
 
+      const already = await existingFixture(slotDate, booking.team_name);
+      if (already) {
+        const { error: linkErr } = await supabase.from('match_bookings')
+          .update({
+            status: 'confirmed', payment_status: 'verified', match_id: already,
+            admin_notes: adminNotes ?? null, confirmed_at: new Date().toISOString(),
+          })
+          .eq('id', bookingId);
+        if (linkErr) throw linkErr;
+        await settleAdhocSlot(slotDate);
+        await fetchBookings();
+        return { success: true, matchId: already };
+      }
+
       // Create the match
       const { data: match, error: matchErr } = await supabase
         .from('matches')
@@ -416,10 +453,32 @@ export function useMatchBookings() {
 
       if (updErr) throw updErr;
 
+      await settleAdhocSlot(slotDate);
       await fetchBookings();
       return { success: true, matchId: match.id };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Failed to confirm booking' };
+    }
+  };
+
+  // ─── Admin: the opponent's money has arrived ──────────────────────────────
+  // A booking can be confirmed long before it's paid — the team agrees on
+  // WhatsApp and pays at the ground. There was no way to record the payment
+  // after that: confirming was the only thing that set it verified. On an
+  // ad-hoc slot this is also what repays the member who fronted the ground.
+  const markPaymentReceived = async (
+    bookingId: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const booking = bookings.find(b => b.id === bookingId);
+      const { error: err } = await supabase.from('match_bookings')
+        .update({ payment_status: 'verified' }).eq('id', bookingId);
+      if (err) throw err;
+      await settleAdhocSlot(booking?.slot?.date);
+      await fetchBookings();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to record payment' };
     }
   };
 
@@ -470,6 +529,7 @@ export function useMatchBookings() {
     createAdminBooking,
     updateBookingStatus,
     confirmBookingAndCreateMatch,
+    markPaymentReceived,
     deleteBooking,
     toggleSlotAvailability,
   };

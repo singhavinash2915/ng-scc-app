@@ -61,6 +61,7 @@ export function Bookings() {
     createAdminBooking,
     updateBookingStatus,
     confirmBookingAndCreateMatch,
+    markPaymentReceived,
     deleteBooking,
   } = useMatchBookings();
 
@@ -119,6 +120,16 @@ export function Bookings() {
     } else {
       setActionError(result.error ?? 'Failed to confirm');
     }
+  }
+
+  async function handlePaymentReceived() {
+    if (!selectedBooking) return;
+    setActionLoading(true);
+    setActionError(null);
+    const result = await markPaymentReceived(selectedBooking.id);
+    setActionLoading(false);
+    if (result.success) setSelectedBooking({ ...selectedBooking, payment_status: 'verified' });
+    else setActionError(result.error ?? 'Failed to record payment');
   }
 
   async function handleReject() {
@@ -517,6 +528,15 @@ export function Bookings() {
                 <CheckCircle2 className="w-4 h-4" />
                 Booking confirmed. Match has been created in the Matches page.
               </Card>
+            )}
+
+            {/* Confirmed on WhatsApp, paid at the ground: the money arrives after
+                the booking, and there was nowhere to say so. */}
+            {selectedBooking.status === 'confirmed' && selectedBooking.payment_status !== 'verified' && (
+              <Button variant="success" onClick={handlePaymentReceived} disabled={actionLoading} className="w-full">
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Payment received · ₹{Number(selectedBooking.amount).toLocaleString('en-IN')}
+              </Button>
             )}
 
             {(selectedBooking.status === 'rejected' || selectedBooking.status === 'cancelled') && (
