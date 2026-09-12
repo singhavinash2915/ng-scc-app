@@ -415,12 +415,25 @@ def _strip_super_over(score):
     return (score or '').split('&')[0].strip()
 
 def reconcile_internal_matches():
-    """Update any still-'upcoming' internal match whose CricHeroes game is now over."""
+    """Update any still-'upcoming' internal match whose CricHeroes game is now over.
+
+    This reads each match's CricHeroes page, which needs the Next.js buildId from
+    their homepage. CricHeroes stopped publishing it, so every match here failed
+    and printed a warning per fixture — four lines of alarm about nothing, since
+    step 3 (sync_internal.py) reconciles the same matches through the API and
+    does it properly. Say so once and move on rather than crying wolf nightly.
+    """
     code, rows = sb_call(
         "GET", "matches",
         params="select=id,date,result,ch_match_id&match_type=eq.internal"
                "&result=eq.upcoming&ch_match_id=not.is.null")
     if code != 200 or not rows:
+        return 0
+    try:
+        _ch_build_id()
+    except Exception:
+        print("  · CricHeroes no longer publishes the page id this path needs — "
+              "internal results come from step 3 instead.")
         return 0
     updated = 0
     for r in rows:

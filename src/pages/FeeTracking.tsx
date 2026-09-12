@@ -32,7 +32,7 @@ import type { Match } from '../types';
 type TabType = 'matches' | 'balances';
 
 export function FeeTracking() {
-  const { matches, toggleFeePaid } = useMatches();
+  const { matches, toggleFeePaid, settleMatchFees, fetchMatches } = useMatches();
   const { members } = useMembers();
   const { transactions } = useTransactions();
   const { isAdmin } = useAuth();
@@ -72,6 +72,26 @@ export function FeeTracking() {
       .filter(mb => mb.status === 'critical' || mb.status === 'low')
       .map(mb => mb.member);
   }, [memberBalances]);
+
+  // ── Fees that never got charged ─────────────────────────────────────────
+  // Fees come off the wallets when an admin saves a result in the app. A result
+  // that arrives from the CricHeroes sync writes straight to the database and
+  // never goes through that, so the match reads WON with nobody charged — the
+  // first external match of this season sat exactly like that.
+  //
+  // Charging is money moving, so it is a button rather than something that
+  // happens because a page loaded. It also settles the ad-hoc ground slot for
+  // that day, which is what repays whoever fronted the ground.
+  const [charging, setCharging] = useState<string | null>(null);
+  const chargeFees = async (match: Match) => {
+    setCharging(match.id);
+    try {
+      await settleMatchFees(match.id);
+      await fetchMatches();
+    } finally {
+      setCharging(null);
+    }
+  };
 
   const openMatchDayMessage = (match: Match) => {
     setMatchDayMatch(match);
@@ -303,6 +323,31 @@ export function FeeTracking() {
                               </p>
                             </div>
                           </div>
+
+                          {/* Nobody charged on a match that is over: the result
+                              came from the sync, which doesn't charge. */}
+                          {isAdmin && !isUpcoming && status.match.result !== 'cancelled'
+                            && status.match.deduct_from_balance && status.match.match_fee > 0
+                            && (status.match.players || []).length > 0
+                            && (status.match.players || []).every(p => !p.fee_paid) && (
+                            <div className="mb-3 p-3 r-card border border-amber-300 dark:border-amber-500/40
+                                            bg-amber-50 dark:bg-amber-900/20">
+                              <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                Fees haven't been charged for this match
+                              </p>
+                              <p className="text-xs text-amber-700 dark:text-amber-400/80 mt-0.5 mb-2">
+                                {(status.match.players || []).length} players ×{' '}
+                                {status.match.match_fee.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}
+                                {' '}comes off their balances, and any ground fronted for the day is settled.
+                              </p>
+                              <button
+                                onClick={() => chargeFees(status.match)}
+                                disabled={charging === status.match.id}
+                                className="w-full r-control py-2 text-sm font-black bg-amber-500 text-white disabled:opacity-50">
+                                {charging === status.match.id ? 'Charging…' : 'Charge the fees now'}
+                              </button>
+                            </div>
+                          )}
 
                           {/* All players with toggle */}
                           <div>

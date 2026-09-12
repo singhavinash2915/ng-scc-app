@@ -192,6 +192,15 @@ def sb_call(method, path, body=None):
         with urllib.request.urlopen(req) as r: return r.status, None
     except urllib.error.HTTPError as e: return e.code, e.read()
 
+def sb_get(path):
+    """Read helper — sb_call returns no body (Prefer: return=minimal)."""
+    req = urllib.request.Request(
+        f"{SUPABASE_URL}/rest/v1/{path}",
+        headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"})
+    with urllib.request.urlopen(req) as r:
+        return json.loads(r.read().decode() or "[]")
+
+
 def main():
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Starting CricHeroes sync...")
 
@@ -346,6 +355,33 @@ def main():
         print(f"  Fingerprint changed: {last_fingerprint[:12]}… → {fingerprint[:12]}…")
     else:
         print(f"  First sync (no previous fingerprint).")
+
+    # ── Drop rows for members who no longer exist ────────────────────────────
+    # CH_TO_SB is a hand-kept map of CricHeroes player → SCC member. When a
+    # member is deleted the map still names them, and the insert below fails on
+    # the foreign key — ALL of it, because it is one statement. The season's
+    # stats had already been deleted by then, so a single stale line in that map
+    # emptied the leaderboard for the whole season and left it empty.
+    #
+    # So the map is checked against the real members first, and anything stale is
+    # dropped with a warning rather than taking the sync down with it.
+    try:
+        live_ids = {m["id"] for m in sb_get("members?select=id")}
+        stale = [r for r in rows if r["member_id"] not in live_ids]
+        if stale:
+            ch_of = {v: k for k, v in CH_TO_SB.items()}
+            print(f"  ⚠️  {len(stale)} mapped player(s) are not in members any more — skipping:")
+            for r in stale:
+                print(f"       CricHeroes {ch_of.get(r['member_id'], '?')} → {r['member_id']}")
+            print("       → remove them from CH_TO_SB in this script.")
+            rows = [r for r in rows if r["member_id"] in live_ids]
+    except Exception as e:
+        print(f"  Member check failed ({e}) — continuing without it.")
+
+    # Never clear the season on the way to writing nothing.
+    if not rows:
+        print("  ❌ No rows left to sync — leaving the existing stats alone.")
+        sys.exit(1)
 
     code, err = sb_call("DELETE", f"member_cricket_stats?season=eq.{SEASON}")
     if err: print(f"  Delete warning: {err[:100]}")

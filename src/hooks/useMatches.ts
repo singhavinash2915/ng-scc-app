@@ -430,5 +430,6 @@ export function useMatches() {
     updateMatchResult,
     getMatchPlayers,
     toggleFeePaid,
+    settleMatchFees,
   };
 }
