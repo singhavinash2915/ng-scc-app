@@ -16,7 +16,6 @@ import { PremiumHero } from '../components/PremiumHero';
 
 import { WhatsAppRemindersModal } from '../components/WhatsAppRemindersModal';
 import { MatchDay } from '../components/MatchDay';
-import { SeasonOpenerBanner } from '../components/SeasonOpenerBanner';
 import { useGroundDates } from '../hooks/useGroundDates';
 import { useAuth } from '../context/AuthContext';
 import { AwayClashes } from '../components/AwayClashes';
@@ -122,16 +121,23 @@ export function Dashboard() {
   // for slots a season ahead (98 of them) and creates a `matches` row for only
   // some (21). Triggering off fixtures alone meant match day silently failed to
   // appear on most of the days the club was actually at the ground.
-  const { todaysMatch, todaysSlot } = useMemo(() => {
+  const { todaysMatch, todaysSlot, matchDayOver } = useMemo(() => {
     const now = new Date();
     const today = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
     const slot = ground.byDate.get(today) ?? null;
     const tm = matches.find(m => m.result === 'upcoming' && m.date === today) ?? null;
+    // Played already? Then match day is over. The card ran off the ground
+    // BOOKING, so it stayed up all afternoon after the match was won — and
+    // with the fixture no longer 'upcoming' it sat there reading "Ocean
+    // Warriors" and "no fixture on this slot yet" at the same time, still
+    // offering to start a live stream.
+    const done = matches.some(m => m.date === today
+      && ['won', 'lost', 'draw', 'cancelled'].includes(m.result));
     const next = league.upcoming[0];
     const days = next
       ? Math.max(0, Math.ceil((new Date(next.date + 'T00:00:00').getTime() - now.getTime()) / 86400000))
       : null;
-    return { todaysMatch: tm, todaysSlot: slot, daysToKickoff: days };
+    return { todaysMatch: tm, todaysSlot: done ? null : slot, daysToKickoff: days, matchDayOver: done };
   }, [matches, league.upcoming, ground.byDate]);
   const { counts: momCounts, allTime: momAllTime } = useMOMCounts();
   const monthSummary = useMonthSummary();
@@ -461,15 +467,17 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* ── SEASON OPENER — a billboard for the first ball of the year.
-             Removes itself once the match is played. ── */}
-      <SeasonOpenerBanner matches={matches} />
+      {/* The MahaSangram billboard used to sit here, above everything. It
+          owned the first screen with a countdown to a fixture that could be
+          weeks away, pushing the actual next match below it. The rivalry has
+          its own page, and the next match already leads the page on its own.
+          The component is kept — nothing to rebuild if it's wanted back. */}
 
       {/* ── MATCH DAY — the takeover. On the one day all 46 open the app,
              the match owns the first screen instead of a line of text
              fifteenth down the page. Sits under the live score, which is the
              only thing that outranks it. ── */}
-      {(todaysMatch || todaysSlot) && (
+      {(todaysMatch || todaysSlot) && !matchDayOver && (
         <MatchDay match={todaysMatch} slot={todaysSlot} members={members}
           compact={liveStream.isLive || !!appLive.live} />
       )}
