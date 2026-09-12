@@ -122,6 +122,11 @@ def get_matches_to_sync(past_days, single_id=None):
         params = (
             f"select=id,ch_match_id,date&"
             f"ch_match_id=not.is.null&"
+            # A match scored ball by ball in the app publishes its own card,
+            # with every dismissal and the fielder who took it. CricHeroes'
+            # version of the same match is a summary entry at best, so pulling
+            # it would replace a full scorecard with a thinner one.
+            f"or=(scoring_source.is.null,scoring_source.neq.app)&"
             f"date=gte.{cutoff}&"
             f"result=in.(won,lost,draw)&"
             f"order=date.desc"

@@ -300,7 +300,7 @@ def find_existing(ch_id, date, opponent):
     """
     # 1. Exact match by ch_match_id (fastest, always wins)
     code, data = sb_call("GET", "matches",
-                          params=f"ch_match_id=eq.{ch_id}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id")
+                          params=f"ch_match_id=eq.{ch_id}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id,scoring_source")
     if code == 200 and data:
         return data[0]
 
@@ -308,7 +308,7 @@ def find_existing(ch_id, date, opponent):
     # only against rows whose ch_match_id is null (i.e. unlinked manual
     # entries). Rows with a different ch_match_id are different matches.
     code2, data2 = sb_call("GET", "matches",
-                            params=f"date=eq.{date}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id")
+                            params=f"date=eq.{date}&select=id,result,ch_match_id,date,venue,opponent,man_of_match_id,scoring_source")
     if code2 == 200 and data2:
         for row in data2:
             if row.get('ch_match_id'):
@@ -334,6 +334,19 @@ def upsert_match(row):
     update = {}
     if not existing.get('ch_match_id'):
         update['ch_match_id'] = ch_id
+
+    # A match scored ball by ball in the app is the authoritative record of it.
+    # CricHeroes may hold nothing for that fixture — nobody scored it there —
+    # so letting this sync write the result back would put a won match back to
+    # 'upcoming' the next morning. Link the id, take a MOM if we have none, and
+    # leave the cricket alone.
+    if existing.get('scoring_source') == 'app':
+        if row.get('man_of_match_id') and not existing.get('man_of_match_id'):
+            update['man_of_match_id'] = row['man_of_match_id']
+        if update:
+            code2, _ = sb_call("PATCH", "matches", body=update, params=f"id=eq.{existing['id']}")
+            return 'updated' if code2 in (200, 204) else 'error'
+        return 'skipped'
 
     # Result changed from upcoming → completed: pull in scores
     if existing['result'] == 'upcoming' and row['result'] != 'upcoming':

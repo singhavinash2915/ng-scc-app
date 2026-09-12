@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useMembers } from '../hooks/useMembers';
 import { useGuests } from '../hooks/useGuests';
+import { buildScorecard } from '../lib/buildScorecard';
 import { useMatches } from '../hooks/useMatches';
 import { useScoring } from '../hooks/useScoring';
 import { useMatchInnings } from '../hooks/useMatchInnings';
@@ -90,6 +91,34 @@ export function LiveScoring() {
     runs: I1.state.runs,
     wickets: I1.state.wickets,
     overs: I1.state.overs,
+  };
+
+  /**
+   * Turn the balls into the row every other screen reads.
+   *
+   * Written under the fixture's ch_match_id as well as its match_id: the match
+   * page looks the card up by match_id, while the stat sync — and with it the
+   * leaderboard, records and the MVP race — keys on ch_match_id. One row, both
+   * doors. The CricHeroes scorecard sync is taught to leave an app-scored match
+   * alone, so this is not overwritten the next morning.
+   */
+  const publishScorecard = async (): Promise<string | null> => {
+    if (!matchId || !M.first) return 'No innings to publish';
+    const nameOfSide = (key: string | undefined) => key === 'home' ? sides[0].name : sides[1].name;
+    // Guests bat and bowl but are not members; buildScorecard tags their rows
+    // so no club figure can pick them up.
+    const guestList = G.appearances.map(a => ({ id: a.guest_id, name: a.guest?.name ?? 'Guest' }));
+    const payload = buildScorecard(
+      matchId,
+      { balls: I1.balls, teamName: nameOfSide(M.first.batting_team) },
+      M.second ? { balls: S.balls, teamName: nameOfSide(M.second.batting_team),
+                   target: M.rows.find(r => r.innings === 2)?.target ?? null } : null,
+      members, format, guestList,
+    );
+    const chId = (match as { ch_match_id?: string | null } | undefined)?.ch_match_id ?? null;
+    const { error } = await supabase.from('match_scorecards')
+      .upsert({ ...payload, match_id: matchId, ch_match_id: chId }, { onConflict: 'match_id' });
+    return error ? error.message : null;
   };
 
   // The watching side of the page. Reads whichever source has data — our pad
@@ -446,6 +475,16 @@ export function LiveScoring() {
             onFinish={async (winner, momId) => {
               setSaving(true);
               const ourFirst = M.first?.batting_team === 'home';
+              // Publish the scorecard, not just the result.
+              //
+              // buildScorecard() has existed since the pad was written and was
+              // never called by anything, so a match scored here produced a
+              // result and nothing else: no batting card, no bowling figures,
+              // nothing for the leaderboard, records or the MVP race, because
+              // every one of those reads match_scorecards. The whole point of
+              // the pad is that a match scored here is indistinguishable from
+              // one synced from CricHeroes — that only holds if this row exists.
+              const publishErr = await publishScorecard();
               const err = await M.finishMatch({
                 winningTeam: match?.match_type === 'internal'
                   ? (winner === sides[0].name ? 'brahmos' : 'agni') : null,
@@ -456,7 +495,13 @@ export function LiveScoring() {
                   : winner === sides[0].name ? 'won' : 'lost',
               });
               setSaving(false);
-              if (err) alert(err); else { await M.closeInnings(2); alert('Result published'); }
+              if (err) alert(err);
+              else {
+                await M.closeInnings(2);
+                alert(publishErr
+                  ? `Result published, but the scorecard did not save: ${publishErr}`
+                  : 'Result and scorecard published');
+              }
             }} />
         )}
 
