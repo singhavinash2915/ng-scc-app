@@ -1,4 +1,4 @@
-import { CURRENT_SEASON_WINDOW, CURRENT_SEASON, todayIso } from '../config/season';
+import { CURRENT_SEASON_WINDOW, CURRENT_SEASON, seasonLabel, todayIso } from '../config/season';
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
@@ -133,7 +133,7 @@ export function Dashboard() {
       : null;
     return { todaysMatch: tm, todaysSlot: slot, daysToKickoff: days };
   }, [matches, league.upcoming, ground.byDate]);
-  const { counts: momCounts } = useMOMCounts();
+  const { counts: momCounts, allTime: momAllTime } = useMOMCounts();
   const monthSummary = useMonthSummary();
   const { stats: cricketStats } = useCricketStats(CURRENT_SEASON);
   const { playerOfMonth, playerOfWeek } = usePlayerOfPeriod(matches, members, cricketStats);
@@ -252,18 +252,27 @@ export function Dashboard() {
     return active.length ? Math.round(active.reduce((s, m) => s + m.balance, 0) / active.length) : 0;
   }, [members, isActive]);
 
-  // Top 5 MOM winners this season (joined with member profile for avatars)
-  const topMOMs = useMemo(() => {
-    const entries = Object.entries(momCounts)
+  // Top 5 MOM winners, this season — with the career count alongside, because
+  // one match in, "1" on its own says nothing about who tends to win these.
+  //
+  // Two matches into a season nobody has a season MOM yet, and a board with one
+  // name on it is worse than no board. So the list falls back to the career
+  // order until the season has something to say, and labels itself accordingly.
+  const { topMOMs, momIsSeason } = useMemo(() => {
+    const build = (src: Record<string, number>) => Object.entries(src)
       .map(([memberId, count]) => ({
         member: members.find(m => m.id === memberId),
         count,
+        career: momAllTime[memberId] ?? 0,
       }))
       .filter(e => e.member)
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b.count - a.count || b.career - a.career)
       .slice(0, 5);
-    return entries;
-  }, [momCounts, members]);
+    const season = build(momCounts);
+    return season.length >= 3
+      ? { topMOMs: season, momIsSeason: true }
+      : { topMOMs: build(momAllTime), momIsSeason: false };
+  }, [momCounts, momAllTime, members]);
 
   // Most recent completed match (for "Last Match" card)
   const lastCompletedMatch = useMemo(() => {
@@ -288,7 +297,10 @@ export function Dashboard() {
       items.push(`⚡ Next: vs ${nextUpcomingMatch.opponent || 'TBD'} ${when}`);
     }
     if (topMOMs.length > 0) {
-      items.push(`${topMOMs[0].member!.name} leads MOM race (${topMOMs[0].count})`);
+      // Say which race. Early in a season this is the career board, and
+      // "leads MOM race (11)" read as if 11 had been won since September.
+      items.push(`${topMOMs[0].member!.name} leads MOM race ${
+        momIsSeason ? 'this season' : 'all time'} (${topMOMs[0].count})`);
     }
     if (streak && streak.count >= 2) {
       items.push(`${streak.count}-match ${streak.result === 'won' ? 'win streak 🔥' : 'run'}`);
@@ -792,7 +804,9 @@ export function Dashboard() {
               <div className="flex items-center justify-between mb-3 relative">
                 <div className="flex items-center gap-1.5">
                   <Crown className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
-                  <span className="text-amber-300/80 t-micro font-bold uppercase tracking-[1.5px]">MOM Race</span>
+                  <span className="text-amber-300/80 t-micro font-bold uppercase tracking-[1.5px]">
+                    MOM Race · {momIsSeason ? seasonLabel(CURRENT_SEASON) : 'all time'}
+                  </span>
                 </div>
                 <Link to="/leaderboard" className="t-micro text-amber-300/60 hover:text-amber-300 font-semibold">All →</Link>
               </div>
@@ -813,8 +827,12 @@ export function Dashboard() {
                       </div>
                     )}
                     <span className="text-xs font-semibold text-slate-800 dark:text-white truncate flex-1">{entry.member!.name.split(' ').slice(0, 2).join(' ')}</span>
-                    <span className="flex items-center gap-0.5 text-amber-300 text-xs font-black tabular-nums">
+                    <span className="flex items-center gap-1 text-amber-300 text-xs font-black tabular-nums">
                       {entry.count}
+                      {/* The career figure, so a season number has a scale. */}
+                      {momIsSeason && entry.career > entry.count && (
+                        <span className="t-micro font-bold text-amber-300/45">/{entry.career}</span>
+                      )}
                       {idx === 0 && <span className="t-micro">🏆</span>}
                     </span>
                   </div>

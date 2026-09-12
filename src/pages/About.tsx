@@ -18,8 +18,10 @@ export function About() {
   const { matches } = useMatches();
   const { activeCount } = useMemberActivity(members, matches);
   const { sponsors } = useSponsor();
-  const { stats: cricketStats } = useCricketStats('2025-26');
-  const { counts: momCounts } = useMOMCounts();
+  // Club lifetime figures, not one season's.
+  const { stats: cricketStats } = useCricketStats('all');
+  // Club lifetime figures.
+  const { allTime: momCounts } = useMOMCounts();
 
   // Quick stats
   const completedMatches = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result) && m.match_type !== 'internal');
@@ -119,7 +121,7 @@ export function About() {
         <div>
           <h2 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
             <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-            Season 2025–26 · By the numbers
+            By the numbers · all seasons
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <BigStat icon={<Users className="w-4 h-4" />} value={activeCount} label="Active Members"

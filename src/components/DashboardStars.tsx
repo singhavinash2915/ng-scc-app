@@ -1,4 +1,4 @@
-import { CURRENT_SEASON } from '../config/season';
+import { CURRENT_SEASON, seasonLabel } from '../config/season';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ChevronRight, Crown, TrendingUp, Zap, Shield } from 'lucide-react';
@@ -112,7 +112,7 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
       <div className="flex items-center justify-between mb-3">
         <h2 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
           <Star className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
-          Season 2025–26 Stars
+          {seasonLabel(CURRENT_SEASON)} Stars
         </h2>
         <Link to="/leaderboard" className="text-xs text-primary-500 dark:text-primary-400 flex items-center gap-0.5 font-semibold">
           Full Leaderboard <ChevronRight className="w-3.5 h-3.5" />

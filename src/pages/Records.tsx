@@ -71,8 +71,11 @@ function RecordCard({ icon, label, value, subtitle, gradient, border }: RecordCa
 export function Records({ embedded = false }: { embedded?: boolean } = {}) {
   const { matches } = useMatches();
   const { members } = useMembers();
-  const { stats } = useCricketStats('2025-26');
-  const { counts: momCounts } = useMOMCounts();
+  // All seasons: a club record isn't a record of one campaign. Pinned to
+  // '2025-26', it could never see this season's cricket at all.
+  const { stats } = useCricketStats('all');
+  // Club records are all-time by definition.
+  const { allTime: momCounts } = useMOMCounts();
   const { isAdmin } = useAuth();
   const { awards, addAward, deleteAward } = useCustomAwards();
   const h2h = useHeadToHead(matches);
@@ -198,7 +201,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
 
   return (
     <div>
-      {!embedded && <Header title="Club Records" subtitle="Hall of fame · Season 2025–26" />}
+      {!embedded && <Header title="Club Records" subtitle="Hall of fame · all seasons" />}
 
       <div className="p-4 lg:p-8 space-y-6">
 
@@ -294,7 +297,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
           <div>
             <h3 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] mb-3 flex items-center gap-2">
               <Star className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
-              Individual Records · Season 2025–26
+              Individual Records · all seasons
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {playerRecords.topRuns && (
@@ -614,7 +617,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
 
         <p className="text-xs text-gray-400 text-center pt-4">
-          Records derived from match results & CricHeroes-synced player stats · Season 2025–26
+          Records derived from match results & CricHeroes-synced player stats · all seasons
         </p>
       </div>
 

@@ -142,7 +142,8 @@ export function MemberProfile() {
     && localStorage.getItem('scc-me') === id);
   const { matches } = useMatches();
   const { stats } = useCricketStats(CURRENT_SEASON);
-  const { counts: momCounts } = useMOMCounts();
+  // A profile is a career page — season MOMs would read 0 for almost everyone.
+  const { allTime: momCounts } = useMOMCounts();
   const { formByMember } = useFormGuide();
   const { photos } = useMatchPhotos();
   const [tab, setTab] = useState<Tab>('overview');
