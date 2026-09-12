@@ -4,6 +4,77 @@ import { Link } from 'react-router-dom';
 import { Star, ChevronRight, Crown, TrendingUp, Zap, Shield } from 'lucide-react';
 import { useCricketStats } from '../hooks/useCricketStats';
 import { outfieldDismissals, keeperDismissals, hasKept } from '../utils/fielding';
+import type { MemberCricketStats } from '../types';
+
+const getAvatar = (m: unknown) => (m as { avatar_url?: string } | undefined)?.avatar_url;
+const getName = (m: unknown) => (m as { name?: string } | undefined)?.name || '—';
+
+// ─── One specialist ─────────────────────────────────────────────────────
+// The old cards were saturated gradient slabs — navy, maroon, green, brown —
+// sitting on a page whose every other card is the app's own light surface.
+// Four full-bleed colours competing at once is what made the section look
+// bolted on, and in light mode it was four dark blocks on a white page.
+//
+// Same information, house surface: colour survives as an accent — the icon
+// chip, a hairline rule along the top, the unit under the figure — and the
+// number carries the card instead of a background gradient.
+function Specialist({ label, icon, tone, number, unit, detail, player, moms }: {
+  label: string;
+  icon: React.ReactNode;
+  tone: { rule: string; chip: string; ink: string };
+  number: number | string;
+  unit: string;
+  detail?: string;
+  player: MemberCricketStats;
+  moms: number;
+}) {
+  const avatar = getAvatar(player.member);
+  const name = getName(player.member);
+  return (
+    <div className="glass r-card relative overflow-hidden p-4 lg:p-5 flex flex-col">
+      {/* The card's only saturated pixels. */}
+      <div className={`absolute inset-x-0 top-0 h-[3px] ${tone.rule}`} />
+
+      <div className="flex items-center gap-2">
+        <span className={`w-6 h-6 rounded-lg flex items-center justify-center ${tone.chip}`}>
+          {icon}
+        </span>
+        <span className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 dark:text-white/45">
+          {label}
+        </span>
+      </div>
+
+      <div className="flex items-baseline gap-1.5 mt-3">
+        <span className="t-num text-4xl lg:text-[2.75rem] leading-none text-slate-900 dark:text-white">
+          {number}
+        </span>
+        <span className={`t-micro font-black uppercase tracking-[1.5px] ${tone.ink}`}>{unit}</span>
+      </div>
+      {detail && (
+        <p className="t-micro font-semibold text-slate-400 dark:text-white/40 mt-1">{detail}</p>
+      )}
+
+      <div className="flex items-center gap-2 mt-auto pt-3.5">
+        {avatar ? (
+          <img src={avatar} alt="" className="w-7 h-7 rounded-full object-cover
+                                             ring-1 ring-slate-200 dark:ring-white/15 flex-shrink-0" />
+        ) : (
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${tone.chip}`}>
+            <span className={`t-micro font-black ${tone.ink}`}>{name.charAt(0)}</span>
+          </div>
+        )}
+        <span className="t-body font-bold text-slate-800 dark:text-white/90 truncate flex-1 min-w-0">
+          {name.split(' ').slice(0, 2).join(' ')}
+        </span>
+        {moms > 0 && (
+          <span className="inline-flex items-center gap-0.5 t-micro font-black text-amber-500 dark:text-amber-300 flex-shrink-0">
+            <Crown className="w-2.5 h-2.5" fill="currentColor" />{moms}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface DashboardStarsProps {
   momCounts?: Record<string, number>;
@@ -41,70 +112,26 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
 
   if (!mvp) return null;
 
-  const getAvatar = (m: unknown) => (m as { avatar_url?: string } | undefined)?.avatar_url;
-  const getName = (m: unknown) => (m as { name?: string } | undefined)?.name || '—';
-
   const mvpAvatar = getAvatar(mvp.player.member);
   const mvpName = getName(mvp.player.member);
   const mvpMoms = momCounts[mvp.player.member_id] || 0;
 
-  // Specialist card helper — shared props
-  const Specialist = ({
-    label, icon, color, number, subtitle, player, moms,
-  }: {
-    label: string;
-    icon: React.ReactNode;
-    color: { bg: string; border: string; accent: string; glow: string; numText: string };
-    number: number | string;
-    subtitle: string;
-    player: typeof cricketStats[0];
-    moms: number;
-  }) => {
-    const avatar = getAvatar(player.member);
-    const name = getName(player.member);
-    return (
-      <div className="relative overflow-hidden r-card p-5 lg:p-6 flex flex-col min-h-[200px]"
-           style={{ background: color.bg }}>
-        <div className="absolute inset-0 r-card pointer-events-none" style={{ border: `1px solid ${color.border}` }} />
-        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-40" style={{ background: color.glow }} />
-
-        <div className="flex items-center justify-between mb-1 relative">
-          <div className={`flex items-center gap-1.5 ${color.accent}`}>
-            <span className="w-6 h-6 r-card flex items-center justify-center" style={{ background: color.glow }}>
-              {icon}
-            </span>
-          </div>
-          <span className={`t-micro font-bold uppercase tracking-[2px] ${color.accent}`}>{label}</span>
-        </div>
-
-        <div className="flex-1 flex flex-col justify-center relative py-2">
-          <div className="text-5xl lg:text-6xl font-black text-white tabular-nums leading-none"
-               style={{ background: color.numText, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            {number}
-          </div>
-          <div className="t-micro text-gray-400 uppercase tracking-[1.5px] font-bold mt-2">{subtitle}</div>
-        </div>
-
-        <div className="relative pt-3 border-t border-white/8 flex items-center gap-2.5">
-          {avatar ? (
-            <img src={avatar} alt="" className="w-9 h-9 rounded-full object-cover border border-white/15 flex-shrink-0" />
-          ) : (
-            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: color.glow }}>
-              <span className="text-xs font-black text-white">{name.charAt(0)}</span>
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold text-white truncate leading-tight">{name.split(' ').slice(0, 2).join(' ')}</div>
-          </div>
-          {moms > 0 && (
-            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 t-micro font-black flex-shrink-0">
-              <Crown className="w-2.5 h-2.5" fill="currentColor" />{moms}
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  };
+  // What actually earned the points. The card used to call every MVP "the
+  // all-rounder leading the pack" — including a bowler who hadn't batted.
+  const mvpBlurb = (() => {
+    const bat = mvp.player.batting_runs;
+    const ball = mvp.player.bowling_wickets * 20;
+    const field = (mvp.player.fielding_catches + mvp.player.fielding_stumpings
+                 + mvp.player.fielding_run_outs) * 10;
+    const top = Math.max(bat, ball, field);
+    if (top === 0) return 'Leading the season';
+    // Two strands within a third of each other is genuinely all-round.
+    const strands = [bat, ball, field].filter(v => v >= top * 0.66).length;
+    if (strands > 1) return 'Contributing in every department';
+    if (top === bat) return 'Leading with the bat';
+    if (top === ball) return 'Leading with the ball';
+    return 'Leading in the field';
+  })();
 
   return (
     <div>
@@ -121,103 +148,97 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
 
       <div className="space-y-3">
 
-        {/* ── MVP HERO CARD (full width, featured) ────────────────────────── */}
-        <div className="relative overflow-hidden r-card p-6 lg:p-8"
-             style={{
-               background: 'radial-gradient(600px circle at 10% 0%, rgba(251,191,36,0.3), transparent 50%), radial-gradient(800px circle at 100% 100%, rgba(245,158,11,0.15), transparent 60%), linear-gradient(135deg, #78350f 0%, #1a0f05 60%, #0a1019 100%)',
-             }}>
-          <div className="absolute inset-0 border border-amber-500/30 r-card pointer-events-none" />
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-400/15 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 -translate-y-1/2 right-10 w-1 h-24 bg-gradient-to-b from-transparent via-amber-400/30 to-transparent hidden lg:block" />
+        {/* ── MVP ──────────────────────────────────────────────────────────
+            Still the one card that gets to feel like an award, but the gold
+            is now light — a wash and a hairline over the house surface rather
+            than a brown slab with a gradient-filled number on top of it. */}
+        <div className="glass r-card relative overflow-hidden p-5 lg:p-7">
+          <div className="absolute inset-0 pointer-events-none"
+               style={{ background: 'radial-gradient(620px circle at 88% -30%, rgba(245,158,11,0.16), transparent 62%)' }} />
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-amber-400 via-amber-300 to-transparent" />
 
-          {/* Decorative MVP trophy emoji in background */}
-          <div className="absolute top-4 right-8 text-8xl opacity-[0.04] select-none pointer-events-none">🏆</div>
-
-          <div className="relative flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-8">
-
-            {/* Left: Avatar + identity */}
-            <div className="flex items-center gap-5 flex-shrink-0">
-              <div className="relative flex-shrink-0">
-                {mvpAvatar ? (
-                  <img src={mvpAvatar} alt=""
-                       className="w-24 h-24 lg:w-28 lg:h-28 r-card object-cover border-[3px] border-amber-400/50 shadow-2xl shadow-amber-500/40" />
-                ) : (
-                  <div className="w-24 h-24 lg:w-28 lg:h-28 r-card bg-gradient-to-br from-amber-400 to-yellow-600 border-[3px] border-amber-400/50 flex items-center justify-center shadow-2xl shadow-amber-500/40">
-                    <span className="text-4xl font-black text-yellow-950">{mvpName.charAt(0)}</span>
-                  </div>
-                )}
-                <div className="absolute -top-2 -right-2 w-9 h-9 rounded-full bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center shadow-lg shadow-amber-500/50 border-2 border-amber-900/20">
-                  <Crown className="w-4 h-4 text-yellow-950" fill="currentColor" />
+          <div className="relative flex items-center gap-3 lg:gap-6">
+            {/* Face */}
+            <div className="relative flex-shrink-0">
+              {mvpAvatar ? (
+                <img src={mvpAvatar} alt=""
+                     className="w-14 h-14 lg:w-20 lg:h-20 r-card object-cover ring-1 ring-amber-400/40" />
+              ) : (
+                <div className="w-14 h-14 lg:w-20 lg:h-20 r-card bg-amber-400/15 ring-1 ring-amber-400/40
+                                flex items-center justify-center">
+                  <span className="t-num text-2xl text-amber-600 dark:text-amber-300">{mvpName.charAt(0)}</span>
                 </div>
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-amber-300/80 t-micro font-bold uppercase tracking-[2px]">Season MVP</span>
-                  {mvpMoms > 0 && (
-                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 t-micro font-black">
-                      <Crown className="w-2.5 h-2.5" fill="currentColor" />
-                      {mvpMoms} MOM{mvpMoms > 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-2xl lg:text-3xl font-black text-white leading-tight tracking-tight">{mvpName}</h3>
-                <p className="text-amber-200/50 text-xs mt-0.5 font-medium">The all-rounder leading the pack</p>
-              </div>
+              )}
+              <span className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-amber-400
+                               flex items-center justify-center shadow-sm">
+                <Crown className="w-3 h-3 text-amber-950" fill="currentColor" />
+              </span>
             </div>
 
-            {/* Right: Points + Breakdown */}
-            <div className="flex-1 min-w-0 lg:pl-8 lg:border-l lg:border-amber-500/15">
+            {/* Identity */}
+            <div className="min-w-0 flex-1">
+              <span className="t-micro font-black uppercase tracking-[2px] text-amber-600 dark:text-amber-300/80">
+                Season MVP
+              </span>
+              <h3 className="font-display font-extrabold text-slate-900 dark:text-white
+                             text-lg lg:text-2xl leading-tight truncate mt-0.5">
+                {mvpName}
+              </h3>
+              <p className="t-micro font-semibold text-slate-400 dark:text-white/40 mt-0.5">
+                {mvpBlurb}
+              </p>
+            </div>
 
-              {/* Big points number */}
-              <div className="flex items-baseline gap-2 lg:justify-end">
-                <span className="text-6xl lg:text-7xl font-black tabular-nums leading-none"
-                      style={{ background: 'linear-gradient(180deg, #fff 30%, #fde68a 70%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            {/* Points — right-aligned, the anchor of the card */}
+            <div className="text-right flex-shrink-0">
+              <div className="flex items-baseline gap-1 justify-end">
+                <span className="t-num text-4xl lg:text-5xl leading-none text-slate-900 dark:text-white">
                   {mvp.points}
                 </span>
-                <span className="text-amber-300/70 text-xs font-bold uppercase tracking-[2px]">pts</span>
+                <span className="t-micro font-black uppercase tracking-[1.5px] text-amber-600 dark:text-amber-300/70">pts</span>
               </div>
-
-              {/* Breakdown stats row */}
-              <div className="grid grid-cols-3 gap-3 mt-4 lg:mt-5 pt-4 border-t border-amber-500/15">
-                <div className="text-center lg:text-left">
-                  <div className="text-xl lg:text-2xl font-black text-white tabular-nums leading-none">
-                    {mvp.player.batting_runs}
-                  </div>
-                  <div className="t-micro text-amber-300/60 uppercase tracking-widest font-bold mt-1">Runs</div>
-                </div>
-                <div className="text-center lg:text-left">
-                  <div className="text-xl lg:text-2xl font-black text-white tabular-nums leading-none">
-                    {mvp.player.bowling_wickets}
-                  </div>
-                  <div className="t-micro text-amber-300/60 uppercase tracking-widest font-bold mt-1">Wickets</div>
-                </div>
-                <div className="text-center lg:text-left">
-                  <div className="text-xl lg:text-2xl font-black text-white tabular-nums leading-none">
-                    {mvp.player.fielding_catches + mvp.player.fielding_stumpings + mvp.player.fielding_run_outs}
-                  </div>
-                  <div className="t-micro text-amber-300/60 uppercase tracking-widest font-bold mt-1">Dismissals</div>
-                </div>
-              </div>
+              {mvpMoms > 0 && (
+                <span className="inline-flex items-center gap-0.5 t-micro font-black
+                                 text-amber-500 dark:text-amber-300 mt-1.5">
+                  <Crown className="w-2.5 h-2.5" fill="currentColor" />
+                  {mvpMoms} MOM{mvpMoms > 1 ? 's' : ''}
+                </span>
+              )}
             </div>
+          </div>
+
+          {/* Breakdown — hairline row, no boxes inside boxes */}
+          <div className="relative grid grid-cols-3 mt-5 pt-4 border-t border-slate-200/70 dark:border-white/10">
+            {[
+              { v: mvp.player.batting_runs, k: 'Runs' },
+              { v: mvp.player.bowling_wickets, k: 'Wickets' },
+              { v: mvp.player.fielding_catches + mvp.player.fielding_stumpings + mvp.player.fielding_run_outs,
+                k: 'Dismissals' },
+            ].map((x, i) => (
+              <div key={x.k} className={i > 0 ? 'pl-4 border-l border-slate-200/70 dark:border-white/10' : ''}>
+                <p className="t-num text-lg lg:text-xl leading-none text-slate-900 dark:text-white">{x.v}</p>
+                <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 dark:text-white/40 mt-1">
+                  {x.k}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* ── 3 SPECIALIST CARDS (equal 1/3 width) ────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* ── The specialists ──────────────────────────────────────────────
+            Two by two on a phone, four across on a desktop. The old
+            three-column grid left the keeper stranded on a row of its own. */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {topBatsman && (
             <Specialist
               label="Top Batsman"
-              icon={<TrendingUp className="w-3.5 h-3.5 text-blue-300" />}
-              color={{
-                bg: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)',
-                border: 'rgba(59, 130, 246, 0.3)',
-                accent: 'text-blue-300/80',
-                glow: 'rgba(59, 130, 246, 0.25)',
-                numText: 'linear-gradient(180deg, #fff 30%, #93c5fd 100%)',
-              }}
+              icon={<TrendingUp className="w-3.5 h-3.5 text-sky-600 dark:text-sky-300" />}
+              tone={{ rule: 'bg-sky-400/70', chip: 'bg-sky-500/10 dark:bg-sky-400/15',
+                      ink: 'text-sky-600 dark:text-sky-300' }}
               number={topBatsman.player.batting_runs}
-              subtitle={`Runs · Avg ${topBatsman.player.batting_average.toFixed(1)}`}
+              unit="runs"
+              detail={topBatsman.player.batting_average > 0
+                ? `Average ${topBatsman.player.batting_average.toFixed(1)}` : undefined}
               player={topBatsman.player}
               moms={momCounts[topBatsman.player.member_id] || 0}
             />
@@ -226,16 +247,13 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
           {topBowler && (
             <Specialist
               label="Top Bowler"
-              icon={<Zap className="w-3.5 h-3.5 text-red-300" fill="currentColor" />}
-              color={{
-                bg: 'linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)',
-                border: 'rgba(239, 68, 68, 0.3)',
-                accent: 'text-red-300/80',
-                glow: 'rgba(239, 68, 68, 0.25)',
-                numText: 'linear-gradient(180deg, #fff 30%, #fca5a5 100%)',
-              }}
+              icon={<Zap className="w-3.5 h-3.5 text-rose-600 dark:text-rose-300" fill="currentColor" />}
+              tone={{ rule: 'bg-rose-400/70', chip: 'bg-rose-500/10 dark:bg-rose-400/15',
+                      ink: 'text-rose-600 dark:text-rose-300' }}
               number={topBowler.player.bowling_wickets}
-              subtitle={`Wickets${topBowler.player.bowling_economy > 0 ? ` · Eco ${topBowler.player.bowling_economy.toFixed(1)}` : ''}`}
+              unit="wkts"
+              detail={topBowler.player.bowling_economy > 0
+                ? `Economy ${topBowler.player.bowling_economy.toFixed(1)}` : undefined}
               player={topBowler.player}
               moms={momCounts[topBowler.player.member_id] || 0}
             />
@@ -244,16 +262,15 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
           {bestFielder && (
             <Specialist
               label="Best Fielder"
-              icon={<Shield className="w-3.5 h-3.5 text-emerald-300" />}
-              color={{
-                bg: 'linear-gradient(135deg, #065f46 0%, #0a1019 100%)',
-                border: 'rgba(16, 185, 129, 0.3)',
-                accent: 'text-emerald-300/80',
-                glow: 'rgba(16, 185, 129, 0.25)',
-                numText: 'linear-gradient(180deg, #fff 30%, #6ee7b7 100%)',
-              }}
+              icon={<Shield className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-300" />}
+              tone={{ rule: 'bg-emerald-400/70', chip: 'bg-emerald-500/10 dark:bg-emerald-400/15',
+                      ink: 'text-emerald-600 dark:text-emerald-300' }}
               number={bestFielder.total}
-              subtitle={`Dismissals · ${bestFielder.player.fielding_catches}c${bestFielder.player.fielding_run_outs > 0 ? ` · ${bestFielder.player.fielding_run_outs}ro` : ''}`}
+              unit="taken"
+              detail={[
+                bestFielder.player.fielding_catches > 0 ? `${bestFielder.player.fielding_catches} caught` : null,
+                bestFielder.player.fielding_run_outs > 0 ? `${bestFielder.player.fielding_run_outs} run out` : null,
+              ].filter(Boolean).join(' · ') || undefined}
               player={bestFielder.player}
               moms={momCounts[bestFielder.player.member_id] || 0}
             />
@@ -261,17 +278,18 @@ export function DashboardStars({ momCounts = {} }: DashboardStarsProps) {
 
           {bestKeeper && (
             <Specialist
-              label="Best Wicket-Keeper"
-              icon={<Shield className="w-3.5 h-3.5 text-amber-300" />}
-              color={{
-                bg: 'linear-gradient(135deg, #78350f 0%, #0a1019 100%)',
-                border: 'rgba(245, 158, 11, 0.3)',
-                accent: 'text-amber-300/80',
-                glow: 'rgba(245, 158, 11, 0.25)',
-                numText: 'linear-gradient(180deg, #fff 30%, #fcd34d 100%)',
-              }}
+              label="Wicket-Keeper"
+              icon={<Shield className="w-3.5 h-3.5 text-amber-600 dark:text-amber-300" />}
+              tone={{ rule: 'bg-amber-400/70', chip: 'bg-amber-500/10 dark:bg-amber-400/15',
+                      ink: 'text-amber-600 dark:text-amber-300' }}
               number={bestKeeper.total}
-              subtitle={`Dismissals · ${bestKeeper.player.fielding_caught_behind ?? 0}cb${bestKeeper.player.fielding_stumpings > 0 ? ` · ${bestKeeper.player.fielding_stumpings}st` : ''}`}
+              unit="behind"
+              detail={[
+                (bestKeeper.player.fielding_caught_behind ?? 0) > 0
+                  ? `${bestKeeper.player.fielding_caught_behind} caught` : null,
+                bestKeeper.player.fielding_stumpings > 0
+                  ? `${bestKeeper.player.fielding_stumpings} stumped` : null,
+              ].filter(Boolean).join(' · ') || undefined}
               player={bestKeeper.player}
               moms={momCounts[bestKeeper.player.member_id] || 0}
             />
