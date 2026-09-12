@@ -458,8 +458,10 @@ export function Settings() {
       setSponsorMsg('');
       await uploadLogo(file, logoUploadSponsorIdRef.current || undefined);
       setSponsorMsg('Logo uploaded!');
-    } catch {
-      setSponsorError('Failed to upload logo');
+    } catch (err) {
+      setSponsorError(/bucket/i.test(String(err))
+        ? 'Logo storage is not set up on this project yet — run recreate_storage_buckets.sql.'
+        : `Could not upload the logo: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSponsorLogoUploading(false);
       logoUploadSponsorIdRef.current = null;

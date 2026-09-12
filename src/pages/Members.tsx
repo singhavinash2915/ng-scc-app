@@ -358,7 +358,11 @@ export function Members() {
       setSelectedMember(null);
     } catch (error) {
       console.error('Failed to upload avatar:', error);
-      alert('Failed to upload avatar. Please try again.');
+      const why = error instanceof Error ? error.message : String(error);
+      alert(/bucket/i.test(why)
+        ? 'Avatar storage is not set up on this project yet — run '
+          + 'supabase/migrations/recreate_storage_buckets.sql.'
+        : `Could not upload the picture: ${why}`);
     } finally {
       setAvatarUploading(false);
       if (avatarInputRef.current) {

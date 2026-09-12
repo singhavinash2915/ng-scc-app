@@ -793,7 +793,11 @@ export function Matches() {
       }
     } catch (error) {
       console.error('Failed to upload photo:', error);
-      alert('Failed to upload photo. Please try again.');
+      const why = error instanceof Error ? error.message : String(error);
+      alert(/bucket/i.test(why)
+        ? 'Photo storage is not set up on this project yet — run '
+          + 'supabase/migrations/recreate_storage_buckets.sql.'
+        : `Could not upload the photo: ${why}`);
     } finally {
       setPhotoUploading(false);
     }
