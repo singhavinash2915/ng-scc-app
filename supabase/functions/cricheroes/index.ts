@@ -125,12 +125,20 @@ async function buildInsights(matchId: string) {
     const extra = Number(b.extra_run ?? 0);
     const isWide = String(b.extra_type_code ?? '').toLowerCase() === 'wd';
     const isNoball = String(b.extra_type_code ?? '').toLowerCase() === 'nb';
+    // A retired hurt carries is_out, and it is not a wicket — nobody got
+    // anybody out. Saturday's only flagged event in 178 balls was Piyush
+    // retiring hurt, and it was being drawn as a W and counted in the over's
+    // wickets, so the batting turning-point list showed a wicket that never
+    // happened. Retired OUT stays a dismissal, which is what the laws say.
+    const dismissCode = String(b.dismiss_type_code ?? '').toUpperCase();
+    const retiredHurt = ['REH', 'RTH', 'RH'].includes(dismissCode);
+    const isWicket = !!b.is_out && !retiredHurt;
     o.runs += run + extra;
-    if (b.is_out) o.wickets += 1;
+    if (isWicket) o.wickets += 1;
     if (b.is_boundry) o.boundaryRuns += run;
     if (!isWide && !isNoball) o.legalBalls += 1;
-    if (run === 0 && extra === 0 && !b.is_out) o.dots += 1;
-    o.seq.push(b.is_out ? 'W' : isWide ? 'wd' : isNoball ? 'nb' : String(run));
+    if (run === 0 && extra === 0 && !isWicket) o.dots += 1;
+    o.seq.push(isWicket ? 'W' : isWide ? 'wd' : isNoball ? 'nb' : String(run));
   }
   // Balls come newest-first → reverse seq so each over reads chronologically.
   const overs = [...byOver.values()].map(o => ({ ...o, seq: o.seq.reverse() }))
