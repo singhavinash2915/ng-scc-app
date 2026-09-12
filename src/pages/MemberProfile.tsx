@@ -1,4 +1,4 @@
-import { CURRENT_SEASON } from '../config/season';
+import { CURRENT_SEASON, seasonLabel } from '../config/season';
 import { useMemo, useState, useEffect } from 'react';
 import { MemberStatement } from '../components/MemberStatement';
 import { useAuth } from '../context/AuthContext';
@@ -142,6 +142,7 @@ export function MemberProfile() {
     && localStorage.getItem('scc-me') === id);
   const { matches } = useMatches();
   const { stats } = useCricketStats(CURRENT_SEASON);
+  const { stats: careerRows } = useCricketStats('all');
   // A profile is a career page — season MOMs would read 0 for almost everyone.
   const { allTime: momCounts } = useMOMCounts();
   const { formByMember } = useFormGuide();
@@ -155,6 +156,16 @@ export function MemberProfile() {
   const myCard = statsFor(id ?? '');
   const myTier = tierFor(myCard, cardAll);
   const seasonStats = stats.find(s => s.member_id === id);
+  const careerStats = careerRows.find(s => s.member_id === id);
+
+  // Season or career, and the reader gets to choose.
+  //
+  // The page was headed "This Season" and, when a season row was missing,
+  // quietly showed a career row underneath that heading instead — so a player
+  // yet to bat this season appeared to have scored 800. Both are worth seeing;
+  // neither should ever be labelled as the other.
+  const [view, setView] = useState<'season' | 'career'>('season');
+  const showing = view === 'season' ? seasonStats : careerStats;
 
   // Fallback: if there's no 2025-26 row (e.g. the daily sync only writes the
   // all-time row for some players, or the name match failed during season
@@ -178,7 +189,9 @@ export function MemberProfile() {
     return () => { cancelled = true; };
   }, [id, seasonStats]);
 
-  const memberStats = seasonStats || fallbackStats || undefined;
+  // The fetched fallback still covers a member with no aggregated row at all
+  // (name never matched a sync), but it can no longer masquerade as a season.
+  const memberStats = showing || (view === 'career' ? fallbackStats : undefined) || undefined;
   const moms = momCounts[id || ''] || 0;
   const form = formByMember[id || ''];
   const matchesPlayed = useMemo(() => {
@@ -419,13 +432,37 @@ export function MemberProfile() {
         {tab === 'overview' && (
           <div className="space-y-4">
             {/* ─── THIS SEASON (compact stat lines, mockup-style) ─── */}
-            {memberStats ? (
+            {!memberStats && view === 'season' ? (
+              <div className="r-card p-5 text-center border border-slate-200 dark:border-white/10">
+                <p className="font-bold text-slate-700 dark:text-white/80">
+                  Nothing this season yet
+                </p>
+                <p className="t-body text-slate-400 mt-1">
+                  {careerStats ? 'Their career record is under “All time”.' : 'No synced stats for this player.'}
+                </p>
+                <button onClick={() => setView('career')}
+                  className="mt-3 r-control px-3 py-1.5 t-meta font-black bg-emerald-500 text-white">
+                  Show all time
+                </button>
+              </div>
+            ) : memberStats ? (
               <div className="relative overflow-hidden r-card p-5"
                    style={{ background: 'linear-gradient(135deg, #061a14 0%, #0a1019 100%)' }}>
                 <div className="absolute inset-0 r-card pointer-events-none border border-emerald-500/15" />
-                <h3 className="t-micro font-black text-emerald-400 uppercase tracking-[3px] mb-3 relative">
-                  This Season
-                </h3>
+                <div className="flex items-center justify-between mb-3 relative">
+                  <h3 className="t-micro font-black text-emerald-400 uppercase tracking-[3px]">
+                    {view === 'season' ? seasonLabel(CURRENT_SEASON) : 'All seasons'}
+                  </h3>
+                  <div className="flex r-control overflow-hidden border border-white/15">
+                    {([['season', 'Season'], ['career', 'All time']] as const).map(([k, label]) => (
+                      <button key={k} onClick={() => setView(k)}
+                        className={`px-2.5 py-1 t-micro font-black uppercase tracking-wider ${
+                          view === k ? 'bg-emerald-500 text-white' : 'text-white/55'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="space-y-2.5 relative">
                   <SeasonLine
                     emoji="📊"

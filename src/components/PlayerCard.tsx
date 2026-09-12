@@ -18,11 +18,20 @@ interface Props {
   all: CardStats[];
   /** Compact drops the stat row: for dense grids and pickers. */
   size?: 'full' | 'compact';
+  /**
+   * This season's numbers, shown under the career ones.
+   *
+   * The card's headline stays career — a tier and a role are judgements about
+   * a body of work, and one match can't make somebody a Legend. But career
+   * alone can't answer "how am I going THIS season", which is the question
+   * anybody opening the app in September actually has.
+   */
+  season?: CardStats | null;
   /** Overrides the profile link — e.g. a squad picker wants to select, not navigate. */
   onClick?: () => void;
 }
 
-export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props) {
+export function PlayerCard({ member, stats, all, size = 'full', season = null, onClick }: Props) {
   const tier = tierFor(stats, all);
   // Their printed shirt, if they have one. Nothing renders when they don't —
   // an empty plate would just ask a question the card can't answer.
@@ -92,6 +101,18 @@ export function PlayerCard({ member, stats, all, size = 'full', onClick }: Props
             </div>
           ))}
         </div>
+      )}
+
+      {/* This season, under the career line. Zeroes are not printed as a stat
+          row — three noughts read as a failing report rather than a season
+          nobody has played yet. */}
+      {size === 'full' && season && (
+        <p className="relative t-micro font-bold text-slate-400 dark:text-white/45 mt-2 text-center">
+          {season.matches > 0 || season.runs > 0 || season.wickets > 0
+            ? <>This season · {season.runs} runs · {season.wickets} wkts
+                {season.matches > 0 && <> · {season.matches} {season.matches === 1 ? 'match' : 'matches'}</>}</>
+            : <>Yet to play this season</>}
+        </p>
       )}
     </div>
   );

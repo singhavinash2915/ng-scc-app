@@ -63,29 +63,11 @@ export function SeasonLeague() {
           </div>
         </div>
 
-        {/* ── Fixtures (upcoming) ───────────────────────────────────────── */}
-        {lg.upcoming.length > 0 && (
-          <div className="glass r-card p-5">
-            <p className="t-meta font-black uppercase tracking-[2px] text-primary-600 dark:text-primary-300 mb-3 flex items-center gap-1.5">
-              <CalendarDays className="w-4 h-4" /> Fixtures
-            </p>
-            <div className="space-y-2">
-              {lg.upcoming.map(m => (
-                <Link key={m.id} to="/matches" className="flex items-center gap-3 r-card bg-white/60 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition p-3">
-                  <div className="text-center min-w-[54px]">
-                    <p className="font-display text-sm font-extrabold text-slate-900 dark:text-white leading-tight">{fmtDate(m.date).split(',')[1]?.trim() ?? fmtDate(m.date)}</p>
-                    <p className="t-micro uppercase text-slate-400 dark:text-white/50">{fmtDate(m.date).split(',')[0]}</p>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 dark:text-white truncate">vs {m.opponent || 'TBD'}</p>
-                    {m.venue && <p className="text-xs text-slate-400 dark:text-white/50 flex items-center gap-1 truncate"><MapPin className="w-3 h-3 shrink-0" /> {m.venue}</p>}
-                  </div>
-                  <span className="t-micro font-bold uppercase text-primary-500">Upcoming</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Results and the leaders come first: what happened, and who is on
+            top, is what this page gets opened for. Fixtures are a reference
+            list — the same dates are on the calendar and the dashboard — so
+            they sit below rather than pushing the season's story off the
+            first screen. */}
 
         {/* ── Results (played) ──────────────────────────────────────────── */}
         {lg.played.length > 0 && (
@@ -161,6 +143,30 @@ export function SeasonLeague() {
         )}
 
         {/* ── Empty / pre-season state ──────────────────────────────────── */}
+        {/* ── Fixtures (upcoming) ───────────────────────────────────────── */}
+        {lg.upcoming.length > 0 && (
+          <div className="glass r-card p-5">
+            <p className="t-meta font-black uppercase tracking-[2px] text-primary-600 dark:text-primary-300 mb-3 flex items-center gap-1.5">
+              <CalendarDays className="w-4 h-4" /> Fixtures
+            </p>
+            <div className="space-y-2">
+              {lg.upcoming.map(m => (
+                <Link key={m.id} to="/matches" className="flex items-center gap-3 r-card bg-white/60 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition p-3">
+                  <div className="text-center min-w-[54px]">
+                    <p className="font-display text-sm font-extrabold text-slate-900 dark:text-white leading-tight">{fmtDate(m.date).split(',')[1]?.trim() ?? fmtDate(m.date)}</p>
+                    <p className="t-micro uppercase text-slate-400 dark:text-white/50">{fmtDate(m.date).split(',')[0]}</p>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-900 dark:text-white truncate">vs {m.opponent || 'TBD'}</p>
+                    {m.venue && <p className="text-xs text-slate-400 dark:text-white/50 flex items-center gap-1 truncate"><MapPin className="w-3 h-3 shrink-0" /> {m.venue}</p>}
+                  </div>
+                  <span className="t-micro font-bold uppercase text-primary-500">Upcoming</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {lg.totalFixtures === 0 ? (
           <div className="glass r-card p-8 text-center">
             <Trophy className="w-10 h-10 text-slate-300 dark:text-white/20 mx-auto" />

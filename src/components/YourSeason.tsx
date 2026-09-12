@@ -8,6 +8,7 @@ import { PlayerCard } from './PlayerCard';
 import { Card } from './ui/Card';
 import { AvailabilityNudge } from './AvailabilityNudge';
 import type { Match } from '../types';
+import { CURRENT_SEASON } from '../config/season';
 
 // ─── Your season ──────────────────────────────────────────────────────────────
 // The club tab feels premium because ONE thing dominates and the rest support
@@ -65,6 +66,10 @@ export function YourSeason({ matches }: Props) {
   const { me, signOut } = useMe();
   const alerts = usePersonalAlerts(matches);
   const { all, statsFor } = useCardStats();
+  // The same numbers for the season in progress. The card leads on career and
+  // carries this season underneath — "Your season" was showing neither until
+  // now, only a career total under a season heading.
+  const { statsFor: seasonStatsFor } = useCardStats(CURRENT_SEASON);
   const [confirmOut, setConfirmOut] = useState(false);
 
   const next = useMemo(() => matches
@@ -141,7 +146,7 @@ export function YourSeason({ matches }: Props) {
 
       {/* ── 1. YOUR CARD — the app's signature object, on the one screen
              that's actually about you. ── */}
-      <PlayerCard member={me} stats={statsFor(me.id)} all={all} />
+      <PlayerCard member={me} stats={statsFor(me.id)} all={all} season={seasonStatsFor(me.id)} />
 
       {/* ── 2. NEXT MATCH — a hero, not a row. Same data the club tab gets
              a countdown for; there's no reason yours shouldn't. ── */}

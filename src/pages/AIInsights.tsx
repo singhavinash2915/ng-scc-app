@@ -82,9 +82,18 @@ export function AIInsights() {
 
 
   const { stats, getLeaderboard } = useCricketStats();
-  // Career totals as well as this season's. With only the season row loaded the
-  // model answered "who has the most wickets all-time" from 2025-26 figures and
-  // called them all-time — a confident wrong answer, which is the worst kind.
+  // Career totals as well as this season's — which the comment here has claimed
+  // for a while without the code doing it. Season alone is thin in September:
+  // one match in, Squad AI and Cricket DNA were ranking the whole club on a
+  // single afternoon, and anything asked "all-time" was answered from it.
+  //
+  // Both go to the model, labelled, so it can weigh current form against a body
+  // of work instead of mistaking one for the other.
+  const { stats: careerStats } = useCricketStats('all');
+  const statsOf = (memberId: string) => ({
+    season: stats.find(st => st.member_id === memberId) ?? null,
+    career: careerStats.find(st => st.member_id === memberId) ?? null,
+  });
 
   const { generateInsight, error: aiError } = useAIInsight();
 
@@ -149,7 +158,7 @@ export function AIInsights() {
     const players = members
       .filter(m => m.status === 'active')
       .map(m => {
-        const s = stats.find(st => st.member_id === m.id);
+        const { season: sSeason, career: s } = statsOf(m.id);
 
         // Count how many of the last 10 matches this player was actually selected
         const recentSelected = last10.filter(match =>
@@ -175,7 +184,13 @@ export function AIInsights() {
             : '0%',
           recent_form: recentResults || '—',
 
-          // ── CricHeroes stats (SECONDARY — quality ranking within available pool) ──
+          // ── This season, then career. A September squad cannot be picked on
+          //    September's cricket alone, and career cannot see current form. ──
+          season_runs: sSeason?.batting_runs ?? 0,
+          season_wickets: sSeason?.bowling_wickets ?? 0,
+          season_matches: sSeason?.batting_matches ?? 0,
+
+          // ── CricHeroes career stats (quality ranking within available pool) ──
           ch_runs: s?.batting_runs ?? 0,
           ch_avg: Number((s?.batting_average ?? 0).toFixed(1)),
           ch_sr: Number((s?.batting_strike_rate ?? 0).toFixed(0)),
@@ -200,7 +215,7 @@ export function AIInsights() {
       ? match.players
           .map(mp => {
             const member = members.find(mm => mm.id === mp.member_id);
-            const s = stats.find(st => st.member_id === mp.member_id);
+            const s = statsOf(mp.member_id).career ?? statsOf(mp.member_id).season;
             if (!member) return null;
             const recentSelected = last10.filter(mt => mt.players?.some(p => p.member_id === mp.member_id)).length;
             return {
@@ -265,7 +280,7 @@ export function AIInsights() {
     const likelySquad = members
       .filter(m => m.status === 'active')
       .map(m => {
-        const s = stats.find(st => st.member_id === m.id);
+        const s = statsOf(m.id).career ?? statsOf(m.id).season;
         const recentSelected = last10.filter(match =>
           match.players?.some(p => p.member_id === m.id)
         ).length;
@@ -303,20 +318,25 @@ export function AIInsights() {
 
   const handleCricketDNA = async (memberId: string, forceRefresh = false) => {
     const member = members.find(m => m.id === memberId);
-    const memberStats = stats.find(s => s.member_id === memberId);
+    const { season: seasonRow, career: careerRow } = statsOf(memberId);
+    const memberStats = careerRow ?? seasonRow;
     if (!member) return;
     const key = `dna_${memberId}`;
-    generateSingleInsight(key, 'cricket_dna', { member, stats: memberStats || {} }, forceRefresh);
+    generateSingleInsight(key, 'cricket_dna',
+      { member, stats: memberStats || {}, thisSeason: seasonRow || {} }, forceRefresh);
   };
 
 
   const handleFormTracker = (memberId: string, forceRefresh = false) => {
     const member = members.find(m => m.id === memberId);
-    const memberStats = stats.find(s => s.member_id === memberId);
+    const { season: seasonRow, career: careerRow } = statsOf(memberId);
+    const memberStats = careerRow ?? seasonRow;
     const memberMatches = recentMatches.filter(m => m.players?.some(p => p.member_id === memberId)).slice(0, 5);
     generateSingleInsight(`form_${memberId}`, 'form_tracker', {
       member,
       stats: memberStats || {},
+      // Form is about now; the career line is what "now" is measured against.
+      thisSeason: seasonRow || {},
       recentMatches: memberMatches.map(m => ({ date: m.date, result: m.result, opponent: m.opponent })),
       careerAverage: memberStats?.batting_average || 0,
     }, forceRefresh);

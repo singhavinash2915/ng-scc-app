@@ -21,6 +21,7 @@ import { CLUB_FACTS } from '../lib/clubFacts';
 import { quickAnswer } from '../lib/quickAnswers';
 import { selectBlocks } from '../lib/chatRouting';
 import { useMe } from '../context/MemberContext';
+import { CURRENT_SEASON_WINDOW } from '../config/season';
 
 // ─── Ask the club a question ──────────────────────────────────────────────────
 // Everything the chat needs, in one place, so the floating bubble and the
@@ -275,7 +276,15 @@ export function useClubChat() {
     // A window again. Per-match highlights are asked about for RECENT games —
     // "what did he score last week" — while anything older is already covered
     // by seasonRecords and the career bests below, at a fraction of the size.
-    const recentMatchHighlights = matchHighlights.slice(0, 40);
+    //
+    // The window is a floor, not a cap: every match of the CURRENT season is
+    // always in, however many there are. Highlights arrive newest-first, so
+    // taking at least the season's own count guarantees it — otherwise a long
+    // season would start pushing its own matches out to make room for last
+    // season's, and the model would answer "this season" with a gap in it.
+    const seasonStart = CURRENT_SEASON_WINDOW.start;
+    const thisSeasonCount = matchHighlights.filter(h => h.date >= seasonStart).length;
+    const recentMatchHighlights = matchHighlights.slice(0, Math.max(40, thisSeasonCount));
     // Top 30 players by season runs — covers all active SCC members
     // Scorecards name everyone who batted, so this was carrying career bests
     // for 681 players — 647 of them opposition. That was 37k tokens a question,
