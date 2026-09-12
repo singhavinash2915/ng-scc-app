@@ -66,11 +66,28 @@ export interface PhaseStat {
   label: string; runs: number; wickets: number; dots: number; boundaryRuns: number; balls: number; runRate: number;
 }
 export interface TurningOver { over: number; runs: number; wickets: number; seq: string[] }
+
+/**
+ * Rank an over by how much it went OUR way, which depends on who was bowling.
+ *
+ * One formula was used for both — wickets × 12 + runs — and for the innings SCC
+ * bowled that sorts by runs conceded. The panel headed "Sangria Cricket Club —
+ * bowling" was therefore listing the overs SCC was hit hardest in: two sixes in
+ * over 7 presented as a turning point in our favour.
+ *
+ * Batting: runs win it, a wicket sets us back — about an over's worth.
+ * Bowling: wickets win it, and a cheap over is worth something on its own, so
+ *          runs conceded count against.
+ */
+export const turningScore = (o: { runs: number; wickets: number }, view: 'batting' | 'bowling') =>
+  view === 'batting' ? o.runs - o.wickets * 6 : o.wickets * 12 - o.runs;
 export interface InnTotal {
   inning: number; team_id: number; team_name: string; runs: number; wickets: number; balls: number; runRate: number;
 }
 export interface InningInsight {
   inning: number; teamId: number; teamName: string;
+  /** Every over of the innings, so the view can rank them its own way. */
+  overs: TurningOver[];
   total: PhaseStat; phases: PhaseStat[]; turning: TurningOver[];
   wicketsReliable: boolean;   // false → ball-by-ball missed wickets; hide per-phase wickets
 }
@@ -121,11 +138,14 @@ export function buildInnings(overs: OverRow[], innTotals: InnTotal[] = []): Inni
     }
     // Ball-by-ball is "reliable" for wickets only if it captured most of them.
     const wicketsReliable = !auth || auth.wickets === 0 || bbWickets >= auth.wickets * 0.8;
-    const turning = [...innOvers]
-      .map(o => ({ over: o.over, runs: o.runs, wickets: o.wickets, seq: o.seq }))
+    const asOvers: TurningOver[] = innOvers
+      .map(o => ({ over: o.over, runs: o.runs, wickets: o.wickets, seq: o.seq }));
+    // Kept for any caller that just wants "the biggest overs of this innings".
+    const turning = [...asOvers]
       .sort((a, b) => (b.wickets * 12 + b.runs) - (a.wickets * 12 + a.runs))
       .slice(0, 3);
-    return { inning: inn, teamId, teamName: auth?.team_name ?? '', total, phases, turning, wicketsReliable };
+    return { inning: inn, teamId, teamName: auth?.team_name ?? '', overs: asOvers,
+             total, phases, turning, wicketsReliable };
   });
 }
 

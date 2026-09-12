@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card } from './ui/Card';
 import { BarChart3, Loader2, Zap } from 'lucide-react';
-import { useMatchInsights, type InningInsight, type PhaseStat } from '../hooks/useMatchAnalysis';
+import { useMatchInsights, turningScore, type InningInsight, type PhaseStat } from '../hooks/useMatchAnalysis';
 
 const SCC_TEAM_ID = 7927431;
 
@@ -125,6 +125,12 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
       {(() => {
         // Batting = SCC's own innings; Bowling = the innings SCC bowled (opponent's).
         const inn = tpView === 'batting' ? scc : opp;
+        // Ranked for the side of the ball we're looking at. Sorting both views
+        // by runs meant the bowling tab listed the overs SCC was hit hardest
+        // in — two sixes in over 7 — under "Sangria Cricket Club — bowling".
+        const best = inn
+          ? [...inn.overs].sort((a, b) => turningScore(b, tpView) - turningScore(a, tpView)).slice(0, 3)
+          : [];
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -145,10 +151,27 @@ export function MatchInsights({ chMatchId, innings1Name, innings2Name }: Props) 
                 <p className="t-meta font-bold text-gray-400 mb-2">
                   Sangria Cricket Club — {tpView}{tpView === 'bowling' ? ` (vs ${teamShort(nameFor(opp))})` : ''}
                 </p>
+                {/* Say what "best" means here, so an over of 0 runs reading
+                    above one of 12 isn't a puzzle. */}
+                <p className="t-micro text-gray-500 mb-2.5">
+                  {tpView === 'batting'
+                    ? 'Our biggest overs with the bat — runs made, wickets lost counted against.'
+                    : 'Our best overs with the ball — wickets taken, runs conceded counted against.'}
+                </p>
+                {/* A quick-scored match reaches CricHeroes without most of its
+                    wickets in the ball-by-ball feed. Ranking still works, but
+                    it is working on runs alone — better said than implied. */}
+                {!inn.wicketsReliable && (
+                  <p className="t-micro text-amber-400/70 mb-2.5">
+                    CricHeroes has no ball-by-ball wickets for this match, so these are ranked on runs alone.
+                  </p>
+                )}
                 <div className="space-y-2">
-                  {inn.turning.slice(0, 3).map((t) => (
+                  {best.map((t) => (
                     <div key={t.over} className="flex items-center gap-2 flex-wrap">
-                      <span className="t-meta text-gray-500 w-16 shrink-0">Over {t.over} · {t.runs}r{t.wickets ? `/${t.wickets}w` : ''}</span>
+                      <span className="t-meta text-gray-500 w-20 shrink-0">
+                        Over {t.over} · {t.wickets ? `${t.wickets}w · ` : ''}{t.runs}r
+                      </span>
                       <div className="flex gap-1 flex-wrap">
                         {t.seq.map((b, i) => (
                           <span key={i} className={`w-6 h-6 rounded-full t-micro font-black flex items-center justify-center ${ballStyle(b)}`}>{b}</span>
