@@ -178,8 +178,15 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Match Centre" size="xl">
+      {/* `dark` on the wrapper, because this panel is dark in BOTH themes.
+          Everything inside is written for it — text-white headings, white/10
+          borders — but the shared Card underneath is theme-aware and paints
+          itself white in light mode. So in light mode the Insights tab put
+          white numbers on white cards: the whole comparison table and the
+          insight one-liners rendered and were invisible. Same for the Heroes
+          and Scorecard tabs. The live match page solves it the same way. */}
       <div
-        className="r-card overflow-hidden"
+        className="dark r-card overflow-hidden"
         style={{ background: 'linear-gradient(180deg, #0b0b0b 0%, #0f0f0f 100%)' }}
       >
         {/* Top-level view tabs — Heroes · Scorecard · Insights */}
