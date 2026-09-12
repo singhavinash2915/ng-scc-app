@@ -121,15 +121,18 @@ export function useCricketStats(season: string = CURRENT_SEASON, scope: StatScop
       setLoading(true);
 
       // Authoritative fielding comes from CricHeroes' team fielding leaderboard
-      // (stored in the 'all-time' row by sync_cricheroes.py). The per-match
-      // dismissal-text parse used for season rows badly overcounts catches
-      // (it can't reliably attribute a catch to the right fielder), so we
-      // overwrite every row's fielding with these career-accurate numbers.
-      // The authoritative fielding numbers come from CricHeroes' TEAM fielding
-      // leaderboard, which only covers matches against other clubs — there is no
-      // such board for MahaSangram. So this override applies to the external
-      // view only; an internal or combined view keeps what the sync parsed.
-      const { data: ftRows } = scope === 'external' ? await supabase
+      // (stored in the 'all-time' row by sync_cricheroes.py), which is a CAREER
+      // board — CricHeroes publishes no per-season version of it.
+      //
+      // It used to overwrite the fielding on every row, season views included.
+      // So picking any season showed the same career numbers: one match into
+      // 2026-27, the board had Akash on 46 catches and Avinash on 46, under a
+      // heading that said Season 2026-27. A season's fielding can only come
+      // from that season's own matches, so the override is now career-only.
+      //
+      // The board also covers matches against other clubs only, so it applies
+      // to the external view; internal and combined keep what the sync parsed.
+      const { data: ftRows } = scope === 'external' && season === 'all' ? await supabase
         .from('member_cricket_stats')
         .select('*')
         .eq('season', 'all-time')
@@ -165,7 +168,12 @@ export function useCricketStats(season: string = CURRENT_SEASON, scope: StatScop
             byMember[row.member_id] = { ...row, season: 'all' };
             continue;
           }
-          return mergeStatRows(existing, row, 'all');
+          // Assign, don't return: this `return` walked out of fetchStats the
+          // first time a member had two seasons, so setStats never ran and the
+          // career board silently kept whatever the previously selected season
+          // had left in state. It looked right only because the fielding
+          // override above was rewriting every row with career numbers anyway.
+          byMember[row.member_id] = mergeStatRows(existing, row, 'all');
         }
         setStats(applyField(Object.values(byMember).sort((a, b) => b.batting_runs - a.batting_runs)));
       } else {

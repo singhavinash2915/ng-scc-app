@@ -653,7 +653,7 @@ export function Leaderboard() {
       {/* Footer note */}
       {!loading && stats.length > 0 && (
         <p className="mx-4 sm:mx-0 text-xs text-gray-400 text-center pb-6">
-          Stats sourced from CricHeroes · Season 2025-26 · Updated daily
+          Stats sourced from CricHeroes · {season === 'all' ? 'All seasons' : seasonLabel(season)} · Updated daily
         </p>
       )}
     </div>
