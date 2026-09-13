@@ -136,8 +136,13 @@ export function Captains() {
   const { members } = useMembers();
   const data = useCaptaincy(matches, members);
 
-  const mostExperienced = data.captains[0];
   const decided = data.ledWon + data.ledLost;
+  // Which of these records are long enough to mean anything. The caveat used to
+  // say "nobody has led more than N — over a run that short", which was true of
+  // four captains over 24 matches and nonsense once the CricHeroes backfill made
+  // the top one 68. So the page counts who is actually thin and says only that.
+  const SOLID = 10;
+  const thin = data.captains.filter(c => c.led < SOLID);
 
   return (
     <div>
@@ -185,14 +190,19 @@ export function Captains() {
         <div className="glass r-card p-4 flex gap-3">
           <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <p className="t-body font-bold text-slate-800 dark:text-white/90">Read these as form, not verdicts</p>
+            <p className="t-body font-bold text-slate-800 dark:text-white/90">What this counts</p>
             <p className="t-meta text-slate-500 dark:text-white/55 mt-1 leading-relaxed">
-              The club only started recording a captain on the fixture in
-              {data.since ? ` ${fmtDate(data.since)}` : ' 2026'}, so{' '}
-              <b className="text-slate-700 dark:text-white/80">{data.unrecorded} earlier matches</b> have
-              nobody named and are not counted here. Nobody has led more than{' '}
-              {mostExperienced?.led ?? 0} matches — over a run that short, a win rate says
-              as much about the opposition and the XI as it does about the captain.
+              Captains come from the fixture where somebody named one, and from
+              CricHeroes' own (c) marker on the scorecard everywhere else — back to{' '}
+              {data.since ? fmtDate(data.since) : 'the first record'}.{' '}
+              <b className="text-slate-700 dark:text-white/80">{data.unrecorded} matches</b> name
+              nobody in either place and are left out, so the records below are a
+              large sample rather than a complete one.
+              {thin.length > 0 && (
+                <> Read {thin.map(c => c.member?.name?.split(' ')[0] ?? '?').join(', ')} as
+                form rather than a verdict — under {SOLID} matches in charge, a win rate says
+                as much about the opposition as the captain.</>
+              )}
             </p>
           </div>
         </div>
@@ -218,9 +228,14 @@ export function Captains() {
             <p className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 dark:text-white/45
                           mb-3 flex items-center gap-1.5">
               <CalendarDays className="w-3.5 h-3.5" /> Match by match
+              {data.timeline.length > 40 && (
+                <span className="font-semibold normal-case tracking-normal text-slate-300 dark:text-white/25">
+                  · latest 40 of {data.timeline.length}
+                </span>
+              )}
             </p>
             <div className="space-y-1.5">
-              {data.timeline.map(({ match, captain }) => (
+              {data.timeline.slice(0, 40).map(({ match, captain }) => (
                 <div key={match.id} className="flex items-center gap-2.5 py-1.5
                                                border-t border-slate-100 dark:border-white/5 first:border-0">
                   <ResultDot result={match.result} />
