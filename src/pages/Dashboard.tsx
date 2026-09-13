@@ -948,6 +948,21 @@ export function Dashboard() {
         {/* ── SQUAD POLL ───────────────────────────────────────────────── */}
         {view === 'club' && <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />}
 
+        {/* ── TEAM GALLERY ─────────────────────────────────────────────
+             The component for this has been here all along and the dashboard
+             never rendered it — only the sponsor half of DashboardDeferred was
+             ever asked for. So a photo uploaded against a match went into the
+             database, into storage, and nowhere anybody would see it.
+
+             Above Explore on purpose: pictures of the side are the best thing
+             this club has to look at, and they were sitting below a grid of
+             links to everything else. */}
+        {view === 'club' && showDeferred && (
+          <Suspense fallback={null}>
+            <DashboardDeferred section="photos" />
+          </Suspense>
+        )}
+
         {/* ── EXPLORE — everything that used to be inlined above ──────── */}
         {view === 'club' && <ExploreGrid />}
 
