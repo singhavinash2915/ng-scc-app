@@ -13,7 +13,7 @@ Notes:
     (so MOM/score corrections trickle in automatically).
   - Skips matches without ch_match_id (manual entries).
 """
-import json, urllib.request, urllib.error, urllib.parse, datetime, sys, time, argparse, gzip
+import json, re, urllib.request, urllib.error, urllib.parse, datetime, sys, time, argparse, gzip
 
 # ── Supabase config ───────────────────────────────────────────────────────────
 SUPABASE_URL = "https://nptvrfqonfmafvbzjrih.supabase.co"
@@ -173,6 +173,82 @@ def normalize_innings(inn):
         'extras': inn.get('extras', {}),
     }
 
+SCC_TEAM_ID = 7927431
+MEMBERS_CACHE = []
+
+
+def _norm(x):
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", "", (x or "").lower().strip()))
+
+
+def resolve_member(ch_name, members):
+    """CricHeroes name -> SCC member id, or None.
+
+    Deliberately strict, and the same rules the app uses (src/lib/nameMatch.ts):
+    an exact name, or "First X" where X initials exactly one member's surname,
+    or a first name only one member has. Anything ambiguous returns None —
+    putting the wrong Aditya down as captain is worse than leaving it blank.
+    """
+    n = _norm(ch_name)
+    if not n:
+        return None
+    for m in members:
+        if _norm(m["name"]) == n:
+            return m["id"]
+    parts = n.split(" ")
+    by_first = [m for m in members if _norm(m["name"]).split(" ")[0] == parts[0]]
+    if len(parts) == 2 and len(parts[1]) == 1:
+        hits = [m for m in by_first if _norm(m["name"]).split(" ")[-1].startswith(parts[1])]
+        if len(hits) == 1:
+            return hits[0]["id"]
+    if len(parts) >= 2:
+        hits = [m for m in members
+                if _norm(m["name"]).split(" ")[0] == parts[0]
+                and (_norm(m["name"]).split(" ")[-1].startswith(parts[-1])
+                     or parts[-1].startswith(_norm(m["name"]).split(" ")[-1]))]
+        if len(hits) == 1:
+            return hits[0]["id"]
+    return by_first[0]["id"] if len(by_first) == 1 else None
+
+
+def captain_from_card(payload, members):
+    """CricHeroes marks the captain in the batting card: "Avinash Singh  (c)".
+
+    That marker has been in every scorecard this script has ever synced and was
+    thrown away each time, so the app knew a captain for 24 matches out of 191
+    while the answer for 110 more sat in the JSON it had already stored.
+    """
+    rows = None
+    if payload.get("innings1_team_id") == SCC_TEAM_ID:
+        rows = payload.get("innings1_batting")
+    elif payload.get("innings2_team_id") == SCC_TEAM_ID:
+        rows = payload.get("innings2_batting")
+    if not rows:
+        return None
+    for r in rows:
+        name = (r or {}).get("name") or ""
+        if re.search(r"\(\s*c\s*\)|\(\s*c\s*&\s*wk\s*\)|\(\s*wk\s*&\s*c\s*\)", name, re.I):
+            clean = re.sub(r"\s*\((?:c|wk|c\s*&\s*wk|wk\s*&\s*c)\)", "", name, flags=re.I).strip()
+            return resolve_member(clean, members)
+    return None
+
+
+def set_captain_if_missing(match_id, payload, members):
+    """Fill the fixture's captain, never overwrite one somebody chose."""
+    cid = captain_from_card(payload, members)
+    if not cid:
+        return False
+    code, rows = sb("GET", "matches", params=f"id=eq.{match_id}&select=captain_id,match_type")
+    if code != 200 or not rows:
+        return False
+    row = rows[0]
+    # Internal matches have two SCC captains; the single column can't hold that.
+    if row.get("captain_id") or row.get("match_type") == "internal":
+        return False
+    code2, _ = sb("PATCH", "matches", body={"captain_id": cid}, params=f"id=eq.{match_id}")
+    return code2 in (200, 204)
+
+
 def upsert_scorecard(match_id, ch_match_id, scorecard):
     """Save a fetched scorecard. Returns 'inserted'/'updated'/'error'."""
     if not scorecard or len(scorecard) < 1:
@@ -209,6 +285,13 @@ def upsert_scorecard(match_id, ch_match_id, scorecard):
             'innings2_extras': inn2['extras'],
         })
 
+    # The captain is in the card CricHeroes just gave us — take it while it's here.
+    try:
+        if MEMBERS_CACHE and set_captain_if_missing(match_id, payload, MEMBERS_CACHE):
+            print("    👑 captain filled from the scorecard")
+    except Exception as e:
+        print(f"    captain lookup skipped ({type(e).__name__})")
+
     # Check if exists
     code, existing = sb("GET", "match_scorecards", params=f"match_id=eq.{match_id}&select=id&limit=1")
     if existing and len(existing) > 0:
@@ -233,6 +316,10 @@ def main():
 
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
     print(f"[{now}] Detailed scorecard sync (CricHeroes API → Supabase)\n")
+
+    global MEMBERS_CACHE
+    code, mem = sb("GET", "members", params="select=id,name")
+    MEMBERS_CACHE = mem if code == 200 and mem else []
 
     matches = get_matches_to_sync(args.past_days, args.match_id)
     print(f"Eligible matches: {len(matches)}\n")
