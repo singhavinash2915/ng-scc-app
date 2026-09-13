@@ -1,9 +1,10 @@
 import { CURRENT_SEASON, todayIso } from '../config/season';
 import { useMemo, useState } from 'react';
 import { Card } from '../components/ui/Card';
+import { Link } from 'react-router-dom';
 import {
   Trophy, Crown, Award, Zap, Shield, TrendingUp, TrendingDown,
-  Flame, Star, Sword, CalendarDays, Plus, X, Trash2,
+  Flame, Star, Sword, CalendarDays, Plus, X, Trash2, ChevronRight,
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { useMatches } from '../hooks/useMatches';
@@ -238,7 +239,7 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                              flex items-center justify-center flex-shrink-0">
               <Trophy className="w-6 h-6 lg:w-7 lg:h-7 text-amber-600 dark:text-amber-300" />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h2 className="font-display font-extrabold text-slate-900 dark:text-white text-xl lg:text-2xl leading-tight">
                 Hall of Fame
               </h2>
@@ -246,7 +247,31 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                 {teamRecords.total} matches · {teamRecords.won}W · {teamRecords.lost}L · {teamRecords.drawn}NR
               </p>
             </div>
+
+            {/* Captaincy lives on its own page, off the nav. This is the one
+                place it makes sense to find it from: whoever is reading the
+                club's record is the person who wants to know who led it. */}
+            {!embedded && (
+              <Link to="/captains"
+                className="hidden sm:inline-flex items-center gap-1 r-control px-3 py-2 flex-shrink-0
+                           bg-amber-500/10 dark:bg-amber-400/15 t-meta font-black
+                           text-amber-700 dark:text-amber-300">
+                Captaincy <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
           </div>
+
+          {/* On a phone the pill would squeeze the record line, so it sits
+              under it instead of shrinking the thing people came for. */}
+          {!embedded && (
+            <Link to="/captains"
+              className="sm:hidden relative flex items-center justify-between mt-4 pt-3
+                         border-t border-slate-200/70 dark:border-white/10">
+              <span className="t-meta font-black text-amber-700 dark:text-amber-300">
+                Who has captained SCC →
+              </span>
+            </Link>
+          )}
         </div>
 
         {/* ── TEAM RECORDS ─────────────────────────────────────────────── */}
