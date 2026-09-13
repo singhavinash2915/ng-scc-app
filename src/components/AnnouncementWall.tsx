@@ -33,7 +33,7 @@ function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full t-micro font-black ${
       urgent
         ? 'bg-red-500/25 border border-red-400/50 text-red-200 animate-pulse'
-        : 'bg-white/10 border border-white/20 text-white/80'
+        : 'bg-white/10 border border-slate-200 dark:border-white/20 text-slate-500 dark:text-white/80'
     }`}>
       <Clock className="w-2.5 h-2.5" />
       {label}
@@ -42,17 +42,20 @@ function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
 }
 
 const TYPE_META: Record<Announcement['type'], { color: string; icon: React.ReactNode; label: string }> = {
-  general:  { color: 'text-blue-300',    icon: <Megaphone className="w-3.5 h-3.5" />,        label: 'NEWS' },
-  match:    { color: 'text-emerald-300', icon: <CalIcon className="w-3.5 h-3.5" />,           label: 'MATCH' },
-  congrats: { color: 'text-amber-300',   icon: <Trophy className="w-3.5 h-3.5" />,            label: 'CONGRATS' },
-  urgent:   { color: 'text-red-300',     icon: <AlertTriangle className="w-3.5 h-3.5" />,     label: 'URGENT' },
+  general:  { color: 'text-sky-600 dark:text-sky-300',         icon: <Megaphone className="w-3.5 h-3.5" />,    label: 'NEWS' },
+  match:    { color: 'text-emerald-600 dark:text-emerald-600 dark:text-emerald-300', icon: <CalIcon className="w-3.5 h-3.5" />,      label: 'MATCH' },
+  congrats: { color: 'text-amber-600 dark:text-amber-600 dark:text-amber-300',     icon: <Trophy className="w-3.5 h-3.5" />,       label: 'CONGRATS' },
+  urgent:   { color: 'text-rose-600 dark:text-rose-600 dark:text-rose-300',       icon: <AlertTriangle className="w-3.5 h-3.5" />, label: 'URGENT' },
 };
 
-const TYPE_GRADIENT: Record<Announcement['type'], string> = {
-  general:  'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)',
-  match:    'linear-gradient(135deg, #065f46 0%, #0a1019 100%)',
-  congrats: 'linear-gradient(135deg, #78350f 0%, #0a1019 100%)',
-  urgent:   'linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)',
+// The type used to fill the whole card — navy, green, brown, maroon. A wall of
+// those is a wall of slabs; the type is better said by a hairline over the
+// house surface, which also lets an urgent one actually stand out from the rest.
+const TYPE_RULE: Record<Announcement['type'], string> = {
+  general:  'bg-sky-400/70',
+  match:    'bg-emerald-400/70',
+  congrats: 'bg-amber-400/70',
+  urgent:   'bg-rose-400/70',
 };
 
 // Compact card with collapse — shows first ~3 lines, "Read more" expands.
@@ -64,9 +67,8 @@ function AnnouncementCard({
   const isLong = a.body.length > 140 || a.body.split('\n').length > 3;
 
   return (
-    <div className="relative overflow-hidden r-card p-4 lg:p-5 group"
-         style={{ background: TYPE_GRADIENT[a.type] || TYPE_GRADIENT.general }}>
-      <div className="absolute inset-0 border border-white/10 r-card pointer-events-none" />
+    <div className="glass r-card relative overflow-hidden p-4 lg:p-5 group">
+      <div className={`absolute inset-x-0 top-0 h-[3px] ${TYPE_RULE[a.type] || TYPE_RULE.general}`} />
 
       <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
         {a.pinned && (
@@ -82,10 +84,10 @@ function AnnouncementCard({
         {meta.icon}
         <span className="t-micro font-bold uppercase tracking-[2px]">{meta.label}</span>
       </div>
-      <h3 className="text-base lg:text-lg font-black text-white relative leading-tight pr-16">{a.title}</h3>
+      <h3 className="text-base lg:text-lg font-black text-slate-900 dark:text-white relative leading-tight pr-16">{a.title}</h3>
 
       <div className="relative mt-2">
-        <p className={`text-sm text-gray-300 whitespace-pre-line leading-relaxed ${
+        <p className={`text-sm text-slate-500 dark:text-slate-500 dark:text-white/60 whitespace-pre-line leading-relaxed ${
           !expanded && isLong ? 'line-clamp-3' : ''
         }`}>
           {a.body}
@@ -93,7 +95,7 @@ function AnnouncementCard({
         {isLong && (
           <button
             onClick={() => setExpanded(v => !v)}
-            className="text-xs font-bold text-emerald-300 hover:text-emerald-200 mt-2"
+            className="text-xs font-bold text-emerald-600 dark:text-emerald-300 hover:text-emerald-600 dark:text-emerald-200 mt-2"
           >
             {expanded ? '↑ Show less' : '↓ Read more'}
           </button>
@@ -101,7 +103,7 @@ function AnnouncementCard({
       </div>
 
       <div className="flex items-center justify-between mt-3 relative">
-        <p className="t-micro text-gray-500">
+        <p className="t-micro text-slate-400 dark:text-slate-500 dark:text-white/40">
           {a.created_by ? `${a.created_by} · ` : ''}
           {new Date(a.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
         </p>
@@ -174,7 +176,7 @@ export function AnnouncementWall() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="t-meta font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
+        <h2 className="t-meta font-bold text-slate-400 dark:text-slate-500 dark:text-white/45 dark:text-slate-400 dark:text-slate-500 dark:text-white/40 uppercase tracking-[2px] flex items-center gap-2">
           <Megaphone className="w-3.5 h-3.5 text-primary-500" />
           Team Wall
         </h2>
@@ -189,7 +191,7 @@ export function AnnouncementWall() {
       </div>
 
       {announcements.length === 0 ? (
-        <Card className="border-dashed p-6 text-center text-sm text-gray-400 dark:text-gray-500">
+        <Card className="border-dashed p-6 text-center text-sm text-slate-400 dark:text-slate-500 dark:text-white/45 dark:text-slate-400 dark:text-slate-500 dark:text-white/40">
           {isAdmin ? 'No announcements yet. Click "+ New" to post one.' : 'No announcements yet.'}
         </Card>
       ) : (
@@ -241,7 +243,7 @@ export function AnnouncementWall() {
                 <Pin className="w-3.5 h-3.5 text-amber-500" fill="currentColor" />
                 Pin to top
               </span>
-              <p className="text-xs text-gray-500 mt-0.5">Pinned announcements stay above newer ones</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-white/40 mt-0.5">Pinned announcements stay above newer ones</p>
             </div>
           </label>
 
@@ -260,7 +262,7 @@ export function AnnouncementWall() {
             ]}
           />
           {form.expiry !== 'never' && (
-            <p className="t-meta text-gray-500 -mt-2">
+            <p className="t-meta text-slate-400 dark:text-slate-500 dark:text-white/40 -mt-2">
               Auto-disappears at {new Date(computeExpiry(form.expiry)!).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
             </p>
           )}

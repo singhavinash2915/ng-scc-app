@@ -234,17 +234,18 @@ export function Predictions() {
       <div className="p-4 lg:p-8 space-y-6 max-w-5xl mx-auto">
 
         {/* HERO */}
-        <div className="relative overflow-hidden r-card p-6 lg:p-7 shadow-xl"
-             style={{ background: 'radial-gradient(500px circle at 0% 0%, rgba(168,85,247,0.3), transparent 50%), linear-gradient(135deg, #2e1065 0%, #1a0b3d 60%, #0f0820 100%)' }}>
-          <div className="absolute inset-0 border border-purple-500/30 r-card pointer-events-none" />
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-purple-400/20 rounded-full blur-3xl" />
+        <div className="glass r-card relative overflow-hidden p-5 lg:p-6">
+          <div className="absolute inset-0 pointer-events-none"
+               style={{ background: 'radial-gradient(520px circle at 88% -30%, rgba(168,85,247,0.16), transparent 62%)' }} />
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-violet-400 via-violet-300 to-transparent" />
           <div className="relative flex items-center gap-5 flex-wrap">
-            <Card className="w-16 h-16 bg-purple-400/20 border-purple-400/40 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-8 h-8 text-purple-300" />
-            </Card>
+            <span className="w-14 h-14 r-card bg-violet-400/15 ring-1 ring-violet-400/40
+                             flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-7 h-7 text-violet-600 dark:text-violet-300" />
+            </span>
             <div className="flex-1 min-w-0">
-              <h2 className="text-2xl lg:text-3xl font-black text-white">Predict & Win</h2>
-              <p className="text-purple-200/70 text-sm mt-1">
+              <h2 className="font-display font-extrabold text-slate-900 dark:text-white text-xl lg:text-2xl">Predict &amp; Win</h2>
+              <p className="t-body text-slate-500 dark:text-white/60 mt-1">
                 Before each match: who wins? top scorer? top wicket-taker? MOM?
                 Plus bonus questions! Earn up to <span className="font-bold text-amber-300">+{MAX_POINTS_EXTERNAL} points</span> per match.
               </p>
@@ -264,14 +265,14 @@ export function Predictions() {
         )}
 
         {/* ── SEASON PRIZES ── */}
-        <div className="relative overflow-hidden r-card p-5"
-             style={{ background: 'radial-gradient(400px circle at 0% 100%, rgba(251,191,36,0.2), transparent 60%), linear-gradient(135deg, #1a1306 0%, #0f0d1a 100%)' }}>
-          <div className="absolute inset-0 r-card pointer-events-none border border-amber-500/25" />
-          <div className="absolute -top-8 -right-8 w-40 h-40 bg-amber-400/10 rounded-full blur-2xl" />
+        <div className="glass r-card relative overflow-hidden p-5">
+          <div className="absolute inset-0 pointer-events-none"
+               style={{ background: 'radial-gradient(420px circle at 90% -25%, rgba(251,191,36,0.14), transparent 62%)' }} />
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-amber-400 via-amber-300 to-transparent" />
           <div className="relative flex items-center gap-3 mb-4">
             <Gift className="w-5 h-5 text-amber-400 flex-shrink-0" />
-            <h3 className="text-sm font-black text-amber-300 uppercase tracking-[2px]">Season Prizes</h3>
-            <span className="t-micro text-amber-400/60 font-medium">Top predictors at season end</span>
+            <h3 className="text-sm font-black text-amber-600 dark:text-amber-300 uppercase tracking-[2px]">Season Prizes</h3>
+            <span className="t-micro font-medium text-slate-400 dark:text-white/40">Top predictors at season end</span>
           </div>
           <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-3">
             {prizes.map(p => (
@@ -297,13 +298,13 @@ export function Predictions() {
                       value={editText}
                       onChange={e => setEditText(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') savePrize(p.rank, editText); if (e.key === 'Escape') setEditingPrize(null); }}
-                      className="flex-1 text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white outline-none focus:border-amber-400"
+                      className="flex-1 text-xs bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded px-2 py-1 text-slate-900 dark:text-white outline-none focus:border-amber-400"
                     />
                     <button onClick={() => savePrize(p.rank, editText)} className="text-emerald-400 hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
                     <button onClick={() => setEditingPrize(null)} className="text-gray-500 hover:text-gray-300"><X className="w-3.5 h-3.5" /></button>
                   </div>
                 ) : (
-                  <p className="text-sm font-black text-white">{p.prize}</p>
+                  <p className="text-sm font-black text-slate-900 dark:text-white">{p.prize}</p>
                 )}
               </div>
             ))}

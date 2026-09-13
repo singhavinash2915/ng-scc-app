@@ -30,7 +30,7 @@ export function AnnualReport() {
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
               Admin access required
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-slate-400 dark:text-white/45">
               The Annual Report contains sensitive financial information.
               Please log in as an admin from the sidebar to view it.
             </p>
@@ -192,7 +192,7 @@ export function AnnualReport() {
             >
               {periods.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/45 pointer-events-none" />
           </div>
           <button
             onClick={() => window.print()}
@@ -210,52 +210,51 @@ export function AnnualReport() {
             <div>
               <h1 className="text-2xl font-black">Sangria Cricket Club</h1>
               <p className="text-sm text-gray-600">Annual Report · {period.label}</p>
-              <p className="text-xs text-gray-500">Generated on {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <p className="text-xs text-slate-400 dark:text-white/40">Generated on {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
           </div>
         </div>
 
         {/* ── Summary cards ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print:gap-2">
-          <div className="r-card p-5 print:border print:border-gray-300"
-               style={{ background: 'linear-gradient(135deg, #065f46 0%, #0a1019 100%)' }}>
-            <div className="flex items-center gap-1.5 text-emerald-300/80 mb-1">
+          <div className="glass r-card relative overflow-hidden p-5 print:border print:border-gray-300">
+               <div className="absolute inset-x-0 top-0 h-[3px] bg-emerald-400/70" />
+            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-300/80 mb-1">
               <TrendingUp className="w-3.5 h-3.5" />
               <span className="t-micro font-bold uppercase tracking-[1.5px]">Deposits</span>
             </div>
-            <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">{fmt(data.deposits)}</p>
+            <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tabular-nums leading-none">{fmt(data.deposits)}</p>
           </div>
           {/* Money from other clubs. Was missing entirely, which made every
               annual report understate income by whatever opponents had paid. */}
-          <div className="r-card p-5"
-               style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)' }}>
-            <div className="flex items-center gap-1.5 text-blue-300/80 mb-1">
+          <div className="glass r-card relative overflow-hidden p-5">
+               <div className="absolute inset-x-0 top-0 h-[3px] bg-sky-400/70" />
+            <div className="flex items-center gap-1.5 text-sky-600 dark:text-sky-300/80 mb-1">
               <TrendingUp className="w-3.5 h-3.5" />
               <span className="t-micro font-bold uppercase tracking-[1.5px]">Booking Income</span>
             </div>
-            <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">
+            <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tabular-nums leading-none">
               {fmt(data.bookingIncome)}
             </p>
             <p className="t-micro text-blue-200/50 mt-1.5">Teams paying to play us</p>
           </div>
 
-          <div className="r-card p-5"
-               style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)' }}>
-            <div className="flex items-center gap-1.5 text-red-300/80 mb-1">
+          <div className="glass r-card relative overflow-hidden p-5">
+               <div className="absolute inset-x-0 top-0 h-[3px] bg-rose-400/70" />
+            <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-300/80 mb-1">
               <TrendingDown className="w-3.5 h-3.5" />
               <span className="t-micro font-bold uppercase tracking-[1.5px]">Expenses</span>
             </div>
-            <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">{fmt(data.expenses)}</p>
+            <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tabular-nums leading-none">{fmt(data.expenses)}</p>
           </div>
-          <div className="r-card p-5"
-               style={{ background: data.net >= 0
-                 ? 'linear-gradient(135deg, #14532d 0%, #0a1019 100%)'
-                 : 'linear-gradient(135deg, #7c2d12 0%, #0a1019 100%)' }}>
-            <div className="flex items-center gap-1.5 text-amber-300/80 mb-1">
+          <div className="glass r-card relative overflow-hidden p-5">
+            <div className={`absolute inset-x-0 top-0 h-[3px] ${
+              data.net >= 0 ? 'bg-emerald-400/70' : 'bg-amber-400/70'}`} />
+            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-300/80 mb-1">
               <Calendar className="w-3.5 h-3.5" />
               <span className="t-micro font-bold uppercase tracking-[1.5px]">Net Flow</span>
             </div>
-            <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${data.net >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+            <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${data.net >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'}`}>
               {data.net >= 0 ? '+' : '−'}{fmt(Math.abs(data.net))}
             </p>
           </div>
@@ -273,8 +272,8 @@ export function AnnualReport() {
             leaves it out shows a year's finances with its largest outgoing
             missing. */}
         {data.groundPaid > 0 && (
-          <div className="mt-3 r-card p-5"
-               style={{ background: 'linear-gradient(135deg, #7c2d12 0%, #0a1019 100%)' }}>
+          <div className="mt-3 glass r-card relative overflow-hidden p-5">
+            <div className="absolute inset-x-0 top-0 h-[3px] bg-amber-400/70" />
             <div className="flex items-center gap-1.5 text-orange-300/80 mb-2">
               <TrendingUp className="w-3.5 h-3.5" />
               <span className="t-micro font-bold uppercase tracking-[1.5px]">
@@ -282,7 +281,7 @@ export function AnnualReport() {
               </span>
             </div>
             <p className="text-2xl font-black tabular-nums text-orange-200">{fmt(data.groundPaid)}</p>
-            <p className="t-meta text-white/55 mt-1">
+            <p className="t-meta text-slate-500 dark:text-white/55 mt-1">
               Rent for the season's slots. Counted in the net figure above, and
               tracked in full on the Season Fund page.
             </p>
@@ -290,8 +289,8 @@ export function AnnualReport() {
         )}
 
         {(data.bookingIncome > 0 || data.paidToOpponents > 0) && (
-          <div className="mt-3 r-card p-5"
-               style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0a1019 100%)' }}>
+          <div className="mt-3 glass r-card relative overflow-hidden p-5">
+            <div className="absolute inset-x-0 top-0 h-[3px] bg-teal-400/70" />
             <div className="flex items-center gap-1.5 text-teal-300/80 mb-3">
               <TrendingUp className="w-3.5 h-3.5" />
               <span className="t-micro font-bold uppercase tracking-[1.5px]">
@@ -300,20 +299,20 @@ export function AnnualReport() {
             </div>
 
             <div className="space-y-1.5 t-body">
-              <div className="flex justify-between text-white/85">
+              <div className="flex justify-between text-slate-500 dark:text-white/85">
                 <span>Teams paid us to play</span>
-                <span className="tabular-nums text-emerald-300">+{fmt(data.bookingIncome)}</span>
+                <span className="tabular-nums text-emerald-600 dark:text-emerald-300">+{fmt(data.bookingIncome)}</span>
               </div>
               {data.paidToOpponents > 0 && (
-                <div className="flex justify-between text-white/85">
+                <div className="flex justify-between text-slate-500 dark:text-white/85">
                   <span>We paid CricBot XI for ground</span>
-                  <span className="tabular-nums text-red-300">−{fmt(data.paidToOpponents)}</span>
+                  <span className="tabular-nums text-rose-600 dark:text-rose-300">−{fmt(data.paidToOpponents)}</span>
                 </div>
               )}
-              <div className="flex justify-between pt-2 mt-1 border-t border-white/15 font-black">
-                <span className="text-white">Net from opponents</span>
+              <div className="flex justify-between pt-2 mt-1 border-t border-slate-200 dark:border-white/15 font-black">
+                <span className="text-slate-900 dark:text-white">Net from opponents</span>
                 <span className={`tabular-nums ${
-                  data.bookingIncome - data.paidToOpponents >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                  data.bookingIncome - data.paidToOpponents >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'}`}>
                   {data.bookingIncome - data.paidToOpponents >= 0 ? '+' : '−'}
                   {fmt(Math.abs(data.bookingIncome - data.paidToOpponents))}
                 </span>
@@ -321,7 +320,7 @@ export function AnnualReport() {
             </div>
 
             {data.bookingDue > 0 && (
-              <p className="t-meta text-amber-300/80 mt-3">
+              <p className="t-meta text-amber-600 dark:text-amber-300/80 mt-3">
                 {fmt(data.bookingDue)} more agreed but not yet received — not counted above.
               </p>
             )}
@@ -341,15 +340,15 @@ export function AnnualReport() {
             money leaving. Sitting in the same row of four it invited arithmetic
             that cannot work, which is why fees exceeding deposits looked like a
             bug rather than a normal year. */}
-        <div className="mt-3 r-card p-5"
-             style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)' }}>
-          <div className="flex items-center gap-1.5 text-blue-300/80 mb-1">
+        <div className="mt-3 glass r-card relative overflow-hidden p-5">
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-sky-400/70" />
+          <div className="flex items-center gap-1.5 text-sky-600 dark:text-sky-300/80 mb-1">
             <IndianRupee className="w-3.5 h-3.5" />
             <span className="t-micro font-bold uppercase tracking-[1.5px]">
               Match fees collected · internal transfer
             </span>
           </div>
-          <p className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-none">
+          <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tabular-nums leading-none">
             {fmt(data.matchFees)}
           </p>
           <p className="t-meta text-blue-200/60 mt-2 leading-snug">
@@ -361,37 +360,37 @@ export function AnnualReport() {
         </div>
 
         {/* Net flow, shown as its workings so the sign needs no explaining. */}
-        <p className="mt-3 t-meta text-gray-400 text-center">
+        <p className="mt-3 t-meta text-slate-400 dark:text-white/45 text-center">
           Net flow = deposits {fmt(data.deposits)}
           {data.bookingIncome > 0 && <> + bookings {fmt(data.bookingIncome)}</>}
           {' '}− expenses {fmt(data.expenses)}
-          {' '}= <span className={data.net >= 0 ? 'text-emerald-300' : 'text-red-300'}>
+          {' '}= <span className={data.net >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'}>
             {data.net >= 0 ? '+' : '−'}{fmt(Math.abs(data.net))}
           </span>
         </p>
 
         {/* ── Match summary ───────────────────────────────────────────────────── */}
         <Card className="p-5">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+          <h3 className="text-sm font-bold text-gray-700 dark:text-white/60 uppercase tracking-wider mb-4 flex items-center gap-1.5">
             <Calendar className="w-4 h-4 text-primary-500" />
             Match Performance · {period.label}
           </h3>
           <div className="grid grid-cols-4 gap-2 text-center">
             <div>
               <p className="text-2xl font-black text-gray-900 dark:text-white">{data.matchesPlayed}</p>
-              <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">Played</p>
+              <p className="t-micro uppercase tracking-wider text-slate-400 dark:text-white/40 mt-0.5">Played</p>
             </div>
             <div>
               <p className="text-2xl font-black text-emerald-600">{data.won}</p>
-              <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">Won</p>
+              <p className="t-micro uppercase tracking-wider text-slate-400 dark:text-white/40 mt-0.5">Won</p>
             </div>
             <div>
               <p className="text-2xl font-black text-red-600">{data.lost}</p>
-              <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">Lost</p>
+              <p className="t-micro uppercase tracking-wider text-slate-400 dark:text-white/40 mt-0.5">Lost</p>
             </div>
             <div>
               <p className="text-2xl font-black text-amber-600">{data.drawn}</p>
-              <p className="t-micro uppercase tracking-wider text-gray-500 mt-0.5">No Result</p>
+              <p className="t-micro uppercase tracking-wider text-slate-400 dark:text-white/40 mt-0.5">No Result</p>
             </div>
           </div>
         </Card>
@@ -399,17 +398,17 @@ export function AnnualReport() {
         {/* ── Two columns: Top contributors + Top expense categories ────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 print:grid-cols-2">
           <Card className="p-5">
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+            <h3 className="text-sm font-bold text-gray-700 dark:text-white/60 uppercase tracking-wider mb-4 flex items-center gap-1.5">
               <Users className="w-4 h-4 text-emerald-500" />
               Top Contributors
             </h3>
             {data.topContributors.length === 0 ? (
-              <p className="text-sm text-gray-400">No deposits this year.</p>
+              <p className="text-sm text-slate-400 dark:text-white/45">No deposits this year.</p>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {data.topContributors.map((c, i) => (
                   <div key={c.member!.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                    <span className="w-6 h-6 r-card flex items-center justify-center t-micro font-black bg-gray-100 dark:bg-gray-800 text-gray-500">
+                    <span className="w-6 h-6 r-card flex items-center justify-center t-micro font-black bg-gray-100 dark:bg-gray-800 text-slate-400 dark:text-white/40">
                       {i + 1}
                     </span>
                     <span className="flex-1 text-sm font-medium truncate">{c.member!.name}</span>
@@ -421,17 +420,17 @@ export function AnnualReport() {
           </Card>
 
           <Card className="p-5">
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+            <h3 className="text-sm font-bold text-gray-700 dark:text-white/60 uppercase tracking-wider mb-4 flex items-center gap-1.5">
               <TrendingDown className="w-4 h-4 text-red-500" />
               Top Expense Categories
             </h3>
             {data.topCategories.length === 0 ? (
-              <p className="text-sm text-gray-400">No expenses this year.</p>
+              <p className="text-sm text-slate-400 dark:text-white/45">No expenses this year.</p>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {data.topCategories.map((c, i) => (
                   <div key={c.category} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                    <span className="w-6 h-6 r-card flex items-center justify-center t-micro font-black bg-gray-100 dark:bg-gray-800 text-gray-500">
+                    <span className="w-6 h-6 r-card flex items-center justify-center t-micro font-black bg-gray-100 dark:bg-gray-800 text-slate-400 dark:text-white/40">
                       {i + 1}
                     </span>
                     <span className="flex-1 text-sm font-medium truncate">{c.category}</span>
@@ -443,7 +442,7 @@ export function AnnualReport() {
           </Card>
         </div>
 
-        <p className="text-xs text-center text-gray-400 dark:text-gray-500 pt-4 print:mt-8">
+        <p className="text-xs text-center text-slate-400 dark:text-white/40 pt-4 print:mt-8">
           {data.yearTxns} transactions · Generated by Sangria Cricket Club app
         </p>
       </div>
