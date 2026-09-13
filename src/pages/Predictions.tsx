@@ -114,7 +114,19 @@ export function Predictions() {
         if (m && !inCurrentSeason(String(m.date).slice(0, 10))) return false;
 
         const cf = cardFetchedAt[p.match_id];
-        return !!(cf && p.scored_at && new Date(cf).getTime() > new Date(p.scored_at).getTime());
+        if (cf && p.scored_at && new Date(cf).getTime() > new Date(p.scored_at).getTime()) return true;
+
+        // Recheck everything else in the current season too. A scorecard
+        // arriving late is not the only way a score goes stale — the SCORER
+        // itself can change. It just did: a guest's spell was being taken as
+        // the top wicket-taker, so the question had no answer a member could
+        // have given and a correct pick scored nothing. Nothing about the row
+        // or the card changes when that is fixed, so without this the old
+        // number would stand for ever.
+        //
+        // Cheap, because the write below only happens when the total actually
+        // differs; a normal load recomputes and writes nothing.
+        return true;
       });
       if (unscored.length === 0) { setScoredCount(0); return; }
 
@@ -149,6 +161,10 @@ export function Predictions() {
         if (p.int_dhur_top_wicket_id && p.int_dhur_top_wicket_id === outcome.int_dhur_top_wicket_id) points += PREDICTION_POINTS.int_team_top_wicket;
         if (p.int_baz_top_wicket_id && p.int_baz_top_wicket_id === outcome.int_baz_top_wicket_id) points += PREDICTION_POINTS.int_team_top_wicket;
 
+        // Only write when the answer moved. Re-scoring every settled
+        // prediction on every page load would otherwise be 130 pointless
+        // updates a visit.
+        if (points === p.points_earned) continue;
         const { error } = await supabase
           .from('match_predictions')
           .update({ points_earned: points, scored_at: new Date().toISOString() })

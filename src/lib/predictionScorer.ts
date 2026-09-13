@@ -94,6 +94,28 @@ export function deriveOutcome(
     winner = match.result === 'won' ? 'scc' : match.result === 'lost' ? 'opponent' : 'draw';
   }
 
+  const resolveToMemberId = (name: string | undefined): string | null => {
+    if (!name) return null;
+    const m = members.find(mem => namesMatch(mem.name, name));
+    return m ? m.id : null;
+  };
+
+  /**
+   * Only a club member can be the answer to "who was top scorer / top wicket-
+   * taker", because the picker only offers members.
+   *
+   * A guest filling in broke this. Ayush, a guest, took 2 for 8 against Ocean
+   * Warriors — better figures than Avinash's 2 for 15 — so he WAS the top
+   * wicket-taker, his name matched no member, and the outcome resolved to null.
+   * The question then had no right answer: Akash, who had correctly picked the
+   * leading member, scored nothing and the card read "none".
+   *
+   * So the pool is narrowed to players the question could have been answered
+   * with, and the best of those wins it.
+   */
+  const byMember = <T extends { name?: string }>(rows: T[] | null): T[] =>
+    (rows || []).filter(r => resolveToMemberId(r.name));
+
   let topScorer: BatterRow | null = null;
   let topWicketTaker: BowlerRow | null = null;
   let sccBattingRows: BatterRow[] | null = null;
@@ -119,22 +141,18 @@ export function deriveOutcome(
           : null;
     }
 
-    if (sccBattingRows && sccBattingRows.length > 0) {
-      topScorer = [...sccBattingRows].filter(b => b.balls > 0).sort((a, b) => b.runs - a.runs)[0] || null;
+    const batByMember = byMember(sccBattingRows);
+    if (batByMember.length > 0) {
+      topScorer = batByMember.filter(b => b.balls > 0).sort((a, b) => b.runs - a.runs)[0] || null;
     }
-    if (sccBowlingRows && sccBowlingRows.length > 0) {
-      topWicketTaker = [...sccBowlingRows].sort((a, b) => {
+    const bowlByMember = byMember(sccBowlingRows);
+    if (bowlByMember.length > 0) {
+      topWicketTaker = [...bowlByMember].sort((a, b) => {
         if (b.wickets !== a.wickets) return b.wickets - a.wickets;
         return a.runs - b.runs;
       })[0] || null;
     }
   }
-
-  const resolveToMemberId = (name: string | undefined): string | null => {
-    if (!name) return null;
-    const m = members.find(mem => namesMatch(mem.name, name));
-    return m ? m.id : null;
-  };
 
   // ── Bonus question outcomes ────────────────────────────────────────────────
   // SCC total runs → bucket
@@ -187,10 +205,10 @@ export function deriveOutcome(
       rows && rows.length ? Math.max(0, ...rows.map(b => b.runs || 0)) : 0;
 
     // Per-team top scorers / top wicket-takers
-    const ds = topScorerOf(dhurBat); if (ds) int_dhur_top_scorer_id = resolveToMemberId(ds.name);
-    const bs = topScorerOf(bazBat);  if (bs) int_baz_top_scorer_id  = resolveToMemberId(bs.name);
-    const dw = topWicketOf(dhurBowl); if (dw && dw.wickets > 0) int_dhur_top_wicket_id = resolveToMemberId(dw.name);
-    const bw = topWicketOf(bazBowl);  if (bw && bw.wickets > 0) int_baz_top_wicket_id  = resolveToMemberId(bw.name);
+    const ds = topScorerOf(byMember(dhurBat)); if (ds) int_dhur_top_scorer_id = resolveToMemberId(ds.name);
+    const bs = topScorerOf(byMember(bazBat));  if (bs) int_baz_top_scorer_id  = resolveToMemberId(bs.name);
+    const dw = topWicketOf(byMember(dhurBowl)); if (dw && dw.wickets > 0) int_dhur_top_wicket_id = resolveToMemberId(dw.name);
+    const bw = topWicketOf(byMember(bazBowl));  if (bw && bw.wickets > 0) int_baz_top_wicket_id  = resolveToMemberId(bw.name);
 
     // Most sixes — compare the two teams' batting innings
     if (inn1Team && inn2Team && (inn1Bat || inn2Bat)) {
