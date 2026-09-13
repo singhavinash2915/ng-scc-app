@@ -494,6 +494,23 @@ export function Dashboard() {
           Above the club-wide hero on purpose: a signed-in member wants to know
           whether THEY are playing before they want the club's win rate. Signed
           out this is the sign-in card, and everything below still works. */}
+      {/* ── TEAM GALLERY ───────────────────────────────────────────────
+          Above the tabs, and so on the page whichever one you land on. It
+          started life inside the club tab, near the bottom — but the app opens
+          on "Your season", so most members would never have scrolled to it.
+          Pictures of the side are the best thing this club has to look at and
+          they belong where everyone passes.
+
+          Still under the live score and the match-day card: on the one day
+          those exist, they outrank a photo of last week. */}
+      {showDeferred && (
+        <div className="px-4 lg:px-8 pt-4">
+          <Suspense fallback={null}>
+            <DashboardDeferred section="photos" />
+          </Suspense>
+        </div>
+      )}
+
       {/* ── ME / CLUB ────────────────────────────────────────────────────
           Both views are worth having — the club stats are the best-looking
           thing in the app — but stacked they made the page 5.8 screens and
@@ -947,21 +964,6 @@ export function Dashboard() {
 
         {/* ── SQUAD POLL ───────────────────────────────────────────────── */}
         {view === 'club' && <DashboardPoll matches={matches} members={members} onMatchUpdate={fetchMatches} />}
-
-        {/* ── TEAM GALLERY ─────────────────────────────────────────────
-             The component for this has been here all along and the dashboard
-             never rendered it — only the sponsor half of DashboardDeferred was
-             ever asked for. So a photo uploaded against a match went into the
-             database, into storage, and nowhere anybody would see it.
-
-             Above Explore on purpose: pictures of the side are the best thing
-             this club has to look at, and they were sitting below a grid of
-             links to everything else. */}
-        {view === 'club' && showDeferred && (
-          <Suspense fallback={null}>
-            <DashboardDeferred section="photos" />
-          </Suspense>
-        )}
 
         {/* ── EXPLORE — everything that used to be inlined above ──────── */}
         {view === 'club' && <ExploreGrid />}
