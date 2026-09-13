@@ -1,14 +1,31 @@
-// ─── Season 2026-27 launch configuration ───────────────────────────────────────
-// Single source of truth for the new season's identity and windows.
+// ─── The current season's league configuration ────────────────────────────────
+// The four season constants used to be typed in: '2026-27', '2026-09-01' and so
+// on. They were right the day they were written and would have gone on being
+// 2026-27 for ever — every league page would have kept asking for last season's
+// registrations after 1 September 2027, with nothing to show and no error. The
+// club's rolling definition already knows what season it is, so take it.
+import {
+  CURRENT_SEASON, PREVIOUS_SEASON, CURRENT_SEASON_WINDOW, seasonWindow, seasonLabel,
+} from './season';
 
-export const SEASON_NEW = '2026-27';
-export const SEASON_PREV = '2025-26';
+export const SEASON_NEW = CURRENT_SEASON;
+export const SEASON_PREV = PREVIOUS_SEASON;
 
-// Cricket season window: Sep 1 → Aug 31 (league runs Sep 2026 – Jun 2027).
-export const SEASON_NEW_START = '2026-09-01';
-export const SEASON_NEW_END = '2027-08-31';
-export const SEASON_PREV_START = '2025-09-01';
-export const SEASON_PREV_END = '2026-08-31';
+// Cricket season window: Sep 1 → Aug 31.
+export const SEASON_NEW_START = CURRENT_SEASON_WINDOW.start;
+export const SEASON_NEW_END = CURRENT_SEASON_WINDOW.end;
+export const SEASON_PREV_START = seasonWindow(PREVIOUS_SEASON).start;
+export const SEASON_PREV_END = seasonWindow(PREVIOUS_SEASON).end;
+
+// ─── Facts that belong to ONE season ──────────────────────────────────────────
+// The rest of this file is not a window — it is a record of things that happened
+// in a particular season: who won the election, which CricHeroes tournament the
+// squads play in, when the auction was held. Those must NOT roll over with the
+// date, or on 1 September the app would name last season's captains as this
+// season's under a new label. They are stamped with the season they belong to
+// and stand down when it passes.
+export const LEAGUE_FACTS_SEASON = '2026-27';
+export const LEAGUE_FACTS_CURRENT = LEAGUE_FACTS_SEASON === SEASON_NEW;
 
 // Auction Night — the live draft. Friday 7 Aug 2026, 9 PM IST on Google Meet.
 // startsAt is the exact instant, in UTC (9 PM IST = 15:30 UTC), so the poster
@@ -32,10 +49,17 @@ export const LEAGUE_TEAM_NAMES = {
 // recorded here as a fact. Deriving them from the ballots would mean every page
 // that names a captain has to read the vote table — the one thing we keep out of
 // browsers. Team 1 first, in finishing order.
-export const LEAGUE_CAPTAIN_IDS: readonly string[] = [
+const CAPTAINS_2026_27: readonly string[] = [
   '230629f4-cd80-4903-8b75-c485c75b2de7',   // AKASH JADHAV
   '7545cb6b-41fe-4102-b392-f560ae44805f',   // Avinash Singh
 ];
+
+// Empty once the season turns: a new season has no captains until it elects
+// them, and every screen that names one already handles having none (the
+// auction setup falls back to a picker). Naming last year's two would be worse
+// than naming nobody.
+export const LEAGUE_CAPTAIN_IDS: readonly string[] =
+  LEAGUE_FACTS_CURRENT ? CAPTAINS_2026_27 : [];
 
 export const isLeagueCaptain = (id: string) => LEAGUE_CAPTAIN_IDS.includes(id);
 
@@ -57,7 +81,10 @@ export const AUCTION_RUNNING_ORDER: readonly string[] = [];
 // CricHeroes link is where the scorecards live.
 export const MAHASANGRAM = {
   name: 'SCC MahaSangram',
-  tagline: 'Brahmos vs Agni · Season 2026-27',
+  // Derived, so the tagline can't claim 2026-27 while the app is in 2027-28.
+  tagline: `Brahmos vs Agni · Season ${seasonLabel(LEAGUE_FACTS_SEASON)}`,
+  /** Which season the CricHeroes ids below belong to. */
+  season: LEAGUE_FACTS_SEASON,
   cricHeroesUrl: 'https://cricheroes.in/scorecard/26509825/scc-mahasangram/scc-agni-vs-scc-brahmos',
   /** CricHeroes ids, read off the tournament's own fixture feed. */
   tournamentId: 2154934,
