@@ -40,28 +40,49 @@ function parseBowling(s: string | null): { wkts: number; runs: number } | null {
   return { wkts: parseInt(m[1]), runs: parseInt(m[2]) };
 }
 
+// ─── A record ────────────────────────────────────────────────────────────────
+// Fourteen of these, each previously carrying its own hand-written gradient and
+// border: maroon, navy, teal, violet, two browns. Dark slabs on a page whose
+// every other surface is the app's own, and in light mode a wall of dark blocks.
+//
+// Colour now says which KIND of record it is — a green one is something we did
+// well, a red one is not — as a hairline along the top and the icon's tint,
+// over the house surface. The figure carries the card.
+type RecordTone = 'good' | 'bad' | 'gold' | 'cool' | 'violet';
+
+const TONE: Record<RecordTone, { rule: string; chip: string; ink: string }> = {
+  good:   { rule: 'bg-emerald-400/70', chip: 'bg-emerald-500/10 dark:bg-emerald-400/15', ink: 'text-emerald-600 dark:text-emerald-300' },
+  bad:    { rule: 'bg-rose-400/70',    chip: 'bg-rose-500/10 dark:bg-rose-400/15',       ink: 'text-rose-600 dark:text-rose-300' },
+  gold:   { rule: 'bg-amber-400/70',   chip: 'bg-amber-500/10 dark:bg-amber-400/15',     ink: 'text-amber-600 dark:text-amber-300' },
+  cool:   { rule: 'bg-sky-400/70',     chip: 'bg-sky-500/10 dark:bg-sky-400/15',         ink: 'text-sky-600 dark:text-sky-300' },
+  violet: { rule: 'bg-violet-400/70',  chip: 'bg-violet-500/10 dark:bg-violet-400/15',   ink: 'text-violet-600 dark:text-violet-300' },
+};
+
 interface RecordCardProps {
   icon: React.ReactNode;
   label: string;
   value: string | React.ReactNode;
   subtitle?: string | React.ReactNode;
-  gradient: string;
-  border: string;
+  tone: RecordTone;
 }
 
-function RecordCard({ icon, label, value, subtitle, gradient, border }: RecordCardProps) {
+function RecordCard({ icon, label, value, subtitle, tone }: RecordCardProps) {
+  const t = TONE[tone];
   return (
-    <div className="relative overflow-hidden r-card p-5 min-h-[140px] flex flex-col"
-         style={{ background: gradient }}>
-      <div className="absolute inset-0 r-card pointer-events-none" style={{ border }} />
-      <div className="flex items-center gap-1.5 mb-2 relative">
-        {icon}
-        <span className="text-white/70 t-micro font-bold uppercase tracking-[1.5px]">{label}</span>
+    <div className="glass r-card relative overflow-hidden p-4 lg:p-5 min-h-[130px] flex flex-col">
+      <div className={`absolute inset-x-0 top-0 h-[3px] ${t.rule}`} />
+      <div className="flex items-center gap-2">
+        <span className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${t.chip}`}>
+          {icon}
+        </span>
+        <span className="t-micro font-black uppercase tracking-[1.5px] text-slate-400 dark:text-white/45 truncate">
+          {label}
+        </span>
       </div>
-      <div className="flex-1 flex flex-col justify-center relative">
-        <div className="text-2xl lg:text-3xl font-black text-white tabular-nums leading-tight">{value}</div>
+      <div className="flex-1 flex flex-col justify-center mt-2">
+        <div className="t-num text-2xl lg:text-3xl leading-tight text-slate-900 dark:text-white">{value}</div>
         {subtitle && (
-          <div className="text-xs text-white/60 mt-1 truncate">{subtitle}</div>
+          <div className="t-micro font-semibold text-slate-400 dark:text-white/40 mt-1 truncate">{subtitle}</div>
         )}
       </div>
     </div>
@@ -206,18 +227,24 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
       <div className="p-4 lg:p-8 space-y-6">
 
         {/* ── Header banner ─────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden r-card p-6 lg:p-7 shadow-2xl"
-             style={{ background: 'radial-gradient(600px circle at 0% 0%, rgba(251,191,36,0.3), transparent 50%), linear-gradient(135deg, #78350f 0%, #1a0f05 60%, #0a1019 100%)' }}>
-          <div className="absolute inset-0 border border-amber-500/30 r-card pointer-events-none" />
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-400/15 rounded-full blur-3xl" />
-          <div className="absolute top-4 right-8 text-7xl opacity-[0.06] select-none pointer-events-none">🏆</div>
+        {/* The gold stays — this is the hall of fame — but as a wash and a
+            hairline over the house surface rather than a brown slab. */}
+        <div className="glass r-card relative overflow-hidden p-5 lg:p-6">
+          <div className="absolute inset-0 pointer-events-none"
+               style={{ background: 'radial-gradient(620px circle at 88% -30%, rgba(245,158,11,0.16), transparent 62%)' }} />
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-amber-400 via-amber-300 to-transparent" />
           <div className="relative flex items-center gap-4">
-            <Card className="w-14 h-14 bg-amber-400/20 border-amber-400/40 flex items-center justify-center flex-shrink-0">
-              <Trophy className="w-7 h-7 text-amber-300" />
-            </Card>
-            <div>
-              <h2 className="text-2xl lg:text-3xl font-black text-white">Hall of Fame</h2>
-              <p className="text-amber-200/60 text-sm mt-0.5">{teamRecords.total} matches · {teamRecords.won}W · {teamRecords.lost}L · {teamRecords.drawn}NR</p>
+            <span className="w-12 h-12 lg:w-14 lg:h-14 r-card bg-amber-400/15 ring-1 ring-amber-400/40
+                             flex items-center justify-center flex-shrink-0">
+              <Trophy className="w-6 h-6 lg:w-7 lg:h-7 text-amber-600 dark:text-amber-300" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-display font-extrabold text-slate-900 dark:text-white text-xl lg:text-2xl leading-tight">
+                Hall of Fame
+              </h2>
+              <p className="t-meta font-semibold text-slate-400 dark:text-white/45 mt-0.5">
+                {teamRecords.total} matches · {teamRecords.won}W · {teamRecords.lost}L · {teamRecords.drawn}NR
+              </p>
             </div>
           </div>
         </div>
@@ -231,62 +258,56 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {teamRecords.highestScore && (
               <RecordCard
-                icon={<TrendingUp className="w-3.5 h-3.5 text-emerald-300" />}
+                icon={<TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-300" />}
                 label="Highest Total"
                 value={`${teamRecords.highestScore.runs}`}
                 subtitle={`${teamRecords.highestScore.match.our_score} vs ${teamRecords.highestScore.match.opponent}`}
-                gradient="linear-gradient(135deg, #065f46 0%, #0a1019 100%)"
-                border="1px solid rgba(16,185,129,0.3)"
+                tone="good"
               />
             )}
             {teamRecords.lowestScore && (
               <RecordCard
-                icon={<TrendingDown className="w-3.5 h-3.5 text-red-300" />}
+                icon={<TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-300" />}
                 label="Lowest All-out"
                 value={`${teamRecords.lowestScore.runs}`}
                 subtitle={`${teamRecords.lowestScore.match.our_score} vs ${teamRecords.lowestScore.match.opponent}`}
-                gradient="linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)"
-                border="1px solid rgba(239,68,68,0.3)"
+                tone="bad"
               />
             )}
             {teamRecords.biggestWin && (
               <RecordCard
-                icon={<Trophy className="w-3.5 h-3.5 text-amber-300" />}
+                icon={<Trophy className="w-3.5 h-3.5 text-amber-600 dark:text-amber-300" />}
                 label="Biggest Victory"
                 value={teamRecords.biggestWin.margin}
                 subtitle={`vs ${teamRecords.biggestWin.match.opponent} · ${teamRecords.biggestWin.match.our_score?.split(' ')[0]} – ${teamRecords.biggestWin.match.opponent_score?.split(' ')[0]}`}
-                gradient="linear-gradient(135deg, #78350f 0%, #0a1019 100%)"
-                border="1px solid rgba(251,191,36,0.3)"
+                tone="gold"
               />
             )}
             {teamRecords.biggestLoss && (
               <RecordCard
-                icon={<Shield className="w-3.5 h-3.5 text-orange-300" />}
+                icon={<Shield className="w-3.5 h-3.5 text-amber-600 dark:text-amber-300" />}
                 label="Biggest Defeat"
                 value={teamRecords.biggestLoss.margin}
                 subtitle={`vs ${teamRecords.biggestLoss.match.opponent} · ${teamRecords.biggestLoss.match.our_score?.split(' ')[0]} – ${teamRecords.biggestLoss.match.opponent_score?.split(' ')[0]}`}
-                gradient="linear-gradient(135deg, #7c2d12 0%, #0a1019 100%)"
-                border="1px solid rgba(249,115,22,0.3)"
+                tone="gold"
               />
             )}
             {teamRecords.longestWin > 1 && (
               <RecordCard
-                icon={<Flame className="w-3.5 h-3.5 text-emerald-300" />}
+                icon={<Flame className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-300" />}
                 label="Longest Win Streak"
                 value={`${teamRecords.longestWin} matches`}
                 subtitle={teamRecords.longestWinEnd ? `last: vs ${teamRecords.longestWinEnd.opponent}` : ''}
-                gradient="linear-gradient(135deg, #14532d 0%, #0a1019 100%)"
-                border="1px solid rgba(34,197,94,0.3)"
+                tone="good"
               />
             )}
             {teamRecords.longestLoss > 1 && (
               <RecordCard
-                icon={<TrendingDown className="w-3.5 h-3.5 text-red-300" />}
+                icon={<TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-300" />}
                 label="Longest Losing Run"
                 value={`${teamRecords.longestLoss} matches`}
                 subtitle={teamRecords.longestLossEnd ? `last: vs ${teamRecords.longestLossEnd.opponent}` : ''}
-                gradient="linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)"
-                border="1px solid rgba(239,68,68,0.3)"
+                tone="bad"
               />
             )}
           </div>
@@ -302,62 +323,56 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {playerRecords.topRuns && (
                 <RecordCard
-                  icon={<TrendingUp className="w-3.5 h-3.5 text-blue-300" />}
+                  icon={<TrendingUp className="w-3.5 h-3.5 text-sky-600 dark:text-sky-300" />}
                   label="Most Runs"
                   value={`${playerRecords.topRuns.batting_runs}`}
                   subtitle={`${playerRecords.getName(playerRecords.topRuns)} · Avg ${playerRecords.topRuns.batting_average.toFixed(1)}`}
-                  gradient="linear-gradient(135deg, #1e3a8a 0%, #0a1019 100%)"
-                  border="1px solid rgba(59,130,246,0.3)"
+                  tone="cool"
                 />
               )}
               {playerRecords.highestIndividual && (
                 <RecordCard
-                  icon={<Award className="w-3.5 h-3.5 text-violet-300" />}
+                  icon={<Award className="w-3.5 h-3.5 text-violet-600 dark:text-violet-300" />}
                   label="Highest Score"
                   value={playerRecords.highestIndividual.batting_highest_score || '—'}
                   subtitle={playerRecords.getName(playerRecords.highestIndividual)}
-                  gradient="linear-gradient(135deg, #4c1d95 0%, #0a1019 100%)"
-                  border="1px solid rgba(139,92,246,0.3)"
+                  tone="violet"
                 />
               )}
               {playerRecords.topAvg && (
                 <RecordCard
-                  icon={<Star className="w-3.5 h-3.5 text-cyan-300" fill="currentColor" />}
+                  icon={<Star className="w-3.5 h-3.5 text-sky-600 dark:text-sky-300" fill="currentColor" />}
                   label="Best Average"
                   value={playerRecords.topAvg.batting_average.toFixed(1)}
                   subtitle={`${playerRecords.getName(playerRecords.topAvg)} · ${playerRecords.topAvg.batting_innings} inns`}
-                  gradient="linear-gradient(135deg, #155e75 0%, #0a1019 100%)"
-                  border="1px solid rgba(6,182,212,0.3)"
+                  tone="cool"
                 />
               )}
               {playerRecords.topWkts && (
                 <RecordCard
-                  icon={<Zap className="w-3.5 h-3.5 text-red-300" fill="currentColor" />}
+                  icon={<Zap className="w-3.5 h-3.5 text-rose-600 dark:text-rose-300" fill="currentColor" />}
                   label="Most Wickets"
                   value={`${playerRecords.topWkts.bowling_wickets}`}
                   subtitle={`${playerRecords.getName(playerRecords.topWkts)} · Eco ${playerRecords.topWkts.bowling_economy.toFixed(2)}`}
-                  gradient="linear-gradient(135deg, #7f1d1d 0%, #0a1019 100%)"
-                  border="1px solid rgba(239,68,68,0.3)"
+                  tone="bad"
                 />
               )}
               {playerRecords.bestBowling && (
                 <RecordCard
-                  icon={<Award className="w-3.5 h-3.5 text-rose-300" />}
+                  icon={<Award className="w-3.5 h-3.5 text-rose-600 dark:text-rose-300" />}
                   label="Best Bowling"
                   value={playerRecords.bestBowling.s.bowling_best_figures || '—'}
                   subtitle={playerRecords.getName(playerRecords.bestBowling.s)}
-                  gradient="linear-gradient(135deg, #881337 0%, #0a1019 100%)"
-                  border="1px solid rgba(244,63,94,0.3)"
+                  tone="bad"
                 />
               )}
               {playerRecords.topCatches && (
                 <RecordCard
-                  icon={<Shield className="w-3.5 h-3.5 text-emerald-300" />}
+                  icon={<Shield className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-300" />}
                   label="Most Catches"
                   value={`${playerRecords.topCatches.fielding_catches}`}
                   subtitle={playerRecords.getName(playerRecords.topCatches)}
-                  gradient="linear-gradient(135deg, #065f46 0%, #0a1019 100%)"
-                  border="1px solid rgba(16,185,129,0.3)"
+                  tone="good"
                 />
               )}
               {playerRecords.topRunOuts && (
@@ -366,20 +381,18 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                   label="Most Run Outs (batting)"
                   value={`${playerRecords.topRunOuts.batting_run_outs || 0}`}
                   subtitle={playerRecords.getName(playerRecords.topRunOuts)}
-                  gradient="linear-gradient(135deg, #7c2d12 0%, #0a1019 100%)"
-                  border="1px solid rgba(249,115,22,0.3)"
+                  tone="gold"
                 />
               )}
               {playerRecords.topMOMs && (() => {
                 const m = stats.find(s => s.member_id === playerRecords.topMOMs!.id);
                 return m ? (
                   <RecordCard
-                    icon={<Crown className="w-3.5 h-3.5 text-amber-300" fill="currentColor" />}
+                    icon={<Crown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-300" fill="currentColor" />}
                     label="Most MOM Awards"
                     value={`${playerRecords.topMOMs.count}`}
                     subtitle={playerRecords.getName(m)}
-                    gradient="linear-gradient(135deg, #78350f 0%, #0a1019 100%)"
-                    border="1px solid rgba(251,191,36,0.3)"
+                    tone="gold"
                   />
                 ) : null;
               })()}
@@ -397,16 +410,16 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Player of the Week */}
               {playerOfWeek && (
-                <div className="relative overflow-hidden r-card p-5 lg:p-6 shadow-xl"
-                     style={{ background: 'radial-gradient(400px circle at 0% 0%, rgba(244,114,182,0.3), transparent 50%), linear-gradient(135deg, #831843 0%, #1a0510 60%, #0a1019 100%)' }}>
-                  <div className="absolute inset-0 border border-pink-500/30 r-card pointer-events-none" />
-                  <div className="absolute -top-12 -right-12 w-44 h-44 bg-pink-400/15 rounded-full blur-3xl" />
+                <div className="glass r-card relative overflow-hidden p-5 lg:p-6">
+                  <div className="absolute inset-0 pointer-events-none"
+                       style={{ background: 'radial-gradient(420px circle at 90% -25%, rgba(244,114,182,0.14), transparent 62%)' }} />
+                  <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-pink-400 via-pink-300 to-transparent" />
                   <div className="relative flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
-                      <Crown className="w-3.5 h-3.5 text-pink-300" fill="currentColor" />
-                      <span className="text-pink-300/80 t-micro font-bold uppercase tracking-[1.5px]">Player of the Week</span>
+                      <Crown className="w-3.5 h-3.5 text-pink-600 dark:text-pink-300" fill="currentColor" />
+                      <span className="t-micro font-black uppercase tracking-[1.5px] text-pink-600 dark:text-pink-300">Player of the Week</span>
                     </div>
-                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-pink-400/15 border border-pink-400/30 text-pink-200 t-micro font-black">
+                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-pink-500/10 dark:bg-pink-400/15 text-pink-600 dark:text-pink-300 t-micro font-black">
                       <Crown className="w-2.5 h-2.5" fill="currentColor" />
                       {playerOfWeek.moms}
                     </span>
@@ -414,17 +427,17 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                   <div className="relative flex items-center gap-4">
                     {playerOfWeek.member.avatar_url ? (
                       <img src={playerOfWeek.member.avatar_url} alt=""
-                           className="w-16 h-16 lg:w-20 lg:h-20 r-card object-cover border-2 border-pink-400/40 shadow-xl shadow-pink-500/30 flex-shrink-0" />
+                           className="w-16 h-16 lg:w-20 lg:h-20 r-card object-cover ring-1 ring-pink-400/40 flex-shrink-0" />
                     ) : (
-                      <Card className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-pink-400 to-rose-600 border-pink-400/40 flex items-center justify-center flex-shrink-0 shadow-xl shadow-pink-500/30">
-                        <span className="text-2xl font-black text-pink-950">{playerOfWeek.member.name.charAt(0)}</span>
-                      </Card>
+                      <span className="w-16 h-16 lg:w-20 lg:h-20 r-card bg-pink-400/15 ring-1 ring-pink-400/40 flex items-center justify-center flex-shrink-0">
+                        <span className="t-num text-2xl text-pink-600 dark:text-pink-300">{playerOfWeek.member.name.charAt(0)}</span>
+                      </span>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-xl lg:text-2xl font-black text-white truncate">{playerOfWeek.member.name}</h3>
-                      <p className="text-pink-200/60 text-xs mt-0.5">{playerOfWeek.matchesPlayedInPeriod} match{playerOfWeek.matchesPlayedInPeriod !== 1 ? 'es' : ''} · last 7 days</p>
+                      <h3 className="font-display font-extrabold text-slate-900 dark:text-white text-xl lg:text-2xl truncate">{playerOfWeek.member.name}</h3>
+                      <p className="t-meta font-semibold text-slate-400 dark:text-white/45 mt-0.5">{playerOfWeek.matchesPlayedInPeriod} match{playerOfWeek.matchesPlayedInPeriod !== 1 ? 'es' : ''} · last 7 days</p>
                       {playerOfWeek.tieBroken && (
-                        <p className="text-pink-300/40 t-micro mt-1">tie-broken by season MVP score</p>
+                        <p className="t-micro text-slate-400 dark:text-white/35 mt-1">tie-broken by season MVP score</p>
                       )}
                     </div>
                   </div>
@@ -433,16 +446,16 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
 
               {/* Player of the Month */}
               {playerOfMonth && (
-                <div className="relative overflow-hidden r-card p-5 lg:p-6 shadow-xl"
-                     style={{ background: 'radial-gradient(400px circle at 0% 0%, rgba(251,191,36,0.25), transparent 50%), linear-gradient(135deg, #78350f 0%, #1a0f05 60%, #0a1019 100%)' }}>
-                  <div className="absolute inset-0 border border-amber-500/30 r-card pointer-events-none" />
-                  <div className="absolute -top-12 -right-12 w-44 h-44 bg-amber-400/15 rounded-full blur-3xl" />
+                <div className="glass r-card relative overflow-hidden p-5 lg:p-6">
+                  <div className="absolute inset-0 pointer-events-none"
+                       style={{ background: 'radial-gradient(420px circle at 90% -25%, rgba(251,191,36,0.14), transparent 62%)' }} />
+                  <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-amber-400 via-amber-300 to-transparent" />
                   <div className="relative flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
-                      <Crown className="w-3.5 h-3.5 text-amber-300" fill="currentColor" />
-                      <span className="text-amber-300/80 t-micro font-bold uppercase tracking-[1.5px]">Player of the Month</span>
+                      <Crown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-300" fill="currentColor" />
+                      <span className="t-micro font-black uppercase tracking-[1.5px] text-amber-600 dark:text-amber-300">Player of the Month</span>
                     </div>
-                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-200 t-micro font-black">
+                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-500/10 dark:bg-amber-400/15 text-amber-600 dark:text-amber-300 t-micro font-black">
                       <Crown className="w-2.5 h-2.5" fill="currentColor" />
                       {playerOfMonth.moms}
                     </span>
@@ -450,17 +463,17 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
                   <div className="relative flex items-center gap-4">
                     {playerOfMonth.member.avatar_url ? (
                       <img src={playerOfMonth.member.avatar_url} alt=""
-                           className="w-16 h-16 lg:w-20 lg:h-20 r-card object-cover border-2 border-amber-400/50 shadow-xl shadow-amber-500/30 flex-shrink-0" />
+                           className="w-16 h-16 lg:w-20 lg:h-20 r-card object-cover ring-1 ring-amber-400/40 flex-shrink-0" />
                     ) : (
-                      <Card className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400/50 flex items-center justify-center flex-shrink-0 shadow-xl shadow-amber-500/30">
-                        <span className="text-2xl font-black text-yellow-950">{playerOfMonth.member.name.charAt(0)}</span>
-                      </Card>
+                      <span className="w-16 h-16 lg:w-20 lg:h-20 r-card bg-amber-400/15 ring-1 ring-amber-400/40 flex items-center justify-center flex-shrink-0">
+                        <span className="t-num text-2xl text-amber-600 dark:text-amber-300">{playerOfMonth.member.name.charAt(0)}</span>
+                      </span>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-xl lg:text-2xl font-black text-white truncate">{playerOfMonth.member.name}</h3>
-                      <p className="text-amber-200/60 text-xs mt-0.5">{playerOfMonth.matchesPlayedInPeriod} match{playerOfMonth.matchesPlayedInPeriod !== 1 ? 'es' : ''} · {playerOfMonth.periodLabel}</p>
+                      <h3 className="font-display font-extrabold text-slate-900 dark:text-white text-xl lg:text-2xl truncate">{playerOfMonth.member.name}</h3>
+                      <p className="t-meta font-semibold text-slate-400 dark:text-white/45 mt-0.5">{playerOfMonth.matchesPlayedInPeriod} match{playerOfMonth.matchesPlayedInPeriod !== 1 ? 'es' : ''} · {playerOfMonth.periodLabel}</p>
                       {playerOfMonth.tieBroken && (
-                        <p className="text-amber-300/40 t-micro mt-1">tie-broken by season MVP score</p>
+                        <p className="t-micro text-slate-400 dark:text-white/35 mt-1">tie-broken by season MVP score</p>
                       )}
                     </div>
                   </div>
@@ -585,17 +598,17 @@ export function Records({ embedded = false }: { embedded?: boolean } = {}) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {awards.map(a => (
-                <div key={a.id} className="relative overflow-hidden r-card p-5 group"
-                     style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #0a1019 100%)' }}>
-                  <div className="absolute inset-0 border border-violet-500/25 r-card pointer-events-none" />
+                <div key={a.id} className="glass r-card relative overflow-hidden p-5 group">
+                  <div className="absolute inset-x-0 top-0 h-[3px] bg-violet-400/70" />
                   <div className="relative flex items-center gap-3">
-                    <Card className="w-12 h-12 bg-violet-500/20 border-violet-400/40 flex items-center justify-center flex-shrink-0 text-2xl">
+                    <span className="w-12 h-12 r-card bg-violet-500/10 dark:bg-violet-400/15 ring-1 ring-violet-400/30
+                                     flex items-center justify-center flex-shrink-0 text-2xl">
                       {a.icon || '🌟'}
-                    </Card>
+                    </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-violet-300/80 t-micro font-bold uppercase tracking-[1.5px]">{a.award_name}</p>
+                      <p className="t-micro font-black uppercase tracking-[1.5px] text-violet-600 dark:text-violet-300">{a.award_name}</p>
                       {a.member && (
-                        <h4 className="text-sm font-black text-white mt-0.5 truncate">{a.member.name}</h4>
+                        <h4 className="t-body font-bold text-slate-900 dark:text-white mt-0.5 truncate">{a.member.name}</h4>
                       )}
                       {a.description && (
                         <p className="t-meta text-gray-400 truncate mt-0.5">{a.description}</p>
