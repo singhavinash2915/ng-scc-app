@@ -32,6 +32,7 @@ const LiveScoring = lazy(() => import('./pages/LiveScoring'));
 const Wrapped = lazy(() => import('./pages/Wrapped'));
 const Challenges = lazy(() => import('./pages/Challenges'));
 const Usage = lazy(() => import('./pages/Usage'));
+const Captains = lazy(() => import('./pages/Captains'));
 const AuctionLive = lazy(() => import('./pages/AuctionLive').then(m => ({ default: m.AuctionLive })));
 const AuctionCentre = lazy(() => import('./pages/AuctionCentre').then(m => ({ default: m.AuctionCentre })));
 const Watch = lazy(() => import('./pages/Watch').then(m => ({ default: m.Watch })));
@@ -137,6 +138,11 @@ const AppRoutes = () => (
             link — including the WhatsApp messages sent during registration —
             still lands in the right place. */}
         <Route path="/scc-league"    element={<Navigate to="/scc-mahasangram" replace />} />
+        {/* Captaincy — who has led SCC and how it went. Off the nav on
+            purpose: a reference page, and a win-rate table of teammates is
+            better found than pushed at everybody. */}
+        <Route path="/captains" element={<Suspense fallback={<PageLoader />}><Captains /></Suspense>} />
+
         {/* Election reveal — admin-gated inside the page, kept out of the nav */}
         {/* Live auction — public to watch, admin-only to run */}
         <Route path="/auction/live" element={FEATURES.sccLeague ? <Suspense fallback={<PageLoader />}><AuctionLive /></Suspense> : <Navigate to="/" replace />} />
