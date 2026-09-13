@@ -1,4 +1,4 @@
-import { CURRENT_SEASON, seasonLabel, inCurrentSeason } from '../config/season';
+import { CURRENT_SEASON, seasonLabel, inCurrentSeason, seasonOptions, seasonWindow } from '../config/season';
 import { useMemo, useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Link } from 'react-router-dom';
@@ -26,8 +26,21 @@ export function Predictions() {
   const { matches } = useMatches();
   const { members } = useMembers();
   const { isAdmin } = useAuth();
-  const { leaderboard } = usePredictionLeaderboard();
-  const { predictions: allPredictions } = usePredictions();
+  // One season at a time. The prizes are season-long, so the table has to start
+  // again when the season does — but last season is still worth looking at, so
+  // it is a filter rather than a delete.
+  const [season, setSeason] = useState<string>(CURRENT_SEASON);
+  const seasonWin = useMemo(() => seasonWindow(season), [season]);
+  const { leaderboard } = usePredictionLeaderboard(seasonWin.start, seasonWin.end);
+  const { predictions: everyPrediction } = usePredictions();
+
+  // Matches of the chosen season, and the predictions that belong to them.
+  const seasonMatchIds = useMemo(
+    () => new Set(matches.filter(m => m.date >= seasonWin.start && m.date <= seasonWin.end).map(m => m.id)),
+    [matches, seasonWin]);
+  const allPredictions = useMemo(
+    () => everyPrediction.filter(p => seasonMatchIds.has(p.match_id)),
+    [everyPrediction, seasonMatchIds]);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [adminViewOpen, setAdminViewOpen] = useState(false);
   const [myMemberId, setMyMemberId] = useState<string>(() =>
@@ -180,15 +193,18 @@ export function Predictions() {
   }, [matches.length, allPredictions.length]);
 
   // Upcoming matches available for prediction
+  // Only this season's fixtures can be predicted; an older season shows its
+  // history and nothing to fill in.
   const upcomingMatches = useMemo(() =>
     matches
-      .filter(m => m.result === 'upcoming')
+      .filter(m => m.result === 'upcoming' && seasonMatchIds.has(m.id))
       .sort((a, b) => a.date.localeCompare(b.date))
-  , [matches]);
+  , [matches, seasonMatchIds]);
 
   // Recent settled matches with predictions
   const settledWithPredictions = useMemo(() => {
-    const settled = matches.filter(m => ['won', 'lost', 'draw'].includes(m.result))
+    const settled = matches
+      .filter(m => ['won', 'lost', 'draw'].includes(m.result) && seasonMatchIds.has(m.id))
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 10);
     return settled
@@ -197,7 +213,7 @@ export function Predictions() {
         predictions: allPredictions.filter(p => p.match_id === m.id),
       }))
       .filter(x => x.predictions.length > 0);
-  }, [matches, allPredictions]);
+  }, [matches, allPredictions, seasonMatchIds]);
 
   const memberById = useMemo(() => {
     const m: Record<string, typeof members[0]> = {};
@@ -229,7 +245,7 @@ export function Predictions() {
 
   return (
     <div>
-      <Header title="Predictions Game" subtitle={`Pre-match predictions · Season ${seasonLabel(CURRENT_SEASON)}`} />
+      <Header title="Predictions Game" subtitle={`Pre-match predictions · Season ${seasonLabel(season)}`} />
 
       <div className="p-4 lg:p-8 space-y-6 max-w-5xl mx-auto">
 
@@ -247,10 +263,28 @@ export function Predictions() {
               <h2 className="font-display font-extrabold text-slate-900 dark:text-white text-xl lg:text-2xl">Predict &amp; Win</h2>
               <p className="t-body text-slate-500 dark:text-white/60 mt-1">
                 Before each match: who wins? top scorer? top wicket-taker? MOM?
-                Plus bonus questions! Earn up to <span className="font-bold text-amber-300">+{MAX_POINTS_EXTERNAL} points</span> per match.
+                Plus bonus questions! Earn up to{' '}
+                <span className="font-bold text-amber-600 dark:text-amber-300">+{MAX_POINTS_EXTERNAL} points</span> per match.
               </p>
             </div>
+
+            {/* Which season's game. The table and the prizes reset with the
+                season; the old one stays here to be looked at. */}
+            <select value={season} onChange={e => setSeason(e.target.value)}
+              className="r-control px-3 py-2 t-meta font-bold bg-white dark:bg-white/10
+                         border border-slate-200 dark:border-white/15
+                         text-slate-700 dark:text-white/80">
+              {seasonOptions().map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
           </div>
+
+          {season !== CURRENT_SEASON && (
+            <p className="relative t-micro font-bold text-amber-600 dark:text-amber-300 mt-3">
+              Viewing a past season — nothing here can be predicted now.
+            </p>
+          )}
         </div>
 
         {scoredCount !== null && scoredCount > 0 && (

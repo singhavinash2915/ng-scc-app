@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import type { InternalTeam } from '../types';
+import { CURRENT_SEASON_WINDOW } from '../config/season';
 
 // 'dhurandars' / 'bazigars' are used for internal (SCC vs SCC) matches
 export type PredictionWinner = 'scc' | 'opponent' | 'draw' | InternalTeam;
@@ -146,7 +147,22 @@ export function usePredictions(matchId?: string) {
  * Hook for the season-long predictor leaderboard.
  * Aggregates points across all completed matches.
  */
-export function usePredictionLeaderboard() {
+/**
+ * The prediction leaderboard, for ONE season.
+ *
+ * It used to read every prediction ever made and add them together, so a new
+ * season opened with last season's table already on the board — 133 rows of it,
+ * and whoever won last year still top with nobody able to catch them. The
+ * competition is a season-long one with prizes at the end of it, so the table
+ * has to start again when the season does.
+ *
+ * A prediction row has no date of its own; the date is the match's. Hence the
+ * inner join — it also drops any row whose match was deleted.
+ */
+export function usePredictionLeaderboard(
+  seasonStart: string = CURRENT_SEASON_WINDOW.start,
+  seasonEnd:   string = CURRENT_SEASON_WINDOW.end,
+) {
   const [predictions, setPredictions] = useState<MatchPrediction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -155,7 +171,9 @@ export function usePredictionLeaderboard() {
     (async () => {
       const { data, error } = await supabase
         .from('match_predictions')
-        .select('*');
+        .select('*, match:matches!inner(date)')
+        .gte('match.date', seasonStart)
+        .lte('match.date', seasonEnd);
       if (cancelled) return;
       if (error || !data) {
         setPredictions([]);
@@ -165,7 +183,7 @@ export function usePredictionLeaderboard() {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [seasonStart, seasonEnd]);
 
   const leaderboard = useMemo(() => {
     const tally: Record<string, { points: number; matches: number; correct: number }> = {};
