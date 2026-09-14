@@ -35,6 +35,7 @@ import { winProbability, chaseLine } from '../lib/liveMatch';
 import { useMe } from '../context/MemberContext';
 import { YourSeason } from '../components/YourSeason';
 import { SignInCard } from '../components/SignInCard';
+import { FestivalBanner } from '../components/FestivalBanner';
 import { LiveScorecard } from '../components/LiveScorecard';
 import { MatchSummaryCard } from '../components/MatchSummaryCard';
 import { useMembers } from '../hooks/useMembers';
@@ -494,6 +495,15 @@ export function Dashboard() {
           Above the club-wide hero on purpose: a signed-in member wants to know
           whether THEY are playing before they want the club's win rate. Signed
           out this is the sign-in card, and everything below still works. */}
+      {/* ── TODAY'S FESTIVAL ───────────────────────────────────────────
+          On the day only, and it takes itself down at midnight. Sits under the
+          live score and the match-day card — on a match morning the cricket
+          outranks the greeting — and above everything else, because a wish is
+          worth seeing before the league table. */}
+      <div className="px-4 lg:px-8 pt-4 empty:hidden">
+        <FestivalBanner />
+      </div>
+
       {/* ── TEAM GALLERY ───────────────────────────────────────────────
           Above the tabs, and so on the page whichever one you land on. It
           started life inside the club tab, near the bottom — but the app opens
