@@ -1,16 +1,18 @@
 import { forwardRef } from 'react';
 import { SCC_LOGO_DATA_URL } from '../assets/sccLogo';
+import { GaneshaMark } from './GaneshaMark';
 import type { Festival } from '../config/festivals';
 
 // ─── The festival poster ──────────────────────────────────────────────────────
 // A 1080×1350 card, rendered as DOM and rasterised by html-to-image on the way
 // out — the same path the match posters take, so what you see is what shares.
 //
-// On the artwork: this marks the day with type, light and motifs — ॐ, a lamp, a
-// garland — and does NOT depict Ganesha. Any figure would have to be drawn in
-// code from nothing, and a clumsy deity on a poster the whole club forwards is
-// worse than no deity at all. If the club wants an image of Bappa, the right way
-// is to drop in artwork somebody owns, and this layout has a place for it.
+// On the artwork: Bappa is drawn as a MARK — symmetrical gold line art, the way
+// a festival invitation renders him — not as a portrait. See GaneshaMark. The ॐ
+// medallion it replaced is still there for festivals that have no figure.
+//
+// To use real artwork instead, replace GaneshaMark: the layout gives it a fixed
+// box and asks nothing else of it.
 //
 // Every dimension is absolute px rather than rem: the export renders this off
 // screen at a fixed size, where anything relative to a root font-size drifts.
@@ -22,6 +24,9 @@ interface Props {
   /** Shown small at the foot: "Day 3 of 10" on a multi-day festival. */
   dayLabel?: string | null;
 }
+
+/** Which festivals get the figure rather than the ॐ medallion. */
+const FIGURE: Record<string, 'ganesha'> = { 'Ganesh Chaturthi': 'ganesha' };
 
 export const FestivalPoster = forwardRef<HTMLDivElement, Props>(function FestivalPoster(
   { festival: f, clubName = 'Sangria Cricket Club', dayLabel = null }, ref,
@@ -65,22 +70,35 @@ export const FestivalPoster = forwardRef<HTMLDivElement, Props>(function Festiva
         ))}
       </div>
 
-      {/* ── ॐ, set in its own medallion ─────────────────────────────────── */}
-      <div style={{
-        marginTop: 150, width: 168, height: 168, borderRadius: '50%',
-        background: `linear-gradient(160deg, ${accent}, #f59e0b)`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 0 90px ${accent}66`, position: 'relative',
-      }}>
-        <span style={{
-          fontFamily: "'Tiro Devanagari Hindi', 'Noto Sans Devanagari', serif",
-          fontSize: 96, lineHeight: 1, color: '#4a1103', marginTop: -8,
-        }}>ॐ</span>
-      </div>
+      {/* ── Bappa, or the ॐ where there is no figure ────────────────────── */}
+      {FIGURE[f.name] === 'ganesha' ? (
+        <div style={{ marginTop: 104, position: 'relative' }}>
+          <div style={{
+            position: 'absolute', inset: -40, borderRadius: '50%',
+            background: `radial-gradient(circle, ${accent}26 0%, transparent 66%)`,
+          }} />
+          <div style={{ position: 'relative' }}>
+            <GaneshaMark size={300} color={accent} />
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          marginTop: 150, width: 168, height: 168, borderRadius: '50%',
+          background: `linear-gradient(160deg, ${accent}, #f59e0b)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 90px ${accent}66`, position: 'relative',
+        }}>
+          <span style={{
+            fontFamily: "'Tiro Devanagari Hindi', 'Noto Sans Devanagari', serif",
+            fontSize: 96, lineHeight: 1, color: '#4a1103', marginTop: -8,
+          }}>ॐ</span>
+        </div>
+      )}
 
       {/* ── The greeting ────────────────────────────────────────────────── */}
       <div style={{
-        marginTop: 52, textAlign: 'center', position: 'relative', padding: '0 70px',
+        marginTop: FIGURE[f.name] ? 24 : 52,
+        textAlign: 'center', position: 'relative', padding: '0 70px',
       }}>
         <div style={{
           fontFamily: "'Tiro Devanagari Hindi', 'Noto Sans Devanagari', serif",

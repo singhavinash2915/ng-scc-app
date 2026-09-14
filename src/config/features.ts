@@ -11,10 +11,18 @@ export const FEATURES = {
   /** Season Finale + Awards Night reveal. Done for 2025-26 — the Champions
    *  page (/awards) carries the winners from here on. */
   seasonFinale: false,
-  /** Fantasy Draft league. LIVE for 2026-27 — drafting open until the first ball. */
-  fantasy: true,
-  /** Pre-season Kickoff Hub (countdown, predictions, goals, market values). */
-  seasonKickoff: true,
+  /** Fantasy Draft league. OFF — its own rule was "drafting open until the
+   *  first ball", and that was 12 September 2026. Nobody drafted a side
+   *  (fantasy_teams is empty) and no page ever linked to it, so it sat behind
+   *  a URL counting down to a deadline that had passed. Turn it back on with a
+   *  season's draft window and a link from somewhere people look. */
+  fantasy: false,
+  /** Pre-season Kickoff Hub — a countdown to the first ball. OFF: the first
+   *  ball was bowled on 12 September 2026, and the page was still promoting
+   *  Auction Night on 7 August and a draft to do "before the first ball". A
+   *  countdown to a date in the past is the clearest kind of stale. Nothing is
+   *  lost — the auction, the league and the goals all have their own pages. */
+  seasonKickoff: false,
   /** Season Awards champions showcase. */
   seasonAwards: true,
   /** SCC League — auction-based internal two-team rivalry.

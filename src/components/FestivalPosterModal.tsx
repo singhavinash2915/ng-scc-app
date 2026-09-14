@@ -91,20 +91,22 @@ export function FestivalPosterModal({ festival, dayLabel, isOpen, onClose }: Pro
       <div className="min-h-full flex flex-col items-center justify-center p-4 gap-4"
         onClick={e => e.stopPropagation()}>
 
-        {/* The poster, scaled to fit the screen. The element that gets exported
-            is the full-size one inside — scaling the wrapper keeps the export
-            at 1080×1350 whatever the phone is. */}
-        <div className="relative" style={{ width: 'min(92vw, 420px)' }}>
+        {/* A transform does not change layout: scaled down, the poster still
+            occupied its full 1350px and pushed the buttons off the screen. The
+            frame is sized to the SCALED poster and clips it; the element that
+            gets exported is the full-size one inside, so the file is 1080×1350
+            whatever the phone is. */}
+        <div style={{
+          width: 'min(92vw, 420px)',
+          height: 'calc(min(92vw, 420px) * 1.25)',
+          overflow: 'hidden', borderRadius: 14, flexShrink: 0,
+        }}>
           <div style={{
             width: 1080, height: 1350, transformOrigin: 'top left',
-            transform: 'scale(var(--poster-scale))',
-            // min(92vw,420px) / 1080
-            ['--poster-scale' as string]: 'calc(min(92vw, 420px) / 1080)',
+            transform: 'scale(calc(min(92vw, 420px) / 1080))',
           }}>
             <FestivalPoster ref={posterRef} festival={festival} dayLabel={dayLabel} />
           </div>
-          {/* Reserve the scaled height so the buttons sit below the poster. */}
-          <div style={{ paddingTop: 'calc(min(92vw, 420px) * 1.25)' }} />
         </div>
 
         {err && (
