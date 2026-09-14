@@ -1,4 +1,5 @@
 import { seasonOptions, CURRENT_SEASON, PREVIOUS_SEASON, seasonLabel } from '../config/season';
+import { SeasonImpactBoard } from '../components/SeasonImpact';
 import { useState, useMemo, useEffect } from 'react';
 import {
   Trophy,
@@ -407,6 +408,8 @@ export function Leaderboard() {
           </div>
         </div>
       )}
+
+      <SeasonImpactBoard season={season} />
 
       {/* Tab bar */}
       <div className="mx-4 sm:mx-0 flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 r-card">

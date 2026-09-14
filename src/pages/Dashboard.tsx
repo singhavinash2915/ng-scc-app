@@ -31,7 +31,9 @@ import { ElClasicoChampionBanner } from '../components/ElClasicoChampionBanner';
 import { useWeather } from '../hooks/useWeather';
 import { useLiveScore } from '../hooks/useLiveScore';
 import { useAppLiveMatch } from '../hooks/useAppLiveMatch';
-import { winProbability, chaseLine } from '../lib/liveMatch';
+import { chaseLine } from '../lib/liveMatch';
+import { winProbability as engineWinProbability, pressureIndex } from '../lib/pressure';
+import { PressureGauge } from '../components/PressureGauge';
 import { useMe } from '../context/MemberContext';
 import { YourSeason } from '../components/YourSeason';
 import { SignInCard } from '../components/SignInCard';
@@ -401,26 +403,28 @@ export function Dashboard() {
               <ChevronRight className="w-5 h-5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
             </div>
 
-            {/* Win probability — second innings only. There's nothing to chase
-                in the first, and a number with no target behind it would be
-                invented rather than derived. */}
-            {appLive.live.target != null && (() => {
-              const pct = Math.round(winProbability({
-                target: appLive.live!.target!, runs: appLive.live!.runs,
-                wickets: appLive.live!.wickets, legalBalls: appLive.live!.legalBalls,
-                oversPerInnings: appLive.live!.oversPerInnings,
-                playersPerSide: appLive.live!.playersPerSide,
-              }) * 100);
+            {/* Win probability and pressure, both innings — batting first reads
+                off the projected total. Calibrated on SCC's own results; see
+                lib/pressure.ts. */}
+            {(() => {
+              const l = appLive.live!;
+              const fmt = { oversPerInnings: l.oversPerInnings, playersPerSide: l.playersPerSide };
+              const state = { runs: l.runs, wickets: l.wickets, legalBalls: l.legalBalls, target: l.target ?? null };
+              const pct = Math.round(engineWinProbability(state, fmt) * 100);
+              const reading = pressureIndex(state, fmt);
               return (
                 <div className="mt-3">
                   <div className="flex items-center justify-between t-micro font-black uppercase tracking-wider text-white/70">
-                    <span>{appLive.live!.battingTeam} {pct}%</span>
-                    <span>{100 - pct}% {appLive.live!.bowlingTeam}</span>
+                    <span>{l.battingTeam} {pct}%</span>
+                    <span>{100 - pct}% {l.bowlingTeam}</span>
                   </div>
                   <div className="mt-1 h-2 rounded-full bg-white/20 overflow-hidden">
                     <div className="h-full bg-white rounded-full transition-all duration-700"
                       style={{ width: `${pct}%` }} />
                   </div>
+                  {l.legalBalls < l.oversPerInnings * 6 && (
+                    <div className="mt-2"><PressureGauge compact reading={reading} battingTeam={l.battingTeam} /></div>
+                  )}
                 </div>
               );
             })()}

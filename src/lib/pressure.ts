@@ -448,3 +448,19 @@ export function keyMoments(curve: BallReading[], limit = 5) {
     .sort((a, b) => b.swing - a.swing)
     .slice(0, limit);
 }
+
+/** Recent dots and wickets from the balls so far, for pressureIndex. */
+export function momentumOf(balls: EngineBall[]): Momentum {
+  const ordered = [...balls].sort((a, b) => a.seq - b.seq);
+  const legalRecent = ordered.filter(isLegal).slice(-12);
+  return {
+    recentDots: legalRecent.filter(b => b.runs_off_bat + b.extra_runs === 0 && !isDismissal(b)).length,
+    recentLegal: legalRecent.length,
+    recentWickets: ordered.slice(-18).filter(isDismissal).length,
+  };
+}
+
+/** Band colours, shared by the gauge and the charts so they always agree. */
+export const BAND_COLOR: Record<PressureBand, string> = {
+  Calm: '#34d399', Light: '#a3e635', Moderate: '#fbbf24', High: '#fb923c', Extreme: '#f43f5e',
+};

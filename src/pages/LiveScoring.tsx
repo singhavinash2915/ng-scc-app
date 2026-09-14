@@ -17,6 +17,8 @@ import { LiveViewer } from '../components/LiveViewer';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import { DEFAULT_FORMAT, battingCard, bowlingCard, type WicketType, type ExtraType } from '../lib/cricketRules';
 import { oppositionPlayers, isOppositionId, oppositionLabel } from '../lib/opposition';
+import { pressureIndex, momentumOf } from '../lib/pressure';
+import { PressureGauge } from '../components/PressureGauge';
 
 // ─── Live scoring ──────────────────────────────────────────────────────────────
 // One page, two faces. Whoever holds the lock gets the scoring pad; everyone
@@ -187,6 +189,8 @@ export function LiveScoring() {
   const [pickedBatter, setPickedBatter] = useState<string | null>(null);
   /** A wicket that needs more than its type: who fielded, and on a run out who
    *  was out. Catches only reach the fielding tables if the catcher is named. */
+  const [fieldSheet, setFieldSheet] = useState<{ kind: 'drop' | 'save'; fielderId: string | null } | null>(null);
+  const [fieldNote, setFieldNote] = useState<string | null>(null);
   const [wkt, setWkt] = useState<{ type: WicketType; dismissedId: string | null } | null>(null);
   const [needBowler, setNeedBowler] = useState(false);
 
@@ -249,6 +253,21 @@ export function LiveScoring() {
     (isOppositionId(id) ? oppositionLabel(id!, oppName) : null)
     ?? squad.find(m => m.id === id)?.name ?? members.find(m => m.id === id)?.name ?? '—';
 
+  const saveFieldEvent = async (kind: 'drop' | 'save', fielderId: string, runs: number) => {
+    const last = S.balls[S.balls.length - 1];
+    setFieldSheet(null);
+    const { error } = await supabase.from('scc_field_events').insert({
+      match_id: matchId, innings: shown, seq: last?.seq ?? null, kind, fielder_id: fielderId, runs, created_by: myId,
+    });
+    if (error) {
+      alert(['42P01', 'PGRST205'].includes(error.code ?? '')
+        ? 'Fielding events need a one-time database update: run supabase/migrations/add_field_events.sql.'
+        : `Not saved: ${error.message}`);
+      return;
+    }
+    setFieldNote(kind === 'drop' ? `Drop noted against ${name(fielderId)}` : `${runs} saved by ${name(fielderId)}`);
+    setTimeout(() => setFieldNote(null), 2500);
+  };
   const record = (input: Parameters<typeof S.scoreBall>[0]) => {
     void S.scoreBall(input, { strikerId: striker, nonStrikerId: nonStriker, bowlerId: bowler }, myId);
     setWicketSheet(null);
@@ -408,6 +427,15 @@ export function LiveScoring() {
             <p className="text-white/60 text-sm mt-1.5">
               {st.overs} / {format.oversPerInnings} overs · RR {st.runRate.toFixed(2)}
             </p>
+            {S.balls.length > 0 && !st.isComplete && (
+              <div className="mt-2">
+                <PressureGauge compact battingTeam={sideName(M.rows.find(r => r.innings === shown)?.batting_team)}
+                  reading={pressureIndex(
+                    { runs: st.runs, wickets: st.wickets, legalBalls: st.legalBalls,
+                      target: M.rows.find(r => r.innings === shown)?.target ?? null },
+                    format, momentumOf(S.balls))} />
+              </div>
+            )}
 
             {/* batters + bowler — figures inline, striker marked */}
             <div className="grid grid-cols-2 gap-2 mt-5 text-left">
@@ -671,6 +699,23 @@ export function LiveScoring() {
               ))}
             </div>
 
+            {/* ── Fielding the ball rows cannot see ──────────────────────
+                Tapped AFTER the ball it happened on is recorded. A drop or a
+                save on the rope moves a match like a wicket or a four does, and
+                the impact score reads these to credit (or charge) the fielder. */}
+            <div className="grid grid-cols-2 gap-2">
+              {([['drop', '🫳 Dropped catch'], ['save', '🧤 Runs saved']] as const).map(([k, l]) => (
+                <button key={k} onClick={() => { setFieldSheet({ kind: k, fielderId: null }); }}
+                  disabled={S.balls.length === 0}
+                  className="h-11 r-control bg-slate-100 dark:bg-white/5 border border-slate-200
+                             dark:border-white/10 text-slate-600 dark:text-white/70 t-meta font-black
+                             disabled:opacity-30 active:scale-95 transition-transform">
+                  {l}
+                </button>
+              ))}
+            </div>
+            {fieldNote && <p className="t-meta font-bold text-center text-emerald-600">{fieldNote}</p>}
+
             {/* ── Fix it ─────────────────────────────────────────────────
                 Undo only walks back one ball at a time, so without these the
                 only way to correct a name three overs later is to destroy three
@@ -911,6 +956,46 @@ export function LiveScoring() {
               )}
 
               <button onClick={() => { setWicketSheet(null); setWkt(null); }}
+                className="w-full t-meta font-bold text-slate-400 pt-1">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── DROPPED / SAVED ─────────────────────────────────────────── */}
+        {fieldSheet && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setFieldSheet(null)} />
+            <div className="relative w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 space-y-3 max-h-[85vh] overflow-y-auto">
+              <p className="font-black text-lg text-slate-900 dark:text-white">
+                {fieldSheet.fielderId
+                  ? `How many did ${name(fieldSheet.fielderId)} save?`
+                  : fieldSheet.kind === 'drop' ? 'Who dropped it?' : 'Who saved the runs?'}
+              </p>
+              {!fieldSheet.fielderId ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {bowlPool.map(m => (
+                    <button key={m.id}
+                      onClick={() => fieldSheet.kind === 'drop'
+                        ? saveFieldEvent('drop', m.id, 0)
+                        : setFieldSheet({ kind: 'save', fielderId: m.id })}
+                      className="py-2.5 r-control border-2 border-slate-200 dark:border-white/10
+                                 t-body font-bold text-slate-700 dark:text-white/80 truncate px-2">
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 2, 3, 4].map(n => (
+                    <button key={n} onClick={() => saveFieldEvent('save', fieldSheet.fielderId!, n)}
+                      className="h-14 r-control border-2 border-emerald-200 bg-emerald-50 dark:bg-emerald-500/10
+                                 dark:border-emerald-400/20 font-display text-xl font-extrabold text-emerald-700 dark:text-emerald-300">
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => setFieldSheet(null)}
                 className="w-full t-meta font-bold text-slate-400 pt-1">Cancel</button>
             </div>
           </div>

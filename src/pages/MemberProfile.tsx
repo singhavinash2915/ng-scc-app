@@ -29,6 +29,7 @@ import { SkillRadarChart } from '../components/SkillRadarChart';
 import { SeasonWrappedButton } from '../components/SeasonWrappedButton';
 import { PlayerCardModal } from '../components/PlayerCardModal';
 import { computeRadar, overallRating } from '../utils/playerRating';
+import { SeasonImpactLine } from '../components/SeasonImpact';
 
 const ROLE_LABEL: Record<string, string> = {
   batsman: '🏏 Batsman',
@@ -440,6 +441,9 @@ export function MemberProfile() {
         {/* ── TAB CONTENT ────────────────────────────────────────────── */}
         {tab === 'overview' && (
           <div className="space-y-4">
+            {/* Impact — only once they have played an app-scored match this season. */}
+            {member && <SeasonImpactLine memberId={member.id} season={CURRENT_SEASON} />}
+
             {/* ─── THIS SEASON (compact stat lines, mockup-style) ─── */}
             {!memberStats && view === 'season' ? (
               <div className="r-card p-5 text-center border border-slate-200 dark:border-white/10">

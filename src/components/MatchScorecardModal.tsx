@@ -5,8 +5,9 @@ import { Modal } from './ui/Modal';
 import { useFullScorecard, type InningsData, type BatterRow, type BowlerRow } from '../hooks/useFullScorecard';
 import { MatchHeroes } from './MatchHeroes';
 import { MatchInsights } from './MatchInsights';
+import { MatchImpact } from './MatchImpact';
 
-type ModalView = 'heroes' | 'scorecard' | 'insights';
+type ModalView = 'heroes' | 'scorecard' | 'insights' | 'impact';
 
 interface Props {
   isOpen:    boolean;
@@ -191,7 +192,7 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
       >
         {/* Top-level view tabs — Heroes · Scorecard · Insights */}
         <div className="flex gap-1 p-1 m-3 mb-0 bg-white/5 r-card">
-          {([['heroes', '🏆 Heroes'], ['scorecard', '📋 Scorecard'], ['insights', '📊 Insights']] as [ModalView, string][]).map(([v, label]) => (
+          {([['heroes', '🏆 Heroes'], ['scorecard', '📋 Scorecard'], ['insights', '📊 Insights'], ['impact', '⚡ Impact']] as [ModalView, string][]).map(([v, label]) => (
             <button
               key={v}
               onClick={() => setView(v)}
@@ -212,6 +213,11 @@ export function MatchScorecardModal({ isOpen, onClose, chMatchId, matchLabel, ma
         {/* Insights panel */}
         {view === 'insights' && (
           <div className="p-4"><MatchInsights chMatchId={chMatchId} innings1Name={inn1Name} innings2Name={inn2Name} /></div>
+        )}
+
+        {/* Impact panel — app-scored matches only; it says so otherwise */}
+        {view === 'impact' && (
+          <div className="p-4"><MatchImpact chMatchId={chMatchId} /></div>
         )}
 
         {/* Scorecard panel */}

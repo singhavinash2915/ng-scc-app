@@ -4,6 +4,8 @@ import { Radio } from 'lucide-react';
 import { commentaryFor, winProbability, chaseLine, keyMoments, overByOver } from '../lib/liveMatch';
 import type { Ball, MatchFormat } from '../lib/cricketRules';
 import { resultTone } from '../lib/playerCard';
+import { pressureIndex, pressureCurve, momentumOf, winProbability as engineWP } from '../lib/pressure';
+import { PressureGauge } from './PressureGauge';
 
 // ─── Live viewer ──────────────────────────────────────────────────────────────
 // What everyone not at the ground sees. Deliberately source-agnostic: it takes
@@ -41,7 +43,15 @@ export function LiveViewer({ view, format, name }: {
   } : null;
 
   const live = resultTone('upcoming');   // a live match is still to be decided
-  const pct = chase ? Math.round(winProbability(chase) * 100) : null;
+  // Both innings now: batting first reads off a projected total, so the bar no
+  // longer disappears until the chase starts.
+  const state = { runs: view.runs, wickets: view.wickets, legalBalls: view.legalBalls, target: view.target };
+  const pct = chase ? Math.round(winProbability(chase) * 100) : Math.round(engineWP(state, format) * 100);
+  const reading = useMemo(
+    () => pressureIndex(state, format, view.balls.length ? momentumOf(view.balls) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [view.runs, view.wickets, view.legalBalls, view.target, view.balls, format]);
+  const curve = useMemo(() => pressureCurve(view.balls, format, view.target), [view.balls, format, view.target]);
   const overs = `${Math.floor(view.legalBalls / 6)}.${view.legalBalls % 6}`;
 
   // Newest first — a live feed is read from the top.
@@ -86,12 +96,18 @@ export function LiveViewer({ view, format, name }: {
                   style={{ width: `${pct}%` }} />
               </div>
               <p className="t-micro text-white/40 mt-1.5">
-                A rough guide from the run rate and wickets in hand — not a betting line.
+                {chase ? 'From runs needed, balls and wickets left' : 'From the projected total'} — calibrated on SCC’s own results.
               </p>
             </div>
           )}
         </div>
       </div>
+
+      {!(view.legalBalls >= format.oversPerInnings * 6) && (
+        <div className="dark rounded-[inherit]" style={{ background: 'linear-gradient(150deg,#0b1220,#020617)', borderRadius: 20 }}>
+          <PressureGauge reading={reading} curve={curve} battingTeam={view.battingTeam} />
+        </div>
+      )}
 
       {/* CricHeroes gives us totals, not deliveries. Rather than fake a feed,
           say plainly what this source can and can't show. */}
