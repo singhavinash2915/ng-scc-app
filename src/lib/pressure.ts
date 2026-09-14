@@ -29,7 +29,10 @@
 //   target 130  → model 38%  (actual 42%, 38 matches)
 //   target 150  → model 19%  (actual 21%, 28 matches)
 //   target 170  → model  8%  (actual  6%, 16 matches)
-// Re-fit each season: see the calibration block in scripts/pressure_calibrate.py.
+// Then, ball by ball, on ~33,000 deliveries rebuilt from CricHeroes (see
+// scripts/sync_ch_balls.py) — which found the model underrating chasing sides by
+// 10–19 points mid-innings. Chasers pace to a number; chasePar puts that in.
+// Re-fit each season with scripts/calibrate_pressure.ts.
 //
 // Everything is scaled per over so a 12- or 20-over fixture reads sensibly, but
 // the numbers were fitted on 16 and are only as good as that sample elsewhere.
@@ -48,8 +51,15 @@ export const CAL = {
   k: 0.6,
   /** How hard losing wickets bites. Tuned so the curve tracks DLS for short
    *  formats: 7 down at halfway leaves ~30% of the batting, not 48%. */
-  alpha: 1.8,
-} as const;
+  alpha: 1.5,
+  /** Ball-to-ball luck: logistic scale of runs per ball. */
+  luck: 0.9,
+  /** Chasers score more of their resources than a side batting first: they
+   *  pace to a number. Multiplies expected remaining runs in a chase. */
+  chasePar: 1.2,
+  /** Widens (>1) or narrows the chase uncertainty. */
+  chaseSpread: 1,
+};
 
 export interface Format {
   oversPerInnings: number;
@@ -109,10 +119,13 @@ export function winProbability(s: InningsState, fmt: Format): number {
     // dominates; in the last over only the second is left, which is why 6 off 6
     // with wickets in hand is comfortable rather than a coin flip. The core is
     // set so the two together reproduce the fitted scale at the first ball.
-    const luck = 1.1 * Math.sqrt(ballsLeft);
-    const core = Math.sqrt(Math.max(S ** 2 - 1.21 * totalBalls, 1));
-    const scale = Math.max(Math.hypot(core * R, luck), 0.6);
-    return clamp(logistic((expectedMore - need) / scale), 0.001, 0.999);
+    const luck = CAL.luck * Math.sqrt(ballsLeft);
+    const core = Math.sqrt(Math.max(S ** 2 - CAL.luck ** 2 * totalBalls, 1));
+    const scale = Math.max(Math.hypot(core * R, luck), 0.6) * CAL.chaseSpread;
+    // The boost grows as the chase goes on: at the first ball the target is all
+    // anyone knows (the fitted curve holds), by the end chasers have paced to it.
+    const paced = expectedMore * (1 + (CAL.chasePar - 1) * (1 - R));
+    return clamp(logistic((paced - need) / scale), 0.001, 0.999);
   }
 
   // ── Batting first ──
@@ -339,6 +352,7 @@ const WICKET_SHARE: Record<string, { bowler: number; fielder: number }> = {
   caught:     { bowler: 0.75, fielder: 0.25 },
   stumped:    { bowler: 0.6, fielder: 0.4 },
   run_out:    { bowler: 0.1, fielder: 0.9 },
+  retired_out: { bowler: 0, fielder: 0 },
 };
 
 /**

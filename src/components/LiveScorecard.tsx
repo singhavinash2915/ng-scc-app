@@ -2,6 +2,41 @@ import { RefreshCw } from 'lucide-react';
 import { Card } from './ui/Card';
 import { todayIso } from '../config/season';
 import type { LiveScoreData } from '../hooks/useLiveScore';
+import { pressureIndex, winProbability, type Format } from '../lib/pressure';
+import { PressureGauge } from './PressureGauge';
+
+/**
+ * Win chance and pressure from what CricHeroes' live feed gives: score, overs
+ * and the required rate. The target is not in the feed, so it is recovered from
+ * the required rate — rounded to two places, which is good to within a run.
+ */
+function liveReading(data: LiveScoreData, fmt: Format) {
+  const m = /^(\d+)\s*\/\s*(\d+)/.exec(data.score ?? '');
+  const o = /^(\d+)(?:\.(\d))?/.exec(data.overs ?? '');
+  if (!m || !o) return null;
+  const runs = +m[1], wickets = +m[2];
+  const legalBalls = +o[1] * 6 + (o[2] ? +o[2] : 0);
+  const ballsLeft = fmt.oversPerInnings * 6 - legalBalls;
+  if (ballsLeft <= 0) return null;
+  let target: number | null = null;
+  if (!data.battingFirst) {
+    const rrr = parseFloat(data.requiredRunRate);
+    if (!Number.isFinite(rrr)) return null;
+    target = runs + Math.round((rrr * ballsLeft) / 6);
+  }
+  // Recent dots and wickets from the over in progress — all the feed carries.
+  const cur = data.currentOver ?? [];
+  const legal = cur.filter(b => !/wd|nb/i.test(b));
+  const state = { runs, wickets, legalBalls, target };
+  return {
+    pct: Math.round(winProbability(state, fmt) * 100),
+    reading: pressureIndex(state, fmt, {
+      recentDots: legal.filter(b => b === '.' || b === '0').length,
+      recentLegal: legal.length,
+      recentWickets: cur.filter(b => /w/i.test(b) && !/wd/i.test(b)).length,
+    }),
+  };
+}
 
 interface Props {
   data:          LiveScoreData | null;
@@ -13,6 +48,8 @@ interface Props {
   matchOpponent?: string | null;
   matchVenue?:   string | null;
   matchDate?:    string | null;   // ISO date string
+  /** The fixture's format — enables the win bar and pressure pill. */
+  format?:       Format;
 }
 
 // Colour each ball in the current over
@@ -31,7 +68,7 @@ function ballStyle(ball: string) {
 
 export function LiveScorecard({
   data, loading, error, countdown, refetch,
-  chMatchId, matchOpponent, matchVenue, matchDate,
+  chMatchId, matchOpponent, matchVenue, matchDate, format,
 }: Props) {
   const chUrl = `https://cricheroes.in/scorecard/${chMatchId}/x/x/live`;
   const isLive = !!data && !data.result;           // in-progress
@@ -202,6 +239,27 @@ export function LiveScorecard({
                 <span className="text-slate-500 dark:text-gray-400">P'ship <span className="text-slate-700 dark:text-white/80 font-mono font-bold">{data.partnership}</span></span>
               )}
             </div>
+
+            {/* ── Win chance + pressure ──────────────────────────── */}
+            {isLive && format && (() => {
+              const r = liveReading(data, format);
+              if (!r) return null;
+              return (
+                <div className="mb-3">
+                  <div className="flex items-center justify-between t-micro font-black uppercase tracking-wider text-slate-500 dark:text-gray-400">
+                    <span className="truncate">{data.battingTeam} {r.pct}%</span>
+                    <span className="truncate">{100 - r.pct}% {data.bowlingTeam}</span>
+                  </div>
+                  <div className="mt-1 h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-700"
+                      style={{ width: `${r.pct}%` }} />
+                  </div>
+                  <div className="mt-2">
+                    <PressureGauge compact reading={r.reading} battingTeam={data.battingTeam} />
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ── Toss strip ─────────────────────────────────────── */}
             {data.tossDetails && (

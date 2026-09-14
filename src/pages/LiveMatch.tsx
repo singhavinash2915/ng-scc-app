@@ -133,6 +133,7 @@ export function LiveMatch() {
               matchOpponent={match?.opponent}
               matchVenue={match?.venue}
               matchDate={match?.date}
+              format={{ oversPerInnings: match?.overs_per_innings ?? 16, playersPerSide: match?.players_per_side ?? 12 }}
             />
           ) : !chMatchId ? (
             <p className="text-center text-gray-400 py-12">No match specified.</p>

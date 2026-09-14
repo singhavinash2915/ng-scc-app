@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Loader2, Zap, Activity, Flame } from 'lucide-react';
 import { useMatchImpact } from '../hooks/useMatchImpact';
 import { BAND_COLOR, bandOf, type ImpactGrade } from '../lib/pressure';
-import { isOppositionId } from '../lib/opposition';
 import { commentaryFor } from '../lib/liveMatch';
 import type { Ball } from '../lib/cricketRules';
 
@@ -24,13 +23,11 @@ const GRADE_TONE: Record<ImpactGrade, string> = {
 };
 
 export function MatchImpact({ chMatchId }: { chMatchId: string }) {
-  const { impact, loading, sideName, playerName } = useMatchImpact(chMatchId, true);
+  const { impact, loading, sideName, playerName, isClub, source, quality } = useMatchImpact(chMatchId, true);
   const [both, setBoth] = useState(false);
   const [inn, setInn] = useState(0);
 
-  const players = useMemo(
-    () => (impact?.players ?? []).filter(p => both || !isOppositionId(p.playerId)),
-    [impact, both]);
+  const players = (impact?.players ?? []).filter(p => both || isClub(p.playerId));
 
   if (loading) {
     return (
@@ -47,9 +44,9 @@ export function MatchImpact({ chMatchId }: { chMatchId: string }) {
         <Zap className="w-8 h-8 text-gray-600 mx-auto" />
         <p className="text-white font-black mt-3">Impact needs every ball</p>
         <p className="text-sm text-gray-400 mt-1 max-w-sm mx-auto leading-relaxed">
-          It is worked out from how each delivery moved the chance of winning, so
-          it only exists for matches scored ball by ball in the app.
-          CricHeroes gives us totals, not deliveries.
+          It is worked out from how each delivery moved the chance of winning.
+          This match has no ball-by-ball yet — CricHeroes matches are rebuilt
+          by the morning sync after their scorecard arrives.
         </p>
       </div>
     );
@@ -76,10 +73,17 @@ export function MatchImpact({ chMatchId }: { chMatchId: string }) {
         <p className="t-meta text-gray-400 mt-1">
           How far each player moved the result. Swinging a match by half ≈ 10.
         </p>
+        {source === 'cricheroes' && quality !== 'exact' && (
+          <p className="t-micro text-amber-300/80 mt-1">
+            {quality === 'close'
+              ? 'Rebuilt from CricHeroes — totals match the scorecard; a ball here or there may sit with the wrong batter.'
+              : 'Rebuilt from CricHeroes with gaps the scorecard could not fill — treat as a rough guide.'}
+          </p>
+        )}
 
         <div className="mt-3 space-y-2">
           {players.slice(0, 12).map((p, i) => {
-            const opp = isOppositionId(p.playerId);
+            const opp = !isClub(p.playerId);
             return (
               <div key={p.playerId} className={`flex items-center gap-3 ${opp ? 'opacity-60' : ''}`}>
                 <span className={`w-6 text-center t-num text-sm ${i < 3 ? 'text-amber-300' : 'text-gray-500'}`}>{i + 1}</span>

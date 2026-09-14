@@ -12,7 +12,9 @@ import { isOppositionId } from './opposition';
 // synthetic commentary with no wickets in it, and an impact score built on that
 // would be confidently wrong — so those matches simply have no impact.
 
-export interface InningsRow { innings: number; batting_team: string; target: number | null }
+export interface InningsRow { innings: number; batting_team: string; target: number | null;
+  /** Defaults to the other of 'home' / 'away' — CricHeroes rows pass team ids. */
+  bowling_team?: string }
 export interface FieldEvent { innings: number; seq: number | null; kind: 'drop' | 'save'; fielder_id: string; runs: number }
 export type StoredBall = EngineBall & { innings: number };
 
@@ -42,7 +44,7 @@ export function computeMatchImpact(
   for (const r of [...rows].sort((a, b) => a.innings - b.innings)) {
     const ib = balls.filter(b => b.innings === r.innings).sort((a, b) => a.seq - b.seq);
     if (!ib.length) continue;
-    const bowlingKey = r.batting_team === 'home' ? 'away' : 'home';
+    const bowlingKey = r.bowling_team ?? (r.batting_team === 'home' ? 'away' : 'home');
     for (const b of ib) {
       for (const id of [b.striker_id, b.non_striker_id]) if (id) sideOf[id] ??= r.batting_team;
       for (const id of [b.bowler_id, b.fielder_id]) if (id) sideOf[id] ??= bowlingKey;

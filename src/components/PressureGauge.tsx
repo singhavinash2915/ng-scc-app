@@ -22,7 +22,7 @@ export function PressureGauge({ reading, curve = [], battingTeam, compact }: Pro
 
   if (compact) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 t-micro font-black uppercase tracking-wider">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/85 text-white px-2.5 py-1 t-micro font-black uppercase tracking-wider">
         <span className="w-2 h-2 rounded-full" style={{ background: color }} />
         Pressure <span className="t-num" style={{ color }}>{reading.index}</span>
         <span className="text-white/50">{reading.band}</span>

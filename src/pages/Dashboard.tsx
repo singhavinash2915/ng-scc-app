@@ -68,7 +68,7 @@ const DashboardStars = lazy(() => import('../components/DashboardStars'));
 const DashboardDeferred = lazy(() => import('../components/DashboardDeferred'));
 
 // Wrapper so we can call useLiveScore unconditionally inside a component
-function LiveScorecardWidget({ match }: { match: { id: string; ch_match_id?: string | null; opponent?: string | null; venue?: string; date?: string } }) {
+function LiveScorecardWidget({ match }: { match: { id: string; ch_match_id?: string | null; opponent?: string | null; venue?: string; date?: string; overs_per_innings?: number | null; players_per_side?: number | null } }) {
   const { data, loading, error, countdown, refetch } = useLiveScore(match.ch_match_id);
   return (
     <LiveScorecard
@@ -78,6 +78,7 @@ function LiveScorecardWidget({ match }: { match: { id: string; ch_match_id?: str
       countdown={countdown}
       refetch={refetch}
       chMatchId={match.ch_match_id!}
+      format={{ oversPerInnings: match.overs_per_innings ?? 16, playersPerSide: match.players_per_side ?? 12 }}
       matchOpponent={match.opponent}
       matchVenue={match.venue}
       matchDate={match.date}
