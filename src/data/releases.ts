@@ -20,6 +20,25 @@ export interface Release {
 // ─────────────────────────────────────────────────────────────────────────────
 export const RELEASES: Release[] = [
   {
+    version: '2026.09.14',
+    date: '14 September 2026',
+    title: 'Impact — who really won the match ⚡',
+    subtitle: 'Like CricHeroes MVP, built on every ball of our own matches · a live pressure meter',
+    notes: [
+      { emoji: '⚡', title: 'Match Centre → Impact', tag: 'new',
+        desc: 'Every player now gets an Impact score for each match. Base points for what the scorecard shows — runs, wickets, economy, catches — plus swing: how far each ball you faced or bowled moved the chance of winning. A tight over when the chase is alive counts for more than the same over when the game is gone.' },
+      { emoji: '📈', title: 'The pressure curve and the balls that swung it', tag: 'new',
+        desc: 'In the same tab: how the pressure rose and fell ball by ball in each innings, the win-chance line, and the deliveries that moved the match most — “SIX! +8%”, “caught! −12%”.' },
+      { emoji: '🏆', title: 'Impact leaders on the Leaderboard', tag: 'new',
+        desc: 'A season table at the top of the Leaderboard, and an Impact card on your own profile — your rank in the club, base and swing, and your best match. Pick a past season too: it goes back two years.' },
+      { emoji: '🌡️', title: 'Live win chance and a pressure meter', tag: 'new',
+        desc: 'On match day the live score on the home screen shows each side’s chance of winning in both innings, and a pressure reading from Calm to Extreme. “1 off the last ball” is Extreme; a chase that’s already gone is Calm.' },
+      { emoji: '🎯', title: 'Tuned on SCC cricket, not T20 on TV', tag: 'improved',
+        desc: 'The numbers come from 190 of our own matches and 33,000 deliveries rebuilt from CricHeroes. At SCC a wicket costs a side about 15 runs, and chasing teams win more often than the run rate suggests — both are built in.' },
+    ],
+  },
+
+  {
     version: '2026.08.30',
     date: '30 August 2026',
     title: 'Season 2026-27 starts 8 September \u{1F3CF}',
