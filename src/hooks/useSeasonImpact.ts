@@ -15,6 +15,8 @@ export interface SeasonImpactRow {
   matches: number;
   total: number;
   perMatch: number;
+  base: number;
+  swing: number;
   batting: number;
   bowling: number;
   fielding: number;
@@ -41,8 +43,8 @@ export function useSeasonImpact(season: string) {
           if (!mb.isClubSide(imp.sideOf[p.playerId] ?? '')) continue;
           const member = mb.memberOf(p.playerId);
           if (!member) continue;
-          const r = acc.get(member) ?? { playerId: member, matches: 0, total: 0, perMatch: 0, batting: 0, bowling: 0, fielding: 0, best: null };
-          r.matches++; r.total += p.total; r.batting += p.batting; r.bowling += p.bowling; r.fielding += p.fielding;
+          const r = acc.get(member) ?? { playerId: member, matches: 0, total: 0, perMatch: 0, base: 0, swing: 0, batting: 0, bowling: 0, fielding: 0, best: null };
+          r.matches++; r.total += p.total; r.base += p.base; r.swing += p.swing; r.batting += p.batting; r.bowling += p.bowling; r.fielding += p.fielding;
           if (!r.best || p.total > r.best.total) {
             r.best = { total: p.total, matchId: mb.matchId, opponent: mb.opponent, date: mb.date, grade: gradeOf(p.total) };
           }
@@ -51,7 +53,7 @@ export function useSeasonImpact(season: string) {
       }
       const out = [...acc.values()].map(r => ({
         ...r,
-        total: +r.total.toFixed(1), batting: +r.batting.toFixed(1), bowling: +r.bowling.toFixed(1),
+        total: +r.total.toFixed(1), base: +r.base.toFixed(1), swing: +r.swing.toFixed(1), batting: +r.batting.toFixed(1), bowling: +r.bowling.toFixed(1),
         fielding: +r.fielding.toFixed(1), perMatch: +(r.total / r.matches).toFixed(1),
       })).sort((a, b) => b.total - a.total);
       setRows(out); setMatchCount(matches.length); setLoading(false);

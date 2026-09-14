@@ -75,7 +75,20 @@ const full = P.inningsImpact(all, F, 97, {});
 const finisher = full.get('bat');
 check('a finish swings impact to the batter', finisher && finisher.batting > 3, finisher ? `${finisher.batting}` : 'none');
 check('and away from the bowler', full.get('bowl')?.bowling < -3, `${full.get('bowl')?.bowling}`);
-check('impact is zero-sum on legal runs', Math.abs((finisher?.batting ?? 0) + (full.get('bowl')?.bowling ?? 0)) < 0.01, 'bat + bowl');
+check('swing is zero-sum between batter and bowler', Math.abs((finisher?.swing ?? 0) + (full.get('bowl')?.swing ?? 0)) < 0.01, 'bat + bowl');
+
+console.log('\nBase points');
+// 45 off 38, nothing else — base only in a dead first innings would still pay.
+seq = 0;
+const knock = Array.from({ length: 38 }, (_, i) => ball({ striker_id: 'anchor', bowler_id: 'b1', runs_off_bat: i < 7 ? 4 : i < 24 ? 1 : 0 }));
+const k = P.inningsImpact(knock, F, null, {}).get('anchor');
+check('45 off 38 earns about 4.4 base', k && Math.abs(k.base - 4.43) < 0.1, k ? `${k.base} (runs ${knock.reduce((a, b) => a + b.runs_off_bat, 0)})` : 'none');
+seq = 0;
+const spell = [ball({ bowler_id: 'bw' }), ball({ bowler_id: 'bw', wicket_type: 'caught', dismissed_id: 'bat', fielder_id: 'fx' })];
+const sp = P.inningsImpact(spell, F, null, {});
+check('a caught wicket: 1.5 to the bowler plus two dots', Math.abs(sp.get('bw').base - (1.5 + 2 * 0.13)) < 0.01, `${sp.get('bw').base}`);
+check('and 0.4 to the catcher', sp.get('fx').base === 0.4, `${sp.get('fx').base}`);
+check('total is base + swing', [...sp.values()].every(p => Math.abs(p.total - p.base - p.swing) < 0.02), 'ok');
 check('grades use the CricHeroes bands', P.gradeOf(10) === 'Exceptional' && P.gradeOf(1) === 'Marginal', 'ok');
 
 console.log(`\n${pass} passed, ${fail} failed`);

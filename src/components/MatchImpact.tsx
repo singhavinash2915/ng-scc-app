@@ -71,7 +71,8 @@ export function MatchImpact({ chMatchId }: { chMatchId: string }) {
           </button>
         </div>
         <p className="t-meta text-gray-400 mt-1">
-          How far each player moved the result. Swinging a match by half ≈ 10.
+          <b className="text-gray-300">Base</b> for what the scorecard shows (runs, wickets, economy, catches), plus{' '}
+          <b className="text-gray-300">swing</b> for how far each ball moved the result.
         </p>
         {source === 'cricheroes' && quality !== 'exact' && (
           <p className="t-micro text-amber-300/80 mt-1">
@@ -105,6 +106,8 @@ export function MatchImpact({ chMatchId }: { chMatchId: string }) {
                       ))}
                   </div>
                   <p className="t-micro text-gray-500 mt-0.5 tabular-nums">
+                    base {p.base.toFixed(1)} · swing {p.swing > 0 ? '+' : ''}{p.swing.toFixed(1)}
+                    <span className="text-gray-600"> — </span>
                     {[['bat', p.batting], ['bowl', p.bowling], ['field', p.fielding]]
                       .filter(([, v]) => Math.abs(v as number) >= 0.05)
                       .map(([l, v]) => `${l} ${(v as number) > 0 ? '+' : ''}${(v as number).toFixed(1)}`).join(' · ') || '—'}

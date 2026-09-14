@@ -29,7 +29,7 @@ export function SeasonImpactBoard({ season }: { season: string }) {
         <div className="min-w-0">
           <p className="font-black text-slate-900 dark:text-white">Impact leaders · {seasonLabel(season)}</p>
           <p className="t-meta text-slate-500 dark:text-white/50">
-            From every ball of {matchCount} match{matchCount === 1 ? '' : 'es'} · how far each player moved results
+            {matchCount} match{matchCount === 1 ? '' : 'es'} · base points for the scorecard + swing for moving results
           </p>
         </div>
       </div>
@@ -45,6 +45,9 @@ export function SeasonImpactBoard({ season }: { season: string }) {
                   <span className="t-micro text-slate-400 font-bold ml-1.5">{r.perMatch.toFixed(1)}/m</span>
                 </p>
               </div>
+              <p className="t-micro text-slate-400 tabular-nums">
+                base {r.base.toFixed(1)} · swing {r.swing > 0 ? '+' : ''}{r.swing.toFixed(1)} · {r.matches} m
+              </p>
               <div className="mt-1 h-1.5 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
                 <div className={`h-full rounded-full ${r.total >= 0 ? 'bg-gradient-to-r from-amber-400 to-rose-400' : 'bg-slate-300'}`}
                   style={{ width: `${Math.max(2, (Math.max(0, r.total) / max) * 100)}%` }} />
@@ -81,8 +84,8 @@ export function SeasonImpactLine({ memberId, season }: { memberId: string; seaso
         </div>
         <p className="t-num text-3xl text-slate-900 dark:text-white">{r.total > 0 ? '+' : ''}{r.total.toFixed(1)}</p>
       </div>
-      <div className="grid grid-cols-4 gap-2 mt-3 text-center">
-        {[['Per match', r.perMatch], ['Batting', r.batting], ['Bowling', r.bowling], ['Fielding', r.fielding]].map(([l, v]) => (
+      <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+        {[['Base', r.base], ['Swing', r.swing], ['Per match', r.perMatch], ['Batting', r.batting], ['Bowling', r.bowling], ['Fielding', r.fielding]].map(([l, v]) => (
           <div key={l as string} className="r-control bg-slate-50 dark:bg-white/5 py-2">
             <p className="t-num text-base text-slate-900 dark:text-white">{v}</p>
             <p className="t-micro text-slate-500 dark:text-white/50">{l}</p>

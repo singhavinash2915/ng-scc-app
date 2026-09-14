@@ -304,17 +304,29 @@ export function pressureCurve(balls: EngineBall[], fmt: Format, target: number |
   return out;
 }
 
-// ─── 4. Impact ────────────────────────────────────────────────────────────────
-// Every ball moves the batting side's win probability. Impact hands that move
-// to whoever caused it: the batter gains it, the bowler gains the opposite. A
-// dot in a tight chase is negative for the batter and positive for the bowler
-// without any special rule — the probability already fell.
+// ─── 4. Impact = base points + swing ──────────────────────────────────────────
+// Two parts, the way CricHeroes' MVP 2.0 adds them:
 //
-// Wickets are shared the way a scorer would: bowled, lbw and hit wicket are all
-// the bowler's; a catch or stumping splits with the fielder; a run-out is mostly
-// the fielder's. A wicket is weighted by how good the batter was — dismissing
-// the club's best is worth more than tail-end runs — and breaking a big
-// partnership earns a little extra.
+// BASE — what the scorecard says you did, so runs and wickets always count.
+// Set from SCC's own record (33,000 rebuilt deliveries), not fantasy-league
+// weights:
+//   batting   0.1 a run, ± 0.03 for each run above or below the club's rate
+//             (1.23 off the bat per ball) — 45 off 38 ≈ 4.4
+//   bowling   1.5 a wicket (a wicket costs an SCC side 14.8 runs, and 0.1 a run
+//             is the batting scale), ± 0.1 for each run under or over the club
+//             rate of 1.3 conceded per ball — a dot ≈ +0.13, a six ≈ −0.47
+//   fielding  catch 0.4, stumping 0.5, run out 0.8
+//
+// SWING — how far each ball moved the win probability, handed to whoever
+// caused it: the batter gains the move, the bowler the opposite. A dot in a
+// tight chase is negative for the batter and positive for the bowler without
+// any special rule — the probability already fell. Wickets are shared the way a
+// scorer would: bowled, lbw, hit wicket all the bowler's; a catch or stumping
+// splits with the fielder; a run out is mostly the fielder's.
+//
+// Base rewards the work; swing rewards the timing. A 45 when the game was
+// drifting and a 45 that won a tight chase get the same base and very
+// different swing.
 
 export interface ImpactOptions {
   /** Batting average by player id, for "quality of batter dismissed". */
@@ -327,10 +339,15 @@ export interface ImpactOptions {
 
 export interface PlayerImpact {
   playerId: string;
+  /** Base + swing, by discipline. */
   batting: number;
   bowling: number;
   fielding: number;
-  /** On CricHeroes' scale: swinging a match by about half ≈ 10. */
+  /** Scorecard points: runs, wickets, economy, catches. */
+  base: number;
+  /** Win probability moved × 20: half a match ≈ 10. */
+  swing: number;
+  /** base + swing. */
   total: number;
   grade: ImpactGrade;
 }
@@ -342,8 +359,21 @@ export const gradeOf = (score: number): ImpactGrade =>
   score >= 10 ? 'Exceptional' : score >= 7.5 ? 'Excellent' : score >= 5 ? 'Very good'
     : score >= 3 ? 'Good' : score >= 1.5 ? 'Useful' : 'Marginal';
 
-/** Win probability moved × SCALE = impact points. Half a match ≈ 10. */
+/** Win probability moved × SCALE = swing points. Half a match ≈ 10. */
 const SCALE = 20;
+
+/** Base point weights — see the note above for where each comes from. */
+export const BASE = {
+  perRun: 0.1,
+  paceBonus: 0.03,
+  clubBatRunsPerBall: 1.23,
+  perWicket: 1.5,
+  perRunSaved: 0.1,
+  clubConcededPerBall: 1.3,
+  catch: 0.4,
+  stumping: 0.5,
+  runOut: 0.8,
+};
 
 const WICKET_SHARE: Record<string, { bowler: number; fielder: number }> = {
   bowled:     { bowler: 1.0, fielder: 0 },
@@ -355,6 +385,12 @@ const WICKET_SHARE: Record<string, { bowler: number; fielder: number }> = {
   retired_out: { bowler: 0, fielder: 0 },
 };
 
+/** Dismissals the bowler is credited with in the book. */
+const BOWLERS_WICKET = new Set(['bowled', 'lbw', 'hit_wicket', 'caught', 'stumped']);
+
+type Part = 'batting' | 'bowling' | 'fielding';
+type Acc = Record<Part, number> & { base: number; swing: number };
+
 /**
  * Impact for everyone who took part in one innings. Combine both innings of a
  * match by adding the rows — the function is additive by player.
@@ -362,11 +398,12 @@ const WICKET_SHARE: Record<string, { bowler: number; fielder: number }> = {
 export function inningsImpact(
   balls: EngineBall[], fmt: Format, target: number | null, opts: ImpactOptions = {},
 ): Map<string, PlayerImpact> {
-  const rows = new Map<string, { batting: number; bowling: number; fielding: number }>();
-  const add = (id: string | null, field: 'batting' | 'bowling' | 'fielding', v: number) => {
+  const rows = new Map<string, Acc>();
+  const add = (id: string | null, part: Part, v: number, kind: 'base' | 'swing' = 'swing') => {
     if (!id || !Number.isFinite(v)) return;
-    const r = rows.get(id) ?? { batting: 0, bowling: 0, fielding: 0 };
-    r[field] += v;
+    const r = rows.get(id) ?? { batting: 0, bowling: 0, fielding: 0, base: 0, swing: 0 };
+    r[part] += v;
+    r[kind] += v;
     rows.set(id, r);
   };
 
@@ -380,6 +417,24 @@ export function inningsImpact(
   let runs = 0, wickets = 0, legal = 0, partnership = 0;
 
   for (const b of ordered) {
+    // ── base ──
+    // Off the bat: the run, and whether it came quicker or slower than the club
+    // rate. A wide is not a ball faced; a no-ball is, for the runs hit off it.
+    if (b.striker_id && b.extra_type !== 'wd') {
+      add(b.striker_id, 'batting', b.runs_off_bat * BASE.perRun, 'base');
+      if (isLegal(b)) add(b.striker_id, 'batting', (b.runs_off_bat - BASE.clubBatRunsPerBall) * BASE.paceBonus, 'base');
+    }
+    // Conceded: runs off the bat, wides and no-balls — byes are the keeper's.
+    const conceded = b.runs_off_bat + (b.extra_type === 'wd' || b.extra_type === 'nb' ? b.extra_runs : 0);
+    add(b.bowler_id, 'bowling', ((isLegal(b) ? BASE.clubConcededPerBall : 0) - conceded) * BASE.perRunSaved, 'base');
+    if (b.wicket_type && BOWLERS_WICKET.has(b.wicket_type)) add(b.bowler_id, 'bowling', BASE.perWicket, 'base');
+    if (b.fielder_id) {
+      if (b.wicket_type === 'caught' && b.fielder_id !== b.bowler_id) add(b.fielder_id, 'fielding', BASE.catch, 'base');
+      else if (b.wicket_type === 'stumped') add(b.fielder_id, 'fielding', BASE.stumping, 'base');
+      else if (b.wicket_type === 'run_out') add(b.fielder_id, 'fielding', BASE.runOut, 'base');
+    }
+
+    // ── swing ──
     const before = winProbability({ runs, wickets, legalBalls: legal, target }, fmt);
     const r = b.runs_off_bat + b.extra_runs;
     runs += r;
@@ -418,23 +473,27 @@ export function inningsImpact(
   // Pad-recorded fielding: a drop costs roughly the wicket it should have been,
   // a save is worth the runs it kept off. Both read at the moment they happened.
   for (const e of opts.fieldEvents ?? []) {
-    if (e.kind === 'drop') add(e.fielder_id, 'fielding', -0.6);
-    else if (e.kind === 'save') add(e.fielder_id, 'fielding', Math.min(1.2, (e.runs ?? 1) * 0.12));
+    if (e.kind === 'drop') add(e.fielder_id, 'fielding', -0.6, 'base');
+    else if (e.kind === 'save') add(e.fielder_id, 'fielding', Math.min(1.2, (e.runs ?? 1) * 0.12), 'base');
   }
 
   const out = new Map<string, PlayerImpact>();
-  for (const [id, v] of rows) {
-    const total = +(v.batting + v.bowling + v.fielding).toFixed(2);
-    out.set(id, {
-      playerId: id,
-      batting: +v.batting.toFixed(2),
-      bowling: +v.bowling.toFixed(2),
-      fielding: +v.fielding.toFixed(2),
-      total,
-      grade: gradeOf(total),
-    });
-  }
+  for (const [id, v] of rows) out.set(id, finish(id, v));
   return out;
+}
+
+function finish(id: string, v: Acc): PlayerImpact {
+  const total = +(v.base + v.swing).toFixed(2);
+  return {
+    playerId: id,
+    batting: +v.batting.toFixed(2),
+    bowling: +v.bowling.toFixed(2),
+    fielding: +v.fielding.toFixed(2),
+    base: +v.base.toFixed(2),
+    swing: +v.swing.toFixed(2),
+    total,
+    grade: gradeOf(total),
+  };
 }
 
 /** Add two impact maps — two innings of a match, or matches across a season. */
@@ -443,14 +502,10 @@ export function mergeImpact(a: Map<string, PlayerImpact>, b: Map<string, PlayerI
   for (const [id, v] of b) {
     const cur = out.get(id);
     if (!cur) { out.set(id, v); continue; }
-    const total = +(cur.total + v.total).toFixed(2);
-    out.set(id, {
-      playerId: id,
-      batting: +(cur.batting + v.batting).toFixed(2),
-      bowling: +(cur.bowling + v.bowling).toFixed(2),
-      fielding: +(cur.fielding + v.fielding).toFixed(2),
-      total, grade: gradeOf(total),
-    });
+    out.set(id, finish(id, {
+      batting: cur.batting + v.batting, bowling: cur.bowling + v.bowling, fielding: cur.fielding + v.fielding,
+      base: cur.base + v.base, swing: cur.swing + v.swing,
+    }));
   }
   return out;
 }
