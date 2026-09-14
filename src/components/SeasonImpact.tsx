@@ -5,7 +5,7 @@ import { useMembers } from '../hooks/useMembers';
 import { seasonLabel } from '../config/season';
 
 // ─── Season impact: the board, and one player's line ──────────────────────────
-// Both render nothing until the season has an app-scored match — a table of
+// Both render nothing until the season has a match with balls — a table of
 // zeros would suggest everyone had no impact, rather than that it isn't measured.
 
 function useNames() {
@@ -29,7 +29,7 @@ export function SeasonImpactBoard({ season }: { season: string }) {
         <div className="min-w-0">
           <p className="font-black text-slate-900 dark:text-white">Impact leaders · {seasonLabel(season)}</p>
           <p className="t-meta text-slate-500 dark:text-white/50">
-            From {matchCount} match{matchCount === 1 ? '' : 'es'} scored ball by ball in the app
+            From every ball of {matchCount} match{matchCount === 1 ? '' : 'es'} · how far each player moved results
           </p>
         </div>
       </div>
@@ -41,8 +41,8 @@ export function SeasonImpactBoard({ season }: { season: string }) {
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-bold text-slate-800 dark:text-white/90 truncate group-hover:underline">{name(r.playerId)}</p>
                 <p className="t-num text-sm text-slate-900 dark:text-white flex-shrink-0">
-                  {r.total > 0 ? '+' : ''}{r.total}
-                  <span className="t-micro text-slate-400 font-bold ml-1.5">{r.perMatch}/m</span>
+                  {r.total > 0 ? '+' : ''}{r.total.toFixed(1)}
+                  <span className="t-micro text-slate-400 font-bold ml-1.5">{r.perMatch.toFixed(1)}/m</span>
                 </p>
               </div>
               <div className="mt-1 h-1.5 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
@@ -79,7 +79,7 @@ export function SeasonImpactLine({ memberId, season }: { memberId: string; seaso
             </p>
           </div>
         </div>
-        <p className="t-num text-3xl text-slate-900 dark:text-white">{r.total > 0 ? '+' : ''}{r.total}</p>
+        <p className="t-num text-3xl text-slate-900 dark:text-white">{r.total > 0 ? '+' : ''}{r.total.toFixed(1)}</p>
       </div>
       <div className="grid grid-cols-4 gap-2 mt-3 text-center">
         {[['Per match', r.perMatch], ['Batting', r.batting], ['Bowling', r.bowling], ['Fielding', r.fielding]].map(([l, v]) => (

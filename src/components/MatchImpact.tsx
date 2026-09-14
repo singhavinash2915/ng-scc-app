@@ -179,8 +179,10 @@ function PressureChart({ curve }: { curve: Array<{ seq: number; index: number; w
   const w = W / curve.length;
   const line = curve.map((r, i) => `${i === 0 ? 'M' : 'L'} ${(i + 0.5) * w} ${H - r.winProbAfter * H}`).join(' ');
   // Over markers every 2 overs of legal balls, read from the labels.
-  const ticks = curve.map((r, i) => ({ i, o: parseInt(r.label, 10), b: r.label.endsWith('.1') }))
-    .filter(t => t.b && t.o % 2 === 0);
+  // First delivery of each even over — once, since a wide repeats the label.
+  const seen = new Set<number>();
+  const ticks = curve.map((r, i) => ({ i, o: parseInt(r.label, 10) }))
+    .filter(t => t.o % 2 === 0 && !seen.has(t.o) && seen.add(t.o));
   return (
     <div className="mt-3">
       <svg width="100%" viewBox={`0 0 ${W} ${H + 14}`} preserveAspectRatio="none" className="block">
