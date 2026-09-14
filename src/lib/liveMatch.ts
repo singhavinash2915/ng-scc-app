@@ -1,4 +1,5 @@
 import { type Ball, isLegalDelivery } from './cricketRules';
+import { winProbability as engineWinProbability } from './pressure';
 
 // ─── The live match experience ────────────────────────────────────────────────
 // The scoring pad is the input; this is what everyone NOT at the ground sees.
@@ -69,40 +70,12 @@ export interface ChaseState {
  * a talking point for the group chat, not a betting line.
  */
 export function winProbability(s: ChaseState): number {
-  const ballsLeft = s.oversPerInnings * 6 - s.legalBalls;
-  const need = s.target - s.runs;
-  const wktsLeft = s.playersPerSide - 1 - s.wickets;
-
-  if (need <= 0) return 1;                       // chased it
-  if (ballsLeft <= 0 || wktsLeft <= 0) return 0; // out of balls or batters
-
-  const required = (need / ballsLeft) * 6;
-  // Par for the club's format — 16 overs, tennis ball, 12 a side.
-  const PAR = 7.5;
-
-  // Wickets in hand act on the rate you can realistically sustain, not as a
-  // separate additive term: 10 an over is a different ask with eight wickets
-  // than with two, and treating them independently gets both ends wrong.
-  const thin = Math.max(0, 5 - wktsLeft);
-  const effective = required * (1 + thin * 0.18);
-
-  let p = 1 / (1 + Math.exp((effective - PAR) * 0.55));
-
-  // Endgame: with few runs left, the ABSOLUTE number matters more than the
-  // rate. Needing 6 off 6 is comfortable however it reads as a run rate, and
-  // the rate model alone scores it like a coin flip.
-  if (need <= 18 && wktsLeft >= 3) {
-    const ease = 1 - need / 18;                   // 0 at 18 needed, 1 at zero
-    p = p + (1 - p) * ease * 0.75;
-  }
-
-  // Mirror image: plenty of wickets can't rescue a total that's out of reach
-  // in the balls remaining. Caps the optimism the rate model would otherwise
-  // carry into a hopeless finish.
-  const maxRealistic = (ballsLeft / 6) * 15;      // ~15 an over is the ceiling
-  if (need > maxRealistic) p = Math.min(p, 0.05);
-
-  return Math.max(0.02, Math.min(0.98, p));
+  // Calibrated against SCC's own chases — see lib/pressure.ts. Kept here with the
+  // old signature so the scoreboard callers do not change.
+  return engineWinProbability(
+    { runs: s.runs, wickets: s.wickets, legalBalls: s.legalBalls, target: s.target },
+    { oversPerInnings: s.oversPerInnings, playersPerSide: s.playersPerSide },
+  );
 }
 
 /** Short human summary — "Need 42 off 30" — for the banner and the viewer. */

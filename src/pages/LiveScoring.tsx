@@ -16,6 +16,7 @@ import { internalSides } from '../utils/internalTeams';
 import { LiveViewer } from '../components/LiveViewer';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import { DEFAULT_FORMAT, battingCard, bowlingCard, type WicketType, type ExtraType } from '../lib/cricketRules';
+import { oppositionPlayers, isOppositionId, oppositionLabel } from '../lib/opposition';
 
 // ─── Live scoring ──────────────────────────────────────────────────────────────
 // One page, two faces. Whoever holds the lock gets the scoring pad; everyone
@@ -107,7 +108,15 @@ export function LiveScoring() {
     const nameOfSide = (key: string | undefined) => key === 'home' ? sides[0].name : sides[1].name;
     // Guests bat and bowl but are not members; buildScorecard tags their rows
     // so no club figure can pick them up.
-    const guestList = G.appearances.map(a => ({ id: a.guest_id, name: a.guest?.name ?? 'Guest' }));
+    const guestList = [
+      ...G.appearances.map(a => ({ id: a.guest_id, name: a.guest?.name ?? 'Guest' })),
+      // The other team rides the guest marker: in the card, never in a stat.
+      ...(match?.match_type !== 'internal'
+        ? [...oppositionPlayers('bat', format.playersPerSide, match?.opponent || 'Opponent'),
+           ...oppositionPlayers('bowl', Math.max(8, format.playersPerSide - 1), match?.opponent || 'Opponent')]
+            .map(p => ({ id: p.id, name: p.name }))
+        : []),
+    ];
     const payload = buildScorecard(
       matchId,
       { balls: I1.balls, teamName: nameOfSide(M.first.batting_team) },
@@ -176,6 +185,9 @@ export function LiveScoring() {
    */
   const [newBatterFor, setNewBatterFor] = useState<'striker' | 'nonStriker' | null>(null);
   const [pickedBatter, setPickedBatter] = useState<string | null>(null);
+  /** A wicket that needs more than its type: who fielded, and on a run out who
+   *  was out. Catches only reach the fielding tables if the catcher is named. */
+  const [wkt, setWkt] = useState<{ type: WicketType; dismissedId: string | null } | null>(null);
   const [needBowler, setNeedBowler] = useState(false);
 
   useEffect(() => {
@@ -220,12 +232,27 @@ export function LiveScoring() {
     return [...mem, ...guests].sort((a, b) => a.name.localeCompare(b.name));
   }, [members, G.appearances]);
 
+  // In an external match only one side is ours. Whoever is batting in the live
+  // innings decides which pool each picker draws from; internal matches are
+  // SCC on both sides, so both pools are the squad. See lib/opposition.ts.
+  const isExternal = match?.match_type !== 'internal';
+  const oppName = match?.opponent || 'Opponent';
+  const weBat = !isExternal || M.current?.batting_team === 'home';
+  const weBowl = !isExternal || M.current?.batting_team === 'away';
+  const oppBatters = oppositionPlayers('bat', format.playersPerSide, oppName);
+  const oppBowlers = oppositionPlayers('bowl', Math.max(8, format.playersPerSide - 1), oppName);
+  type PoolPlayer = { id: string; name: string; isGuest: boolean };
+  const batPool: PoolPlayer[] = weBat ? squad : oppBatters;
+  const bowlPool: PoolPlayer[] = weBowl ? squad : oppBowlers;
+
   const name = (id: string | null) =>
-    squad.find(m => m.id === id)?.name ?? members.find(m => m.id === id)?.name ?? '—';
+    (isOppositionId(id) ? oppositionLabel(id!, oppName) : null)
+    ?? squad.find(m => m.id === id)?.name ?? members.find(m => m.id === id)?.name ?? '—';
 
   const record = (input: Parameters<typeof S.scoreBall>[0]) => {
     void S.scoreBall(input, { strikerId: striker, nonStrikerId: nonStriker, bowlerId: bowler }, myId);
     setWicketSheet(null);
+    setWkt(null);
 
     // A wicket empties one end — ask who replaces the man who's out. Which end
     // depends on who was actually dismissed, since a run out can take the
@@ -578,7 +605,7 @@ export function LiveScoring() {
                   <select key={f.l} value={f.v ?? ''} onChange={e => f.set(e.target.value || null)}
                     className="w-full r-control border border-amber-200 bg-white px-3 py-2 text-sm">
                     <option value="">{f.l}…</option>
-                    {squad.map(m => (
+                    {(f.l === 'Bowler' ? bowlPool : batPool).map(m => (
                       <option key={m.id} value={m.id}>
                         {m.isGuest ? `${m.name} (guest)` : m.name}
                       </option>
@@ -697,7 +724,7 @@ export function LiveScoring() {
 
               {!pickedBatter ? (
                 <div className="mt-3 space-y-1.5">
-                  {squad.filter(m => !usedBatters.has(m.id)).map(m => (
+                  {batPool.filter(m => !usedBatters.has(m.id)).map(m => (
                     <button key={m.id} onClick={() => setPickedBatter(m.id)}
                       className="w-full text-left r-control border-2 border-slate-200 dark:border-white/10
                                  px-3.5 py-3 font-bold t-body text-slate-800 dark:text-white/85
@@ -709,7 +736,7 @@ export function LiveScoring() {
                       )}
                     </button>
                   ))}
-                  {squad.filter(m => !usedBatters.has(m.id)).length === 0 && (
+                  {batPool.filter(m => !usedBatters.has(m.id)).length === 0 && (
                     <p className="text-sm text-slate-500 py-3">
                       Everyone has batted — the innings is done.
                     </p>
@@ -761,7 +788,7 @@ export function LiveScoring() {
                 Who’s bowling?
               </p>
               <div className="mt-3 space-y-1.5">
-                {squad.filter(m => !S.ctx.ineligibleBowlers.includes(m.id)).map(m => {
+                {bowlPool.filter(m => !S.ctx.ineligibleBowlers.includes(m.id)).map(m => {
                   const l = bowl.get(m.id);
                   return (
                     <button key={m.id} onClick={() => { setBowler(m.id); setNeedBowler(false); }}
@@ -793,23 +820,59 @@ export function LiveScoring() {
         {/* ── EXTRA / WICKET SHEET ─────────────────────────────────────── */}
         {wicketSheet && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setWicketSheet(null)} />
+            <div className="absolute inset-0 bg-black/50" onClick={() => { setWicketSheet(null); setWkt(null); }} />
             <div className="relative w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 space-y-3">
               <p className="font-black text-lg text-slate-900 dark:text-white">
                 {wicketSheet === 'W' ? 'How was he out?'
                   : EXTRAS.find(e => e.key === wicketSheet)?.label}
               </p>
 
-              {wicketSheet === 'W' ? (
+              {wicketSheet === 'W' && wkt?.type === 'run_out' && !wkt.dismissedId ? (
+                <div className="space-y-2">
+                  <p className="t-meta font-black uppercase tracking-wider text-slate-400">Who was run out?</p>
+                  {[striker, nonStriker].filter(Boolean).map(id => (
+                    <button key={id} onClick={() => setWkt({ type: 'run_out', dismissedId: id })}
+                      className="w-full r-control border-2 border-slate-200 dark:border-white/10 py-3
+                                 font-black t-body text-slate-700 dark:text-white/80">
+                      {name(id)}{id === striker ? ' · striker' : ' · non-striker'}
+                    </button>
+                  ))}
+                </div>
+              ) : wicketSheet === 'W' && wkt ? (
+                <div className="space-y-2">
+                  <p className="t-meta font-black uppercase tracking-wider text-slate-400">
+                    {wkt.type === 'caught' ? 'Caught by' : wkt.type === 'stumped' ? 'Stumped by' : 'Run out by'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 max-h-[45vh] overflow-y-auto">
+                    {bowlPool.map(m => (
+                      <button key={m.id}
+                        onClick={() => record({ wicketType: wkt.type, dismissedId: wkt.dismissedId, fielderId: m.id })}
+                        className={`py-2.5 r-control border-2 t-body font-bold truncate px-2 ${
+                          m.id === bowler
+                            ? 'border-emerald-400 text-emerald-700 dark:text-emerald-300'
+                            : 'border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80'}`}>
+                        {m.name}{m.id === bowler ? ' (bowler)' : ''}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => record({ wicketType: wkt.type, dismissedId: wkt.dismissedId, fielderId: null })}
+                    className="w-full r-control border border-slate-200 dark:border-white/10 py-2.5
+                               t-meta font-bold text-slate-500">
+                    Not sure who — record without a fielder
+                  </button>
+                </div>
+              ) : wicketSheet === 'W' ? (
                 <div className="grid grid-cols-2 gap-2">
                   {WICKETS.map(w => (
                     <button key={w.key}
-                      onClick={() => record({
-                        wicketType: w.key,
-                        // A run out can take the non-striker; everything else is
-                        // the man on strike.
-                        dismissedId: w.key === 'run_out' ? striker : striker,
-                      })}
+                      onClick={() => {
+                        // Bowled, lbw, hit wicket: nothing more to ask. A catch or
+                        // stumping needs the fielder; a run out can take either
+                        // batter, so that is asked first.
+                        if (w.key === 'caught' || w.key === 'stumped') setWkt({ type: w.key, dismissedId: striker });
+                        else if (w.key === 'run_out') setWkt({ type: 'run_out', dismissedId: null });
+                        else record({ wicketType: w.key, dismissedId: striker });
+                      }}
                       className="r-control border-2 border-slate-200 dark:border-white/10 py-3
                                  font-black t-body text-slate-700 dark:text-white/80">
                       {w.label}
@@ -847,7 +910,7 @@ export function LiveScoring() {
                 </div>
               )}
 
-              <button onClick={() => setWicketSheet(null)}
+              <button onClick={() => { setWicketSheet(null); setWkt(null); }}
                 className="w-full t-meta font-bold text-slate-400 pt-1">Cancel</button>
             </div>
           </div>
@@ -903,7 +966,7 @@ export function LiveScoring() {
                         Should have been
                       </p>
                       <div className="grid grid-cols-2 gap-2">
-                        {squad.filter(m => m.id !== striker && m.id !== nonStriker && !usedBatters.has(m.id))
+                        {batPool.filter(m => m.id !== striker && m.id !== nonStriker && !usedBatters.has(m.id))
                           .map(m => (
                             <button key={m.id}
                               onClick={async () => {
@@ -945,7 +1008,7 @@ export function LiveScoring() {
                     ))}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    {squad.filter(m => m.id !== bowler).map(m => (
+                    {bowlPool.filter(m => m.id !== bowler).map(m => (
                       <button key={m.id}
                         onClick={async () => {
                           // "From here on" needs no rewrite — the next ball simply
